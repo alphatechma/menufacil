@@ -171,13 +171,18 @@ export default function LandingPage() {
   // Fetch plans
   useEffect(() => {
     api
-      .get<Plan[]>('/plans/public')
+      .get('/plans/public')
       .then((res) => {
-        setPlans(res.data);
-        if (res.data.length > 0) {
+        // Normalize modules: API returns objects {id, key, name, ...}, we need string[]
+        const normalized: Plan[] = res.data.map((p: any) => ({
+          ...p,
+          modules: (p.modules || []).map((m: any) => (typeof m === 'string' ? m : m.key)),
+        }));
+        setPlans(normalized);
+        if (normalized.length > 0) {
           // Default to middle plan (Pro)
-          const midIdx = Math.min(1, res.data.length - 1);
-          setSelectedPlanId(res.data[midIdx].id);
+          const midIdx = Math.min(1, normalized.length - 1);
+          setSelectedPlanId(normalized[midIdx].id);
         }
       })
       .catch(() => {

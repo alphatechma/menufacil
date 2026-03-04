@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductRepository } from './product.repository';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ReorderProductsDto } from './dto/reorder-products.dto';
 import { Product } from './entities/product.entity';
 import { ExtraGroup } from './entities/extra-group.entity';
 
@@ -19,8 +20,8 @@ export class ProductService {
 
     if (variations?.length) {
       product.variations = variations.map((v) =>
-        Object.assign(Object.create(Object.getPrototypeOf(product)), v),
-      ) as any;
+        this.productRepository.createVariation({ name: v.name, price: v.price }),
+      );
     }
 
     if (extra_group_ids?.length) {
@@ -59,6 +60,17 @@ export class ProductService {
       await this.productRepository.update(id, tenantId, productData);
     }
 
+    if (variations !== undefined) {
+      await this.productRepository.deleteVariationsByProduct(id);
+      if (variations.length > 0) {
+        const product = await this.findById(id, tenantId);
+        product.variations = variations.map((v) =>
+          this.productRepository.createVariation({ name: v.name, price: v.price, product_id: id }),
+        );
+        await this.productRepository.save(product);
+      }
+    }
+
     if (extra_group_ids) {
       const product = await this.findById(id, tenantId);
       product.extra_groups = await this.productRepository.findExtraGroupsByIds(extra_group_ids);
@@ -66,6 +78,10 @@ export class ProductService {
     }
 
     return this.findById(id, tenantId);
+  }
+
+  async reorder(dto: ReorderProductsDto, tenantId: string): Promise<void> {
+    await this.productRepository.batchUpdateSortOrder(dto.items, tenantId);
   }
 
   async remove(id: string, tenantId: string): Promise<void> {

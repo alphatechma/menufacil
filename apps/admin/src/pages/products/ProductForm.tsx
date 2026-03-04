@@ -1,7 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, useRef, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, X, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ArrowLeft, Save, X, Plus, Trash2, GripVertical, Upload, ImageIcon } from 'lucide-react';
 import api from '../../services/api';
 
 interface Variation {
@@ -55,10 +55,12 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEditing = Boolean(id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProductFormData>(emptyForm);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'general' | 'variations' | 'extras'>('general');
+  const [uploading, setUploading] = useState(false);
 
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
@@ -130,7 +132,8 @@ export default function ProductForm() {
       navigate('/products');
     },
     onError: (err: any) => {
-      setError(err.response?.data?.message || 'Erro ao salvar produto.');
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao salvar produto.');
     },
   });
 
@@ -142,6 +145,41 @@ export default function ProductForm() {
 
   const handleChange = (field: keyof ProductFormData, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Image upload
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      handleChange('image_url', response.data.url);
+    } catch (err: any) {
+      setError('Erro ao fazer upload da imagem. Verifique o tamanho e formato.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+    // Reset so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleImageUpload(file);
+    }
   };
 
   // Variation handlers
@@ -314,24 +352,25 @@ export default function ProductForm() {
                 </div>
               </div>
 
-              {/* Image URL */}
+              {/* Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  URL da Imagem
+                  Imagem do Produto
                 </label>
                 <input
-                  type="text"
-                  value={form.image_url}
-                  onChange={(e) => handleChange('image_url', e.target.value)}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileSelect}
+                  className="hidden"
                 />
-                {form.image_url && (
-                  <div className="mt-3 relative inline-block">
+
+                {form.image_url ? (
+                  <div className="relative inline-block">
                     <img
                       src={form.image_url}
                       alt="Preview"
-                      className="w-24 h-24 rounded-xl object-cover border border-gray-200"
+                      className="w-32 h-32 rounded-xl object-cover border border-gray-200"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -343,6 +382,38 @@ export default function ProductForm() {
                     >
                       <X className="w-3 h-3" />
                     </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                      uploading
+                        ? 'border-primary bg-primary-50'
+                        : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+                    }`}
+                  >
+                    {uploading ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm text-primary font-medium">Enviando imagem...</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Clique para enviar ou arraste a imagem
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            JPG, PNG, WebP ou GIF (max. 5MB)
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

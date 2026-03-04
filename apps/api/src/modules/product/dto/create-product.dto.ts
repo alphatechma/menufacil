@@ -91,6 +91,11 @@ export class CreateProductDto {
   @IsBoolean()
   is_pizza?: boolean;
 
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean;
+
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
   @IsNumber()

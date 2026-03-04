@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  DndContext,
+  DragOverlay,
+  useDroppable,
+  useDraggable,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
   Clock,
   ChefHat,
   CheckCircle,
@@ -10,6 +22,7 @@ import {
   Minimize,
   RefreshCw,
   UtensilsCrossed,
+  GripVertical,
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -71,24 +84,33 @@ function getTimerColor(minutes: number): string {
   return 'bg-red-100 text-red-700';
 }
 
+// Allowed transitions: only forward, one step at a time
+const ALLOWED_TRANSITIONS: Record<string, string> = {
+  confirmed: 'preparing',
+  preparing: 'ready',
+  ready: 'out_for_delivery',
+};
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function OrderCard({
+function OrderCardContent({
   order,
   actionLabel,
   actionIcon: ActionIcon,
   actionColor,
   onAction,
   isUpdating,
+  showDragHandle,
 }: {
   order: Order;
   actionLabel: string;
   actionIcon: React.ElementType;
   actionColor: string;
-  onAction: () => void;
+  onAction?: () => void;
   isUpdating: boolean;
+  showDragHandle?: boolean;
 }) {
   const elapsed = getElapsedMinutes(order.created_at);
 
@@ -96,11 +118,16 @@ function OrderCard({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col gap-3">
       {/* Header row */}
       <div className="flex items-start justify-between">
-        <div>
-          <span className="text-lg font-bold text-gray-900">
-            {formatOrderNumber(order.order_number)}
-          </span>
-          <p className="text-sm text-gray-500 mt-0.5">{order.customer.name}</p>
+        <div className="flex items-center gap-2">
+          {showDragHandle && (
+            <GripVertical className="w-4 h-4 text-gray-400 cursor-grab shrink-0" />
+          )}
+          <div>
+            <span className="text-lg font-bold text-gray-900">
+              {formatOrderNumber(order.order_number)}
+            </span>
+            <p className="text-sm text-gray-500 mt-0.5">{order.customer.name}</p>
+          </div>
         </div>
         <span
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getTimerColor(elapsed)}`}
@@ -144,14 +171,79 @@ function OrderCard({
       )}
 
       {/* Action button */}
-      <button
-        onClick={onAction}
-        disabled={isUpdating}
-        className={`mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${actionColor}`}
-      >
-        <ActionIcon className="w-4 h-4" />
-        {isUpdating ? 'Atualizando...' : actionLabel}
-      </button>
+      {onAction && (
+        <button
+          onClick={onAction}
+          disabled={isUpdating}
+          className={`mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${actionColor}`}
+        >
+          <ActionIcon className="w-4 h-4" />
+          {isUpdating ? 'Atualizando...' : actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function DraggableOrderCard({
+  order,
+  actionLabel,
+  actionIcon,
+  actionColor,
+  onAction,
+  isUpdating,
+}: {
+  order: Order;
+  actionLabel: string;
+  actionIcon: React.ElementType;
+  actionColor: string;
+  onAction: () => void;
+  isUpdating: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: order.id,
+    data: { order },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`touch-none ${isDragging ? 'opacity-30' : ''}`}
+    >
+      <OrderCardContent
+        order={order}
+        actionLabel={actionLabel}
+        actionIcon={actionIcon}
+        actionColor={actionColor}
+        onAction={onAction}
+        isUpdating={isUpdating}
+        showDragHandle
+      />
+    </div>
+  );
+}
+
+function DroppableColumn({
+  id,
+  children,
+  isOver,
+}: {
+  id: string;
+  children: React.ReactNode;
+  isOver: boolean;
+}) {
+  const { setNodeRef } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex-1 overflow-y-auto p-3 space-y-3 transition-colors duration-200 ${
+        isOver ? 'bg-blue-50 ring-2 ring-blue-300 ring-inset rounded-b-xl' : ''
+      }`}
+    >
+      {children}
     </div>
   );
 }
@@ -236,10 +328,17 @@ export default function KDS() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [overColumnId, setOverColumnId] = useState<string | null>(null);
 
   const prevOrderCountRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
 
   // -----------------------------------------------------------------------
   // Fetch orders
@@ -295,6 +394,44 @@ export default function KDS() {
     },
     [fetchOrders],
   );
+
+  // -----------------------------------------------------------------------
+  // Drag handlers
+  // -----------------------------------------------------------------------
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const order = event.active.data.current?.order as Order;
+    setActiveOrder(order);
+  }, []);
+
+  const handleDragOver = useCallback((event: DragEndEvent) => {
+    setOverColumnId(event.over?.id as string | null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveOrder(null);
+      setOverColumnId(null);
+
+      const { active, over } = event;
+      if (!over) return;
+
+      const order = active.data.current?.order as Order;
+      const targetColumnKey = over.id as string;
+
+      // Check if the transition is allowed (only forward, one step)
+      const allowedNext = ALLOWED_TRANSITIONS[order.status];
+      if (allowedNext !== targetColumnKey) return;
+
+      updateStatus(order.id, targetColumnKey);
+    },
+    [updateStatus],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveOrder(null);
+    setOverColumnId(null);
+  }, []);
 
   // -----------------------------------------------------------------------
   // Sound notification
@@ -368,6 +505,11 @@ export default function KDS() {
   const getOrdersForColumn = (col: ColumnConfig) =>
     orders.filter((o) => col.statuses.includes(o.status));
 
+  // Find column config for the active order (for DragOverlay)
+  const activeOrderColumn = activeOrder
+    ? columns.find((c) => c.statuses.includes(activeOrder.status))
+    : null;
+
   // -----------------------------------------------------------------------
   // Main render
   // -----------------------------------------------------------------------
@@ -432,55 +574,78 @@ export default function KDS() {
 
       {/* Columns */}
       <div className="flex-1 overflow-hidden p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
-          {columns.map((col) => {
-            const colOrders = getOrdersForColumn(col);
-            const ColIcon = col.icon;
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+            {columns.map((col) => {
+              const colOrders = getOrdersForColumn(col);
+              const ColIcon = col.icon;
 
-            return (
-              <div
-                key={col.key}
-                className="flex flex-col rounded-xl overflow-hidden bg-gray-50 border border-gray-200"
-              >
-                {/* Column header */}
+              return (
                 <div
-                  className={`${col.headerBg} ${col.headerText} px-4 py-3 flex items-center justify-between shrink-0`}
+                  key={col.key}
+                  className="flex flex-col rounded-xl overflow-hidden bg-gray-50 border border-gray-200"
                 >
-                  <div className="flex items-center gap-2">
-                    <ColIcon className="w-5 h-5" />
-                    <span className="font-bold text-sm uppercase tracking-wide">
-                      {col.title}
+                  {/* Column header */}
+                  <div
+                    className={`${col.headerBg} ${col.headerText} px-4 py-3 flex items-center justify-between shrink-0`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ColIcon className="w-5 h-5" />
+                      <span className="font-bold text-sm uppercase tracking-wide">
+                        {col.title}
+                      </span>
+                    </div>
+                    <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                      {colOrders.length}
                     </span>
                   </div>
-                  <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold">
-                    {colOrders.length}
-                  </span>
-                </div>
 
-                {/* Column body */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                  {colOrders.length === 0 ? (
-                    <EmptyColumn message={col.emptyMessage} />
-                  ) : (
-                    colOrders.map((order) => (
-                      <OrderCard
-                        key={order.id}
-                        order={order}
-                        actionLabel={col.actionLabel}
-                        actionIcon={col.actionIcon}
-                        actionColor={col.actionColor}
-                        isUpdating={updatingIds.has(order.id)}
-                        onAction={() =>
-                          updateStatus(order.id, col.nextStatus)
-                        }
-                      />
-                    ))
-                  )}
+                  {/* Column body (droppable) */}
+                  <DroppableColumn id={col.key} isOver={overColumnId === col.key}>
+                    {colOrders.length === 0 ? (
+                      <EmptyColumn message={col.emptyMessage} />
+                    ) : (
+                      colOrders.map((order) => (
+                        <DraggableOrderCard
+                          key={order.id}
+                          order={order}
+                          actionLabel={col.actionLabel}
+                          actionIcon={col.actionIcon}
+                          actionColor={col.actionColor}
+                          isUpdating={updatingIds.has(order.id)}
+                          onAction={() =>
+                            updateStatus(order.id, col.nextStatus)
+                          }
+                        />
+                      ))
+                    )}
+                  </DroppableColumn>
                 </div>
+              );
+            })}
+          </div>
+
+          {/* Drag Overlay */}
+          <DragOverlay>
+            {activeOrder && activeOrderColumn ? (
+              <div className="rotate-2 scale-105 opacity-90">
+                <OrderCardContent
+                  order={activeOrder}
+                  actionLabel={activeOrderColumn.actionLabel}
+                  actionIcon={activeOrderColumn.actionIcon}
+                  actionColor={activeOrderColumn.actionColor}
+                  isUpdating={false}
+                />
               </div>
-            );
-          })}
-        </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
     </div>
   );

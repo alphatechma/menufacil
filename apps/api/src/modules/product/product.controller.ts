@@ -15,6 +15,7 @@ import { UserRole } from '@menufacil/shared';
 import { ProductService } from './product.service';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ReorderProductsDto } from './dto/reorder-products.dto';
 import { CurrentTenant, Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
 
@@ -61,6 +62,15 @@ export class ProductController {
   @ApiOperation({ summary: 'Create a product' })
   create(@Body() dto: CreateProductDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.create(dto, tenantId);
+  }
+
+  @Put('reorder')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @ApiBearerAuth()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Reorder products' })
+  reorder(@Body() dto: ReorderProductsDto, @CurrentTenant('id') tenantId: string) {
+    return this.productService.reorder(dto, tenantId);
   }
 
   @Put(':id')

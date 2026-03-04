@@ -46,7 +46,8 @@ export const useAuthStore = create<AuthState>()(
           accessToken,
           refreshToken,
           tenantSlug,
-          modules,
+          // Normalize modules: handle both string[] and object[] (legacy persisted data)
+          modules: modules.map((m: any) => (typeof m === 'string' ? m : m.key)),
           plan,
           isAuthenticated: true,
         }),
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'menufacil-admin-auth',
+      version: 1,
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
@@ -79,6 +81,14 @@ export const useAuthStore = create<AuthState>()(
         plan: state.plan,
         isAuthenticated: state.isAuthenticated,
       }),
+      migrate: (persisted: any, version: number) => {
+        if (version === 0 && persisted?.modules) {
+          persisted.modules = persisted.modules.map((m: any) =>
+            typeof m === 'string' ? m : m.key,
+          );
+        }
+        return persisted;
+      },
     },
   ),
 );

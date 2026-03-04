@@ -96,4 +96,21 @@ export class ProductRepository {
   async removeExtraGroup(id: string, tenantId: string): Promise<void> {
     await this.extraGroupRepo.delete({ id, tenant_id: tenantId });
   }
+
+  // Variation methods
+  createVariation(data: Partial<ProductVariation>): ProductVariation {
+    return this.variationRepo.create(data);
+  }
+
+  async deleteVariationsByProduct(productId: string): Promise<void> {
+    await this.variationRepo.delete({ product_id: productId });
+  }
+
+  async batchUpdateSortOrder(items: { id: string; sort_order: number }[], tenantId: string): Promise<void> {
+    await Promise.all(
+      items.map((item) =>
+        this.repo.update({ id: item.id, tenant_id: tenantId }, { sort_order: item.sort_order }),
+      ),
+    );
+  }
 }

@@ -124,7 +124,7 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen sticky top-0 ${
           collapsed ? 'w-[72px]' : 'w-64'
         }`}
       >
@@ -145,7 +145,7 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0">
           <div className="flex items-center gap-3">

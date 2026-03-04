@@ -2,6 +2,21 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Plus,
   Pencil,
   Trash2,
@@ -10,6 +25,7 @@ import {
   Eye,
   EyeOff,
   Filter,
+  GripVertical,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -34,11 +50,123 @@ interface Category {
   name: string;
 }
 
+function SortableRow({
+  product,
+  formatPrice,
+  onDelete,
+}: {
+  product: Product;
+  formatPrice: (price: number) => string;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`hover:bg-gray-50 transition-colors ${isDragging ? 'opacity-50 bg-blue-50' : ''}`}
+    >
+      <td className="px-2 py-3.5 w-10">
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing touch-none"
+          title="Arrastar para reordenar"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      </td>
+      <td className="px-5 py-3.5">
+        <div className="flex items-center gap-3">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-10 h-10 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
+              <Package className="w-5 h-5 text-primary" />
+            </div>
+          )}
+          <div>
+            <p className="font-medium text-gray-900">{product.name}</p>
+            {product.is_pizza && (
+              <span className="text-xs text-primary font-medium">Pizza</span>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">
+        {product.category?.name || '--'}
+      </td>
+      <td className="px-5 py-3.5 text-sm font-medium text-gray-900">
+        {formatPrice(product.base_price)}
+      </td>
+      <td className="px-5 py-3.5 text-sm text-center text-gray-600 hidden lg:table-cell">
+        {product.variations?.length || 0}
+      </td>
+      <td className="px-5 py-3.5 text-center">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+            product.is_active
+              ? 'bg-green-100 text-green-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {product.is_active ? (
+            <Eye className="w-3 h-3" />
+          ) : (
+            <EyeOff className="w-3 h-3" />
+          )}
+          {product.is_active ? 'Ativo' : 'Inativo'}
+        </span>
+      </td>
+      <td className="px-5 py-3.5">
+        <div className="flex items-center justify-end gap-1">
+          <Link
+            to={`/products/${product.id}/edit`}
+            className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
+            title="Editar"
+          >
+            <Pencil className="w-4 h-4" />
+          </Link>
+          <button
+            onClick={() => onDelete(product.id)}
+            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            title="Excluir"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function ProductList() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -64,6 +192,14 @@ export default function ProductList() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sort_order: number }[]) =>
+      api.put('/products/reorder', { items }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+
   const filtered = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,11 +208,44 @@ export default function ProductList() {
     return matchesSearch && matchesCategory;
   });
 
+  const isFiltering = search !== '' || categoryFilter !== '';
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(price);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filtered.findIndex((p) => p.id === active.id);
+    const newIndex = filtered.findIndex((p) => p.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder locally
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Assign new sort_order values
+    const items = reordered.map((p, idx) => ({ id: p.id, sort_order: idx }));
+
+    // Optimistic update
+    queryClient.setQueryData<Product[]>(['products'], (old) => {
+      if (!old) return old;
+      const orderMap = new Map(items.map((i) => [i.id, i.sort_order]));
+      return old
+        .map((p) => ({
+          ...p,
+          sort_order: orderMap.has(p.id) ? orderMap.get(p.id)! : p.sort_order,
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+    });
+
+    reorderMutation.mutate(items);
   };
 
   return (
@@ -139,100 +308,53 @@ export default function ProductList() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Produto
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                    Categoria
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Preco
-                  </th>
-                  <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                    Variacoes
-                  </th>
-                  <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-right px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acoes
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtered.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-                            <Package className="w-5 h-5 text-primary" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-900">{product.name}</p>
-                          {product.is_pizza && (
-                            <span className="text-xs text-primary font-medium">Pizza</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">
-                      {product.category?.name || '--'}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm font-medium text-gray-900">
-                      {formatPrice(product.base_price)}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-center text-gray-600 hidden lg:table-cell">
-                      {product.variations?.length || 0}
-                    </td>
-                    <td className="px-5 py-3.5 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          product.is_active
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {product.is_active ? (
-                          <Eye className="w-3 h-3" />
-                        ) : (
-                          <EyeOff className="w-3 h-3" />
-                        )}
-                        {product.is_active ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          to={`/products/${product.id}/edit`}
-                          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
-                          title="Editar"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => setDeleteId(product.id)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="w-10 px-2 py-3" />
+                    <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Produto
+                    </th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                      Categoria
+                    </th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Preco
+                    </th>
+                    <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                      Variacoes
+                    </th>
+                    <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="text-right px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acoes
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <SortableContext
+                  items={filtered.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
+                  disabled={isFiltering}
+                >
+                  <tbody className="divide-y divide-gray-100">
+                    {filtered.map((product) => (
+                      <SortableRow
+                        key={product.id}
+                        product={product}
+                        formatPrice={formatPrice}
+                        onDelete={setDeleteId}
+                      />
+                    ))}
+                  </tbody>
+                </SortableContext>
+              </table>
+            </DndContext>
           </div>
         )}
       </div>
