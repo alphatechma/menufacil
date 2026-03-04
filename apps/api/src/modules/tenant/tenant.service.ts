@@ -44,6 +44,10 @@ export class TenantService {
     return tenant;
   }
 
+  async findBySlugOptional(slug: string): Promise<Tenant | null> {
+    return this.tenantRepository.findBySlug(slug);
+  }
+
   async update(id: string, dto: UpdateTenantDto): Promise<Tenant> {
     if (dto.slug) {
       const existing = await this.tenantRepository.findBySlug(dto.slug);

@@ -7,6 +7,7 @@ import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CustomerLoginDto, CustomerRegisterDto } from './dto/customer-login.dto';
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
+import { RegisterTenantDto } from './dto/register-tenant.dto';
 import { CurrentTenant, CurrentUser } from '../../common/decorators';
 
 @ApiTags('Auth')
@@ -19,6 +20,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Super Admin login' })
   loginSuperAdmin(@Body() dto: SuperAdminLoginDto) {
     return this.authService.loginSuperAdmin(dto);
+  }
+
+  @Post('admin/login')
+  @ApiOperation({ summary: 'Admin login (no tenant slug required)' })
+  loginAdmin(@Body() dto: LoginDto) {
+    return this.authService.loginAdmin(dto);
+  }
+
+  @Post('register-tenant')
+  @ApiOperation({ summary: 'Register a new tenant with admin user (7-day trial)' })
+  registerTenant(@Body() dto: RegisterTenantDto) {
+    return this.authService.registerTenant(dto);
   }
 
   @Post('staff/login')

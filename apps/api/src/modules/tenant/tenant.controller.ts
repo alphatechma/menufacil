@@ -30,6 +30,13 @@ export class TenantController {
     return this.tenantService.findAll();
   }
 
+  @Get('check-slug/:slug')
+  @ApiOperation({ summary: 'Check if slug is available' })
+  async checkSlug(@Param('slug') slug: string) {
+    const tenant = await this.tenantService.findBySlugOptional(slug);
+    return { available: !tenant, slug };
+  }
+
   @Get('slug/:slug')
   @ApiOperation({ summary: 'Get tenant by slug (public)' })
   findBySlug(@Param('slug') slug: string) {

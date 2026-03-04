@@ -6,6 +6,7 @@ import { ProductDetail } from './pages/ProductDetail';
 import { Checkout } from './pages/Checkout';
 import { OrderTracking } from './pages/OrderTracking';
 import { Account } from './pages/Account';
+import LandingPage from './pages/LandingPage';
 
 function TenantRoutes() {
   return (
@@ -25,22 +26,9 @@ function TenantRoutes() {
 export default function App() {
   return (
     <Routes>
+      <Route index element={<LandingPage />} />
       <Route path="/:slug/*" element={<TenantRoutes />} />
-      <Route
-        path="*"
-        element={
-          <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="text-center p-8">
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">
-                MenuFacil
-              </h1>
-              <p className="text-gray-500 text-lg">
-                Acesse a loja pelo link fornecido pelo restaurante.
-              </p>
-            </div>
-          </div>
-        }
-      />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

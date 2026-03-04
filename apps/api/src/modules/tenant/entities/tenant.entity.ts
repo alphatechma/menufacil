@@ -54,6 +54,9 @@ export class Tenant {
   @Column({ default: true })
   is_active: boolean;
 
+  @Column({ type: 'timestamp', nullable: true })
+  trial_ends_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

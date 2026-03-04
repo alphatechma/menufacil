@@ -6,9 +6,8 @@ import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, setTenantSlug } = useAuthStore();
+  const { login } = useAuthStore();
 
-  const [tenantSlug, setTenantSlugInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,16 +20,10 @@ export default function Login() {
     setError('');
 
     try {
-      setTenantSlug(tenantSlug);
+      const response = await api.post('/auth/admin/login', { email, password });
 
-      const response = await api.post(
-        '/auth/staff/login',
-        { email, password },
-        { headers: { 'X-Tenant-Slug': tenantSlug } },
-      );
-
-      const { user, access_token, refresh_token, modules, plan } = response.data;
-      login(user, access_token, refresh_token, tenantSlug, modules || [], plan || null);
+      const { user, access_token, refresh_token, modules, plan, tenant_slug } = response.data;
+      login(user, access_token, refresh_token, tenant_slug, modules || [], plan || null);
       navigate('/');
     } catch (err: any) {
       const message =
@@ -63,22 +56,6 @@ export default function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Tenant Slug */}
-            <div>
-              <label htmlFor="tenant" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Restaurante (slug)
-              </label>
-              <input
-                id="tenant"
-                type="text"
-                required
-                value={tenantSlug}
-                onChange={(e) => setTenantSlugInput(e.target.value)}
-                placeholder="meu-restaurante"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
