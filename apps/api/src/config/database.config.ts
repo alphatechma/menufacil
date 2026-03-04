@@ -12,5 +12,6 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   entities: [join(__dirname, '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
   migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
   synchronize: configService.get('NODE_ENV') === 'development',
+  migrationsRun: true,
   logging: configService.get('NODE_ENV') === 'development',
 });
