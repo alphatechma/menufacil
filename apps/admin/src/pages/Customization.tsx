@@ -158,7 +158,7 @@ export default function Customization() {
     );
   }
 
-  const customerBase = import.meta.env.VITE_CUSTOMER_URL || 'http://localhost:5173';
+  const customerBase = (window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'http://localhost:5173';
   const storeUrl = `${customerBase}/${slug}`;
 
   return (

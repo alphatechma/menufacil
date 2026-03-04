@@ -11,9 +11,6 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/src packages/shared/src
 COPY apps/admin/ apps/admin/
 
-ARG VITE_CUSTOMER_URL=""
-ENV VITE_CUSTOMER_URL=$VITE_CUSTOMER_URL
-
 RUN pnpm --filter @menufacil/shared build
 RUN pnpm --filter admin build
 
@@ -23,4 +20,7 @@ COPY apps/admin/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/admin/dist /usr/share/nginx/html
 EXPOSE 80
 
-CMD ["/bin/sh", "-c", "sed -i \"s|__API_URL__|${API_URL:-http://api:3000}|g\" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "\
+  sed -i \"s|__API_URL__|${API_URL:-http://api:3000}|g\" /etc/nginx/conf.d/default.conf && \
+  echo \"window.__RUNTIME_CONFIG__ = { CUSTOMER_URL: '${CUSTOMER_URL:-}' };\" > /usr/share/nginx/html/runtime-config.js && \
+  nginx -g 'daemon off;'"]
