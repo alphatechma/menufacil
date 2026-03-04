@@ -1,0 +1,86 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { User } from '../../user/entities/user.entity';
+import { Category } from '../../category/entities/category.entity';
+import { Product } from '../../product/entities/product.entity';
+import { Customer } from '../../customer/entities/customer.entity';
+import { Order } from '../../order/entities/order.entity';
+import { DeliveryZone } from '../../delivery-zone/entities/delivery-zone.entity';
+import { Coupon } from '../../coupon/entities/coupon.entity';
+import { LoyaltyReward } from '../../loyalty/entities/loyalty-reward.entity';
+import { ExtraGroup } from '../../product/entities/extra-group.entity';
+
+@Entity('tenants')
+export class Tenant {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  slug: string;
+
+  @Column({ nullable: true })
+  logo_url: string;
+
+  @Column({ nullable: true })
+  banner_url: string;
+
+  @Column({ nullable: true, default: '#FF6B35' })
+  primary_color: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  business_hours: Record<string, { open: string; close: string }>;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  min_order_value: number;
+
+  @Column({ default: true })
+  is_active: boolean;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @OneToMany(() => User, (user) => user.tenant)
+  users: User[];
+
+  @OneToMany(() => Category, (category) => category.tenant)
+  categories: Category[];
+
+  @OneToMany(() => Product, (product) => product.tenant)
+  products: Product[];
+
+  @OneToMany(() => Customer, (customer) => customer.tenant)
+  customers: Customer[];
+
+  @OneToMany(() => Order, (order) => order.tenant)
+  orders: Order[];
+
+  @OneToMany(() => DeliveryZone, (zone) => zone.tenant)
+  delivery_zones: DeliveryZone[];
+
+  @OneToMany(() => Coupon, (coupon) => coupon.tenant)
+  coupons: Coupon[];
+
+  @OneToMany(() => LoyaltyReward, (reward) => reward.tenant)
+  loyalty_rewards: LoyaltyReward[];
+
+  @OneToMany(() => ExtraGroup, (group) => group.tenant)
+  extra_groups: ExtraGroup[];
+}

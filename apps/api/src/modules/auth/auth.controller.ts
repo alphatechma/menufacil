@@ -1,0 +1,54 @@
+import { Controller, Post, Body, UseGuards, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CustomerLoginDto, CustomerRegisterDto } from './dto/customer-login.dto';
+import { CurrentTenant, CurrentUser } from '../../common/decorators';
+
+@ApiTags('Auth')
+@ApiSecurity('tenant-slug')
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('staff/login')
+  @ApiOperation({ summary: 'Staff login' })
+  loginStaff(@Body() dto: LoginDto, @CurrentTenant('id') tenantId: string) {
+    return this.authService.loginStaff(dto, tenantId);
+  }
+
+  @Post('staff/register')
+  @ApiOperation({ summary: 'Register new staff member' })
+  registerStaff(@Body() dto: RegisterDto, @CurrentTenant('id') tenantId: string) {
+    return this.authService.registerStaff(dto, tenantId);
+  }
+
+  @Post('customer/login')
+  @ApiOperation({ summary: 'Customer login' })
+  loginCustomer(@Body() dto: CustomerLoginDto, @CurrentTenant('id') tenantId: string) {
+    return this.authService.loginCustomer(dto, tenantId);
+  }
+
+  @Post('customer/register')
+  @ApiOperation({ summary: 'Register new customer' })
+  registerCustomer(@Body() dto: CustomerRegisterDto, @CurrentTenant('id') tenantId: string) {
+    return this.authService.registerCustomer(dto, tenantId);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refresh_token);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  getProfile(@CurrentUser() user: any) {
+    return user;
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "menufacil",
+  "version": "0.0.1",
+  "private": true,
+  "description": "MenuFácil - Plataforma multi-tenant de delivery de comida",
+  "scripts": {
+    "dev:api": "pnpm --filter api dev",
+    "dev:customer": "pnpm --filter customer dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "build:api": "pnpm --filter api build",
+    "build:customer": "pnpm --filter customer build",
+    "build:admin": "pnpm --filter admin build",
+    "db:seed": "pnpm --filter api seed",
+    "db:migration:generate": "pnpm --filter api migration:generate",
+    "db:migration:run": "pnpm --filter api migration:run",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@nestjs/core", "bcrypt", "esbuild"]
+  }
+}

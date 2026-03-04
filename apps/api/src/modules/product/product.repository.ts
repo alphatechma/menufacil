@@ -1,0 +1,99 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { Product } from './entities/product.entity';
+import { ProductVariation } from './entities/product-variation.entity';
+import { ExtraGroup } from './entities/extra-group.entity';
+import { Extra } from './entities/extra.entity';
+
+@Injectable()
+export class ProductRepository {
+  constructor(
+    @InjectRepository(Product)
+    private readonly repo: Repository<Product>,
+    @InjectRepository(ProductVariation)
+    private readonly variationRepo: Repository<ProductVariation>,
+    @InjectRepository(ExtraGroup)
+    private readonly extraGroupRepo: Repository<ExtraGroup>,
+    @InjectRepository(Extra)
+    private readonly extraRepo: Repository<Extra>,
+  ) {}
+
+  create(data: Partial<Product>): Product {
+    return this.repo.create(data);
+  }
+
+  async save(product: Product): Promise<Product> {
+    return this.repo.save(product);
+  }
+
+  async findAllByTenant(tenantId: string): Promise<Product[]> {
+    return this.repo.find({
+      where: { tenant_id: tenantId },
+      relations: ['category', 'variations', 'extra_groups', 'extra_groups.extras'],
+      order: { sort_order: 'ASC', name: 'ASC' },
+    });
+  }
+
+  async findActiveByTenant(tenantId: string): Promise<Product[]> {
+    return this.repo.find({
+      where: { tenant_id: tenantId, is_active: true },
+      relations: ['category', 'variations', 'extra_groups', 'extra_groups.extras'],
+      order: { sort_order: 'ASC' },
+    });
+  }
+
+  async findByCategory(categoryId: string, tenantId: string): Promise<Product[]> {
+    return this.repo.find({
+      where: { category_id: categoryId, tenant_id: tenantId, is_active: true },
+      relations: ['variations', 'extra_groups', 'extra_groups.extras'],
+      order: { sort_order: 'ASC' },
+    });
+  }
+
+  async findById(id: string, tenantId: string): Promise<Product | null> {
+    return this.repo.findOne({
+      where: { id, tenant_id: tenantId },
+      relations: ['category', 'variations', 'extra_groups', 'extra_groups.extras'],
+    });
+  }
+
+  async update(id: string, tenantId: string, data: Partial<Product>): Promise<void> {
+    await this.repo.update({ id, tenant_id: tenantId }, data as any);
+  }
+
+  async remove(id: string, tenantId: string): Promise<void> {
+    await this.repo.delete({ id, tenant_id: tenantId });
+  }
+
+  async findExtraGroupsByIds(ids: string[]): Promise<ExtraGroup[]> {
+    return this.extraGroupRepo.find({ where: { id: In(ids) } });
+  }
+
+  // Extra group methods
+  createExtraGroup(data: Partial<ExtraGroup>): ExtraGroup {
+    return this.extraGroupRepo.create(data);
+  }
+
+  async saveExtraGroup(group: ExtraGroup): Promise<ExtraGroup> {
+    return this.extraGroupRepo.save(group);
+  }
+
+  async findExtraGroupsByTenant(tenantId: string): Promise<ExtraGroup[]> {
+    return this.extraGroupRepo.find({
+      where: { tenant_id: tenantId },
+      relations: ['extras'],
+    });
+  }
+
+  async findExtraGroupById(id: string, tenantId: string): Promise<ExtraGroup | null> {
+    return this.extraGroupRepo.findOne({
+      where: { id, tenant_id: tenantId },
+      relations: ['extras'],
+    });
+  }
+
+  async removeExtraGroup(id: string, tenantId: string): Promise<void> {
+    await this.extraGroupRepo.delete({ id, tenant_id: tenantId });
+  }
+}
