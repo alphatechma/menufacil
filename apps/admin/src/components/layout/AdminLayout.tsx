@@ -174,7 +174,7 @@ export default function AdminLayout() {
             {/* Ver Vitrine */}
             {tenantSlug && (
               <a
-                href={`${(window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'http://localhost:5173'}/${tenantSlug}`}
+                href={`${(window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'https://app-menufacil.maistechtecnologia.com.br'}/${tenantSlug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-primary border border-primary/30 hover:bg-primary-50 transition-colors"
