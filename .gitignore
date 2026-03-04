@@ -1,9 +1,46 @@
-node_modules
-dist
-.env
-*.env.local
-uploads/
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+
+# Logs
+logs
 *.log
-.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
 coverage/
-.turbo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build/Turbo
+.turbo/
+build/
+out/
+
+# Apps/Uploads
+uploads/
+temp/
