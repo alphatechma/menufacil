@@ -46,4 +46,9 @@ export class CreateTenantDto {
   @IsOptional()
   @IsNumber()
   min_order_value?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  plan_id?: string;
 }

@@ -21,29 +21,34 @@ import {
   UtensilsCrossed,
   Bell,
   ExternalLink,
+  Crown,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
-const sidebarItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/categories', icon: FolderTree, label: 'Categorias' },
-  { to: '/products', icon: Package, label: 'Produtos' },
-  { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
-  { to: '/kds', icon: Monitor, label: 'KDS' },
-  { to: '/customers', icon: Users, label: 'Clientes' },
-  { to: '/delivery-zones', icon: MapPin, label: 'Zonas de Entrega' },
-  { to: '/coupons', icon: Ticket, label: 'Cupons' },
-  { to: '/loyalty', icon: Heart, label: 'Fidelidade' },
-  { to: '/reports', icon: BarChart3, label: 'Relatorios' },
-  { to: '/customization', icon: Palette, label: 'Personalizar' },
-  { to: '/settings', icon: Settings, label: 'Configuracoes' },
+const allSidebarItems = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', module: null },
+  { to: '/categories', icon: FolderTree, label: 'Categorias', module: 'categories' },
+  { to: '/products', icon: Package, label: 'Produtos', module: 'products' },
+  { to: '/orders', icon: ShoppingCart, label: 'Pedidos', module: 'orders' },
+  { to: '/kds', icon: Monitor, label: 'KDS', module: 'kds' },
+  { to: '/customers', icon: Users, label: 'Clientes', module: 'customers' },
+  { to: '/delivery-zones', icon: MapPin, label: 'Zonas de Entrega', module: 'delivery' },
+  { to: '/coupons', icon: Ticket, label: 'Cupons', module: 'coupons' },
+  { to: '/loyalty', icon: Heart, label: 'Fidelidade', module: 'loyalty' },
+  { to: '/reports', icon: BarChart3, label: 'Relatorios', module: 'reports' },
+  { to: '/customization', icon: Palette, label: 'Personalizar', module: null },
+  { to: '/settings', icon: Settings, label: 'Configuracoes', module: null },
 ];
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, tenantSlug, logout } = useAuthStore();
+  const { user, tenantSlug, modules, plan, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const sidebarItems = allSidebarItems.filter(
+    (item) => item.module === null || modules.includes(item.module),
+  );
 
   const handleLogout = () => {
     logout();
@@ -83,6 +88,22 @@ export default function AdminLayout() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Plan badge */}
+      {!collapsed && plan && (
+        <div className="px-3 pb-2 shrink-0">
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              navigate('/plano');
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-sm font-medium text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all"
+          >
+            <Crown className="w-4 h-4 shrink-0" />
+            <span className="flex-1 text-left">Plano {plan.name}</span>
+          </button>
+        </div>
+      )}
 
       {/* User section */}
       <div className="border-t border-gray-200 p-3 shrink-0">
@@ -153,7 +174,7 @@ export default function AdminLayout() {
             {/* Ver Vitrine */}
             {tenantSlug && (
               <a
-                href={`http://localhost:5173/${tenantSlug}`}
+                href={`${import.meta.env.VITE_CUSTOMER_URL || 'http://localhost:5173'}/${tenantSlug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-primary border border-primary/30 hover:bg-primary-50 transition-colors"

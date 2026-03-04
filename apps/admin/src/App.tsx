@@ -22,6 +22,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Customization from './pages/Customization';
 import Profile from './pages/Profile';
+import MyPlan from './pages/MyPlan';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -99,8 +100,9 @@ export default function App() {
           <Route path="loyalty" element={<LoyaltyList />} />
           <Route path="loyalty/new" element={<LoyaltyForm />} />
 
-          {/* Profile */}
+          {/* Profile & Plan */}
           <Route path="profile" element={<Profile />} />
+          <Route path="plano" element={<MyPlan />} />
 
           {/* Reports, Customization & Settings */}
           <Route path="reports" element={<Reports />} />

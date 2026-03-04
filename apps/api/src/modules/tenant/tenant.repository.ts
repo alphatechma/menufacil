@@ -29,7 +29,10 @@ export class TenantRepository {
   }
 
   async findBySlug(slug: string): Promise<Tenant | null> {
-    return this.repo.findOne({ where: { slug } });
+    return this.repo.findOne({
+      where: { slug },
+      relations: ['plan', 'plan.modules'],
+    });
   }
 
   async update(id: string, dto: UpdateTenantDto): Promise<Tenant | null> {

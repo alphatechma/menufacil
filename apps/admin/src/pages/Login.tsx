@@ -29,8 +29,8 @@ export default function Login() {
         { headers: { 'X-Tenant-Slug': tenantSlug } },
       );
 
-      const { user, access_token, refresh_token } = response.data;
-      login(user, access_token, refresh_token, tenantSlug);
+      const { user, access_token, refresh_token, modules, plan } = response.data;
+      login(user, access_token, refresh_token, tenantSlug, modules || [], plan || null);
       navigate('/');
     } catch (err: any) {
       const message =

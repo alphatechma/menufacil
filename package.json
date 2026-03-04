@@ -10,6 +10,8 @@
     "build:api": "pnpm --filter api build",
     "build:customer": "pnpm --filter customer build",
     "build:admin": "pnpm --filter admin build",
+    "dev:super-admin": "pnpm --filter super-admin dev",
+    "build:super-admin": "pnpm --filter super-admin build",
     "db:seed": "pnpm --filter api seed",
     "db:migration:generate": "pnpm --filter api migration:generate",
     "db:migration:run": "pnpm --filter api migration:run",

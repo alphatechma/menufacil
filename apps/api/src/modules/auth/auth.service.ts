@@ -12,9 +12,11 @@ import { Repository } from 'typeorm';
 import { UserRole, IJwtPayload, IAuthTokens } from '@menufacil/shared';
 import { User } from '../user/entities/user.entity';
 import { Customer } from '../customer/entities/customer.entity';
+import { Tenant } from '../tenant/entities/tenant.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { CustomerLoginDto, CustomerRegisterDto } from './dto/customer-login.dto';
+import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,11 +25,45 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(Tenant)
+    private readonly tenantRepository: Repository<Tenant>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
-  async loginStaff(dto: LoginDto, tenantId: string): Promise<IAuthTokens> {
+  async loginSuperAdmin(dto: SuperAdminLoginDto): Promise<IAuthTokens & { user: { id: string; name: string; email: string; role: UserRole } }> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email, system_role: UserRole.SUPER_ADMIN, is_active: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const tokens = this.generateTokens({
+      sub: user.id,
+      tenant_id: user.tenant_id || '',
+      role: user.system_role,
+      type: 'user',
+    });
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.system_role,
+      },
+    };
+  }
+
+  async loginStaff(dto: LoginDto, tenantId: string) {
     const user = await this.userRepository.findOne({
       where: { email: dto.email, tenant_id: tenantId, is_active: true },
     });
@@ -41,12 +77,37 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.generateTokens({
+    const tokens = this.generateTokens({
       sub: user.id,
       tenant_id: user.tenant_id,
       role: user.system_role,
       type: 'user',
     });
+
+    // Fetch tenant with plan modules
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+      relations: ['plan', 'plan.modules'],
+    });
+
+    const modules = tenant?.plan?.modules?.map((m) => m.key) || [];
+
+    const plan = tenant?.plan
+      ? { id: tenant.plan.id, name: tenant.plan.name, price: Number(tenant.plan.price) }
+      : null;
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.system_role,
+        tenant_id: user.tenant_id,
+      },
+      modules,
+      plan,
+    };
   }
 
   async registerStaff(dto: RegisterDto, tenantId: string): Promise<IAuthTokens> {

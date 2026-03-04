@@ -16,6 +16,10 @@ import { DeliveryZoneModule } from './modules/delivery-zone/delivery-zone.module
 import { CouponModule } from './modules/coupon/coupon.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { PlanModule } from './modules/plan/plan.module';
+import { SystemModuleModule } from './modules/system-module/system-module.module';
+import { PermissionModule } from './modules/permission/permission.module';
+import { SuperAdminDashboardModule } from './modules/super-admin-dashboard/super-admin-dashboard.module';
 
 @Module({
   imports: [
@@ -40,6 +44,10 @@ import { WebsocketModule } from './websocket/websocket.module';
     CouponModule,
     LoyaltyModule,
     WebsocketModule,
+    PlanModule,
+    SystemModuleModule,
+    PermissionModule,
+    SuperAdminDashboardModule,
   ],
 })
 export class AppModule implements NestModule {

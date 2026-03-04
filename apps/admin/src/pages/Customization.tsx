@@ -158,7 +158,8 @@ export default function Customization() {
     );
   }
 
-  const storeUrl = `http://localhost:5173/${slug}`;
+  const customerBase = import.meta.env.VITE_CUSTOMER_URL || 'http://localhost:5173';
+  const storeUrl = `${customerBase}/${slug}`;
 
   return (
     <div className="space-y-6">

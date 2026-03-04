@@ -14,6 +14,7 @@ interface TenantState {
   fetchProducts: (categoryId?: string) => Promise<void>;
   fetchProductById: (productId: string) => Promise<Product | null>;
   applyBranding: (tenant: Tenant) => void;
+  hasModule: (key: string) => boolean;
 }
 
 export const useTenantStore = create<TenantState>()((set, get) => ({
@@ -64,6 +65,12 @@ export const useTenantStore = create<TenantState>()((set, get) => ({
       console.error('Failed to fetch product', err);
       return null;
     }
+  },
+
+  hasModule: (key: string) => {
+    const tenant = get().tenant;
+    if (!tenant?.plan?.modules) return false;
+    return tenant.plan.modules.some((m) => m.key === key);
   },
 
   applyBranding: (tenant: Tenant) => {

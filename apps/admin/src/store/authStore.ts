@@ -9,13 +9,21 @@ export interface User {
   tenant_id: string;
 }
 
+export interface PlanInfo {
+  id: string;
+  name: string;
+  price: number;
+}
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   tenantSlug: string | null;
+  modules: string[];
+  plan: PlanInfo | null;
   isAuthenticated: boolean;
-  login: (user: User, accessToken: string, refreshToken: string, tenantSlug: string) => void;
+  login: (user: User, accessToken: string, refreshToken: string, tenantSlug: string, modules?: string[], plan?: PlanInfo | null) => void;
   logout: () => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   setTenantSlug: (slug: string) => void;
@@ -28,14 +36,18 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       tenantSlug: null,
+      modules: [],
+      plan: null,
       isAuthenticated: false,
 
-      login: (user, accessToken, refreshToken, tenantSlug) =>
+      login: (user, accessToken, refreshToken, tenantSlug, modules = [], plan = null) =>
         set({
           user,
           accessToken,
           refreshToken,
           tenantSlug,
+          modules,
+          plan,
           isAuthenticated: true,
         }),
 
@@ -44,6 +56,8 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           accessToken: null,
           refreshToken: null,
+          modules: [],
+          plan: null,
           isAuthenticated: false,
         }),
 
@@ -52,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
 
       setTenantSlug: (slug) =>
         set({ tenantSlug: slug }),
+
     }),
     {
       name: 'menufacil-admin-auth',
@@ -60,6 +75,8 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         tenantSlug: state.tenantSlug,
+        modules: state.modules,
+        plan: state.plan,
         isAuthenticated: state.isAuthenticated,
       }),
     },

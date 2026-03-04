@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CustomerLoginDto, CustomerRegisterDto } from './dto/customer-login.dto';
+import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
 import { CurrentTenant, CurrentUser } from '../../common/decorators';
 
 @ApiTags('Auth')
@@ -13,6 +14,12 @@ import { CurrentTenant, CurrentUser } from '../../common/decorators';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('super-admin/login')
+  @ApiOperation({ summary: 'Super Admin login' })
+  loginSuperAdmin(@Body() dto: SuperAdminLoginDto) {
+    return this.authService.loginSuperAdmin(dto);
+  }
 
   @Post('staff/login')
   @ApiOperation({ summary: 'Staff login' })

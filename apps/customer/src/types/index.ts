@@ -13,6 +13,10 @@ export interface Tenant {
   delivery_fee: number;
   min_order_value: number;
   estimated_delivery_time: string | null;
+  plan?: {
+    name: string;
+    modules?: Array<{ key: string; name: string }>;
+  } | null;
 }
 
 export interface Category {

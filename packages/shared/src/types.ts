@@ -199,6 +199,58 @@ export interface IPaymentTransaction {
   pix_copy_paste?: string;
 }
 
+// Plans and Modules
+export interface IPlan {
+  id: string;
+  name: string;
+  price: number;
+  max_users: number | null;
+  max_products: number | null;
+  is_active: boolean;
+  modules?: ISystemModule[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ISystemModule {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface IPermission {
+  id: string;
+  key: string;
+  name: string;
+  module_id?: string;
+  module?: ISystemModule;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface IRole {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description?: string;
+  is_system_default: boolean;
+  permissions?: IPermission[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ISuperAdminDashboardStats {
+  total_tenants: number;
+  active_tenants: number;
+  total_users: number;
+  total_orders: number;
+  total_revenue: number;
+  tenants_by_plan: Array<{ plan_name: string; count: number }>;
+}
+
 export interface IAuthTokens {
   access_token: string;
   refresh_token: string;
