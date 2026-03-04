@@ -32,6 +32,7 @@ services:
       - '80:80'
     environment:
       API_URL: http://api:3000
+      CUSTOMER_URL: https://app.menufacil.com.br
 
   customer:
     build:
