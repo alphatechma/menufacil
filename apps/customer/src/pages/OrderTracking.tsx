@@ -295,14 +295,14 @@ export function OrderTracking() {
                   )}
                   {item.extras.length > 0 && (
                     <p className="text-xs text-gray-400">
-                      + {item.extras.map((e) => e.name).join(', ')}
+                      + {item.extras.map((e) => e.extra_name).join(', ')}
                     </p>
                   )}
                 </div>
                 <span className="text-gray-700 font-medium whitespace-nowrap">
                   {formatPrice(
                     (item.unit_price +
-                      item.extras.reduce((s, e) => s + e.price, 0)) *
+                      item.extras.reduce((s, e) => s + e.extra_price, 0)) *
                       item.quantity,
                   )}
                 </span>
