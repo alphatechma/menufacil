@@ -5,7 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Plan } from '../../plan/entities/plan.entity';
 import { User } from '../../user/entities/user.entity';
 import { Category } from '../../category/entities/category.entity';
 import { Product } from '../../product/entities/product.entity';
@@ -56,6 +59,13 @@ export class Tenant {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ nullable: true })
+  plan_id: string;
+
+  @ManyToOne(() => Plan)
+  @JoinColumn({ name: 'plan_id' })
+  plan: Plan;
 
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];

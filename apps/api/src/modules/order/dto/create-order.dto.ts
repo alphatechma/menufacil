@@ -48,6 +48,10 @@ export class OrderItemDto {
 }
 
 export class AddressDto {
+  @IsOptional()
+  @IsString()
+  label?: string;
+
   @IsString()
   street: string;
 
@@ -84,10 +88,16 @@ export class CreateOrderDto {
   @IsEnum(PaymentMethod)
   payment_method: PaymentMethod;
 
-  @ApiProperty({ type: AddressDto })
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  address_id?: string;
+
+  @ApiPropertyOptional({ type: AddressDto })
+  @IsOptional()
   @ValidateNested()
   @Type(() => AddressDto)
-  address: AddressDto;
+  address?: AddressDto;
 
   @ApiPropertyOptional()
   @IsOptional()

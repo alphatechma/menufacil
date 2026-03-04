@@ -79,8 +79,9 @@ export interface CartItemExtra {
 export interface Customer {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
+  loyalty_points: number;
   addresses?: CustomerAddress[];
 }
 

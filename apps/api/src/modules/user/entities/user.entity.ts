@@ -10,6 +10,7 @@ import {
 import { Exclude } from 'class-transformer';
 import { UserRole } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { Role } from '../../role/entities/role.entity';
 
 @Entity('users')
 export class User {
@@ -30,7 +31,14 @@ export class User {
   password_hash: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.ADMIN })
-  role: UserRole;
+  system_role: UserRole;
+
+  @Column({ nullable: true })
+  role_id: string;
+
+  @ManyToOne(() => Role)
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
 
   @Column({ default: true })
   is_active: boolean;

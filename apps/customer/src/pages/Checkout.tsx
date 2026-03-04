@@ -320,7 +320,8 @@ export function Checkout() {
           quantity: item.quantity,
           extras: item.extras,
         })),
-        address,
+        address_id: selectedAddressId,
+        address: selectedAddressId ? undefined : address,
         payment_method: paymentMethod,
       };
 

@@ -22,7 +22,7 @@ export class UserService {
       name: dto.name,
       email: dto.email,
       password_hash: passwordHash,
-      role: dto.role || UserRole.ADMIN,
+      system_role: dto.role || UserRole.ADMIN,
       tenant_id: tenantId,
     });
 
@@ -43,7 +43,9 @@ export class UserService {
 
   async update(id: string, dto: UpdateUserDto, tenantId: string): Promise<User> {
     await this.findById(id, tenantId);
-    await this.userRepository.update(id, tenantId, dto);
+    const { role, ...rest } = dto as any;
+    const updateData = { ...rest, ...(role && { system_role: role }) };
+    await this.userRepository.update(id, tenantId, updateData);
     return this.findById(id, tenantId);
   }
 

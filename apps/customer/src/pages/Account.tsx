@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  Star,
   User,
   Phone,
   LogOut,
@@ -308,10 +309,18 @@ export function Account() {
             <h3 className="font-bold text-gray-900 text-lg truncate">
               {customer?.name || 'Cliente'}
             </h3>
-            <p className="text-sm text-gray-500 flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5" />
-              {customer?.phone}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+              <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5" />
+                {customer?.phone}
+              </p>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 rounded-full border border-amber-100">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span className="text-xs font-bold text-amber-700">
+                  {customer?.loyalty_points || 0} pontos
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

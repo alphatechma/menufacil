@@ -44,7 +44,7 @@ export class AuthService {
     return this.generateTokens({
       sub: user.id,
       tenant_id: user.tenant_id,
-      role: user.role,
+      role: user.system_role,
       type: 'user',
     });
   }
@@ -64,7 +64,7 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       password_hash: passwordHash,
-      role: dto.role || UserRole.ADMIN,
+      system_role: dto.role || UserRole.ADMIN,
       tenant_id: tenantId,
     });
 
@@ -73,7 +73,7 @@ export class AuthService {
     return this.generateTokens({
       sub: savedUser.id,
       tenant_id: savedUser.tenant_id,
-      role: savedUser.role,
+      role: savedUser.system_role,
       type: 'user',
     });
   }
