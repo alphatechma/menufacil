@@ -1,11 +1,15 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const dotenv = require('dotenv');
 import { join } from 'path';
 import { UserRole } from '@menufacil/shared';
 
-dotenv.config({ path: join(__dirname, '..', '..', '..', '..', '..', '.env') });
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dotenv = require('dotenv');
+  dotenv.config({ path: join(__dirname, '..', '..', '..', '..', '..', '.env') });
+} catch {
+  // dotenv not available in production — env vars already set
+}
 
 async function seed() {
   const dataSource = new DataSource({
