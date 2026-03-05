@@ -21,26 +21,13 @@ services:
       - postgres
       - redis
 
-  admin:
+  web:
     build:
       context: .
-      dockerfile: apps/admin/Dockerfile
-      args:
-        VITE_CUSTOMER_URL: https://app.menufacil.com.br
+      dockerfile: apps/web/Dockerfile
     restart: unless-stopped
     ports:
       - '80:80'
-    environment:
-      API_URL: http://api:3000
-      CUSTOMER_URL: https://app.menufacil.com.br
-
-  customer:
-    build:
-      context: .
-      dockerfile: apps/customer/Dockerfile
-    restart: unless-stopped
-    ports:
-      - '81:80'
     environment:
       API_URL: http://api:3000
 
