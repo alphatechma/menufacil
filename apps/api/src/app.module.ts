@@ -20,6 +20,8 @@ import { PlanModule } from './modules/plan/plan.module';
 import { SystemModuleModule } from './modules/system-module/system-module.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { SuperAdminDashboardModule } from './modules/super-admin-dashboard/super-admin-dashboard.module';
+import { DeliveryPersonModule } from './modules/delivery-person/delivery-person.module';
+import { RoleModule } from './modules/role/role.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { SuperAdminDashboardModule } from './modules/super-admin-dashboard/super
     SystemModuleModule,
     PermissionModule,
     SuperAdminDashboardModule,
+    DeliveryPersonModule,
+    RoleModule,
   ],
 })
 export class AppModule implements NestModule {

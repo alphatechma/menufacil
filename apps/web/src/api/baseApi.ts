@@ -20,6 +20,11 @@ export const baseApi = createApi({
     'Plan',
     'CustomerProfile',
     'CustomerOrders',
+    'DeliveryPersons',
+    'Staff',
+    'Roles',
+    'LoyaltyRewards',
+    'LoyaltyRedemptions',
   ],
   endpoints: () => ({}),
 });

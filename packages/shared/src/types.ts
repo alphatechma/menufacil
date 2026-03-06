@@ -18,7 +18,7 @@ export interface ITenant {
   primary_color?: string;
   phone?: string;
   address?: string;
-  business_hours?: Record<string, { open: string; close: string }>;
+  business_hours?: Record<string, { open: boolean; openTime: string; closeTime: string }>;
   min_order_value?: number;
   is_active: boolean;
   created_at: Date;
@@ -109,10 +109,22 @@ export interface IExtra {
   price: number;
 }
 
+export interface IDeliveryPerson {
+  id: string;
+  tenant_id: string;
+  name: string;
+  phone: string;
+  vehicle?: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface IOrder {
   id: string;
   tenant_id: string;
   customer_id: string;
+  delivery_person_id?: string;
   order_number: string;
   status: OrderStatus;
   subtotal: number;

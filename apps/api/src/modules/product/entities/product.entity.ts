@@ -45,6 +45,12 @@ export class Product {
   @Column({ default: 0 })
   sort_order: number;
 
+  @Column({ default: 0 })
+  min_variations: number;
+
+  @Column({ default: 0 })
+  max_variations: number;
+
   @ManyToOne(() => Tenant, (tenant) => tenant.products)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;

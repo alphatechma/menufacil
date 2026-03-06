@@ -59,7 +59,7 @@ export class DeliveryZoneController {
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Create a delivery zone' })
   create(@Body() dto: CreateDeliveryZoneDto, @CurrentTenant('id') tenantId: string) {
     return this.service.create(dto, tenantId);
@@ -68,7 +68,7 @@ export class DeliveryZoneController {
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Update a delivery zone' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -81,7 +81,7 @@ export class DeliveryZoneController {
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Delete a delivery zone' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.remove(id, tenantId);

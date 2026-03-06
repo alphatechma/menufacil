@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  FolderTree,
-  Package,
-  ShoppingCart,
-  Monitor,
-  Users,
-  MapPin,
-  Ticket,
-  Heart,
   BarChart3,
-  Settings,
-  Palette,
+  Bell,
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  Menu,
-  X,
-  UtensilsCrossed,
-  Bell,
-  ExternalLink,
   Crown,
+  ExternalLink,
+  FolderTree,
+  Heart,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  Menu,
+  Monitor,
+  Package,
+  Palette,
+  Settings,
+  ShoppingCart,
+  Ticket,
+  Users,
+  UtensilsCrossed,
+  X,
 } from 'lucide-react';
+import { useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 const allSidebarItems = [
@@ -76,10 +76,9 @@ export default function AdminLayout() {
             end={item.to === '/'}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-primary-50 text-primary'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                ? 'bg-primary-50 text-primary'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               } ${collapsed ? 'justify-center' : ''}`
             }
           >
@@ -109,9 +108,8 @@ export default function AdminLayout() {
       <div className="border-t border-gray-200 p-3 shrink-0">
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all ${
-            collapsed ? 'justify-center' : ''
-          }`}
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all ${collapsed ? 'justify-center' : ''
+            }`}
         >
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Sair</span>}
@@ -124,9 +122,8 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen sticky top-0 ${
-          collapsed ? 'w-[72px]' : 'w-64'
-        }`}
+        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen sticky top-0 ${collapsed ? 'w-[72px]' : 'w-64'
+          }`}
       >
         <SidebarContent />
       </aside>
@@ -174,7 +171,7 @@ export default function AdminLayout() {
             {/* Ver Vitrine */}
             {tenantSlug && (
               <a
-                href={`${(window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'https://app-menufacil.maistechtecnologia.com.br'}/${tenantSlug}`}
+                href={`${(window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'http://localhost:5175'}/${tenantSlug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-primary border border-primary/30 hover:bg-primary-50 transition-colors"

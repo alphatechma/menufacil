@@ -40,7 +40,7 @@ export class CreateTenantDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  business_hours?: Record<string, { open: string; close: string }>;
+  business_hours?: Record<string, { open: boolean; openTime: string; closeTime: string }>;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()

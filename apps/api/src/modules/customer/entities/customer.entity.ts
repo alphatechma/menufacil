@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Tenant } from '../../tenant/entities/tenant.entity';
@@ -14,6 +15,7 @@ import { CustomerAddress } from './customer-address.entity';
 import { Order } from '../../order/entities/order.entity';
 
 @Entity('customers')
+@Unique(['phone', 'tenant_id'])
 export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -33,6 +35,15 @@ export class Customer {
   @Column({ nullable: true })
   @Exclude()
   password_hash: string;
+
+  @Column({ type: 'date', nullable: true })
+  birth_date: string;
+
+  @Column({ nullable: true })
+  gender: string; // 'male' | 'female' | 'other' | 'prefer_not_to_say'
+
+  @Column({ nullable: true })
+  cpf: string;
 
   @Column({ default: 0 })
   loyalty_points: number;

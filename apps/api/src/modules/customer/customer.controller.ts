@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   Param,
@@ -45,6 +46,16 @@ export class CustomerController {
   @ApiOperation({ summary: 'Get my profile (customer)' })
   getMyProfile(@CurrentUser('id') id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.findById(id, tenantId);
+  }
+
+  @Put('me')
+  @ApiOperation({ summary: 'Update my profile (customer)' })
+  updateMyProfile(
+    @CurrentUser('id') id: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() body: { name?: string; email?: string; password?: string; birth_date?: string; gender?: string; cpf?: string },
+  ) {
+    return this.service.updateProfile(id, tenantId, body);
   }
 
   @Get('me/addresses')

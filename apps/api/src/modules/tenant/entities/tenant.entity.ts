@@ -18,6 +18,7 @@ import { DeliveryZone } from '../../delivery-zone/entities/delivery-zone.entity'
 import { Coupon } from '../../coupon/entities/coupon.entity';
 import { LoyaltyReward } from '../../loyalty/entities/loyalty-reward.entity';
 import { ExtraGroup } from '../../product/entities/extra-group.entity';
+import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
 
 @Entity('tenants')
 export class Tenant {
@@ -46,7 +47,7 @@ export class Tenant {
   address: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  business_hours: Record<string, { open: string; close: string }>;
+  business_hours: Record<string, { open: boolean; openTime: string; closeTime: string }>;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   min_order_value: number;
@@ -96,4 +97,7 @@ export class Tenant {
 
   @OneToMany(() => ExtraGroup, (group) => group.tenant)
   extra_groups: ExtraGroup[];
+
+  @OneToMany(() => DeliveryPerson, (dp) => dp.tenant)
+  delivery_persons: DeliveryPerson[];
 }

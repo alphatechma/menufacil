@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { Customer } from './entities/customer.entity';
 import { CustomerAddress } from './entities/customer-address.entity';
 import { CreateAddressDto } from './dto/create-address.dto';
@@ -36,7 +37,8 @@ export class CustomerService {
   async findById(id: string, tenantId: string): Promise<Customer> {
     const customer = await this.customerRepo.findOne({
       where: { id, tenant_id: tenantId },
-      relations: ['addresses'],
+      relations: ['addresses', 'orders', 'orders.items'],
+      order: { orders: { created_at: 'DESC' } },
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
@@ -48,6 +50,35 @@ export class CustomerService {
       order: { created_at: 'DESC' },
       select: ['id', 'name', 'phone', 'email', 'loyalty_points', 'created_at'],
     });
+  }
+
+  async updateProfile(
+    id: string,
+    tenantId: string,
+    data: { name?: string; email?: string; password?: string; birth_date?: string; gender?: string; cpf?: string },
+  ): Promise<Customer> {
+    const customer = await this.findById(id, tenantId);
+
+    if (data.email && data.email !== customer.email) {
+      const existing = await this.customerRepo.findOne({
+        where: { email: data.email, tenant_id: tenantId },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('Este email ja esta em uso');
+      }
+      customer.email = data.email;
+    }
+
+    if (data.name) customer.name = data.name;
+    if (data.birth_date !== undefined) customer.birth_date = data.birth_date;
+    if (data.gender !== undefined) customer.gender = data.gender;
+    if (data.cpf !== undefined) customer.cpf = data.cpf;
+
+    if (data.password) {
+      customer.password_hash = await bcrypt.hash(data.password, 10);
+    }
+
+    return this.customerRepo.save(customer);
   }
 
   async addAddress(customerId: string, dto: CreateAddressDto): Promise<CustomerAddress> {

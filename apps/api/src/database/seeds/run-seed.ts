@@ -54,6 +54,7 @@ async function seed() {
   // ==========================================
   const moduleRepo = dataSource.getRepository('SystemModule');
   const defaultModules = [
+    { key: 'dashboard', name: 'Dashboard', description: 'Painel principal com metricas e resumo' },
     { key: 'orders', name: 'Pedidos', description: 'Gerenciamento de pedidos' },
     { key: 'products', name: 'Produtos', description: 'Gerenciamento de produtos e cardapio' },
     { key: 'categories', name: 'Categorias', description: 'Gerenciamento de categorias' },
@@ -63,6 +64,7 @@ async function seed() {
     { key: 'loyalty', name: 'Fidelidade', description: 'Programa de fidelidade e pontos' },
     { key: 'kds', name: 'KDS', description: 'Kitchen Display System' },
     { key: 'reports', name: 'Relatorios', description: 'Relatorios e analytics' },
+    { key: 'delivery_driver', name: 'Painel Entregador', description: 'Painel do entregador para acompanhar e concluir entregas' },
   ];
 
   const savedModules: Record<string, any> = {};
@@ -88,36 +90,45 @@ async function seed() {
       price: 99,
       max_users: 3,
       max_products: 50,
-      moduleKeys: ['orders', 'products', 'categories', 'customers'],
+      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers'],
     },
     {
       name: 'Pro',
       price: 199,
       max_users: 10,
       max_products: 200,
-      moduleKeys: ['orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds'],
+      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds', 'delivery_driver'],
     },
     {
       name: 'Enterprise',
       price: 399,
       max_users: null,
       max_products: null,
-      moduleKeys: ['orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports'],
+      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports', 'delivery_driver'],
     },
   ];
 
   const savedPlans: Record<string, any> = {};
   for (const planData of defaultPlans) {
-    let plan = await planRepo.findOne({ where: { name: planData.name } });
+    const { moduleKeys, ...planFields } = planData;
+    let plan = await planRepo.findOne({ where: { name: planData.name }, relations: ['modules'] });
     if (!plan) {
-      const { moduleKeys, ...planFields } = planData;
       plan = await planRepo.save({
         ...planFields,
-        modules: moduleKeys.map((key) => savedModules[key]),
+        modules: moduleKeys.map((key) => savedModules[key]).filter(Boolean),
       });
       console.log(`✅ Plan "${planData.name}" created (R$${planData.price})`);
     } else {
-      console.log(`⏭️  Plan "${planData.name}" already exists`);
+      // Update modules to include any new ones
+      const existingKeys = new Set((plan as any).modules?.map((m: any) => m.key) || []);
+      const missingModules = moduleKeys.filter((key) => !existingKeys.has(key)).map((key) => savedModules[key]).filter(Boolean);
+      if (missingModules.length > 0) {
+        (plan as any).modules = [...((plan as any).modules || []), ...missingModules];
+        await planRepo.save(plan);
+        console.log(`🔄 Plan "${planData.name}" updated with modules: ${missingModules.map((m: any) => m.key).join(', ')}`);
+      } else {
+        console.log(`⏭️  Plan "${planData.name}" already up to date`);
+      }
     }
     savedPlans[planData.name] = plan;
   }
@@ -177,6 +188,13 @@ async function seed() {
     reports: [
       { key: 'report:read', name: 'Ver Relatorios' },
     ],
+    dashboard: [
+      { key: 'dashboard:read', name: 'Ver Dashboard' },
+    ],
+    delivery_driver: [
+      { key: 'delivery_driver:read', name: 'Ver Minhas Entregas' },
+      { key: 'delivery_driver:update', name: 'Atualizar Status da Entrega' },
+    ],
   };
 
   for (const [moduleKey, permissions] of Object.entries(permissionsByModule)) {
@@ -213,13 +231,13 @@ async function seed() {
         address: 'Av. dos Hamburgueres, 456 - Sao Paulo, SP',
         description: 'Os melhores burgers artesanais da cidade',
         business_hours: {
-          monday: { open: '11:00', close: '23:00' },
-          tuesday: { open: '11:00', close: '23:00' },
-          wednesday: { open: '11:00', close: '23:00' },
-          thursday: { open: '11:00', close: '23:00' },
-          friday: { open: '11:00', close: '00:00' },
-          saturday: { open: '11:00', close: '00:00' },
-          sunday: { open: '12:00', close: '22:00' },
+          monday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          tuesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          wednesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          thursday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          friday: { open: true, openTime: '11:00', closeTime: '00:00' },
+          saturday: { open: true, openTime: '11:00', closeTime: '00:00' },
+          sunday: { open: true, openTime: '12:00', closeTime: '22:00' },
         },
         min_order_value: 30,
         is_active: true,
@@ -261,13 +279,13 @@ async function seed() {
         address: 'Rua das Pizzas, 123 - Sao Paulo, SP',
         description: 'Pizzas artesanais com ingredientes selecionados',
         business_hours: {
-          monday: { open: '11:00', close: '23:00' },
-          tuesday: { open: '11:00', close: '23:00' },
-          wednesday: { open: '11:00', close: '23:00' },
-          thursday: { open: '11:00', close: '23:00' },
-          friday: { open: '11:00', close: '00:00' },
-          saturday: { open: '11:00', close: '00:00' },
-          sunday: { open: '11:00', close: '22:00' },
+          monday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          tuesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          wednesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          thursday: { open: true, openTime: '11:00', closeTime: '23:00' },
+          friday: { open: true, openTime: '11:00', closeTime: '00:00' },
+          saturday: { open: true, openTime: '11:00', closeTime: '00:00' },
+          sunday: { open: true, openTime: '11:00', closeTime: '22:00' },
         },
         min_order_value: 25,
         is_active: true,
@@ -317,13 +335,13 @@ async function seed() {
         address: 'Rua da Liberdade, 789 - Sao Paulo, SP',
         description: 'Culinaria japonesa premium com ingredientes importados',
         business_hours: {
-          monday: { open: '11:30', close: '22:30' },
-          tuesday: { open: '11:30', close: '22:30' },
-          wednesday: { open: '11:30', close: '22:30' },
-          thursday: { open: '11:30', close: '22:30' },
-          friday: { open: '11:30', close: '23:30' },
-          saturday: { open: '11:30', close: '23:30' },
-          sunday: { open: '12:00', close: '22:00' },
+          monday: { open: true, openTime: '11:30', closeTime: '22:30' },
+          tuesday: { open: true, openTime: '11:30', closeTime: '22:30' },
+          wednesday: { open: true, openTime: '11:30', closeTime: '22:30' },
+          thursday: { open: true, openTime: '11:30', closeTime: '22:30' },
+          friday: { open: true, openTime: '11:30', closeTime: '23:30' },
+          saturday: { open: true, openTime: '11:30', closeTime: '23:30' },
+          sunday: { open: true, openTime: '12:00', closeTime: '22:00' },
         },
         min_order_value: 50,
         is_active: true,

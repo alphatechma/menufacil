@@ -13,6 +13,11 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateVariationDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty({ example: 'Grande' })
   @IsString()
   name: string;
@@ -100,6 +105,18 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   sort_order?: number;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  min_variations?: number;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  max_variations?: number;
 
   @ApiPropertyOptional({ type: [CreateVariationDto] })
   @IsOptional()
