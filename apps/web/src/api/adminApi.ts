@@ -4,7 +4,7 @@ export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Auth
     adminLogin: builder.mutation<
-      { user: any; access_token: string; refresh_token: string; modules: string[]; plan: any; tenant_slug: string },
+      { user: any; access_token: string; refresh_token: string; modules: string[]; permissions: string[]; plan: any; tenant_slug: string },
       { email: string; password: string }
     >({
       query: (body) => ({ url: '/auth/admin/login', method: 'POST', data: body, meta: { authContext: 'public' as const } }),
@@ -91,9 +91,25 @@ export const adminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/orders/${id}`, meta: { authContext: 'admin' as const } }),
       providesTags: (_result, _err, id) => [{ type: 'Orders', id }],
     }),
-    updateOrderStatus: builder.mutation<void, { id: string; status: string }>({
-      query: ({ id, status }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: { status }, meta: { authContext: 'admin' as const } }),
+    updateOrderStatus: builder.mutation<void, { id: string; status: string; delivery_person_id?: string }>({
+      query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders'],
+    }),
+    getDashboardData: builder.query<any, { since: string; until: string; status?: string; payment_method?: string; delivery_person_id?: string }>({
+      query: ({ since, until, status, payment_method, delivery_person_id }) => ({
+        url: '/orders/stats/dashboard',
+        params: { since, until, ...(status && { status }), ...(payment_method && { payment_method }), ...(delivery_person_id && { delivery_person_id }) },
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Dashboard'],
+    }),
+    getOrderPerformanceStats: builder.query<any, { days?: number }>({
+      query: ({ days } = {}) => ({
+        url: '/orders/stats/performance',
+        params: days ? { days } : undefined,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Orders'],
     }),
 
     // Customers
@@ -156,16 +172,24 @@ export const adminApi = baseApi.injectEndpoints({
 
     // Loyalty
     getLoyaltyRewards: builder.query<any[], void>({
-      query: () => ({ url: '/loyalty/rewards', meta: { authContext: 'admin' as const } }),
+      query: () => ({ url: '/loyalty/rewards/all', meta: { authContext: 'admin' as const } }),
       providesTags: ['Loyalty'],
     }),
     createLoyaltyReward: builder.mutation<void, any>({
       query: (body) => ({ url: '/loyalty/rewards', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Loyalty'],
     }),
+    updateLoyaltyReward: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/loyalty/rewards/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Loyalty'],
+    }),
     deleteLoyaltyReward: builder.mutation<void, string>({
       query: (id) => ({ url: `/loyalty/rewards/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Loyalty'],
+    }),
+    getLoyaltyRedemptions: builder.query<any[], void>({
+      query: () => ({ url: '/loyalty/redemptions', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Loyalty'],
     }),
 
     // Tenant Settings
@@ -176,6 +200,79 @@ export const adminApi = baseApi.injectEndpoints({
     updateTenant: builder.mutation<void, { id: string; data: any }>({
       query: ({ id, data }) => ({ url: `/tenants/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Settings'],
+    }),
+
+    // Delivery Persons
+    getDeliveryPersons: builder.query<any[], void>({
+      query: () => ({ url: '/delivery-persons', meta: { authContext: 'admin' as const } }),
+      providesTags: ['DeliveryPersons'],
+    }),
+    getDeliveryPerson: builder.query<any, string>({
+      query: (id) => ({ url: `/delivery-persons/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: (_result, _err, id) => [{ type: 'DeliveryPersons', id }],
+    }),
+    createDeliveryPerson: builder.mutation<void, { name: string; phone: string; vehicle?: string; user_id?: string }>({
+      query: (body) => ({ url: '/delivery-persons', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['DeliveryPersons'],
+    }),
+    updateDeliveryPerson: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/delivery-persons/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['DeliveryPersons'],
+    }),
+    deleteDeliveryPerson: builder.mutation<void, string>({
+      query: (id) => ({ url: `/delivery-persons/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['DeliveryPersons'],
+    }),
+    assignDeliveryPerson: builder.mutation<void, { orderId: string; delivery_person_id: string | null }>({
+      query: ({ orderId, ...body }) => ({ url: `/orders/${orderId}/delivery-person`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'DeliveryPersons'],
+    }),
+
+    // Roles & Permissions
+    getRoles: builder.query<any[], void>({
+      query: () => ({ url: '/roles', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Roles'],
+    }),
+    getRole: builder.query<any, string>({
+      query: (id) => ({ url: `/roles/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: (_result, _err, id) => [{ type: 'Roles', id }],
+    }),
+    getPermissions: builder.query<any[], void>({
+      query: () => ({ url: '/roles/permissions', meta: { authContext: 'admin' as const } }),
+    }),
+    createRole: builder.mutation<any, { name: string; description?: string; permission_ids: string[] }>({
+      query: (body) => ({ url: '/roles', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Roles'],
+    }),
+    updateRole: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/roles/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Roles'],
+    }),
+    deleteRole: builder.mutation<void, string>({
+      query: (id) => ({ url: `/roles/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Roles'],
+    }),
+
+    // Staff
+    getStaff: builder.query<any[], void>({
+      query: () => ({ url: '/users', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Staff'],
+    }),
+    getStaffMember: builder.query<any, string>({
+      query: (id) => ({ url: `/users/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: (_result, _err, id) => [{ type: 'Staff', id }],
+    }),
+    createStaff: builder.mutation<void, { name: string; email: string; password: string; role: string }>({
+      query: (body) => ({ url: '/users', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Staff'],
+    }),
+    updateStaff: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/users/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Staff'],
+    }),
+    deleteStaff: builder.mutation<void, string>({
+      query: (id) => ({ url: `/users/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Staff'],
     }),
 
     // Upload
@@ -212,6 +309,8 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
+  useGetDashboardDataQuery,
+  useGetOrderPerformanceStatsQuery,
   useGetCustomersQuery,
   useGetCustomerQuery,
   useCreateCustomerMutation,
@@ -227,8 +326,27 @@ export const {
   useDeleteCouponMutation,
   useGetLoyaltyRewardsQuery,
   useCreateLoyaltyRewardMutation,
+  useUpdateLoyaltyRewardMutation,
   useDeleteLoyaltyRewardMutation,
+  useGetLoyaltyRedemptionsQuery,
   useGetTenantBySlugQuery,
   useUpdateTenantMutation,
   useUploadImageMutation,
+  useGetDeliveryPersonsQuery,
+  useGetDeliveryPersonQuery,
+  useCreateDeliveryPersonMutation,
+  useUpdateDeliveryPersonMutation,
+  useDeleteDeliveryPersonMutation,
+  useAssignDeliveryPersonMutation,
+  useGetStaffQuery,
+  useGetStaffMemberQuery,
+  useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useDeleteStaffMutation,
+  useGetRolesQuery,
+  useGetRoleQuery,
+  useGetPermissionsQuery,
+  useCreateRoleMutation,
+  useUpdateRoleMutation,
+  useDeleteRoleMutation,
 } = adminApi;

@@ -11,6 +11,7 @@ import {
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Customer } from '../../customer/entities/customer.entity';
+import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
 import { OrderItem } from './order-item.entity';
 
 @Entity('orders')
@@ -52,7 +53,31 @@ export class Order {
   address_snapshot: Record<string, unknown>;
 
   @Column({ nullable: true })
+  delivery_person_id: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  change_for: number;
+
+  @Column({ nullable: true })
   notes: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  confirmed_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  preparing_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  ready_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  out_for_delivery_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  delivered_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  cancelled_at: Date;
 
   @CreateDateColumn()
   created_at: Date;
@@ -67,6 +92,10 @@ export class Order {
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
+
+  @ManyToOne(() => DeliveryPerson, (dp) => dp.orders)
+  @JoinColumn({ name: 'delivery_person_id' })
+  delivery_person: DeliveryPerson;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];

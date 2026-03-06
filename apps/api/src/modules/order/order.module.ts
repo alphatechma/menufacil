@@ -5,15 +5,20 @@ import { OrderItem } from './entities/order-item.entity';
 import { OrderItemExtra } from './entities/order-item-extra.entity';
 import { Product } from '../product/entities/product.entity';
 import { ProductVariation } from '../product/entities/product-variation.entity';
+import { CustomerAddress } from '../customer/entities/customer-address.entity';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { OrderRepository } from './order.repository';
 import { DeliveryZoneModule } from '../delivery-zone/delivery-zone.module';
+import { CouponModule } from '../coupon/coupon.module';
+import { LoyaltyModule } from '../loyalty/loyalty.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, OrderItemExtra, Product, ProductVariation]),
+    TypeOrmModule.forFeature([Order, OrderItem, OrderItemExtra, Product, ProductVariation, CustomerAddress]),
     DeliveryZoneModule,
+    CouponModule,
+    LoyaltyModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, OrderRepository],
