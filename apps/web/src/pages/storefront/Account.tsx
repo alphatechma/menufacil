@@ -405,7 +405,11 @@ export default function Account() {
             </div>
             <h3 className="text-lg font-bold text-gray-900">Minha Conta</h3>
             <p className="text-sm text-gray-500 mt-1">
-              Entre com seu telefone para ver seus pedidos
+              {loginMode === 'phone'
+                ? 'Informe seu telefone para entrar ou criar sua conta'
+                : loginMode === 'email'
+                ? 'Entre com seu email e senha'
+                : 'Crie sua conta com email e senha'}
             </p>
           </div>
 
@@ -417,7 +421,7 @@ export default function Account() {
                 loginMode === 'phone' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
             >
-              Telefone
+              Entrar
             </button>
             <button
               onClick={() => { setLoginMode('email'); setAuthError(null); }}
@@ -425,7 +429,7 @@ export default function Account() {
                 loginMode === 'email' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
             >
-              Email
+              Email e Senha
             </button>
             <button
               onClick={() => { setLoginMode('register'); setAuthError(null); }}
@@ -433,7 +437,7 @@ export default function Account() {
                 loginMode === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
             >
-              Criar conta
+              Criar Conta
             </button>
           </div>
 
@@ -613,6 +617,33 @@ export default function Account() {
                 loginMode === 'register' ? 'Criar minha conta' : 'Entrar'
               )}
             </button>
+
+            {loginMode === 'email' && (
+              <p className="text-center text-sm text-gray-500">
+                Nao tem conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('register'); setAuthError(null); }}
+                  className="font-semibold hover:underline"
+                  style={{ color: 'var(--tenant-primary)' }}
+                >
+                  Crie aqui
+                </button>
+              </p>
+            )}
+            {loginMode === 'register' && (
+              <p className="text-center text-sm text-gray-500">
+                Ja tem conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('email'); setAuthError(null); }}
+                  className="font-semibold hover:underline"
+                  style={{ color: 'var(--tenant-primary)' }}
+                >
+                  Entre aqui
+                </button>
+              </p>
+            )}
           </form>
         </div>
       </div>
