@@ -7,7 +7,6 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Exclude } from 'class-transformer';
 import { UserRole } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Role } from '../../role/entities/role.entity';
@@ -26,8 +25,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  @Exclude()
+  @Column({ select: false })
   password_hash: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.ADMIN })

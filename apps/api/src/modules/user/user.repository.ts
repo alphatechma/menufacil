@@ -13,14 +13,15 @@ export class UserRepository {
   async findAllByTenant(tenantId: string): Promise<User[]> {
     return this.repo.find({
       where: { tenant_id: tenantId },
+      relations: ['role'],
       order: { created_at: 'DESC' },
-      select: ['id', 'name', 'email', 'role', 'is_active', 'created_at'],
     });
   }
 
   async findById(id: string, tenantId: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id, tenant_id: tenantId },
+      relations: ['role', 'role.permissions'],
     });
   }
 

@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, MinLength } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsUUID, MinLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@menufacil/shared';
 
@@ -13,6 +13,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  role_id?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

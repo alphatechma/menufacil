@@ -178,7 +178,7 @@ export default function CustomerDetail() {
                               to={`/admin/orders/${order.id}`}
                               className="font-medium text-primary hover:underline"
                             >
-                              #{order.number}
+                              #{order.order_number}
                             </Link>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">

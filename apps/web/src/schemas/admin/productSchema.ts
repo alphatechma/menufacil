@@ -15,6 +15,8 @@ export const productSchema = z.object({
   is_pizza: z.boolean().default(false),
   is_active: z.boolean().default(true),
   sort_order: z.coerce.number().int().min(0).default(0),
+  min_variations: z.coerce.number().int().min(0).default(0),
+  max_variations: z.coerce.number().int().min(0).default(0),
   variations: z.array(variationSchema).default([]),
   extra_group_ids: z.array(z.string()).default([]),
 });

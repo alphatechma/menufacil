@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, Shield, Lock, Save } from 'lucide-react';
+import { User, Mail, Shield, Lock, Save, Check, KeyRound } from 'lucide-react';
 import { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation } from '@/api/adminApi';
 import { profileSchema, type ProfileFormData, passwordChangeSchema, type PasswordChangeFormData } from '@/schemas/admin/profileSchema';
 import { FormField } from '@/components/ui/FormField';
@@ -12,25 +12,59 @@ import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { PageSpinner } from '@/components/ui/Spinner';
 
-const getRoleLabel = (role: string) => {
-  switch (role) {
-    case 'admin':
-      return 'Administrador';
-    case 'manager':
-      return 'Gerente';
-    case 'cashier':
-      return 'Caixa';
-    case 'kitchen':
-      return 'Cozinha';
-    default:
-      return role;
-  }
+const SYSTEM_ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Administrador',
+  admin: 'Administrador',
+  manager: 'Gerente',
+  cashier: 'Caixa',
+  kitchen: 'Cozinha',
 };
+
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  products: 'Produtos',
+  categories: 'Categorias',
+  orders: 'Pedidos',
+  customers: 'Clientes',
+  delivery: 'Entregas',
+  coupons: 'Cupons',
+  loyalty: 'Fidelidade',
+  kds: 'KDS',
+  reports: 'Relatorios',
+  delivery_driver: 'Painel Entregador',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  create: 'Criar',
+  read: 'Visualizar',
+  update: 'Editar',
+  delete: 'Remover',
+  cancel: 'Cancelar',
+};
+
+const getRoleLabel = (role: string) => SYSTEM_ROLE_LABELS[role] || role;
 
 export default function Profile() {
   const { data: profile, isLoading } = useGetProfileQuery();
   const [updateProfile, { isLoading: isSavingName, error: nameError }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isSavingPassword, error: passwordError }] = useChangePasswordMutation();
+
+  const isAdmin = ['admin', 'super_admin'].includes(profile?.system_role || profile?.role || '');
+
+  // Group permissions by module
+  const permissionsByModule = useMemo(() => {
+    const permissions = profile?.role?.permissions || [];
+    if (permissions.length === 0) return {};
+    const grouped: Record<string, string[]> = {};
+    for (const perm of permissions) {
+      const key = perm.key || '';
+      const [mod, action] = key.split(':');
+      if (!mod) continue;
+      if (!grouped[mod]) grouped[mod] = [];
+      if (action) grouped[mod].push(action);
+    }
+    return grouped;
+  }, [profile?.role?.permissions]);
 
   const [nameSuccess, setNameSuccess] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
@@ -113,7 +147,8 @@ export default function Profile() {
               </span>
               <span className="flex items-center gap-1.5 text-sm text-gray-500">
                 <Shield className="w-4 h-4" />
-                {getRoleLabel(profile?.role || '')}
+                {getRoleLabel(profile?.system_role || '')}
+                {profile?.role?.name && ` - ${profile.role.name}`}
               </span>
             </div>
             {profile?.created_at && (
@@ -170,7 +205,7 @@ export default function Profile() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Funcao</label>
               <Input
-                value={getRoleLabel(profile?.role || '')}
+                value={getRoleLabel(profile?.system_role || '')}
                 disabled
                 className="bg-gray-50 text-gray-500 cursor-not-allowed"
               />
@@ -234,6 +269,68 @@ export default function Profile() {
           </div>
         </FormCard>
       </form>
+
+      {/* Access Profile & Permissions */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <KeyRound className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Perfil de Acesso</h3>
+        </div>
+
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200">
+            <Shield className="w-4 h-4 text-indigo-600" />
+            <span className="text-sm font-semibold text-indigo-700">
+              {getRoleLabel(profile?.system_role || profile?.role || '')}
+            </span>
+          </div>
+          {profile?.role?.name && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200">
+              <span className="text-sm font-semibold text-purple-700">
+                {profile.role.name}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isAdmin ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-600" />
+              <p className="text-sm font-semibold text-green-800">Acesso completo</p>
+            </div>
+            <p className="text-xs text-green-600 mt-1">
+              Administradores possuem acesso total a todas as funcionalidades do sistema.
+            </p>
+          </div>
+        ) : Object.keys(permissionsByModule).length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">Suas permissoes no sistema:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(permissionsByModule).map(([mod, actions]) => (
+                <div key={mod} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-800 mb-1.5">
+                    {MODULE_LABELS[mod] || mod}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {actions.map((action) => (
+                      <span
+                        key={action}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-gray-200 text-xs text-gray-600"
+                      >
+                        <Check className="w-3 h-3 text-green-500" />
+                        {ACTION_LABELS[action] || action}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">Nenhuma permissao personalizada configurada.</p>
+        )}
+      </div>
     </div>
   );
 }

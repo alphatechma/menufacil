@@ -43,8 +43,10 @@ export class UserService {
 
   async update(id: string, dto: UpdateUserDto, tenantId: string): Promise<User> {
     await this.findById(id, tenantId);
-    const { role, ...rest } = dto as any;
-    const updateData = { ...rest, ...(role && { system_role: role }) };
+    const { role, role_id, ...rest } = dto as any;
+    const updateData: any = { ...rest };
+    if (role) updateData.system_role = role;
+    if (role_id !== undefined) updateData.role_id = role_id;
     await this.userRepository.update(id, tenantId, updateData);
     return this.findById(id, tenantId);
   }

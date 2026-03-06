@@ -49,6 +49,8 @@ export default function ProductForm() {
       is_pizza: false,
       is_active: true,
       sort_order: 0,
+      min_variations: 0,
+      max_variations: 0,
       variations: [],
       extra_group_ids: [],
     },
@@ -72,8 +74,10 @@ export default function ProductForm() {
         is_pizza: product.is_pizza ?? false,
         is_active: product.is_active ?? true,
         sort_order: product.sort_order ?? 0,
-        variations: product.variations ?? [],
-        extra_group_ids: product.extra_group_ids ?? [],
+        min_variations: product.min_variations ?? 0,
+        max_variations: product.max_variations ?? 0,
+        variations: product.variations?.map((v: any) => ({ name: v.name, price: Number(v.price) })) ?? [],
+        extra_group_ids: product.extra_groups?.map((g: any) => g.id) ?? [],
       });
     }
   }, [product, reset]);
@@ -226,6 +230,35 @@ export default function ProductForm() {
               Adicionar Variacao
             </Button>
           </div>
+
+          {fields.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <FormField control={control} name="min_variations" label="Minimo de selecoes">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min={0}
+                    placeholder="0 = opcional"
+                  />
+                )}
+              </FormField>
+              <FormField control={control} name="max_variations" label="Maximo de selecoes">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min={0}
+                    placeholder="0 = sem limite"
+                  />
+                )}
+              </FormField>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400">
+            Min=0, Max=0: opcional. Min=1, Max=1: obrigatorio (selecao unica). Min=1, Max=2: escolher de 1 a 2.
+          </p>
 
           {fields.length === 0 ? (
             <p className="text-sm text-gray-500">
