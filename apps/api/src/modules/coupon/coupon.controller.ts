@@ -12,8 +12,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
+import { UserRole, RewardType } from '@menufacil/shared';
 import { CouponService } from './coupon.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { CurrentTenant, Roles } from '../../common/decorators';
@@ -23,22 +24,51 @@ import { RolesGuard } from '../../common/guards';
 @ApiSecurity('tenant-slug')
 @Controller('coupons')
 export class CouponController {
-  constructor(private readonly service: CouponService) {}
+  constructor(
+    private readonly service: CouponService,
+    private readonly loyaltyService: LoyaltyService,
+  ) {}
 
   @Get('validate')
-  @ApiOperation({ summary: 'Validate a coupon code' })
-  validate(
+  @ApiOperation({ summary: 'Validate a coupon code (regular or loyalty)' })
+  async validate(
     @Query('code') code: string,
     @Query('total') total: number,
     @CurrentTenant('id') tenantId: string,
   ) {
-    return this.service.validate(code, total, tenantId);
+    const upperCode = (code || '').toUpperCase();
+
+    // First try loyalty redemption coupon
+    const loyaltyResult = await this.loyaltyService.validateRedemptionCoupon(upperCode, tenantId);
+    if (loyaltyResult.valid && loyaltyResult.redemption) {
+      const reward = loyaltyResult.redemption.reward;
+      let discount = 0;
+      if (reward.reward_type === RewardType.DISCOUNT_PERCENT) {
+        discount = (Number(total) * Number(reward.reward_value)) / 100;
+      } else {
+        discount = Number(reward.reward_value);
+      }
+      discount = Math.min(discount, Number(total));
+      return {
+        discount,
+        coupon: {
+          id: loyaltyResult.redemption.id,
+          code: upperCode,
+          discount_type: reward.reward_type === RewardType.DISCOUNT_PERCENT ? 'percent' : 'fixed',
+          discount_value: reward.reward_value,
+          source: 'loyalty',
+        },
+      };
+    }
+
+    // Fallback to regular coupon
+    return this.service.validate(upperCode, total, tenantId);
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'List all coupons' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.service.findAll(tenantId);
@@ -47,7 +77,7 @@ export class CouponController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Get coupon by ID' })
   findById(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.findById(id, tenantId);
@@ -56,7 +86,7 @@ export class CouponController {
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Create a coupon' })
   create(@Body() dto: CreateCouponDto, @CurrentTenant('id') tenantId: string) {
     return this.service.create(dto, tenantId);
@@ -65,7 +95,7 @@ export class CouponController {
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Update a coupon' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -78,7 +108,7 @@ export class CouponController {
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   @ApiOperation({ summary: 'Delete a coupon' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.remove(id, tenantId);

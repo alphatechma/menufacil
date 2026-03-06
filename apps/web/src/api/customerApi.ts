@@ -38,9 +38,25 @@ export const customerApi = baseApi.injectEndpoints({
     }),
 
     // Customer auth
-    customerLogin: builder.mutation<{ access_token: string; customer: any }, { phone: string; name?: string; slug: string }>({
+    customerLogin: builder.mutation<
+      { access_token: string; customer: any },
+      { slug: string; phone?: string; name?: string; email?: string; password?: string }
+    >({
       query: ({ slug, ...body }) => ({
         url: '/auth/customer/login',
+        method: 'POST',
+        data: body,
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+
+    // Customer register
+    customerRegister: builder.mutation<
+      { access_token: string; refresh_token: string },
+      { slug: string; name: string; phone: string; email?: string; password: string }
+    >({
+      query: ({ slug, ...body }) => ({
+        url: '/auth/customer/register',
         method: 'POST',
         data: body,
         meta: { authContext: 'customer' as const, tenantSlug: slug },
@@ -51,6 +67,15 @@ export const customerApi = baseApi.injectEndpoints({
     getCustomerProfile: builder.query<any, { slug: string }>({
       query: ({ slug }) => ({ url: '/customers/me', meta: { authContext: 'customer' as const, tenantSlug: slug } }),
       providesTags: ['CustomerProfile'],
+    }),
+    updateCustomerProfile: builder.mutation<any, { slug: string; data: { name?: string; email?: string; password?: string; birth_date?: string; gender?: string; cpf?: string } }>({
+      query: ({ slug, data }) => ({
+        url: '/customers/me',
+        method: 'PUT',
+        data,
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      invalidatesTags: ['CustomerProfile'],
     }),
     addCustomerAddress: builder.mutation<void, { slug: string; address: any }>({
       query: ({ slug, address }) => ({
@@ -91,6 +116,39 @@ export const customerApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Loyalty
+    getLoyaltyRewards: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/loyalty/rewards',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['LoyaltyRewards'],
+    }),
+    redeemReward: builder.mutation<any, { slug: string; rewardId: string }>({
+      query: ({ slug, rewardId }) => ({
+        url: `/loyalty/redeem/${rewardId}`,
+        method: 'POST',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      invalidatesTags: ['CustomerProfile', 'LoyaltyRewards', 'LoyaltyRedemptions'],
+    }),
+    getMyRedemptions: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/loyalty/redemptions/my',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['LoyaltyRedemptions'],
+    }),
+
+    // Coupon validation
+    validateCoupon: builder.query<{ discount: number; coupon: any }, { slug: string; code: string; total: number }>({
+      query: ({ slug, code, total }) => ({
+        url: '/coupons/validate',
+        params: { code, total },
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+
     // Delivery zones (public on customer side)
     getPublicDeliveryZones: builder.query<any[], { slug: string }>({
       query: ({ slug }) => ({ url: '/delivery-zones', meta: { authContext: 'customer' as const, tenantSlug: slug } }),
@@ -114,7 +172,9 @@ export const {
   useGetStorefrontProductsQuery,
   useGetStorefrontProductQuery,
   useCustomerLoginMutation,
+  useCustomerRegisterMutation,
   useGetCustomerProfileQuery,
+  useUpdateCustomerProfileMutation,
   useAddCustomerAddressMutation,
   useRemoveCustomerAddressMutation,
   useCreateOrderMutation,
@@ -122,4 +182,8 @@ export const {
   useGetOrderTrackingQuery,
   useGetPublicDeliveryZonesQuery,
   useGetDeliveryZoneByNeighborhoodQuery,
+  useLazyValidateCouponQuery,
+  useGetLoyaltyRewardsQuery,
+  useRedeemRewardMutation,
+  useGetMyRedemptionsQuery,
 } = customerApi;

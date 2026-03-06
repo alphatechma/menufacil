@@ -10,7 +10,7 @@ export class CouponService {
   constructor(private readonly repository: CouponRepository) {}
 
   async create(dto: CreateCouponDto, tenantId: string): Promise<Coupon> {
-    const coupon = this.repository.create({ ...dto, tenant_id: tenantId } as any);
+    const coupon = this.repository.create({ ...dto, code: dto.code?.toUpperCase(), tenant_id: tenantId } as any);
     return this.repository.save(coupon);
   }
 
