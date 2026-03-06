@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Search, X } from 'lucide-react';
+import { Search, X, Lock } from 'lucide-react';
 import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery } from '@/api/customerApi';
+import { useAppSelector } from '@/store/hooks';
 import { formatPrice } from '@/utils/formatPrice';
 
 export default function Menu() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const tenant = useAppSelector((state) => state.tenant.tenant);
+  const isClosed = tenant ? !tenant.is_open : false;
 
   const { data: categories = [] } = useGetStorefrontCategoriesQuery(
     { slug: slug! },
@@ -140,6 +143,7 @@ export default function Menu() {
                 key={product.id}
                 product={product}
                 slug={slug!}
+                isClosed={isClosed}
               />
             ))}
           </div>
@@ -157,6 +161,7 @@ export default function Menu() {
                       key={product.id}
                       product={product}
                       slug={slug!}
+                      isClosed={isClosed}
                     />
                   ))}
                 </div>
@@ -183,9 +188,11 @@ export default function Menu() {
 function ProductCard({
   product,
   slug,
+  isClosed,
 }: {
   product: any;
   slug: string;
+  isClosed: boolean;
 }) {
   const hasVariations = product.variations && product.variations.length > 0;
 
@@ -193,12 +200,27 @@ function ProductCard({
     ? Math.min(...product.variations.map((v: any) => v.price))
     : product.base_price;
 
+  const Wrapper = isClosed ? 'div' : Link;
+  const wrapperProps = isClosed ? {} : { to: `/${slug}/menu/${product.id}` };
+
   return (
-    <Link
-      to={`/${slug}/menu/${product.id}`}
-      className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex group"
+    <Wrapper
+      {...(wrapperProps as any)}
+      className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex group relative ${
+        isClosed
+          ? 'border-gray-200 cursor-not-allowed'
+          : 'border-gray-100 hover:shadow-md transition-shadow'
+      }`}
     >
-      <div className="flex-1 p-4 flex flex-col justify-between">
+      {/* Closed overlay */}
+      {isClosed && (
+        <div className="absolute inset-0 z-10 bg-gray-100/50 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="bg-white/90 rounded-full p-2 shadow-sm">
+            <Lock className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+      )}
+      <div className={`flex-1 p-4 flex flex-col justify-between ${isClosed ? 'opacity-50' : ''}`}>
         <div>
           <h4 className="font-semibold text-gray-900 mb-1">{product.name}</h4>
           {product.description && (
@@ -210,7 +232,7 @@ function ProductCard({
         <div className="flex items-end justify-between mt-3">
           <p
             className="font-bold"
-            style={{ color: 'var(--tenant-primary)' }}
+            style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
           >
             {hasVariations
               ? `A partir de ${formatPrice(minPrice)}`
@@ -218,24 +240,26 @@ function ProductCard({
           </p>
         </div>
       </div>
-      <div className="w-28 h-28 flex-shrink-0 bg-gray-100 overflow-hidden">
+      <div className={`w-28 h-28 flex-shrink-0 bg-gray-100 overflow-hidden ${isClosed ? 'grayscale opacity-60' : ''}`}>
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className={`w-full h-full object-cover ${isClosed ? '' : 'group-hover:scale-105'} transition-transform duration-300`}
           />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-3xl text-white/70"
             style={{
-              background: `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+              background: isClosed
+                ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
+                : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
             }}
           >
             {product.name.charAt(0)}
           </div>
         )}
       </div>
-    </Link>
+    </Wrapper>
   );
 }

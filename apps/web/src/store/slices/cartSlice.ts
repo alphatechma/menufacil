@@ -11,18 +11,11 @@ export interface CartItem {
   product_name: string;
   product_image?: string | null;
   variation_id: string | null;
+  variation_ids?: string[];
   variation_name: string | null;
   unit_price: number;
   quantity: number;
   extras: CartItemExtra[];
-}
-
-function buildCartItemKey(item: CartItem): string {
-  const extrasKey = item.extras
-    .map((e) => e.name)
-    .sort()
-    .join(',');
-  return `${item.product_id}:${item.variation_id || 'none'}:${extrasKey}`;
 }
 
 interface CartState {
@@ -53,14 +46,7 @@ const cartSlice = createSlice({
   reducers: {
     addItem(state, action: PayloadAction<Omit<CartItem, 'quantity'> & { quantity?: number }>) {
       const item: CartItem = { ...action.payload, quantity: action.payload.quantity || 1 };
-      const key = buildCartItemKey(item);
-      const existingIndex = state.items.findIndex((existing) => buildCartItemKey(existing) === key);
-
-      if (existingIndex >= 0) {
-        state.items[existingIndex].quantity += item.quantity;
-      } else {
-        state.items.push(item);
-      }
+      state.items.push(item);
     },
     removeItem(state, action: PayloadAction<number>) {
       state.items.splice(action.payload, 1);

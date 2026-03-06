@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Bike,
   ArrowRight,
+  Lock,
 } from 'lucide-react';
 import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery } from '@/api/customerApi';
 import { useAppSelector } from '@/store/hooks';
@@ -25,6 +26,7 @@ export default function StoreFront() {
   );
 
   const featuredProducts = products.filter((p: any) => p.is_active).slice(0, 6);
+  const isClosed = tenant ? !tenant.is_open : false;
 
   return (
     <div className="pb-6">
@@ -78,6 +80,32 @@ export default function StoreFront() {
         </div>
       </div>
 
+      {/* Store status banner */}
+      {tenant && !tenant.is_open && (
+        <div className="bg-red-50 border-b border-red-100 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-red-700">
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <div>
+              <span>Estamos fechados no momento.</span>
+              {tenant.next_open_label && (
+                <span className="ml-1 font-bold">{tenant.next_open_label}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {tenant && tenant.is_open && (
+        <div className="bg-green-50 border-b border-green-100 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-green-700">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+            <span>Aberto agora</span>
+            {tenant.hours_label && (
+              <span className="text-green-600 font-normal ml-1">• {tenant.hours_label}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Store info bar */}
       {tenant?.address && (
         <div className="bg-white px-4 py-3 border-b border-gray-100">
@@ -103,35 +131,49 @@ export default function StoreFront() {
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
-            {categories.map((category: any) => (
-              <Link
-                key={category.id}
-                to={`/${slug}/menu?category=${category.id}`}
-                className="flex-shrink-0 group"
-              >
-                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 mb-2 ring-2 ring-transparent group-hover:ring-[var(--tenant-primary)] transition-all">
-                  {category.image_url ? (
-                    <img
-                      src={category.image_url}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-2xl font-bold text-white"
-                      style={{
-                        background: `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
-                      }}
-                    >
-                      {category.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs font-medium text-gray-700 text-center truncate w-24">
-                  {category.name}
-                </p>
-              </Link>
-            ))}
+            {categories.map((category: any) => {
+              const CatWrapper = isClosed ? 'div' : Link;
+              const catProps = isClosed ? {} : { to: `/${slug}/menu?category=${category.id}` };
+
+              return (
+                <CatWrapper
+                  key={category.id}
+                  {...(catProps as any)}
+                  className={`flex-shrink-0 group ${isClosed ? 'cursor-not-allowed' : ''}`}
+                >
+                  <div className={`w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 mb-2 ring-2 ring-transparent relative ${
+                    isClosed ? 'grayscale opacity-50' : 'group-hover:ring-[var(--tenant-primary)]'
+                  } transition-all`}>
+                    {isClosed && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200/40">
+                        <Lock className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    )}
+                    {category.image_url ? (
+                      <img
+                        src={category.image_url}
+                        alt={category.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center text-2xl font-bold text-white"
+                        style={{
+                          background: isClosed
+                            ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
+                            : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                        }}
+                      >
+                        {category.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <p className={`text-xs font-medium text-center truncate w-24 ${isClosed ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {category.name}
+                  </p>
+                </CatWrapper>
+              );
+            })}
           </div>
         </section>
       )}
@@ -151,56 +193,77 @@ export default function StoreFront() {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {featuredProducts.map((product: any) => (
-              <Link
-                key={product.id}
-                to={`/${slug}/menu/${product.id}`}
-                className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
-              >
-                <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-white/80"
-                      style={{
-                        background: `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
-                      }}
-                    >
-                      <span className="text-4xl">
-                        {product.name.charAt(0)}
-                      </span>
+            {featuredProducts.map((product: any) => {
+              const Wrapper = isClosed ? 'div' : Link;
+              const wrapperProps = isClosed
+                ? {}
+                : { to: `/${slug}/menu/${product.id}` };
+
+              return (
+                <Wrapper
+                  key={product.id}
+                  {...(wrapperProps as any)}
+                  className={`bg-white rounded-2xl border overflow-hidden shadow-sm group relative ${
+                    isClosed
+                      ? 'border-gray-200 cursor-not-allowed'
+                      : 'border-gray-100 hover:shadow-md transition-shadow'
+                  }`}
+                >
+                  {/* Closed overlay */}
+                  {isClosed && (
+                    <div className="absolute inset-0 z-10 bg-gray-100/60 backdrop-blur-[1px] flex items-center justify-center">
+                      <div className="bg-white/90 rounded-full p-2 shadow-sm">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
                     </div>
                   )}
-                </div>
-                <div className="p-3">
-                  <h4 className="font-semibold text-gray-900 text-sm truncate">
-                    {product.name}
-                  </h4>
-                  {product.description && (
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                      {product.description}
+                  <div className={`aspect-square bg-gray-100 overflow-hidden relative ${isClosed ? 'grayscale opacity-60' : ''}`}>
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className={`w-full h-full object-cover ${isClosed ? '' : 'group-hover:scale-105'} transition-transform duration-300`}
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center text-white/80"
+                        style={{
+                          background: isClosed
+                            ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
+                            : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                        }}
+                      >
+                        <span className="text-4xl">
+                          {product.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`p-3 ${isClosed ? 'opacity-50' : ''}`}>
+                    <h4 className="font-semibold text-gray-900 text-sm truncate">
+                      {product.name}
+                    </h4>
+                    {product.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+                    <p
+                      className="font-bold text-sm mt-2"
+                      style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
+                    >
+                      {product.variations && product.variations.length > 0
+                        ? `A partir de ${formatPrice(
+                            Math.min(
+                              ...product.variations.map((v: any) => v.price),
+                            ),
+                          )}`
+                        : formatPrice(product.base_price)}
                     </p>
-                  )}
-                  <p
-                    className="font-bold text-sm mt-2"
-                    style={{ color: 'var(--tenant-primary)' }}
-                  >
-                    {product.variations && product.variations.length > 0
-                      ? `A partir de ${formatPrice(
-                          Math.min(
-                            ...product.variations.map((v: any) => v.price),
-                          ),
-                        )}`
-                      : formatPrice(product.base_price)}
-                  </p>
-                </div>
-              </Link>
-            ))}
+                  </div>
+                </Wrapper>
+              );
+            })}
           </div>
         </section>
       )}

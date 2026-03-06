@@ -13,9 +13,12 @@ export interface Tenant {
   phone: string | null;
   opening_hours: string | null;
   is_open: boolean;
+  next_open_label: string | null;
+  hours_label: string | null;
   delivery_fee: number;
   min_order_value: number;
   estimated_delivery_time: string | null;
+  business_hours?: Record<string, { open: boolean; openTime: string; closeTime: string }> | null;
   plan?: {
     name: string;
     modules?: Array<{ key: string; name: string }>;

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Link, Outlet, useParams, useLocation } from 'react-router-dom';
 import { ShoppingBag, Home, UtensilsCrossed, User } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -12,6 +12,10 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
   const dispatch = useAppDispatch();
   const tenant = useAppSelector(selectTenant);
   const totalItems = useAppSelector(selectTotalItems);
+
+  useEffect(() => {
+    document.title = tenant?.name || 'MenuFacil';
+  }, [tenant?.name]);
 
   const isActive = (path: string) => {
     const base = `/${slug}`;

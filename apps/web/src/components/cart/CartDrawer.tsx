@@ -197,13 +197,22 @@ export function CartDrawer() {
               <span>Total</span>
               <span>{formatPrice(total)}</span>
             </div>
-            <button
-              onClick={handleCheckout}
-              className="w-full py-3 rounded-xl text-white font-semibold transition-colors text-center"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
-            >
-              Finalizar Pedido
-            </button>
+            {tenant && !tenant.is_open ? (
+              <div className="w-full py-3 rounded-xl bg-gray-200 text-gray-500 font-semibold text-center text-sm">
+                <p>Loja fechada no momento</p>
+                {tenant.next_open_label && (
+                  <p className="text-xs font-medium mt-0.5">{tenant.next_open_label}</p>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={handleCheckout}
+                className="w-full py-3 rounded-xl text-white font-semibold transition-colors text-center"
+                style={{ backgroundColor: 'var(--tenant-primary)' }}
+              >
+                Finalizar Pedido
+              </button>
+            )}
           </div>
         )}
       </div>
