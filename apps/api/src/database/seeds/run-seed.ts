@@ -202,10 +202,10 @@ async function seed() {
       { key: 'staff:delete', name: 'Remover Membro' },
     ],
     roles: [
-      { key: 'role:read', name: 'Ver Perfis de Acesso' },
-      { key: 'role:create', name: 'Criar Perfil de Acesso' },
-      { key: 'role:update', name: 'Editar Perfil de Acesso' },
-      { key: 'role:delete', name: 'Remover Perfil de Acesso' },
+      { key: 'roles:read', name: 'Ver Perfis de Acesso' },
+      { key: 'roles:create', name: 'Criar Perfil de Acesso' },
+      { key: 'roles:update', name: 'Editar Perfil de Acesso' },
+      { key: 'roles:delete', name: 'Remover Perfil de Acesso' },
     ],
     settings: [
       { key: 'settings:read', name: 'Ver Configuracoes' },
@@ -443,7 +443,7 @@ async function seed() {
 
     // ── Create default "Administrador" role with ALL permissions ──
     const roleRepo = dataSource.getRepository('Role');
-    let adminRole = await roleRepo.findOne({ where: { name: 'Administrador', tenant_id: tenantId } });
+    let adminRole = await roleRepo.findOne({ where: { name: 'Administrador', tenant_id: tenantId }, relations: ['permissions'] });
     if (!adminRole) {
       adminRole = await roleRepo.save({
         name: 'Administrador',
@@ -453,7 +453,16 @@ async function seed() {
       });
       console.log(`  ✅ Role "Administrador" created with ${allPermissions.length} permissions`);
     } else {
-      console.log(`  ⏭️  Role "Administrador" already exists`);
+      // Update permissions to include any new ones
+      const existingKeys = new Set(((adminRole as any).permissions || []).map((p: any) => p.key));
+      const missing = allPermissions.filter((p: any) => !existingKeys.has(p.key));
+      if (missing.length > 0) {
+        (adminRole as any).permissions = [...((adminRole as any).permissions || []), ...missing];
+        await roleRepo.save(adminRole);
+        console.log(`  🔄 Role "Administrador" updated with ${missing.length} new permissions (total: ${allPermissions.length})`);
+      } else {
+        console.log(`  ⏭️  Role "Administrador" already up to date (${allPermissions.length} permissions)`);
+      }
     }
 
     // ── Create admin user ──
@@ -470,12 +479,12 @@ async function seed() {
       });
       console.log(`  ✅ Admin "${demo.admin.email}" created with role "Administrador"`);
     } else {
-      // Ensure existing admin has the role assigned
-      if (!(admin as any).role_id) {
+      // Ensure existing admin has the correct role assigned
+      if ((admin as any).role_id !== (adminRole as any).id) {
         await userRepo.update((admin as any).id, { role_id: (adminRole as any).id });
         console.log(`  🔄 Admin "${demo.admin.email}" assigned role "Administrador"`);
       } else {
-        console.log(`  ⏭️  Admin "${demo.admin.email}" already exists`);
+        console.log(`  ⏭️  Admin "${demo.admin.email}" already exists with correct role`);
       }
     }
 
