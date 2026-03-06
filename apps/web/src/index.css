@@ -42,6 +42,16 @@
   }
 }
 
+@layer utilities {
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  .animate-slide-in-left {
+    animation: slide-in-left 0.2s ease-out;
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply bg-[var(--tenant-primary)] hover:bg-[var(--tenant-primary-dark)] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
