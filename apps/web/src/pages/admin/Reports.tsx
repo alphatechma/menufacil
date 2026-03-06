@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import {
-  BarChart3,
   TrendingUp,
   ShoppingBag,
   Receipt,
   XCircle,
   Calendar,
+  Truck,
+  Timer,
+  Filter,
+  X,
+  DollarSign,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -22,137 +26,49 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery } from '@/api/adminApi';
+import { PageSpinner } from '@/components/ui/Spinner';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { formatPrice } from '@/utils/formatPrice';
 
-type DateRange = '7d' | '30d' | 'month' | 'custom';
+const COLORS = ['#FF6B35', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 
-const COLORS = ['#FF6B35', '#FF8F65', '#FFB395', '#FFD7C5', '#E55A2B', '#CC4E24'];
+const STATUS_OPTIONS = [
+  { value: '', label: 'Todos os status' },
+  { value: 'pending', label: 'Pendente' },
+  { value: 'confirmed', label: 'Confirmado' },
+  { value: 'preparing', label: 'Preparando' },
+  { value: 'ready', label: 'Pronto' },
+  { value: 'out_for_delivery', label: 'Em Entrega' },
+  { value: 'delivered', label: 'Entregue' },
+  { value: 'cancelled', label: 'Cancelado' },
+];
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const formatShortCurrency = (value: number) => {
-  if (value >= 1000) {
-    return `R$ ${(value / 1000).toFixed(1)}k`;
-  }
-  return formatCurrency(value);
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendente',
+  confirmed: 'Confirmado',
+  preparing: 'Preparando',
+  ready: 'Pronto',
+  out_for_delivery: 'Em Entrega',
+  delivered: 'Entregue',
+  cancelled: 'Cancelado',
 };
 
-function seedRandom(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
+const PAYMENT_OPTIONS = [
+  { value: '', label: 'Todas as formas' },
+  { value: 'pix', label: 'PIX' },
+  { value: 'credit_card', label: 'Cartao de Credito' },
+  { value: 'debit_card', label: 'Cartao de Debito' },
+  { value: 'cash', label: 'Dinheiro' },
+];
 
-function generateMockData(range: DateRange, customStart: string, customEnd: string) {
-  const now = new Date();
-  let startDate: Date;
-  let endDate: Date = new Date(now);
-
-  switch (range) {
-    case '7d':
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 6);
-      break;
-    case '30d':
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 29);
-      break;
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
-    case 'custom':
-      startDate = customStart ? new Date(customStart) : new Date(now);
-      endDate = customEnd ? new Date(customEnd) : new Date(now);
-      break;
-  }
-
-  const days: Date[] = [];
-  const current = new Date(startDate);
-  while (current <= endDate) {
-    days.push(new Date(current));
-    current.setDate(current.getDate() + 1);
-  }
-  if (days.length === 0) days.push(new Date(now));
-
-  const rand = seedRandom(days.length * 17 + startDate.getDate());
-
-  const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
-
-  const revenueData = days.map((day) => {
-    const dayOfWeek = day.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-    const base = isWeekend ? 3500 : 2200;
-    const variation = rand() * 1500 - 500;
-    const revenue = Math.max(800, base + variation);
-    return {
-      date: day.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      dayName: dayNames[dayOfWeek],
-      revenue: Math.round(revenue * 100) / 100,
-    };
-  });
-
-  const ordersData = days.map((day) => {
-    const dayOfWeek = day.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-    const base = isWeekend ? 85 : 55;
-    const variation = Math.round(rand() * 40 - 15);
-    return {
-      date: day.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      dayName: dayNames[dayOfWeek],
-      pedidos: Math.max(20, base + variation),
-    };
-  });
-
-  const topProducts = [
-    { name: 'X-Burguer Especial', vendas: Math.round(120 + rand() * 80) },
-    { name: 'Pizza Margherita', vendas: Math.round(95 + rand() * 60) },
-    { name: 'Coca-Cola 600ml', vendas: Math.round(80 + rand() * 70) },
-    { name: 'Batata Frita Grande', vendas: Math.round(70 + rand() * 50) },
-    { name: 'Acai 500ml', vendas: Math.round(55 + rand() * 45) },
-    { name: 'Combo Familia', vendas: Math.round(40 + rand() * 35) },
-    { name: 'Suco Natural', vendas: Math.round(35 + rand() * 30) },
-    { name: 'Sobremesa do Dia', vendas: Math.round(25 + rand() * 25) },
-  ].sort((a, b) => b.vendas - a.vendas);
-
-  const paymentMethods = [
-    { name: 'PIX', value: Math.round(38 + rand() * 10) },
-    { name: 'Credito', value: Math.round(25 + rand() * 8) },
-    { name: 'Debito', value: Math.round(15 + rand() * 8) },
-    { name: 'Dinheiro', value: Math.round(10 + rand() * 8) },
-  ];
-
-  const orderStatuses = [
-    { name: 'Entregue', value: Math.round(65 + rand() * 15) },
-    { name: 'Em preparo', value: Math.round(10 + rand() * 8) },
-    { name: 'Pendente', value: Math.round(5 + rand() * 5) },
-    { name: 'Cancelado', value: Math.round(3 + rand() * 5) },
-    { name: 'Saiu p/ entrega', value: Math.round(8 + rand() * 5) },
-  ];
-
-  const totalRevenue = revenueData.reduce((sum, d) => sum + d.revenue, 0);
-  const totalOrders = ordersData.reduce((sum, d) => sum + d.pedidos, 0);
-  const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const cancelledPct = orderStatuses.find((s) => s.name === 'Cancelado');
-  const totalStatusSum = orderStatuses.reduce((sum, s) => sum + s.value, 0);
-  const cancellationRate =
-    cancelledPct && totalStatusSum > 0
-      ? ((cancelledPct.value / totalStatusSum) * 100).toFixed(1)
-      : '0.0';
-
-  return {
-    revenueData,
-    ordersData,
-    topProducts,
-    paymentMethods,
-    orderStatuses,
-    totalRevenue,
-    totalOrders,
-    avgTicket,
-    cancellationRate,
-  };
-}
+const PAYMENT_LABELS: Record<string, string> = {
+  pix: 'PIX',
+  credit_card: 'Cartao de Credito',
+  debit_card: 'Cartao de Debito',
+  cash: 'Dinheiro',
+};
 
 const tooltipStyle = {
   borderRadius: '12px',
@@ -160,182 +76,302 @@ const tooltipStyle = {
   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
 };
 
+type RangePreset = '7d' | '30d' | 'month' | 'custom';
+
+function getDateRange(preset: RangePreset, customStart: string, customEnd: string) {
+  const now = new Date();
+  let since: string;
+  let until: string = now.toISOString().split('T')[0];
+
+  switch (preset) {
+    case '7d': {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 6);
+      since = d.toISOString().split('T')[0];
+      break;
+    }
+    case '30d': {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 29);
+      since = d.toISOString().split('T')[0];
+      break;
+    }
+    case 'month': {
+      since = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      break;
+    }
+    case 'custom':
+      since = customStart || until;
+      until = customEnd || until;
+      break;
+  }
+
+  return { since, until };
+}
+
+const selectClass = 'px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
+
 export default function Reports() {
-  const [dateRange, setDateRange] = useState<DateRange>('7d');
+  const [preset, setPreset] = useState<RangePreset>('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [deliveryPersonFilter, setDeliveryPersonFilter] = useState('');
 
-  const data = useMemo(
-    () => generateMockData(dateRange, customStart, customEnd),
-    [dateRange, customStart, customEnd],
-  );
+  const range = useMemo(() => getDateRange(preset, customStart, customEnd), [preset, customStart, customEnd]);
+
+  const queryParams = useMemo(() => ({
+    ...range,
+    ...(statusFilter && { status: statusFilter }),
+    ...(paymentFilter && { payment_method: paymentFilter }),
+    ...(deliveryPersonFilter && { delivery_person_id: deliveryPersonFilter }),
+  }), [range, statusFilter, paymentFilter, deliveryPersonFilter]);
+
+  const { data: dashboard, isLoading, isFetching } = useGetDashboardDataQuery(queryParams);
+  const { data: allDeliveryPersons = [] } = useGetDeliveryPersonsQuery();
+
+  const activeFiltersCount = [statusFilter, paymentFilter, deliveryPersonFilter].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setStatusFilter('');
+    setPaymentFilter('');
+    setDeliveryPersonFilter('');
+  };
+
+  if (isLoading) return <PageSpinner />;
+
+  const totalRevenue = Number(dashboard?.totals?.total_revenue || 0);
+  const totalOrders = Number(dashboard?.totals?.total_orders || 0);
+  const cancelledOrders = Number(dashboard?.totals?.cancelled_orders || 0);
+  const deliveredOrders = Number(dashboard?.totals?.delivered_orders || 0);
+  const totalDeliveryFee = Number(dashboard?.totals?.total_delivery_fee || 0);
+  const totalDiscount = Number(dashboard?.totals?.total_discount || 0);
+  const validOrders = totalOrders - cancelledOrders;
+  const avgTicket = validOrders > 0 ? totalRevenue / validOrders : 0;
+  const cancellationRate = totalOrders > 0 ? ((cancelledOrders / totalOrders) * 100).toFixed(1) : '0.0';
+
+  const revenueData = (dashboard?.daily || []).map((d: any) => ({
+    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    revenue: Number(d.revenue),
+  }));
+
+  const ordersChartData = (dashboard?.daily || []).map((d: any) => ({
+    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    pedidos: Number(d.orders),
+  }));
+
+  const byStatus = (dashboard?.by_status || []).map((s: any) => ({
+    name: STATUS_LABELS[s.status] || s.status,
+    count: Number(s.count),
+    revenue: Number(s.revenue),
+  }));
+
+  const byPayment = (dashboard?.by_payment_method || []).map((p: any) => ({
+    name: PAYMENT_LABELS[p.method] || p.method,
+    count: Number(p.count),
+    revenue: Number(p.revenue),
+  }));
+
+  const totalPaymentCount = byPayment.reduce((s: number, p: any) => s + p.count, 0);
+
+  const topProducts = (dashboard?.top_products || []).map((p: any) => ({
+    name: p.name,
+    quantity: Number(p.quantity),
+    revenue: Number(p.revenue),
+  }));
+
+  const totalProductQty = topProducts.reduce((s: number, p: any) => s + p.quantity, 0);
+
+  const deliveryPersons = (dashboard?.delivery_persons || []).map((dp: any) => ({
+    id: dp.id,
+    name: dp.name,
+    phone: dp.phone,
+    vehicle: dp.vehicle,
+    total_deliveries: Number(dp.total_deliveries),
+    total_value: Number(dp.total_value),
+    avg_delivery_minutes: Number(dp.avg_delivery_minutes) || 0,
+  }));
+
+  const totalDPDeliveries = deliveryPersons.reduce((s: number, d: any) => s + d.total_deliveries, 0);
 
   const stats = [
-    {
-      label: 'Receita Total',
-      value: formatCurrency(data.totalRevenue),
-      icon: TrendingUp,
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600',
-    },
-    {
-      label: 'Total de Pedidos',
-      value: data.totalOrders.toLocaleString('pt-BR'),
-      icon: ShoppingBag,
-      bgColor: 'bg-primary-50',
-      iconColor: 'text-primary',
-    },
-    {
-      label: 'Ticket Medio',
-      value: formatCurrency(data.avgTicket),
-      icon: Receipt,
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-    {
-      label: 'Taxa de Cancelamento',
-      value: `${data.cancellationRate}%`,
-      icon: XCircle,
-      bgColor: 'bg-red-50',
-      iconColor: 'text-red-600',
-    },
+    { label: 'Receita Total', value: formatPrice(totalRevenue), icon: TrendingUp, bgColor: 'bg-green-50', iconColor: 'text-green-600' },
+    { label: 'Total de Pedidos', value: String(totalOrders), sub: `${deliveredOrders} entregues`, icon: ShoppingBag, bgColor: 'bg-orange-50', iconColor: 'text-primary' },
+    { label: 'Ticket Medio', value: formatPrice(avgTicket), icon: Receipt, bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
+    { label: 'Cancelamentos', value: `${cancellationRate}%`, sub: `${cancelledOrders} pedido(s)`, icon: XCircle, bgColor: 'bg-red-50', iconColor: 'text-red-600' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Relatorios</h1>
           <p className="text-gray-500 mt-1">Analise o desempenho do seu restaurante</p>
         </div>
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-gray-400" />
-          <span className="text-sm text-gray-500">Dados ilustrativos (mock)</span>
-        </div>
+        {isFetching && !isLoading && (
+          <div className="text-xs text-gray-400 flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            Atualizando...
+          </div>
+        )}
       </div>
 
-      {/* Date Range Filter */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      {/* Filters */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+        {/* Period */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0">
             <Calendar className="w-4 h-4" />
             Periodo:
           </div>
           <div className="flex flex-wrap gap-2">
-            {[
-              { value: '7d' as DateRange, label: 'Ultimos 7 dias' },
-              { value: '30d' as DateRange, label: 'Ultimos 30 dias' },
-              { value: 'month' as DateRange, label: 'Este mes' },
-              { value: 'custom' as DateRange, label: 'Personalizado' },
-            ].map((option) => (
+            {([
+              { value: '7d' as RangePreset, label: '7 dias' },
+              { value: '30d' as RangePreset, label: '30 dias' },
+              { value: 'month' as RangePreset, label: 'Este mes' },
+              { value: 'custom' as RangePreset, label: 'Personalizado' },
+            ]).map((opt) => (
               <button
-                key={option.value}
-                onClick={() => setDateRange(option.value)}
+                key={opt.value}
+                onClick={() => setPreset(opt.value)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  dateRange === option.value
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  preset === opt.value ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {option.label}
+                {opt.label}
               </button>
             ))}
           </div>
-          {dateRange === 'custom' && (
+          {preset === 'custom' && (
             <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
               <span className="text-gray-400 text-sm">ate</span>
-              <input
-                type="date"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
           )}
         </div>
+
+        {/* Additional Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0">
+            <Filter className="w-4 h-4" />
+            Filtros:
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClass}>
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+
+            <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className={selectClass}>
+              {PAYMENT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+
+            <select value={deliveryPersonFilter} onChange={(e) => setDeliveryPersonFilter(e.target.value)} className={selectClass}>
+              <option value="">Todos os entregadores</option>
+              {allDeliveryPersons.filter((dp: any) => dp.is_active).map((dp: any) => (
+                <option key={dp.id} value={dp.id}>{dp.name}</option>
+              ))}
+            </select>
+
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                Limpar filtros ({activeFiltersCount})
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Active filter badges */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {statusFilter && (
+              <Badge className="bg-blue-100 text-blue-700">
+                Status: {STATUS_LABELS[statusFilter]}
+                <button onClick={() => setStatusFilter('')} className="ml-1.5 hover:text-blue-900"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {paymentFilter && (
+              <Badge className="bg-purple-100 text-purple-700">
+                Pagamento: {PAYMENT_LABELS[paymentFilter]}
+                <button onClick={() => setPaymentFilter('')} className="ml-1.5 hover:text-purple-900"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {deliveryPersonFilter && (
+              <Badge className="bg-green-100 text-green-700">
+                Entregador: {allDeliveryPersons.find((dp: any) => dp.id === deliveryPersonFilter)?.name || '...'}
+                <button onClick={() => setDeliveryPersonFilter('')} className="ml-1.5 hover:text-green-900"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between">
-              <div
-                className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}
-              >
-                <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-              </div>
+            <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
+              <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
             </div>
             <p className="mt-3 text-2xl font-bold text-gray-900">{stat.value}</p>
             <p className="text-sm text-gray-500">{stat.label}</p>
+            {'sub' in stat && stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Over Time */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita ao Longo do Tempo</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita por Dia</h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.revenueData}>
-                <defs>
-                  <linearGradient id="colorRevenueReport" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#FF6B35" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-                <YAxis
-                  stroke="#9ca3af"
-                  fontSize={12}
-                  tickFormatter={(value) => formatShortCurrency(value)}
-                />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [formatCurrency(value), 'Receita']}
-                  labelFormatter={(label) => `Data: ${label}`}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#FF6B35"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorRevenueReport)"
-                  name="Receita"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="colorRevenueR" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#FF6B35" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(v) => `R$${v}`} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatPrice(value), 'Receita']} />
+                  <Area type="monotone" dataKey="revenue" stroke="#FF6B35" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenueR)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+            )}
           </div>
         </div>
 
-        {/* Orders Per Day */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Dia</h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.ordersData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-                <YAxis stroke="#9ca3af" fontSize={12} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [value, 'Pedidos']}
-                  labelFormatter={(label) => `Data: ${label}`}
-                />
-                <Bar dataKey="pedidos" fill="#FF6B35" radius={[6, 6, 0, 0]} name="Pedidos" />
-              </BarChart>
-            </ResponsiveContainer>
+            {ordersChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={ordersChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="pedidos" fill="#FF6B35" radius={[6, 6, 0, 0]} name="Pedidos" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+            )}
           </div>
         </div>
       </div>
@@ -345,91 +381,247 @@ export default function Reports() {
         {/* Top Products */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Produtos Mais Vendidos</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.topProducts} layout="vertical" margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                <XAxis type="number" stroke="#9ca3af" fontSize={12} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  stroke="#9ca3af"
-                  fontSize={11}
-                  width={120}
-                  tick={{ fill: '#4b5563' }}
-                />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [value, 'Vendas']}
-                />
-                <Bar dataKey="vendas" fill="#FF6B35" radius={[0, 6, 6, 0]} name="Vendas" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {topProducts.length > 0 ? (
+            <div className="space-y-3">
+              {topProducts.map((p: any, i: number) => {
+                const pct = totalProductQty > 0 ? ((p.quantity / totalProductQty) * 100).toFixed(1) : '0';
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                        <p className="text-sm font-semibold text-gray-900 ml-2 shrink-0">{formatPrice(p.revenue)}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <div className="flex-1 bg-gray-100 rounded-full h-1.5 mr-3">
+                          <div className="bg-primary rounded-full h-1.5" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs text-gray-500 shrink-0">{p.quantity} un ({pct}%)</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">Sem vendas no periodo</p>
+          )}
         </div>
 
-        {/* Payment Methods Distribution */}
+        {/* Payment Methods */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Formas de Pagamento</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.paymentMethods}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {data.paymentMethods.map((_, index) => (
-                    <Cell key={`cell-payment-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [`${value}%`, 'Participacao']}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {byPayment.length > 0 ? (
+            <>
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={byPayment} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} dataKey="count" nameKey="name">
+                      {byPayment.map((_: any, index: number) => (
+                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value} pedido(s)`, name]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-2 space-y-2">
+                {byPayment.map((p: any, i: number) => {
+                  const pct = totalPaymentCount > 0 ? ((p.count / totalPaymentCount) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-gray-700">{p.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-medium text-gray-900">{formatPrice(p.revenue)}</span>
+                        <span className="text-gray-400 ml-2">({pct}%)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">Sem dados</p>
+          )}
         </div>
 
-        {/* Orders by Status */}
+        {/* Order Status Breakdown */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Status</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.orderStatuses}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {data.orderStatuses.map((_, index) => (
-                    <Cell key={`cell-status-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [`${value}%`, 'Participacao']}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {byStatus.length > 0 ? (
+            <div className="space-y-3">
+              {byStatus.map((s: any, i: number) => {
+                const pct = totalOrders > 0 ? ((s.count / totalOrders) * 100).toFixed(1) : '0';
+                return (
+                  <div key={i}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-gray-700 font-medium">{s.name}</span>
+                      <span className="text-gray-500">{s.count} ({pct}%)</span>
+                    </div>
+                    <div className="bg-gray-100 rounded-full h-2">
+                      <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 text-right">{formatPrice(s.revenue)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">Sem dados</p>
+          )}
         </div>
       </div>
+
+      {/* Delivery Person Stats */}
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Truck className="w-5 h-5 text-primary" />
+            Entregas por Entregador
+          </h3>
+          <p className="text-sm text-gray-500 mt-0.5">Quantidade, valor, porcentagem e tempo medio de entrega no periodo</p>
+        </div>
+        {deliveryPersons.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Entregador</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Veiculo</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Entregas</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">% do Total</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Valor Total</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tempo Medio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {deliveryPersons.map((dp: any) => {
+                  const pct = totalDPDeliveries > 0 ? ((dp.total_deliveries / totalDPDeliveries) * 100).toFixed(1) : '0';
+                  return (
+                    <tr key={dp.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="text-sm font-medium text-gray-900">{dp.name}</p>
+                        <p className="text-xs text-gray-400">{dp.phone}</p>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{dp.vehicle || '-'}</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className="text-sm font-bold text-gray-900">{dp.total_deliveries}</span>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                            <div className="bg-primary rounded-full h-1.5" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-sm font-medium text-gray-600">{pct}%</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <span className="text-sm font-semibold text-gray-900">{formatPrice(dp.total_value)}</span>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                          <Timer className="w-3.5 h-3.5 text-gray-400" />
+                          {dp.avg_delivery_minutes > 0 ? `${dp.avg_delivery_minutes}min` : '-'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Totals row */}
+                <tr className="bg-gray-50 font-semibold">
+                  <td className="px-5 py-3 text-sm text-gray-900" colSpan={2}>Total</td>
+                  <td className="px-5 py-3 text-center text-sm text-gray-900">{totalDPDeliveries}</td>
+                  <td className="px-5 py-3 text-center text-sm text-gray-900">100%</td>
+                  <td className="px-5 py-3 text-right text-sm text-gray-900">
+                    {formatPrice(deliveryPersons.reduce((s: number, d: any) => s + d.total_value, 0))}
+                  </td>
+                  <td className="px-5 py-3" />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-sm text-gray-400">Nenhuma entrega no periodo selecionado</div>
+        )}
+      </Card>
+
+      {/* Closing Summary */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-green-600" />
+          Fechamento do Periodo
+        </h3>
+        <p className="text-sm text-gray-500 mb-5">Detalhamento financeiro completo</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Financial */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Resumo Financeiro</h4>
+            <div className="space-y-2">
+              {[
+                { label: 'Receita Bruta (s/ cancelados)', value: formatPrice(totalRevenue), color: 'text-gray-900' },
+                { label: 'Taxa de Entrega', value: formatPrice(totalDeliveryFee), color: 'text-gray-900' },
+                { label: 'Descontos', value: `-${formatPrice(totalDiscount)}`, color: 'text-red-600' },
+                { label: 'Total de Pedidos', value: String(totalOrders), color: 'text-gray-900' },
+                { label: 'Pedidos Validos', value: `${validOrders} (${totalOrders > 0 ? ((validOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-gray-900' },
+                { label: 'Entregues', value: `${deliveredOrders} (${totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-green-700' },
+                { label: 'Cancelados', value: `${cancelledOrders} (${cancellationRate}%)`, color: 'text-red-600' },
+                { label: 'Ticket Medio', value: formatPrice(avgTicket), color: 'text-gray-900' },
+              ].map((row, i) => (
+                <div key={i} className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">{row.label}</span>
+                  <span className={`text-sm font-semibold ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* By Payment */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Por Forma de Pagamento</h4>
+            <div className="space-y-2">
+              {byPayment.map((p: any, i: number) => {
+                const pct = totalPaymentCount > 0 ? ((p.count / totalPaymentCount) * 100).toFixed(1) : '0';
+                return (
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-600">{p.name}</span>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-gray-900">{formatPrice(p.revenue)}</span>
+                      <span className="text-xs text-gray-400 ml-2">{p.count} · {pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {byPayment.length === 0 && <p className="text-sm text-gray-400 py-4 text-center">Sem dados</p>}
+            </div>
+          </div>
+
+          {/* By Status */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Por Status</h4>
+            <div className="space-y-2">
+              {byStatus.map((s: any, i: number) => {
+                const pct = totalOrders > 0 ? ((s.count / totalOrders) * 100).toFixed(1) : '0';
+                return (
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-600">{s.name}</span>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-gray-900">{formatPrice(s.revenue)}</span>
+                      <span className="text-xs text-gray-400 ml-2">{s.count} · {pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {byStatus.length === 0 && <p className="text-sm text-gray-400 py-4 text-center">Sem dados</p>}
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

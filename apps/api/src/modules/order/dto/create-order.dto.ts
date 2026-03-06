@@ -34,6 +34,12 @@ export class OrderItemDto {
   @IsUUID()
   variation_id?: string;
 
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  variation_ids?: string[];
+
   @ApiProperty({ example: 1 })
   @IsNumber()
   @Min(1)
@@ -103,6 +109,12 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   coupon_code?: string;
+
+  @ApiPropertyOptional({ description: 'Amount the customer has (for cash change calculation)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  change_for?: number;
 
   @ApiPropertyOptional()
   @IsOptional()

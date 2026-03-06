@@ -1,13 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { OrderStatus, PaymentStatus, ORDER_STATUS_TRANSITIONS } from '@menufacil/shared';
+import { OrderStatus, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
 import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
 import { Product } from '../product/entities/product.entity';
 import { ProductVariation } from '../product/entities/product-variation.entity';
+import { CustomerAddress } from '../customer/entities/customer-address.entity';
 import { DeliveryZoneService } from '../delivery-zone/delivery-zone.service';
+import { CouponService } from '../coupon/coupon.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 
 @Injectable()
 export class OrderService {
@@ -17,7 +20,11 @@ export class OrderService {
     private readonly productRepo: Repository<Product>,
     @InjectRepository(ProductVariation)
     private readonly variationRepo: Repository<ProductVariation>,
+    @InjectRepository(CustomerAddress)
+    private readonly customerAddressRepo: Repository<CustomerAddress>,
     private readonly deliveryZoneService: DeliveryZoneService,
+    private readonly couponService: CouponService,
+    private readonly loyaltyService: LoyaltyService,
   ) {}
 
   async create(dto: CreateOrderDto, customerId: string, tenantId: string): Promise<Order> {
@@ -30,20 +37,50 @@ export class OrderService {
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // Resolve variations if any
-    const variationIds = dto.items.map((i) => i.variation_id).filter(Boolean) as string[];
+    // Resolve variations if any (support both single variation_id and multiple variation_ids)
+    const allVariationIds = new Set<string>();
+    for (const item of dto.items) {
+      if (item.variation_ids && item.variation_ids.length > 0) {
+        item.variation_ids.forEach((id) => allVariationIds.add(id));
+      } else if (item.variation_id) {
+        allVariationIds.add(item.variation_id);
+      }
+    }
     let variationMap = new Map<string, ProductVariation>();
-    if (variationIds.length > 0) {
+    if (allVariationIds.size > 0) {
       const variations = await this.variationRepo.find({
-        where: { id: In(variationIds) },
+        where: { id: In([...allVariationIds]) },
       });
       variationMap = new Map(variations.map((v) => [v.id, v]));
     }
 
+    // Resolve address: either from inline dto.address or from saved address_id
+    let resolvedAddress = dto.address
+      ? { ...dto.address }
+      : null;
+
+    if (!resolvedAddress && dto.address_id) {
+      const savedAddress = await this.customerAddressRepo.findOne({
+        where: { id: dto.address_id, customer_id: customerId },
+      });
+      if (savedAddress) {
+        resolvedAddress = {
+          label: savedAddress.label,
+          street: savedAddress.street,
+          number: savedAddress.number,
+          complement: savedAddress.complement,
+          neighborhood: savedAddress.neighborhood,
+          city: savedAddress.city,
+          state: savedAddress.state,
+          zip_code: savedAddress.zipcode,
+        };
+      }
+    }
+
     // Calculate delivery fee from neighborhood
     let deliveryFee = 0;
-    if (dto.address?.neighborhood) {
-      const result = await this.deliveryZoneService.findByNeighborhood(dto.address.neighborhood, tenantId);
+    if (resolvedAddress?.neighborhood) {
+      const result = await this.deliveryZoneService.findByNeighborhood(resolvedAddress.neighborhood, tenantId);
       if (result.zone) {
         deliveryFee = result.fee;
       }
@@ -56,15 +93,27 @@ export class OrderService {
         throw new BadRequestException(`Produto nao encontrado: ${item.product_id}`);
       }
 
-      const variation = item.variation_id ? variationMap.get(item.variation_id) : null;
-      const unitPrice = variation ? Number(variation.price) : Number(product.base_price);
-      const productName = product.name;
-      const variationName = variation ? variation.name : null;
+      // Support multiple variations (e.g. pizza with 3 flavors)
+      const hasMultipleVariations = item.variation_ids && item.variation_ids.length > 1;
+      let unitPrice: number;
+      let variationName: string | null;
+
+      if (hasMultipleVariations) {
+        const resolvedVariations = item.variation_ids!
+          .map((vid) => variationMap.get(vid))
+          .filter(Boolean) as ProductVariation[];
+        unitPrice = resolvedVariations.reduce((sum, v) => sum + Number(v.price), 0);
+        variationName = resolvedVariations.map((v) => v.name).join(' / ');
+      } else {
+        const variation = item.variation_id ? variationMap.get(item.variation_id) : null;
+        unitPrice = variation ? Number(variation.price) : Number(product.base_price);
+        variationName = variation ? variation.name : null;
+      }
 
       return {
         product_id: item.product_id,
         variation_id: item.variation_id || null,
-        product_name: productName,
+        product_name: product.name,
         variation_name: variationName,
         unit_price: unitPrice,
         quantity: item.quantity,
@@ -80,7 +129,35 @@ export class OrderService {
       return sum + (item.unit_price + extrasTotal) * item.quantity;
     }, 0);
 
-    const total = subtotal + deliveryFee;
+    // Validate and apply coupon if provided (regular coupon or loyalty redemption)
+    let discount = 0;
+    let couponCode: string | undefined;
+    if (dto.coupon_code) {
+      const code = dto.coupon_code.toUpperCase();
+
+      // First try loyalty redemption coupon
+      const loyaltyResult = await this.loyaltyService.validateRedemptionCoupon(code, tenantId);
+
+      if (loyaltyResult.valid && loyaltyResult.redemption) {
+        const reward = loyaltyResult.redemption.reward;
+        if (reward.reward_type === RewardType.DISCOUNT_PERCENT) {
+          discount = (subtotal * Number(reward.reward_value)) / 100;
+        } else if (reward.reward_type === RewardType.DISCOUNT_FIXED || reward.reward_type === RewardType.FREE_PRODUCT) {
+          discount = Number(reward.reward_value);
+        }
+        discount = Math.min(discount, subtotal);
+        couponCode = code;
+        await this.loyaltyService.markRedemptionUsed(code, tenantId);
+      } else {
+        // Fallback to regular coupon
+        const couponResult = await this.couponService.validate(code, subtotal, tenantId);
+        discount = couponResult.discount;
+        couponCode = code;
+        await this.couponService.use(couponResult.coupon.id);
+      }
+    }
+
+    const total = subtotal + deliveryFee - discount;
 
     const order = this.orderRepository.create({
       tenant_id: tenantId,
@@ -91,9 +168,10 @@ export class OrderService {
       payment_status: PaymentStatus.PENDING,
       subtotal,
       delivery_fee: deliveryFee,
-      discount: 0,
+      discount,
       total,
-      address_snapshot: dto.address as any,
+      address_snapshot: resolvedAddress as any,
+      change_for: dto.change_for || undefined,
       notes: dto.notes,
       items: orderItems as any,
     });
@@ -118,7 +196,7 @@ export class OrderService {
     return order;
   }
 
-  async updateStatus(id: string, status: OrderStatus, tenantId: string): Promise<Order> {
+  async updateStatus(id: string, status: OrderStatus, tenantId: string, deliveryPersonId?: string): Promise<Order> {
     const order = await this.findById(id, tenantId);
 
     const allowedTransitions = ORDER_STATUS_TRANSITIONS[order.status] || [];
@@ -128,7 +206,109 @@ export class OrderService {
       );
     }
 
-    await this.orderRepository.updateStatus(id, tenantId, { status });
+    const now = new Date();
+    const timestampMap: Partial<Record<OrderStatus, string>> = {
+      [OrderStatus.CONFIRMED]: 'confirmed_at',
+      [OrderStatus.PREPARING]: 'preparing_at',
+      [OrderStatus.READY]: 'ready_at',
+      [OrderStatus.OUT_FOR_DELIVERY]: 'out_for_delivery_at',
+      [OrderStatus.DELIVERED]: 'delivered_at',
+      [OrderStatus.CANCELLED]: 'cancelled_at',
+    };
+
+    const tsField = timestampMap[status];
+    const updateData: any = { status };
+    if (tsField) {
+      updateData[tsField] = now;
+    }
+    if (deliveryPersonId) {
+      updateData.delivery_person_id = deliveryPersonId;
+    }
+
+    await this.orderRepository.updateStatus(id, tenantId, updateData);
+
+    // Award loyalty points when order is delivered (1 point per R$1)
+    if (status === OrderStatus.DELIVERED) {
+      const points = Math.floor(Number(order.total));
+      if (points > 0) {
+        await this.loyaltyService.addPoints(order.customer_id, points);
+      }
+    }
+
     return this.findById(id, tenantId);
+  }
+
+  async getPerformanceStats(tenantId: string, days = 7) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const completedOrders = await this.orderRepository.getCompletedOrders(tenantId, since);
+
+    const calcDiffMin = (start: Date | null, end: Date | null): number | null => {
+      if (!start || !end) return null;
+      const diff = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000);
+      return diff >= 0 ? diff : null;
+    };
+
+    const timings = completedOrders.map((o) => ({
+      id: o.id,
+      order_number: o.order_number,
+      created_at: o.created_at,
+      total_time: calcDiffMin(o.created_at, o.delivered_at),
+      wait_time: calcDiffMin(o.created_at, o.confirmed_at),
+      prep_time: calcDiffMin(o.preparing_at, o.ready_at),
+      delivery_time: calcDiffMin(o.out_for_delivery_at, o.delivered_at),
+    }));
+
+    const validTotals = timings.filter((t) => t.total_time !== null).map((t) => t.total_time!);
+    const validPrep = timings.filter((t) => t.prep_time !== null).map((t) => t.prep_time!);
+    const validDelivery = timings.filter((t) => t.delivery_time !== null).map((t) => t.delivery_time!);
+    const validWait = timings.filter((t) => t.wait_time !== null).map((t) => t.wait_time!);
+
+    const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+    const fastest = (arr: number[]) => arr.length > 0 ? Math.min(...arr) : 0;
+    const slowest = (arr: number[]) => arr.length > 0 ? Math.max(...arr) : 0;
+
+    // Ranking: top 10 fastest and slowest
+    const sorted = [...timings].filter((t) => t.total_time !== null).sort((a, b) => a.total_time! - b.total_time!);
+
+    return {
+      period_days: days,
+      total_completed: completedOrders.length,
+      avg_total_time: avg(validTotals),
+      avg_wait_time: avg(validWait),
+      avg_prep_time: avg(validPrep),
+      avg_delivery_time: avg(validDelivery),
+      fastest_order: fastest(validTotals),
+      slowest_order: slowest(validTotals),
+      ranking_fastest: sorted.slice(0, 10).map((t) => ({
+        order_number: t.order_number,
+        total_time: t.total_time,
+        created_at: t.created_at,
+      })),
+      ranking_slowest: sorted.slice(-10).reverse().map((t) => ({
+        order_number: t.order_number,
+        total_time: t.total_time,
+        created_at: t.created_at,
+      })),
+    };
+  }
+
+  async assignDeliveryPerson(orderId: string, deliveryPersonId: string | null, tenantId: string): Promise<Order> {
+    await this.findById(orderId, tenantId);
+    await this.orderRepository.updateStatus(orderId, tenantId, { delivery_person_id: deliveryPersonId } as any);
+    return this.findById(orderId, tenantId);
+  }
+
+  async getDashboard(
+    tenantId: string,
+    since: string,
+    until: string,
+    filters: { status?: string; payment_method?: string; delivery_person_id?: string } = {},
+  ) {
+    const sinceDate = new Date(since);
+    const untilDate = new Date(until);
+    untilDate.setHours(23, 59, 59, 999);
+    return this.orderRepository.getDashboardData(tenantId, sinceDate, untilDate, filters);
   }
 }

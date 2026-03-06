@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart,
   Clock,
@@ -8,10 +8,13 @@ import {
   Truck,
   Package,
   XCircle,
+  Timer,
+  X,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
   useUpdateOrderStatusMutation,
+  useGetDeliveryPersonsQuery,
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
@@ -90,13 +93,46 @@ const STATUS_TABS = [
   { key: 'cancelled', label: 'Cancelados' },
 ];
 
+function getElapsedTime(order: any): string | null {
+  if (order.status === 'delivered' && order.delivered_at && order.created_at) {
+    const diff = Math.round((new Date(order.delivered_at).getTime() - new Date(order.created_at).getTime()) / 60000);
+    if (diff < 60) return `${diff}min`;
+    return `${Math.floor(diff / 60)}h ${diff % 60}min`;
+  }
+  if (order.status === 'cancelled') return null;
+  if (!order.created_at) return null;
+  const diff = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `${diff}min`;
+  return `${Math.floor(diff / 60)}h ${diff % 60}min`;
+}
+
+function getTimeColor(order: any): string {
+  if (order.status === 'delivered') return 'text-green-600';
+  if (!order.created_at) return 'text-gray-400';
+  const diff = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
+  if (diff >= 30) return 'text-red-600';
+  if (diff >= 15) return 'text-amber-600';
+  return 'text-gray-500';
+}
+
 export default function OrderList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [, setTick] = useState(0);
+  const [deliveryModal, setDeliveryModal] = useState<{ orderId: string; currentStatus: string } | null>(null);
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState('');
 
+  const navigate = useNavigate();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+  const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleRefetch = useCallback(() => {
     refetch();
@@ -119,7 +155,7 @@ export default function OrderList() {
       result = result.filter(
         (o: any) =>
           o.customer?.name?.toLowerCase().includes(term) ||
-          String(o.number)?.includes(term),
+          String(o.order_number)?.includes(term),
       );
     }
 
@@ -129,12 +165,39 @@ export default function OrderList() {
   const handleAdvanceStatus = async (orderId: string, currentStatus: string) => {
     const nextStatus = STATUS_FLOW[currentStatus];
     if (!nextStatus) return;
+
+    // If pending, navigate to detail to review the order first
+    if (currentStatus === 'pending') {
+      navigate(`/admin/orders/${orderId}`);
+      return;
+    }
+
+    // If ready -> out_for_delivery, require delivery person
+    if (nextStatus === 'out_for_delivery') {
+      setSelectedDeliveryPerson('');
+      setDeliveryModal({ orderId, currentStatus });
+      return;
+    }
+
     await updateStatus({ id: orderId, status: nextStatus }).unwrap();
+  };
+
+  const handleConfirmDelivery = async () => {
+    if (!deliveryModal || !selectedDeliveryPerson) return;
+    await updateStatus({
+      id: deliveryModal.orderId,
+      status: 'out_for_delivery',
+      delivery_person_id: selectedDeliveryPerson,
+    }).unwrap();
+    setDeliveryModal(null);
+    setSelectedDeliveryPerson('');
   };
 
   const handleCancel = async (orderId: string) => {
     await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
   };
+
+  const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
 
   if (isLoading) return <PageSpinner />;
 
@@ -188,6 +251,9 @@ export default function OrderList() {
                     Status
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Tempo
+                  </th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Data
                   </th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -207,7 +273,7 @@ export default function OrderList() {
                           to={`/admin/orders/${order.id}`}
                           className="font-medium text-primary hover:underline"
                         >
-                          #{order.number}
+                          #{order.order_number}
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-700">
@@ -225,6 +291,19 @@ export default function OrderList() {
                           <span className="ml-1">{config.label}</span>
                         </Badge>
                       </td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const elapsed = getElapsedTime(order);
+                          if (!elapsed) return <span className="text-xs text-gray-400">-</span>;
+                          const color = getTimeColor(order);
+                          return (
+                            <span className={`text-xs font-semibold flex items-center gap-1 ${color}`}>
+                              <Timer className="w-3 h-3" />
+                              {elapsed}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {order.created_at
                           ? new Date(order.created_at).toLocaleDateString('pt-BR', {
@@ -241,12 +320,21 @@ export default function OrderList() {
                           {nextStatus && order.status !== 'cancelled' && (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant={order.status === 'pending' ? 'outline' : 'outline'}
                               onClick={() => handleAdvanceStatus(order.id, order.status)}
                               disabled={isUpdating}
                             >
-                              {STATUS_CONFIG[nextStatus]?.icon}
-                              <span className="ml-1">{STATUS_CONFIG[nextStatus]?.label}</span>
+                              {order.status === 'pending' ? (
+                                <>
+                                  <ShoppingCart className="w-3 h-3" />
+                                  <span className="ml-1">Ver pedido</span>
+                                </>
+                              ) : (
+                                <>
+                                  {STATUS_CONFIG[nextStatus]?.icon}
+                                  <span className="ml-1">{STATUS_CONFIG[nextStatus]?.label}</span>
+                                </>
+                              )}
                             </Button>
                           )}
                           {order.status !== 'cancelled' && order.status !== 'delivered' && (
@@ -266,6 +354,97 @@ export default function OrderList() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Selecionar Entregador */}
+      {deliveryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDeliveryModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-gray-900">Selecionar Entregador</h3>
+              </div>
+              <button
+                onClick={() => setDeliveryModal(null)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-gray-500 mb-4">
+                Selecione o entregador antes de enviar o pedido para entrega.
+              </p>
+
+              {activeDeliveryPersons.length === 0 ? (
+                <div className="text-center py-6">
+                  <Truck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Nenhum entregador ativo cadastrado.</p>
+                  <Link
+                    to="/admin/delivery-persons"
+                    className="text-sm text-primary hover:underline mt-1 inline-block"
+                  >
+                    Cadastrar entregador
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {activeDeliveryPersons.map((person: any) => (
+                    <label
+                      key={person.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        selectedDeliveryPerson === person.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-100 hover:border-gray-200'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="delivery_person"
+                        value={person.id}
+                        checked={selectedDeliveryPerson === person.id}
+                        onChange={() => setSelectedDeliveryPerson(person.id)}
+                        className="sr-only"
+                      />
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{person.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {person.phone}
+                          {person.vehicle && ` · ${person.vehicle}`}
+                        </p>
+                      </div>
+                      {selectedDeliveryPerson === person.id && (
+                        <Check className="w-5 h-5 text-primary" />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <Button variant="outline" onClick={() => setDeliveryModal(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmDelivery}
+                disabled={!selectedDeliveryPerson || isUpdating}
+                loading={isUpdating}
+              >
+                <Truck className="w-4 h-4" />
+                <span className="ml-1">Enviar para entrega</span>
+              </Button>
+            </div>
           </div>
         </div>
       )}
