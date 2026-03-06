@@ -4,6 +4,8 @@ import { axiosBaseQuery } from './axiosBaseQuery';
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: axiosBaseQuery,
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
   tagTypes: [
     'Categories',
     'Products',
@@ -25,6 +27,10 @@ export const baseApi = createApi({
     'Roles',
     'LoyaltyRewards',
     'LoyaltyRedemptions',
+    'Tables',
+    'TableSessions',
+    'Reservations',
+    'FloorPlans',
   ],
   endpoints: () => ({}),
 });

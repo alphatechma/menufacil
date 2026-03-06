@@ -17,6 +17,12 @@ import {
   Trash2,
   Tag,
   Check,
+  Truck,
+  ShoppingBag,
+  UtensilsCrossed,
+  Mail,
+  Lock,
+  ShoppingCart,
 } from 'lucide-react';
 import {
   useCustomerLoginMutation,
@@ -26,10 +32,12 @@ import {
   useCreateOrderMutation,
   useGetPublicDeliveryZonesQuery,
   useLazyValidateCouponQuery,
+  useGetCustomerOrdersQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customerLoginSuccess } from '@/store/slices/customerAuthSlice';
-import { clearCart } from '@/store/slices/cartSlice';
+import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId } from '@/store/slices/cartSlice';
+import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
 import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
 
@@ -86,6 +94,21 @@ export default function Checkout() {
   const cartItems = useAppSelector((state) => state.cart.items);
   const customerAuth = useAppSelector((state) => state.customerAuth);
   const tenant = useAppSelector((state) => state.tenant.tenant);
+  const orderType = useAppSelector(selectOrderType);
+  const tableId = useAppSelector(selectTableId);
+  const tableSessionId = useAppSelector(selectTableSessionId);
+
+  // Determine available order modes from tenant
+  const orderModes = tenant?.order_modes || { delivery: true, pickup: false, dine_in: false };
+  const availableModes: { key: OrderMode; label: string; icon: typeof Truck }[] = [
+    ...(orderModes.delivery ? [{ key: 'delivery' as OrderMode, label: 'Entrega', icon: Truck }] : []),
+    ...(orderModes.pickup ? [{ key: 'pickup' as OrderMode, label: 'Retirada', icon: ShoppingBag }] : []),
+    ...(orderModes.dine_in && tableId ? [{ key: 'dine_in' as OrderMode, label: 'Mesa', icon: UtensilsCrossed }] : []),
+  ];
+
+  // Auto-select if only one mode is available
+  const effectiveOrderType = availableModes.length === 1 ? availableModes[0].key : orderType;
+  const isDelivery = effectiveOrderType === 'delivery';
 
   const [customerLogin, { isLoading: authLoading }] = useCustomerLoginMutation();
   const { data: customerProfile } = useGetCustomerProfileQuery(
@@ -102,9 +125,18 @@ export default function Checkout() {
   const [validateCoupon] = useLazyValidateCouponQuery();
 
   // Login form state
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('register');
   const [loginPhone, setLoginPhone] = useState('');
   const [loginName, setLoginName] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Previous orders
+  const { data: previousOrders } = useGetCustomerOrdersQuery(
+    { slug: slug! },
+    { skip: !slug || !customerAuth.isAuthenticated },
+  );
 
   // Address state
   const [address, setAddress] = useState<Address>({
@@ -145,7 +177,8 @@ export default function Checkout() {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
     return sum + (item.unit_price + extrasTotal) * item.quantity;
   }, 0);
-  const total = subtotal + deliveryFee - couponDiscount;
+  const effectiveDeliveryFee = isDelivery ? deliveryFee : 0;
+  const total = subtotal + effectiveDeliveryFee - couponDiscount;
 
   // Get item total
   const getItemTotal = (item: typeof cartItems[0]) => {
@@ -335,17 +368,27 @@ export default function Checkout() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginPhone.trim() || !loginName.trim()) return;
     setAuthError(null);
     try {
-      const result = await customerLogin({
-        phone: unmaskDigits(loginPhone),
-        name: loginName.trim(),
-        slug: slug!,
-      }).unwrap();
-
-      // Cookie is set by backend (httpOnly)
-      dispatch(customerLoginSuccess(result.customer));
+      if (authTab === 'login') {
+        // Email + password login
+        if (!loginEmail.trim() || !loginPassword.trim()) return;
+        const result = await customerLogin({
+          email: loginEmail.trim(),
+          password: loginPassword,
+          slug: slug!,
+        }).unwrap();
+        dispatch(customerLoginSuccess(result.customer));
+      } else {
+        // Quick register by phone + name (auto-creates)
+        if (!loginPhone.trim() || !loginName.trim()) return;
+        const result = await customerLogin({
+          phone: unmaskDigits(loginPhone),
+          name: loginName.trim(),
+          slug: slug!,
+        }).unwrap();
+        dispatch(customerLoginSuccess(result.customer));
+      }
     } catch (err: any) {
       setAuthError(err?.data?.message || 'Erro ao entrar. Tente novamente.');
     }
@@ -355,14 +398,16 @@ export default function Checkout() {
     e.preventDefault();
     setError(null);
 
-    if (!address.street || !address.number || !address.neighborhood || !address.city) {
-      setError('Preencha todos os campos obrigatorios do endereco.');
-      return;
-    }
+    if (isDelivery) {
+      if (!address.street || !address.number || !address.neighborhood || !address.city) {
+        setError('Preencha todos os campos obrigatorios do endereco.');
+        return;
+      }
 
-    if (zoneNotFound) {
-      setError('O bairro informado nao esta em nenhuma zona de entrega. Verifique o nome do bairro.');
-      return;
+      if (zoneNotFound) {
+        setError('O bairro informado nao esta em nenhuma zona de entrega. Verifique o nome do bairro.');
+        return;
+      }
     }
 
     if (cartItems.length === 0) {
@@ -400,11 +445,14 @@ export default function Checkout() {
           quantity: item.quantity,
           extras: item.extras,
         })),
-        address_id: selectedAddressId,
-        address: selectedAddressId ? undefined : address,
+        order_type: effectiveOrderType,
+        address_id: isDelivery ? selectedAddressId : undefined,
+        address: isDelivery ? (selectedAddressId ? undefined : address) : undefined,
         payment_method: paymentMethod,
         coupon_code: appliedCoupon || undefined,
         change_for: changeFor,
+        table_id: tableId || undefined,
+        table_session_id: tableSessionId || undefined,
       };
 
       const result = await createOrder({ slug: slug!, data: orderData }).unwrap();
@@ -463,6 +511,10 @@ export default function Checkout() {
 
   // Show login screen if not authenticated
   if (!customerAuth.isAuthenticated) {
+    const isLoginDisabled = authTab === 'login'
+      ? authLoading || !loginEmail.trim() || !loginPassword.trim()
+      : authLoading || !loginPhone.trim() || !loginName.trim();
+
     return (
       <div className="pb-6">
         {/* Header */}
@@ -483,14 +535,40 @@ export default function Checkout() {
                 className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center"
                 style={{ backgroundColor: 'var(--tenant-primary-light)' }}
               >
-                <Phone className="w-8 h-8 text-white" />
+                <User className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">
-                Informe seu telefone
+                Identifique-se para continuar
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                Para finalizar o pedido, precisamos do seu numero
+                Entre com sua conta ou cadastre-se rapidamente
               </p>
+            </div>
+
+            {/* Auth Tabs */}
+            <div className="flex rounded-xl bg-gray-100 p-1 mb-5">
+              <button
+                type="button"
+                onClick={() => { setAuthTab('register'); setAuthError(null); }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  authTab === 'register'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500'
+                }`}
+              >
+                Cadastro rapido
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('login'); setAuthError(null); }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  authTab === 'login'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500'
+                }`}
+              >
+                Ja tenho conta
+              </button>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
@@ -501,44 +579,89 @@ export default function Checkout() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Telefone <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={loginPhone}
-                    onChange={(e) => setLoginPhone(maskPhone(e.target.value))}
-                    placeholder="(11) 99999-1234"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                    autoFocus
-                    required
-                  />
-                </div>
-              </div>
+              {authTab === 'register' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Seu nome <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={loginName}
+                        onChange={(e) => setLoginName(e.target.value)}
+                        placeholder="Como podemos te chamar?"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Seu nome <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={loginName}
-                    onChange={(e) => setLoginName(e.target.value)}
-                    placeholder="Como podemos te chamar?"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                    required
-                  />
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Telefone <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={loginPhone}
+                        onChange={(e) => setLoginPhone(maskPhone(e.target.value))}
+                        placeholder="(11) 99999-1234"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    Voce podera cadastrar uma senha depois na sua conta
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Senha <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Sua senha"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <button
                 type="submit"
-                disabled={authLoading || !loginPhone.trim() || !loginName.trim()}
+                disabled={isLoginDisabled}
                 className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
@@ -547,8 +670,10 @@ export default function Checkout() {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Entrando...
                   </>
-                ) : (
+                ) : authTab === 'register' ? (
                   'Continuar'
+                ) : (
+                  'Entrar'
                 )}
               </button>
             </form>
@@ -598,8 +723,101 @@ export default function Checkout() {
           </div>
         )}
 
-        {/* Address Section */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        {/* Order Mode Selection */}
+        {availableModes.length > 1 && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-bold text-gray-900 mb-3">Como deseja receber?</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {availableModes.map((mode) => {
+                const Icon = mode.icon;
+                const isSelected = effectiveOrderType === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    onClick={() => dispatch(setOrderType(mode.key))}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
+                        : 'border-gray-100 hover:border-gray-200'
+                    }`}
+                  >
+                    <Icon
+                      className="w-6 h-6"
+                      style={{ color: isSelected ? 'var(--tenant-primary)' : '#9CA3AF' }}
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        isSelected ? 'text-gray-900' : 'text-gray-500'
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Pickup info */}
+        {effectiveOrderType === 'pickup' && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <ShoppingBag className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              <h3 className="font-bold text-gray-900">Retirada no balcao</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Retire seu pedido em: <span className="font-medium text-gray-900">{tenant?.address || 'Endereco do restaurante'}</span>
+            </p>
+          </section>
+        )}
+
+        {/* Dine-in info */}
+        {effectiveOrderType === 'dine_in' && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <UtensilsCrossed className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              <h3 className="font-bold text-gray-900">Consumo no local</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Seu pedido sera servido na mesa
+            </p>
+          </section>
+        )}
+
+        {/* Previous Orders */}
+        {previousOrders && previousOrders.length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <ShoppingCart className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              <h3 className="font-bold text-gray-900">Pedidos anteriores</h3>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {previousOrders.slice(0, 5).map((order: any) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {order.items?.map((i: any) => `${i.quantity}x ${i.product?.name || i.product_name || 'Produto'}`).join(', ') || `Pedido #${order.id.slice(-6)}`}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 ml-3 whitespace-nowrap">
+                    {formatPrice(Number(order.total || 0))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Address Section - only for delivery */}
+        {isDelivery && <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin
@@ -828,7 +1046,7 @@ export default function Checkout() {
               </div>
             </div>
           )}
-        </section>
+        </section>}
 
         {/* Payment Method */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -1068,20 +1286,28 @@ export default function Checkout() {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Taxa de entrega</span>
-              <span>
-                {lookingUpFee ? (
-                  <Loader2 className="w-4 h-4 animate-spin inline" />
-                ) : zoneNotFound && address.neighborhood.trim() ? (
-                  <span className="text-red-500 font-medium text-xs">Bairro nao atendido</span>
-                ) : deliveryFee === 0 ? (
-                  <span className="text-green-600 font-medium">Gratis</span>
-                ) : (
-                  formatPrice(deliveryFee)
-                )}
-              </span>
-            </div>
+            {isDelivery && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Taxa de entrega</span>
+                <span>
+                  {lookingUpFee ? (
+                    <Loader2 className="w-4 h-4 animate-spin inline" />
+                  ) : zoneNotFound && address.neighborhood.trim() ? (
+                    <span className="text-red-500 font-medium text-xs">Bairro nao atendido</span>
+                  ) : deliveryFee === 0 ? (
+                    <span className="text-green-600 font-medium">Gratis</span>
+                  ) : (
+                    formatPrice(deliveryFee)
+                  )}
+                </span>
+              </div>
+            )}
+            {!isDelivery && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>{effectiveOrderType === 'pickup' ? 'Retirada' : 'Mesa'}</span>
+                <span className="text-green-600 font-medium">Sem taxa</span>
+              </div>
+            )}
             {couponDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
                 <span>Desconto ({appliedCoupon})</span>

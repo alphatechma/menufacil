@@ -53,24 +53,24 @@ export default function DeliveryPersonDetail() {
         <div className="space-y-6">
           <Card className="p-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
                 <Truck className="w-7 h-7 text-purple-500" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{person.name}</h2>
-                <Badge className={person.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{person.name}</h2>
+                <Badge className={person.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}>
                   {person.is_active ? 'Ativo' : 'Inativo'}
                 </Badge>
               </div>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Phone className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 {person.phone}
               </div>
               {person.vehicle && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Truck className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Truck className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   {person.vehicle}
                 </div>
               )}
@@ -81,11 +81,11 @@ export default function DeliveryPersonDetail() {
           <div className="grid grid-cols-2 gap-3">
             <Card className="p-4 text-center">
               <p className="text-2xl font-bold text-purple-600">{activeOrders.length}</p>
-              <p className="text-xs text-gray-500 mt-1">Pedidos Ativos</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Pedidos Ativos</p>
             </Card>
             <Card className="p-4 text-center">
               <p className="text-2xl font-bold text-emerald-600">{completedOrders.length}</p>
-              <p className="text-xs text-gray-500 mt-1">Entregas Realizadas</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Entregas Realizadas</p>
             </Card>
           </div>
         </div>
@@ -94,8 +94,8 @@ export default function DeliveryPersonDetail() {
         <div className="lg:col-span-2">
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <ShoppingCart className="w-5 h-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <ShoppingCart className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Pedidos ({allOrders.length})
               </h2>
             </div>
@@ -107,18 +107,18 @@ export default function DeliveryPersonDetail() {
                 description="Este entregador ainda nao possui pedidos atribuidos."
               />
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {allOrders.map((order: any) => {
                   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
                   return (
                     <Link
                       key={order.id}
                       to={`/admin/orders/${order.id}`}
-                      className="flex items-center justify-between py-4 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
+                      className="flex items-center justify-between py-4 hover:bg-gray-50 dark:hover:bg-slate-700 -mx-2 px-2 rounded-lg transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
                             #{order.order_number}
                           </p>
                           <Badge className={config.color}>
@@ -126,7 +126,7 @@ export default function DeliveryPersonDetail() {
                             <span className="ml-1">{config.label}</span>
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                           {order.customer?.name || 'Cliente'}
                           {' - '}
                           {new Date(order.created_at).toLocaleDateString('pt-BR', {
@@ -137,7 +137,7 @@ export default function DeliveryPersonDetail() {
                           })}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 ml-4">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-4">
                         {formatPrice(order.total)}
                       </p>
                     </Link>

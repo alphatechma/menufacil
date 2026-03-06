@@ -168,7 +168,7 @@ export default function DeliveryZoneForm() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
               Bairros <span className="text-red-500 ml-0.5">*</span>
             </label>
             <div className="flex gap-2">
@@ -191,13 +191,13 @@ export default function DeliveryZoneForm() {
                 {neighborhoods.map((name: string, index: number) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium"
                   >
                     {name}
                     <button
                       type="button"
                       onClick={() => removeNeighborhood(index)}
-                      className="ml-0.5 p-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                      className="ml-0.5 p-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>

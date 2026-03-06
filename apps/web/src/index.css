@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #FF6B35;
   --color-primary-dark: #E55A2B;
@@ -19,6 +21,17 @@
   --color-success: #00B894;
   --color-warning: #FFEAA7;
   --color-danger: #E17055;
+
+  /* Dark mode surface colors */
+  --color-surface: #ffffff;
+  --color-surface-dim: #f9fafb;
+  --color-surface-hover: #f3f4f6;
+  --color-surface-border: #e5e7eb;
+  --color-surface-border-light: #f3f4f6;
+  --color-on-surface: #111827;
+  --color-on-surface-secondary: #374151;
+  --color-on-surface-muted: #6b7280;
+  --color-on-surface-placeholder: #9ca3af;
 }
 
 @layer base {
@@ -26,6 +39,20 @@
     --tenant-primary: #FF6B35;
     --tenant-primary-dark: #E55A2B;
     --tenant-primary-light: #FF8F66;
+  }
+
+  /* Dark mode overrides for admin */
+  .dark {
+    --color-surface: #1e293b;
+    --color-surface-dim: #0f172a;
+    --color-surface-hover: #334155;
+    --color-surface-border: #334155;
+    --color-surface-border-light: #1e293b;
+    --color-on-surface: #f1f5f9;
+    --color-on-surface-secondary: #cbd5e1;
+    --color-on-surface-muted: #94a3b8;
+    --color-on-surface-placeholder: #64748b;
+    color-scheme: dark;
   }
 
   body {
@@ -40,6 +67,10 @@
     scrollbar-width: thin;
     scrollbar-color: #d1d5db transparent;
   }
+
+  .dark * {
+    scrollbar-color: #475569 transparent;
+  }
 }
 
 @layer utilities {
@@ -49,6 +80,14 @@
   }
   .animate-slide-in-left {
     animation: slide-in-left 0.2s ease-out;
+  }
+
+  @keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
   }
 }
 

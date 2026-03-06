@@ -111,7 +111,7 @@ export default function StaffForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <FormCard>
-          <h2 className="text-lg font-semibold text-gray-900">Informacoes</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Informacoes</h2>
 
           <FormField control={control} name="name" label="Nome" required>
             {(field) => <Input {...field} placeholder="Nome completo" />}
@@ -156,11 +156,11 @@ export default function StaffForm() {
         <FormCard>
           <div className="flex items-center gap-2 mb-1">
             <Shield className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Perfil de Acesso <span className="text-red-500">*</span>
             </h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Selecione o perfil que define as permissoes deste membro.
           </p>
 
@@ -195,26 +195,26 @@ export default function StaffForm() {
                     className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
                       isSelected
                         ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         isSelected
                           ? 'bg-primary/10 text-primary'
-                          : 'bg-gray-100 text-gray-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                       }`}
                     >
                       <Shield className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold text-sm ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <p className={`font-semibold text-sm ${isSelected ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-200'}`}>
                         {cr.name}
                       </p>
                       {cr.description && (
-                        <p className="text-xs text-gray-500 mt-0.5">{cr.description}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{cr.description}</p>
                       )}
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         {cr.permissions?.length || 0} permissao(es)
                       </p>
                     </div>

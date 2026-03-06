@@ -53,21 +53,21 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-2xl mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 dark:bg-primary/10 rounded-2xl mb-4">
               <UtensilsCrossed className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">MenuFacil</h1>
-            <p className="text-gray-500 mt-1">Painel Administrativo</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">MenuFacil</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Painel Administrativo</p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -108,7 +108,7 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-400 mt-6">
+        <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-6">
           MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
         </p>
       </div>

@@ -18,9 +18,14 @@ export interface CartItem {
   extras: CartItemExtra[];
 }
 
+export type OrderMode = 'delivery' | 'pickup' | 'dine_in';
+
 interface CartState {
   items: CartItem[];
   isDrawerOpen: boolean;
+  orderType: OrderMode;
+  tableId: string | null;
+  tableSessionId: string | null;
 }
 
 const STORAGE_KEY = 'menufacil-cart';
@@ -38,6 +43,9 @@ function loadCartFromStorage(): CartItem[] {
 const initialState: CartState = {
   items: loadCartFromStorage(),
   isDrawerOpen: false,
+  orderType: 'delivery',
+  tableId: null,
+  tableSessionId: null,
 };
 
 const cartSlice = createSlice({
@@ -71,6 +79,21 @@ const cartSlice = createSlice({
     toggleDrawer(state) {
       state.isDrawerOpen = !state.isDrawerOpen;
     },
+    setOrderType(state, action: PayloadAction<OrderMode>) {
+      state.orderType = action.payload;
+    },
+    setTableContext(state, action: PayloadAction<{ tableId: string; tableSessionId?: string }>) {
+      state.tableId = action.payload.tableId;
+      state.tableSessionId = action.payload.tableSessionId || null;
+      state.orderType = 'dine_in';
+    },
+    clearTableContext(state) {
+      state.tableId = null;
+      state.tableSessionId = null;
+      if (state.orderType === 'dine_in') {
+        state.orderType = 'delivery';
+      }
+    },
   },
 });
 
@@ -94,6 +117,10 @@ export const selectTotalItems = (state: RootState) => {
   return state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
 };
 
-export const { addItem, removeItem, updateQuantity, clearCart, openDrawer, closeDrawer, toggleDrawer } =
+export const selectOrderType = (state: RootState) => state.cart.orderType;
+export const selectTableId = (state: RootState) => state.cart.tableId;
+export const selectTableSessionId = (state: RootState) => state.cart.tableSessionId;
+
+export const { addItem, removeItem, updateQuantity, clearCart, openDrawer, closeDrawer, toggleDrawer, setOrderType, setTableContext, clearTableContext } =
   cartSlice.actions;
 export default cartSlice.reducer;

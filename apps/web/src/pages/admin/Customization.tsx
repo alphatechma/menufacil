@@ -122,7 +122,7 @@ export default function Customization() {
       />
 
       {successMessage && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm">
           {successMessage}
         </div>
       )}
@@ -135,11 +135,11 @@ export default function Customization() {
         {/* Form - Left Side */}
         <div className="lg:col-span-3 space-y-6">
           {/* Identidade */}
-          <div className="bg-white rounded-xl border border-gray-200">
-            <div className="p-5 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <Type className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-gray-900">Identidade</h2>
+                <h2 className="font-bold text-gray-900 dark:text-gray-100">Identidade</h2>
               </div>
             </div>
             <div className="p-5 space-y-5">
@@ -150,11 +150,11 @@ export default function Customization() {
               </FormField>
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                   Slug (URL do restaurante)
                 </label>
                 <div className="flex items-stretch">
-                  <span className="inline-flex items-center px-4 bg-gray-50 border border-r-0 border-gray-300 rounded-l-xl text-sm text-gray-500">
+                  <span className="inline-flex items-center px-4 bg-gray-50 dark:bg-slate-700/50 border border-r-0 border-gray-300 dark:border-gray-700 rounded-l-xl text-sm text-gray-500 dark:text-gray-400">
                     menufacil.com/
                   </span>
                   <Input
@@ -172,22 +172,22 @@ export default function Customization() {
                     {slugError}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400">URL: {storeUrl}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">URL: {storeUrl}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Cores */}
-          <div className="bg-white rounded-xl border border-gray-200">
-            <div className="p-5 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <Palette className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-gray-900">Cores</h2>
+                <h2 className="font-bold text-gray-900 dark:text-gray-100">Cores</h2>
               </div>
             </div>
             <div className="p-5 space-y-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
                 Cor principal
               </label>
               <div className="grid grid-cols-6 gap-2 mb-4">
@@ -198,7 +198,7 @@ export default function Customization() {
                     onClick={() => setValue('primary_color', color)}
                     className={`w-full aspect-square rounded-xl border-2 transition-all hover:scale-105 ${
                       watchedColor === color
-                        ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-900/20'
+                        ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-900/20 dark:ring-gray-100/20'
                         : 'border-transparent'
                     }`}
                     style={{ backgroundColor: color }}
@@ -211,7 +211,7 @@ export default function Customization() {
                   type="color"
                   value={watchedColor}
                   onChange={(e) => setValue('primary_color', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-gray-300 cursor-pointer p-1"
+                  className="w-12 h-12 rounded-xl border border-gray-300 dark:border-gray-700 cursor-pointer p-1"
                 />
                 <Input
                   value={watchedColor}
@@ -224,11 +224,11 @@ export default function Customization() {
           </div>
 
           {/* Imagens */}
-          <div className="bg-white rounded-xl border border-gray-200">
-            <div className="p-5 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-gray-900">Imagens</h2>
+                <h2 className="font-bold text-gray-900 dark:text-gray-100">Imagens</h2>
               </div>
             </div>
             <div className="p-5 space-y-6">
@@ -257,11 +257,11 @@ export default function Customization() {
         {/* Preview - Right Side */}
         <div className="lg:col-span-2">
           <div className="sticky top-6">
-            <div className="bg-white rounded-xl border border-gray-200">
-              <div className="p-5 border-b border-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="p-5 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <Eye className="w-5 h-5 text-primary" />
-                  <h2 className="font-bold text-gray-900">Pre-visualizacao</h2>
+                  <h2 className="font-bold text-gray-900 dark:text-gray-100">Pre-visualizacao</h2>
                 </div>
               </div>
               <div className="p-5">
@@ -372,7 +372,7 @@ export default function Customization() {
                   </div>
                 </div>
 
-                <p className="text-center text-xs text-gray-400 mt-4">
+                <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
                   Visualizacao aproximada da vitrine
                 </p>
               </div>

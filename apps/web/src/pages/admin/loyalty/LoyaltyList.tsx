@@ -84,7 +84,7 @@ export default function LoyaltyList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Fidelidade</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Fidelidade</h1>
         <Link to="/admin/loyalty/new">
           <Button>
             <Plus className="w-4 h-4" />
@@ -95,30 +95,30 @@ export default function LoyaltyList() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Recompensas</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{rewards.length}</p>
-          <p className="text-xs text-gray-400">{rewards.filter((r: any) => r.is_active).length} ativas</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Recompensas</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{rewards.length}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{rewards.filter((r: any) => r.is_active).length} ativas</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Total Resgates</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{redemptions.length}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Resgates</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{redemptions.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Pendentes</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pendentes</p>
           <p className="text-2xl font-bold text-amber-600 mt-1">
             {redemptions.filter((r: any) => r.status === 'pending').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Pontos Resgatados</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pontos Resgatados</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             {redemptions.reduce((sum: number, r: any) => sum + (r.points_spent || 0), 0).toLocaleString()}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <Tabs
           tabs={TABS}
           activeTab={activeTab}
@@ -148,19 +148,19 @@ export default function LoyaltyList() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ativa</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pontos</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Valor</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Regras</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Acoes</th>
+                    <tr className="border-b border-gray-100 dark:border-gray-700">
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ativa</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nome</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pontos</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Regras</th>
+                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acoes</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                     {rewards.map((reward: any) => (
-                      <tr key={reward.id} className={`hover:bg-gray-50 transition-colors ${!reward.is_active ? 'opacity-50' : ''}`}>
+                      <tr key={reward.id} className={`hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${!reward.is_active ? 'opacity-50' : ''}`}>
                         <td className="px-6 py-4">
                           <Toggle
                             checked={reward.is_active}
@@ -169,18 +169,18 @@ export default function LoyaltyList() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center">
                               <Heart className="w-5 h-5 text-pink-500" />
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">{reward.name}</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{reward.name}</span>
                               {reward.description && (
-                                <p className="text-xs text-gray-400 mt-0.5">{reward.description}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{reward.description}</p>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200">
                           {reward.points_required}
                         </td>
                         <td className="px-6 py-4">
@@ -188,11 +188,11 @@ export default function LoyaltyList() {
                             {REWARD_TYPE_LABELS[reward.reward_type] ?? reward.reward_type}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-700">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-200">
                           {formatRewardValue(reward)}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="space-y-1 text-xs text-gray-500">
+                          <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               Intervalo: {reward.cooldown_hours || 0}h
@@ -207,13 +207,13 @@ export default function LoyaltyList() {
                           <div className="flex items-center justify-end gap-1">
                             <Link
                               to={`/admin/loyalty/${reward.id}/edit`}
-                              className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() => setDeleteTarget({ id: reward.id, name: reward.name })}
-                              className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -246,25 +246,25 @@ export default function LoyaltyList() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Recompensa</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pontos</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cupom</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Data</th>
-                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expira</th>
+                    <tr className="border-b border-gray-100 dark:border-gray-700">
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recompensa</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pontos</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cupom</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expira</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                     {redemptions.map((r: any) => {
                       const statusInfo = STATUS_LABELS[r.status] || STATUS_LABELS.pending;
                       return (
-                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm font-medium text-gray-900">
+                              <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {r.customer?.name || 'Cliente'}
                               </span>
                             </div>
@@ -272,16 +272,16 @@ export default function LoyaltyList() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <Gift className="w-4 h-4 text-pink-500" />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-sm text-gray-700 dark:text-gray-200">
                                 {r.reward?.name || 'Recompensa removida'}
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-700">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-200">
                             {r.points_spent}
                           </td>
                           <td className="px-6 py-4">
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                            <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-900 dark:text-gray-100">
                               {r.coupon_code}
                             </code>
                           </td>
@@ -290,10 +290,10 @@ export default function LoyaltyList() {
                               {statusInfo.label}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(r.created_at)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {r.expires_at ? formatDate(r.expires_at) : '-'}
                           </td>
                         </tr>

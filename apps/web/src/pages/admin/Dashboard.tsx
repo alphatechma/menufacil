@@ -56,8 +56,8 @@ function formatDateRange() {
 
 export default function Dashboard() {
   const range = useMemo(formatDateRange, []);
-  const { data: dashboard, isLoading } = useGetDashboardDataQuery(range);
-  const { data: orders = [] } = useGetOrdersQuery();
+  const { data: dashboard, isLoading } = useGetDashboardDataQuery(range, { refetchOnMountOrArgChange: true });
+  const { data: orders = [] } = useGetOrdersQuery(undefined, { refetchOnMountOrArgChange: true });
   const { data: customers = [] } = useGetCustomersQuery();
 
   if (isLoading) return <PageSpinner />;
@@ -85,28 +85,28 @@ export default function Dashboard() {
       label: 'Receita (7 dias)',
       value: formatPrice(totalRevenue),
       icon: DollarSign,
-      bgColor: 'bg-green-50',
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
       iconColor: 'text-green-600',
     },
     {
       label: 'Pedidos (7 dias)',
       value: String(validOrders),
       icon: ShoppingCart,
-      bgColor: 'bg-orange-50',
+      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
       iconColor: 'text-primary',
     },
     {
       label: 'Ticket Medio',
       value: formatPrice(avgTicket),
       icon: TrendingUp,
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
       iconColor: 'text-blue-600',
     },
     {
       label: 'Clientes',
       value: String(customers.length),
       icon: Users,
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
       iconColor: 'text-purple-600',
     },
   ];
@@ -114,27 +114,27 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Visao geral do seu restaurante</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+        <p className="text-gray-500 mt-1 dark:text-gray-400">Visao geral do seu restaurante</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
+          <div key={stat.label} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
               <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
             </div>
-            <p className="mt-3 text-2xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-sm text-gray-500">{stat.label}</p>
+            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita (7 dias)</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receita (7 dias)</h3>
           <div className="h-64">
             {revenueData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -153,13 +153,13 @@ export default function Dashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Dia</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pedidos por Dia</h3>
           <div className="h-64">
             {ordersChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -172,49 +172,49 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
             )}
           </div>
         </div>
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Pedidos Recentes</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pedidos Recentes</h3>
           <Link to="/admin/orders" className="text-sm text-primary hover:underline">Ver todos</Link>
         </div>
         {recentOrders.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                <tr className="border-b border-gray-100 dark:border-gray-700">
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pedido</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {recentOrders.map((order: any) => {
                   const status = STATUS_LABELS[order.status] || STATUS_LABELS.pending;
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                       <td className="px-5 py-3.5">
                         <Link to={`/admin/orders/${order.id}`} className="text-sm font-medium text-primary hover:underline">
                           #{order.order_number}
                         </Link>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-600">{order.customer?.name || '-'}</td>
-                      <td className="px-5 py-3.5 text-sm font-medium text-gray-900">{formatPrice(order.total || 0)}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-300">{order.customer?.name || '-'}</td>
+                      <td className="px-5 py-3.5 text-sm font-medium text-gray-900 dark:text-gray-100">{formatPrice(order.total || 0)}</td>
                       <td className="px-5 py-3.5">
                         <Badge className={status.color}>
                           {status.icon}
                           <span className="ml-1">{status.label}</span>
                         </Badge>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">
+                      <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400">
                         {order.created_at ? new Date(order.created_at.endsWith('Z') ? order.created_at : order.created_at + 'Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
                     </tr>
@@ -224,7 +224,7 @@ export default function Dashboard() {
             </table>
           </div>
         ) : (
-          <div className="py-8 text-center text-sm text-gray-400">Nenhum pedido registrado</div>
+          <div className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum pedido registrado</div>
         )}
       </div>
     </div>

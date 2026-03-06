@@ -11,7 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useGetOrderTrackingQuery } from '@/api/customerApi';
-import { useSocket } from '@/hooks/useSocket';
+import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { formatPrice } from '@/utils/formatPrice';
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
@@ -71,20 +71,19 @@ export default function OrderTracking() {
   const { slug, orderId } = useParams<{ slug: string; orderId: string }>();
   const navigate = useNavigate();
 
-  const { data: order, isLoading, error, refetch } = useGetOrderTrackingQuery(
+  const { data: apiOrder, isLoading, error, refetch } = useGetOrderTrackingQuery(
     { slug: slug!, orderId: orderId! },
     {
       skip: !slug || !orderId,
-      pollingInterval: 15000,
+      pollingInterval: 30000, // Fallback polling (longer interval since we have WebSocket)
     },
   );
 
-  // Real-time updates via socket
-  useSocket(slug || null, {
-    'order-updated': () => {
-      refetch();
-    },
-  });
+  // Real-time updates via WebSocket
+  const { orderUpdate } = useOrderTracking(orderId || null, slug || null);
+
+  // Use WebSocket data if available, otherwise fall back to API data
+  const order = orderUpdate || apiOrder;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);

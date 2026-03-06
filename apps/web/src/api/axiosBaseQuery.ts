@@ -19,7 +19,6 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-let isRefreshing = false;
 let refreshPromise: Promise<any> | null = null;
 
 export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> = async (
@@ -41,6 +40,7 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
     if (slug) {
       headers['X-Tenant-Slug'] = slug;
     }
+    headers['X-Auth-Context'] = 'customer';
   }
 
   try {
@@ -52,20 +52,22 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
     // Handle admin 401 with token refresh via cookie
     if (err.response?.status === 401 && authContext === 'admin') {
       try {
-        if (!isRefreshing) {
-          isRefreshing = true;
-          refreshPromise = axiosInstance.post('/auth/refresh', {}).then((res) => res.data);
+        // Deduplicate concurrent refresh attempts
+        if (!refreshPromise) {
+          refreshPromise = axiosInstance
+            .post('/auth/refresh', {})
+            .then((res) => res.data)
+            .finally(() => {
+              refreshPromise = null;
+            });
         }
 
-        await refreshPromise!;
-        isRefreshing = false;
-        refreshPromise = null;
+        await refreshPromise;
 
         // Retry original request (new cookies are set automatically)
         const retryResult = await axiosInstance({ url, method, data, params, headers });
         return { data: retryResult.data };
       } catch {
-        isRefreshing = false;
         refreshPromise = null;
         api.dispatch(adminLogout());
         window.location.href = '/login';

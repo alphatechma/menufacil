@@ -160,6 +160,31 @@ export const customerApi = baseApi.injectEndpoints({
         meta: { authContext: 'customer' as const, tenantSlug: slug },
       }),
     }),
+
+    // Public Table (QR code landing)
+    getPublicTable: builder.query<any, { slug: string; tableNumber: number }>({
+      query: ({ slug, tableNumber }) => ({
+        url: `/public/${slug}/tables/${tableNumber}`,
+        meta: { authContext: 'public' as const },
+      }),
+    }),
+    joinTable: builder.mutation<any, { slug: string; tableNumber: number }>({
+      query: ({ slug, tableNumber }) => ({
+        url: `/public/${slug}/tables/${tableNumber}/join`,
+        method: 'POST',
+        meta: { authContext: 'public' as const },
+      }),
+    }),
+
+    // Public Reservation
+    createPublicReservation: builder.mutation<any, { slug: string; data: any }>({
+      query: ({ slug, data }) => ({
+        url: `/public/${slug}/reservations`,
+        method: 'POST',
+        data,
+        meta: { authContext: 'public' as const },
+      }),
+    }),
   }),
 });
 
@@ -186,4 +211,7 @@ export const {
   useGetLoyaltyRewardsQuery,
   useRedeemRewardMutation,
   useGetMyRedemptionsQuery,
+  useGetPublicTableQuery,
+  useJoinTableMutation,
+  useCreatePublicReservationMutation,
 } = customerApi;

@@ -31,6 +31,7 @@ import {
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { printOrderReceipt } from '@/utils/printOrderReceipt';
 
 interface ColumnConfig {
   id: string;
@@ -110,7 +111,7 @@ function getTimeSince(dateStr: string): { text: string; minutes: number } {
 function getUrgencyStyle(minutes: number) {
   if (minutes >= 30) return { ring: 'ring-red-400 ring-2', badge: 'bg-red-100 text-red-700 border-red-200', pulse: true };
   if (minutes >= 15) return { ring: 'ring-amber-300 ring-1', badge: 'bg-amber-50 text-amber-700 border-amber-200', pulse: false };
-  return { ring: '', badge: 'bg-gray-50 text-gray-600 border-gray-200', pulse: false };
+  return { ring: '', badge: 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600', pulse: false };
 }
 
 function formatMinutes(minutes: number): string {
@@ -157,10 +158,10 @@ function useLiveTMA(orders: any[]) {
 }
 
 function getTMAColor(avgMinutes: number): { bg: string; text: string; ring: string; label: string } {
-  if (avgMinutes <= 10) return { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', label: 'Excelente' };
-  if (avgMinutes <= 20) return { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200', label: 'Bom' };
-  if (avgMinutes <= 30) return { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200', label: 'Atencao' };
-  return { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-300', label: 'Critico' };
+  if (avgMinutes <= 10) return { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', ring: 'ring-emerald-200 dark:ring-emerald-800', label: 'Excelente' };
+  if (avgMinutes <= 20) return { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-800', label: 'Bom' };
+  if (avgMinutes <= 30) return { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-800', label: 'Atencao' };
+  return { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', ring: 'ring-red-300 dark:ring-red-800', label: 'Critico' };
 }
 
 function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
@@ -178,7 +179,7 @@ function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
           <Gauge className={`w-7 h-7 ${tmaStyle.text}`} />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">TMA Atual</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">TMA Atual</p>
           <div className="flex items-baseline gap-2">
             <span className={`text-3xl font-black ${tmaStyle.text}`}>
               {liveTMA.count > 0 ? formatMinutes(liveTMA.avgMinutes) : '--'}
@@ -193,24 +194,24 @@ function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-12 bg-gray-200" />
+      <div className="w-px h-12 bg-gray-200 dark:bg-gray-700" />
 
       {/* Quick stats */}
       <div className="flex items-center gap-6">
         <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Pedidos Ativos</p>
-          <p className="text-xl font-black text-gray-900">{liveTMA.count}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pedidos Ativos</p>
+          <p className="text-xl font-black text-gray-900 dark:text-gray-100">{liveTMA.count}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Mais Antigo</p>
-          <p className={`text-xl font-black ${liveTMA.oldest >= 30 ? 'text-red-600' : liveTMA.oldest >= 15 ? 'text-amber-600' : 'text-gray-900'}`}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Mais Antigo</p>
+          <p className={`text-xl font-black ${liveTMA.oldest >= 30 ? 'text-red-600' : liveTMA.oldest >= 15 ? 'text-amber-600' : 'text-gray-900 dark:text-gray-100'}`}>
             {liveTMA.count > 0 ? formatMinutes(liveTMA.oldest) : '--'}
           </p>
         </div>
         {historicalTMA > 0 && (
           <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">TMA 7 dias</p>
-            <p className="text-xl font-black text-gray-600">{formatMinutes(historicalTMA)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">TMA 7 dias</p>
+            <p className="text-xl font-black text-gray-600 dark:text-gray-300">{formatMinutes(historicalTMA)}</p>
           </div>
         )}
       </div>
@@ -239,14 +240,14 @@ function KDSOrderCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl border-2 overflow-hidden transition-all ${urgency.ring} ${
+      className={`bg-white dark:bg-slate-800 rounded-2xl border-2 overflow-hidden transition-all ${urgency.ring} ${
         urgency.pulse ? 'animate-pulse-subtle' : ''
       } ${column.borderColor}`}
     >
       {/* Card Header - Order number + Time */}
       <div className={`${column.bgColor} px-4 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
-          <span className="text-xl font-black text-gray-900">
+          <span className="text-xl font-black text-gray-900 dark:text-gray-100">
             #{order.order_number || order.id?.slice(0, 6)}
           </span>
           {order.status === 'pending' && (
@@ -271,16 +272,16 @@ function KDSOrderCard({
                 {item.quantity}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-gray-900 leading-snug">
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">
                   {item.product_name || item.product?.name || item.name}
                 </p>
                 {(item.variation_name || item.variation?.name) && (
-                  <p className="text-sm text-indigo-600 font-medium">
+                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
                     {item.variation_name || item.variation?.name}
                   </p>
                 )}
                 {item.extras && item.extras.length > 0 && (
-                  <p className="text-sm text-amber-600 font-medium">
+                  <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                     + {item.extras.map((e: any) => e.name).join(', ')}
                   </p>
                 )}
@@ -292,16 +293,16 @@ function KDSOrderCard({
 
       {/* Notes - Very visible for kitchen */}
       {order.notes && (
-        <div className="mx-4 mb-3 bg-yellow-100 border-2 border-yellow-300 rounded-xl px-4 py-3">
+        <div className="mx-4 mb-3 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-700 rounded-xl px-4 py-3">
           <div className="flex items-start gap-2">
-            <UtensilsCrossed className="w-4 h-4 text-yellow-700 shrink-0 mt-0.5" />
-            <p className="text-sm font-bold text-yellow-800">{order.notes}</p>
+            <UtensilsCrossed className="w-4 h-4 text-yellow-700 dark:text-yellow-400 shrink-0 mt-0.5" />
+            <p className="text-sm font-bold text-yellow-800 dark:text-yellow-300">{order.notes}</p>
           </div>
         </div>
       )}
 
       {/* Customer info - Small, secondary */}
-      <div className="px-4 pb-2 flex items-center gap-2 text-xs text-gray-400">
+      <div className="px-4 pb-2 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
         <User className="w-3.5 h-3.5" />
         <span className="truncate">{order.customer?.name || 'Cliente'}</span>
         {order.customer?.phone && (
@@ -320,9 +321,9 @@ function KDSOrderCard({
       {showDelivery && onAssignDelivery && (
         <div className="px-4 pb-3 pt-1">
           <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-gray-400 shrink-0" />
+            <Truck className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
             <select
-              className="flex-1 text-sm rounded-xl border-2 border-gray-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
+              className="flex-1 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
               value={order.delivery_person_id || ''}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
@@ -366,40 +367,40 @@ function PerformancePanel({ stats }: { stats: any }) {
   if (!stats || stats.total_completed === 0) return null;
 
   const metrics = [
-    { label: 'Tempo Total', value: formatMinutes(stats.avg_total_time), icon: Clock, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Espera', value: formatMinutes(stats.avg_wait_time), icon: Timer, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Preparo', value: formatMinutes(stats.avg_prep_time), icon: ChefHat, color: 'text-purple-600 bg-purple-50' },
-    { label: 'Entrega', value: formatMinutes(stats.avg_delivery_time), icon: Truck, color: 'text-green-600 bg-green-50' },
-    { label: 'Mais Rapido', value: formatMinutes(stats.fastest_order), icon: Zap, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Mais Lento', value: formatMinutes(stats.slowest_order), icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
+    { label: 'Tempo Total', value: formatMinutes(stats.avg_total_time), icon: Clock, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Espera', value: formatMinutes(stats.avg_wait_time), icon: Timer, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Preparo', value: formatMinutes(stats.avg_prep_time), icon: ChefHat, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
+    { label: 'Entrega', value: formatMinutes(stats.avg_delivery_time), icon: Truck, color: 'text-green-600 bg-green-50 dark:bg-green-900/20' },
+    { label: 'Mais Rapido', value: formatMinutes(stats.fastest_order), icon: Zap, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Mais Lento', value: formatMinutes(stats.slowest_order), icon: AlertTriangle, color: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
       >
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
-          <span className="font-bold text-gray-900">Performance Historica</span>
-          <span className="text-xs text-gray-400 font-medium">
+          <span className="font-bold text-gray-900 dark:text-gray-100">Performance Historica</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
             {stats.period_days}d - {stats.total_completed} entregues
           </span>
         </div>
-        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />}
       </button>
 
       {expanded && (
         <div className="px-5 pb-5 space-y-4">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {metrics.map((m) => (
-              <div key={m.label} className="rounded-xl border border-gray-100 p-3 text-center">
+              <div key={m.label} className="rounded-xl border border-gray-100 dark:border-gray-700 p-3 text-center">
                 <div className={`w-8 h-8 rounded-lg ${m.color} flex items-center justify-center mx-auto mb-2`}>
                   <m.icon className="w-4 h-4" />
                 </div>
-                <p className="text-lg font-black text-gray-900">{m.value}</p>
-                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">{m.label}</p>
+                <p className="text-lg font-black text-gray-900 dark:text-gray-100">{m.value}</p>
+                <p className="text-[9px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{m.label}</p>
               </div>
             ))}
           </div>
@@ -408,17 +409,17 @@ function PerformancePanel({ stats }: { stats: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stats.ranking_fastest?.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5">
                     <Zap className="w-4 h-4 text-emerald-500" /> Top Rapidos
                   </h4>
                   <div className="space-y-1">
                     {stats.ranking_fastest.map((r: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50/50 text-sm">
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-gray-700">#{r.order_number}</span>
+                          <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">#{r.order_number}</span>
                         </div>
-                        <span className="font-bold text-emerald-600">{formatMinutes(r.total_time)}</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMinutes(r.total_time)}</span>
                       </div>
                     ))}
                   </div>
@@ -426,17 +427,17 @@ function PerformancePanel({ stats }: { stats: any }) {
               )}
               {stats.ranking_slowest?.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4 text-red-500" /> Mais Lentos
                   </h4>
                   <div className="space-y-1">
                     {stats.ranking_slowest.map((r: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-50/50 text-sm">
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-50/50 dark:bg-red-900/10 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-gray-700">#{r.order_number}</span>
+                          <span className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">#{r.order_number}</span>
                         </div>
-                        <span className="font-bold text-red-600">{formatMinutes(r.total_time)}</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">{formatMinutes(r.total_time)}</span>
                       </div>
                     ))}
                   </div>
@@ -497,6 +498,8 @@ export default function KDS() {
       const order = orders.find((o: any) => o.id === orderId);
       if (order?.status === 'pending' && newStatus === 'preparing') {
         await updateStatus({ id: orderId, status: 'confirmed' }).unwrap();
+        // Auto-print receipt when confirming order for kitchen
+        if (order) printOrderReceipt(order);
       }
       await updateStatus({ id: orderId, status: newStatus }).unwrap();
     } catch {
@@ -522,8 +525,8 @@ export default function KDS() {
             <ChefHat className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Cozinha</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">Cozinha</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {pendingCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600 animate-pulse">
                   {pendingCount} novo(s)!
@@ -537,7 +540,7 @@ export default function KDS() {
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`p-2.5 rounded-xl border transition-colors ${
-              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-gray-50 border-gray-200 text-gray-400'
+              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500'
             }`}
             title={soundEnabled ? 'Som ativado' : 'Som desativado'}
           >
@@ -578,9 +581,9 @@ export default function KDS() {
               {/* Column Body */}
               <div className={`flex-1 ${column.bgColor}/30 rounded-b-2xl border-2 border-t-0 ${column.borderColor} p-3 space-y-3 min-h-[300px]`}>
                 {colOrders.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-300">
+                  <div className="flex flex-col items-center justify-center py-16 text-gray-300 dark:text-gray-600">
                     <Package className="w-14 h-14 mb-3 opacity-50" />
-                    <p className="text-sm font-bold text-gray-400">Nenhum pedido</p>
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-500">Nenhum pedido</p>
                   </div>
                 ) : (
                   colOrders.map((order: any) => (

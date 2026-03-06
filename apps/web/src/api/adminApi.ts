@@ -93,7 +93,7 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     updateOrderStatus: builder.mutation<void, { id: string; status: string; delivery_person_id?: string }>({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Orders'],
+      invalidatesTags: ['Orders', 'Dashboard'],
     }),
     getDashboardData: builder.query<any, { since: string; until: string; status?: string; payment_method?: string; delivery_person_id?: string }>({
       query: ({ since, until, status, payment_method, delivery_person_id }) => ({
@@ -225,7 +225,7 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     assignDeliveryPerson: builder.mutation<void, { orderId: string; delivery_person_id: string | null }>({
       query: ({ orderId, ...body }) => ({ url: `/orders/${orderId}/delivery-person`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Orders', 'DeliveryPersons'],
+      invalidatesTags: ['Orders', 'DeliveryPersons', 'Dashboard'],
     }),
 
     // Roles & Permissions
@@ -273,6 +273,95 @@ export const adminApi = baseApi.injectEndpoints({
     deleteStaff: builder.mutation<void, string>({
       query: (id) => ({ url: `/users/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Staff'],
+    }),
+
+    // Tables
+    getTables: builder.query<any[], void>({
+      query: () => ({ url: '/tables', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Tables'],
+    }),
+    createTable: builder.mutation<void, any>({
+      query: (body) => ({ url: '/tables', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables'],
+    }),
+    updateTable: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/tables/${id}`, method: 'PATCH', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables'],
+    }),
+    deleteTable: builder.mutation<void, string>({
+      query: (id) => ({ url: `/tables/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables'],
+    }),
+    updateTableStatus: builder.mutation<void, { id: string; status: string }>({
+      query: ({ id, status }) => ({ url: `/tables/${id}/status`, method: 'PATCH', data: { status }, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables'],
+    }),
+    getTableQr: builder.query<{ url: string; tableNumber: number }, string>({
+      query: (id) => ({ url: `/tables/${id}/qr`, meta: { authContext: 'admin' as const } }),
+    }),
+
+    // Table Sessions
+    openTableSession: builder.mutation<any, { table_id: string; opened_by?: string }>({
+      query: (body) => ({ url: '/table-sessions/open', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables', 'TableSessions'],
+    }),
+    closeTableSession: builder.mutation<any, string>({
+      query: (id) => ({ url: `/table-sessions/${id}/close`, method: 'POST', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables', 'TableSessions'],
+    }),
+    getTableSession: builder.query<any, string>({
+      query: (id) => ({ url: `/table-sessions/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['TableSessions'],
+    }),
+    getActiveTableSession: builder.query<any, string>({
+      query: (tableId) => ({ url: `/table-sessions/active/${tableId}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['TableSessions'],
+    }),
+    transferTableSession: builder.mutation<any, { id: string; table_id: string }>({
+      query: ({ id, table_id }) => ({ url: `/table-sessions/${id}/transfer`, method: 'POST', data: { table_id }, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Tables', 'TableSessions'],
+    }),
+    getSessionBill: builder.query<any, string>({
+      query: (id) => ({ url: `/table-sessions/${id}/bill`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['TableSessions'],
+    }),
+    splitBillEqual: builder.mutation<any, { id: string; number_of_people: number }>({
+      query: ({ id, number_of_people }) => ({ url: `/table-sessions/${id}/split-equal`, method: 'POST', data: { number_of_people }, meta: { authContext: 'admin' as const } }),
+    }),
+    splitBillByConsumption: builder.query<any, string>({
+      query: (id) => ({ url: `/table-sessions/${id}/split-consumption`, meta: { authContext: 'admin' as const } }),
+    }),
+
+    // Reservations
+    getReservations: builder.query<any[], { date?: string; status?: string }>({
+      query: (params) => ({ url: '/reservations', params, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Reservations'],
+    }),
+    createReservation: builder.mutation<void, any>({
+      query: (body) => ({ url: '/reservations', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Reservations'],
+    }),
+    updateReservationStatus: builder.mutation<void, { id: string; status: string }>({
+      query: ({ id, status }) => ({ url: `/reservations/${id}/status`, method: 'PATCH', data: { status }, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Reservations'],
+    }),
+
+    // Floor Plans
+    getFloorPlans: builder.query<any[], void>({
+      query: () => ({ url: '/floor-plans', meta: { authContext: 'admin' as const } }),
+      providesTags: ['FloorPlans'],
+    }),
+    createFloorPlan: builder.mutation<any, any>({
+      query: (body) => ({ url: '/floor-plans', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['FloorPlans'],
+    }),
+    updateFloorPlan: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/floor-plans/${id}`, method: 'PATCH', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['FloorPlans'],
+    }),
+    deleteFloorPlan: builder.mutation<void, string>({
+      query: (id) => ({ url: `/floor-plans/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['FloorPlans'],
     }),
 
     // Upload
@@ -349,4 +438,25 @@ export const {
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useDeleteRoleMutation,
+  useGetTablesQuery,
+  useCreateTableMutation,
+  useUpdateTableMutation,
+  useDeleteTableMutation,
+  useUpdateTableStatusMutation,
+  useGetTableQrQuery,
+  useOpenTableSessionMutation,
+  useCloseTableSessionMutation,
+  useGetTableSessionQuery,
+  useGetActiveTableSessionQuery,
+  useTransferTableSessionMutation,
+  useGetSessionBillQuery,
+  useSplitBillEqualMutation,
+  useSplitBillByConsumptionQuery,
+  useGetReservationsQuery,
+  useCreateReservationMutation,
+  useUpdateReservationStatusMutation,
+  useGetFloorPlansQuery,
+  useCreateFloorPlanMutation,
+  useUpdateFloorPlanMutation,
+  useDeleteFloorPlanMutation,
 } = adminApi;

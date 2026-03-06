@@ -19,6 +19,11 @@ export interface Tenant {
   min_order_value: number;
   estimated_delivery_time: string | null;
   business_hours?: Record<string, { open: boolean; openTime: string; closeTime: string }> | null;
+  order_modes?: {
+    delivery: boolean;
+    pickup: boolean;
+    dine_in: boolean;
+  } | null;
   plan?: {
     name: string;
     modules?: Array<{ key: string; name: string }>;

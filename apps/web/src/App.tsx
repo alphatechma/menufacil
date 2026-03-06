@@ -39,6 +39,10 @@ const AdminSettings = lazy(() => import('@/pages/admin/Settings'));
 const Customization = lazy(() => import('@/pages/admin/Customization'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const MyPlan = lazy(() => import('@/pages/admin/MyPlan'));
+const TableList = lazy(() => import('@/pages/admin/tables/TableList'));
+const TableForm = lazy(() => import('@/pages/admin/tables/TableForm'));
+const FloorPlanEditor = lazy(() => import('@/pages/admin/tables/FloorPlanEditor'));
+const ReservationList = lazy(() => import('@/pages/admin/reservations/ReservationList'));
 
 // Customer / storefront pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -48,6 +52,8 @@ const ProductDetailPage = lazy(() => import('@/pages/storefront/ProductDetail'))
 const Checkout = lazy(() => import('@/pages/storefront/Checkout'));
 const OrderTracking = lazy(() => import('@/pages/storefront/OrderTracking'));
 const Account = lazy(() => import('@/pages/storefront/Account'));
+const TableLanding = lazy(() => import('@/pages/storefront/TableLanding'));
+const ReservationRequest = lazy(() => import('@/pages/storefront/ReservationRequest'));
 
 export default function App() {
   return (
@@ -115,6 +121,11 @@ export default function App() {
           <Route path="settings" element={<AdminSettings />} />
           <Route path="profile" element={<Profile />} />
           <Route path="plano" element={<MyPlan />} />
+          <Route path="tables" element={<TableList />} />
+          <Route path="tables/new" element={<TableForm />} />
+          <Route path="tables/:id/edit" element={<TableForm />} />
+          <Route path="floor-plan" element={<FloorPlanEditor />} />
+          <Route path="reservations" element={<ReservationList />} />
         </Route>
 
         {/* Tenant storefront routes — /:slug AFTER static routes */}
@@ -126,6 +137,8 @@ export default function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="order/:orderId" element={<OrderTracking />} />
             <Route path="account" element={<Account />} />
+            <Route path="mesa/:tableNumber" element={<TableLanding />} />
+            <Route path="reservar" element={<ReservationRequest />} />
           </Route>
         </Route>
 

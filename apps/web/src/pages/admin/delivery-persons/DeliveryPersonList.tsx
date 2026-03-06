@@ -40,7 +40,7 @@ export default function DeliveryPersonList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Entregadores</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Entregadores</h1>
         <Link to="/admin/delivery-persons/new">
           <Button>
             <Plus className="w-4 h-4" />
@@ -78,47 +78,47 @@ export default function DeliveryPersonList() {
           }
         />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-gray-700">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Telefone
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Veiculo
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acoes
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {filtered.map((person: any) => (
-                  <tr key={person.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={person.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
                           <Truck className="w-5 h-5 text-purple-500" />
                         </div>
-                        <span className="font-medium text-gray-900">{person.name}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{person.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{person.phone}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{person.vehicle || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{person.phone}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{person.vehicle || '-'}</td>
                     <td className="px-6 py-4">
                       <Badge
                         className={
                           person.is_active
                             ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-500'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                         }
                       >
                         {person.is_active ? 'Ativo' : 'Inativo'}
@@ -127,18 +127,18 @@ export default function DeliveryPersonList() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <Link to={`/admin/delivery-persons/${person.id}`}>
-                          <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors">
+                          <button className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
                             <Eye className="w-4 h-4" />
                           </button>
                         </Link>
                         <Link to={`/admin/delivery-persons/${person.id}/edit`}>
-                          <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors">
+                          <button className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
                         </Link>
                         <button
                           onClick={() => setDeleteTarget({ id: person.id, name: person.name })}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

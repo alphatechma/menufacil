@@ -46,16 +46,16 @@ export default function CustomerDetail() {
                 <User className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{customer.name}</h2>
-                <p className="text-sm text-gray-500">Cliente</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{customer.name}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Cliente</p>
               </div>
             </div>
 
             <div className="space-y-4">
               {customer.phone && (
                 <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-700">
+                  <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
                     {formatPhone(customer.phone)}
                   </span>
                 </div>
@@ -63,22 +63,22 @@ export default function CustomerDetail() {
 
               {customer.email && (
                 <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-700">{customer.email}</span>
+                  <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">{customer.email}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-3">
                 <Star className="w-4 h-4 text-amber-500" />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-200">
                   <span className="font-semibold">{customer.loyalty_points || 0}</span>{' '}
                   pontos de fidelidade
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-500">
+                <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Cliente desde{' '}
                   {customer.created_at
                     ? new Date(customer.created_at).toLocaleDateString('pt-BR', {
@@ -95,8 +95,8 @@ export default function CustomerDetail() {
           {/* Addresses */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">Enderecos</h2>
+              <MapPin className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Enderecos</h2>
             </div>
 
             {customer.addresses && customer.addresses.length > 0 ? (
@@ -104,21 +104,21 @@ export default function CustomerDetail() {
                 {customer.addresses.map((addr: any, idx: number) => (
                   <div
                     key={addr.id || idx}
-                    className="bg-gray-50 rounded-xl p-4 text-sm"
+                    className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-4 text-sm"
                   >
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {addr.street}
                       {addr.number ? `, ${addr.number}` : ''}
                     </p>
                     {addr.complement && (
-                      <p className="text-gray-500">{addr.complement}</p>
+                      <p className="text-gray-500 dark:text-gray-400">{addr.complement}</p>
                     )}
-                    <p className="text-gray-500">
+                    <p className="text-gray-500 dark:text-gray-400">
                       {addr.neighborhood}
                       {addr.city ? ` - ${addr.city}` : ''}
                     </p>
                     {addr.zip_code && (
-                      <p className="text-gray-400 text-xs mt-1">CEP: {addr.zip_code}</p>
+                      <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">CEP: {addr.zip_code}</p>
                     )}
                     {addr.label && (
                       <Badge variant="default" className="mt-2">
@@ -129,7 +129,7 @@ export default function CustomerDetail() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-4">
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
                 Nenhum endereco cadastrado
               </p>
             )}
@@ -140,39 +140,39 @@ export default function CustomerDetail() {
         <div className="lg:col-span-2">
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <ShoppingCart className="w-5 h-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">Pedidos Recentes</h2>
+              <ShoppingCart className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pedidos Recentes</h2>
             </div>
 
             {customer.orders && customer.orders.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <tr className="border-b border-gray-100 dark:border-gray-700">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Pedido
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Data
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Itens
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Total
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                     {customer.orders.map((order: any) => {
                       const statusInfo =
                         ORDER_STATUS_LABELS[order.status] || ORDER_STATUS_LABELS.pending;
 
                       return (
-                        <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                           <td className="px-4 py-3">
                             <Link
                               to={`/admin/orders/${order.id}`}
@@ -181,7 +181,7 @@ export default function CustomerDetail() {
                               #{order.order_number}
                             </Link>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
+                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                             {order.created_at
                               ? new Date(order.created_at).toLocaleDateString('pt-BR', {
                                   day: '2-digit',
@@ -190,10 +190,10 @@ export default function CustomerDetail() {
                                 })
                               : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
+                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                             {order.items?.length || 0} item(s)
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                             {formatPrice(order.total || 0)}
                           </td>
                           <td className="px-4 py-3">
@@ -208,7 +208,7 @@ export default function CustomerDetail() {
                 </table>
               </div>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-8">
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
                 Nenhum pedido registrado para este cliente
               </p>
             )}

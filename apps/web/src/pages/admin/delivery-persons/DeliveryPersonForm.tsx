@@ -138,9 +138,9 @@ export default function DeliveryPersonForm() {
         <FormCard>
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="w-5 h-5 text-green-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Comissao por Entrega</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Comissao por Entrega</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Configure quanto o entregador recebe por cada entrega concluida.
           </p>
 
@@ -151,7 +151,7 @@ export default function DeliveryPersonForm() {
                 className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   commissionType === ct.value
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 <input
@@ -166,10 +166,10 @@ export default function DeliveryPersonForm() {
                   className="mt-0.5 accent-primary"
                 />
                 <div className="flex-1">
-                  <p className={`font-semibold text-sm ${commissionType === ct.value ? 'text-gray-900' : 'text-gray-700'}`}>
+                  <p className={`font-semibold text-sm ${commissionType === ct.value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-200'}`}>
                     {ct.label}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{ct.desc}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{ct.desc}</p>
                 </div>
               </label>
             ))}
@@ -177,11 +177,11 @@ export default function DeliveryPersonForm() {
 
           {commissionType !== 'none' && (
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                 {commissionType === 'fixed' ? 'Valor por entrega (R$)' : 'Percentual por entrega (%)'}
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 dark:text-gray-500">
                   {commissionType === 'fixed' ? 'R$' : '%'}
                 </span>
                 <input
@@ -191,7 +191,7 @@ export default function DeliveryPersonForm() {
                   max={commissionType === 'percent' ? '100' : undefined}
                   value={commissionValue}
                   onChange={(e) => setCommissionValue(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   placeholder={commissionType === 'fixed' ? '5.00' : '10'}
                 />
               </div>
@@ -213,16 +213,16 @@ export default function DeliveryPersonForm() {
         <FormCard>
           <div className="flex items-center gap-2 mb-1">
             <UserCog className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Vincular Acesso ao Sistema</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vincular Acesso ao Sistema</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Vincule este entregador a um usuario do sistema para que ele possa acessar o painel "Minhas Entregas".
           </p>
 
           <select
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           >
             <option value="">Nenhum (sem acesso ao sistema)</option>
             {staff

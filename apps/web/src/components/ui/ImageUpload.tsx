@@ -47,7 +47,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
 
   if (value) {
     return (
-      <div className={cn('relative w-full h-48 rounded-xl overflow-hidden border border-gray-200', className)}>
+      <div className={cn('relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600', className)}>
         <img src={value} alt="Upload" className="w-full h-full object-cover" />
         <button
           type="button"
@@ -64,7 +64,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
     <label
       className={cn(
         'flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors',
-        dragActive ? 'border-primary bg-primary-50' : 'border-gray-300 hover:border-gray-400',
+        dragActive ? 'border-primary bg-primary-50' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
         isLoading && 'opacity-50 pointer-events-none',
         className,
       )}
@@ -80,7 +80,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
       ) : (
         <>
           <Upload className="w-8 h-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500">Clique ou arraste uma imagem</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Clique ou arraste uma imagem</p>
         </>
       )}
       <input type="file" accept="image/*" className="hidden" onChange={handleInputChange} />

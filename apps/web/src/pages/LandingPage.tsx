@@ -38,6 +38,8 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  CalendarCheck,
+  Map,
 } from 'lucide-react';
 import {
   useGetPlansPublicQuery,
@@ -123,6 +125,10 @@ const ALL_FEATURES = [
   { icon: Shield, title: 'Painel Seguro', desc: 'Acesso protegido com autenticacao JWT e controle de sessao.' },
   { icon: Zap, title: 'Tempo Real', desc: 'Atualizacoes instantaneas via WebSocket para pedidos e KDS.' },
   { icon: Menu, title: 'Horario de Funcionamento', desc: 'Configure dias e horarios de atendimento automaticamente.' },
+  { icon: ShoppingBag, title: 'Retirada no Balcao', desc: 'Clientes pedem online e retiram no local, sem taxa de entrega.' },
+  { icon: UtensilsCrossed, title: 'Atendimento Presencial', desc: 'Mesas com QR code, comanda digital e divisao de conta.' },
+  { icon: CalendarCheck, title: 'Reserva de Mesa', desc: 'Clientes solicitam reserva online, restaurante aprova.' },
+  { icon: Map, title: 'Mapa do Salao', desc: 'Visualize suas mesas em tempo real com layout interativo.' },
 ];
 
 const MODULE_LABELS: Record<string, string> = {
@@ -343,7 +349,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Cardapio digital, gestao de pedidos, delivery, KDS e muito mais.
+            O sistema completo para delivery, retirada e atendimento presencial.
             <strong className="text-gray-700"> Sem taxa por pedido.</strong> Tudo por um valor fixo mensal.
           </p>
 

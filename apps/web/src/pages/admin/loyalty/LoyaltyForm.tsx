@@ -94,10 +94,10 @@ export default function LoyaltyForm() {
               </>
             }
           >
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
               <div>
-                <span className="text-sm font-medium text-gray-900">Ativa</span>
-                <p className="text-xs text-gray-500 mt-0.5">Recompensa visivel para os clientes</p>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Ativa</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Recompensa visivel para os clientes</p>
               </div>
               <Toggle
                 checked={isActive ?? true}
@@ -152,7 +152,7 @@ export default function LoyaltyForm() {
           </FormCard>
 
           <FormCard>
-            <h3 className="text-sm font-semibold text-gray-700">Regras de Resgate</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Regras de Resgate</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField
                 control={control}
@@ -162,7 +162,7 @@ export default function LoyaltyForm() {
                 {(field) => (
                   <div>
                     <Input {...field} type="number" min={0} placeholder="24" />
-                    <p className="text-xs text-gray-400 mt-1">0 = sem intervalo</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">0 = sem intervalo</p>
                   </div>
                 )}
               </FormField>
@@ -175,7 +175,7 @@ export default function LoyaltyForm() {
                 {(field) => (
                   <div>
                     <Input {...field} type="number" min={0} placeholder="0" />
-                    <p className="text-xs text-gray-400 mt-1">0 = ilimitado</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">0 = ilimitado</p>
                   </div>
                 )}
               </FormField>
@@ -188,7 +188,7 @@ export default function LoyaltyForm() {
                 {(field) => (
                   <div>
                     <Input {...field} type="number" min={1} placeholder="72" />
-                    <p className="text-xs text-gray-400 mt-1">Apos resgatar</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Apos resgatar</p>
                   </div>
                 )}
               </FormField>

@@ -59,12 +59,12 @@ function SortableRow({ product, onDelete, categoriesMap }: SortableRowProps) {
     <tr
       ref={setNodeRef}
       style={style}
-      className="hover:bg-gray-50 transition-colors"
+      className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
     >
       <td className="px-3 py-4 w-10">
         <button
           type="button"
-          className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+          className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -80,17 +80,17 @@ function SortableRow({ product, onDelete, categoriesMap }: SortableRowProps) {
               className="w-10 h-10 rounded-lg object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
               <Package className="w-5 h-5 text-gray-400" />
             </div>
           )}
-          <span className="font-medium text-gray-900">{product.name}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{product.name}</span>
         </div>
       </td>
-      <td className="px-6 py-4 text-sm text-gray-500">
+      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
         {categoriesMap[product.category_id] ?? '-'}
       </td>
-      <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+      <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200 font-medium">
         {formatPrice(product.base_price)}
       </td>
       <td className="px-6 py-4">
@@ -109,13 +109,13 @@ function SortableRow({ product, onDelete, categoriesMap }: SortableRowProps) {
       <td className="px-6 py-4">
         <div className="flex items-center justify-end gap-1">
           <Link to={`/admin/products/${product.id}/edit`}>
-            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors">
+            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
               <Pencil className="w-4 h-4" />
             </button>
           </Link>
           <button
             onClick={() => onDelete({ id: product.id, name: product.name })}
-            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -195,7 +195,7 @@ export default function ProductList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Produtos</h1>
         <Link to="/admin/products/new">
           <Button>
             <Plus className="w-4 h-4" />
@@ -246,7 +246,7 @@ export default function ProductList() {
           }
         />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <DndContext
               sensors={sensors}
@@ -255,21 +255,21 @@ export default function ProductList() {
             >
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-gray-100 dark:border-gray-700">
                     <th className="w-10 px-3 py-4" />
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Produto
                     </th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Categoria
                     </th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Preco
                     </th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Acoes
                     </th>
                   </tr>
@@ -278,7 +278,7 @@ export default function ProductList() {
                   items={filtered.map((p: any) => p.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                     {filtered.map((product: any) => (
                       <SortableRow
                         key={product.id}

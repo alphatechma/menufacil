@@ -109,7 +109,7 @@ function getDateRange(preset: RangePreset, customStart: string, customEnd: strin
   return { since, until };
 }
 
-const selectClass = 'px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
+const selectClass = 'px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
 
 export default function Reports() {
   const [preset, setPreset] = useState<RangePreset>('month');
@@ -128,7 +128,7 @@ export default function Reports() {
     ...(deliveryPersonFilter && { delivery_person_id: deliveryPersonFilter }),
   }), [range, statusFilter, paymentFilter, deliveryPersonFilter]);
 
-  const { data: dashboard, isLoading, isFetching } = useGetDashboardDataQuery(queryParams);
+  const { data: dashboard, isLoading, isFetching } = useGetDashboardDataQuery(queryParams, { refetchOnMountOrArgChange: true });
   const { data: allDeliveryPersons = [] } = useGetDeliveryPersonsQuery();
 
   const activeFiltersCount = [statusFilter, paymentFilter, deliveryPersonFilter].filter(Boolean).length;
@@ -196,21 +196,21 @@ export default function Reports() {
   const totalDPDeliveries = deliveryPersons.reduce((s: number, d: any) => s + d.total_deliveries, 0);
 
   const stats = [
-    { label: 'Receita Total', value: formatPrice(totalRevenue), icon: TrendingUp, bgColor: 'bg-green-50', iconColor: 'text-green-600' },
-    { label: 'Total de Pedidos', value: String(totalOrders), sub: `${deliveredOrders} entregues`, icon: ShoppingBag, bgColor: 'bg-orange-50', iconColor: 'text-primary' },
-    { label: 'Ticket Medio', value: formatPrice(avgTicket), icon: Receipt, bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
-    { label: 'Cancelamentos', value: `${cancellationRate}%`, sub: `${cancelledOrders} pedido(s)`, icon: XCircle, bgColor: 'bg-red-50', iconColor: 'text-red-600' },
+    { label: 'Receita Total', value: formatPrice(totalRevenue), icon: TrendingUp, bgColor: 'bg-green-50 dark:bg-green-900/20', iconColor: 'text-green-600' },
+    { label: 'Total de Pedidos', value: String(totalOrders), sub: `${deliveredOrders} entregues`, icon: ShoppingBag, bgColor: 'bg-orange-50 dark:bg-orange-900/20', iconColor: 'text-primary' },
+    { label: 'Ticket Medio', value: formatPrice(avgTicket), icon: Receipt, bgColor: 'bg-blue-50 dark:bg-blue-900/20', iconColor: 'text-blue-600' },
+    { label: 'Cancelamentos', value: `${cancellationRate}%`, sub: `${cancelledOrders} pedido(s)`, icon: XCircle, bgColor: 'bg-red-50 dark:bg-red-900/20', iconColor: 'text-red-600' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Relatorios</h1>
-          <p className="text-gray-500 mt-1">Analise o desempenho do seu restaurante</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Relatorios</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Analise o desempenho do seu restaurante</p>
         </div>
         {isFetching && !isLoading && (
-          <div className="text-xs text-gray-400 flex items-center gap-1.5">
+          <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             Atualizando...
           </div>
@@ -218,10 +218,10 @@ export default function Reports() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
         {/* Period */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 shrink-0">
             <Calendar className="w-4 h-4" />
             Periodo:
           </div>
@@ -236,7 +236,7 @@ export default function Reports() {
                 key={opt.value}
                 onClick={() => setPreset(opt.value)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  preset === opt.value ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  preset === opt.value ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {opt.label}
@@ -245,16 +245,16 @@ export default function Reports() {
           </div>
           {preset === 'custom' && (
             <div className="flex items-center gap-2">
-              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
-              <span className="text-gray-400 text-sm">ate</span>
-              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+              <span className="text-gray-400 dark:text-gray-500 text-sm">ate</span>
+              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
           )}
         </div>
 
         {/* Additional Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 shrink-0">
             <Filter className="w-4 h-4" />
             Filtros:
           </div>
@@ -281,7 +281,7 @@ export default function Reports() {
             {activeFiltersCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
                 Limpar filtros ({activeFiltersCount})
@@ -294,21 +294,21 @@ export default function Reports() {
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-2">
             {statusFilter && (
-              <Badge className="bg-blue-100 text-blue-700">
+              <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                 Status: {STATUS_LABELS[statusFilter]}
-                <button onClick={() => setStatusFilter('')} className="ml-1.5 hover:text-blue-900"><X className="w-3 h-3" /></button>
+                <button onClick={() => setStatusFilter('')} className="ml-1.5 hover:text-blue-900 dark:hover:text-blue-300"><X className="w-3 h-3" /></button>
               </Badge>
             )}
             {paymentFilter && (
-              <Badge className="bg-purple-100 text-purple-700">
+              <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                 Pagamento: {PAYMENT_LABELS[paymentFilter]}
-                <button onClick={() => setPaymentFilter('')} className="ml-1.5 hover:text-purple-900"><X className="w-3 h-3" /></button>
+                <button onClick={() => setPaymentFilter('')} className="ml-1.5 hover:text-purple-900 dark:hover:text-purple-300"><X className="w-3 h-3" /></button>
               </Badge>
             )}
             {deliveryPersonFilter && (
-              <Badge className="bg-green-100 text-green-700">
+              <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                 Entregador: {allDeliveryPersons.find((dp: any) => dp.id === deliveryPersonFilter)?.name || '...'}
-                <button onClick={() => setDeliveryPersonFilter('')} className="ml-1.5 hover:text-green-900"><X className="w-3 h-3" /></button>
+                <button onClick={() => setDeliveryPersonFilter('')} className="ml-1.5 hover:text-green-900 dark:hover:text-green-300"><X className="w-3 h-3" /></button>
               </Badge>
             )}
           </div>
@@ -318,21 +318,21 @@ export default function Reports() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
+          <div key={stat.label} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
               <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
             </div>
-            <p className="mt-3 text-2xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-sm text-gray-500">{stat.label}</p>
-            {'sub' in stat && stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
+            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
+            {'sub' in stat && stat.sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{stat.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita por Dia</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receita por Dia</h3>
           <div className="h-72">
             {revenueData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -351,13 +351,13 @@ export default function Reports() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Dia</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pedidos por Dia</h3>
           <div className="h-72">
             {ordersChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -370,7 +370,7 @@ export default function Reports() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
             )}
           </div>
         </div>
@@ -379,8 +379,8 @@ export default function Reports() {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Products */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Produtos Mais Vendidos</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 lg:col-span-1">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Produtos Mais Vendidos</h3>
           {topProducts.length > 0 ? (
             <div className="space-y-3">
               {topProducts.map((p: any, i: number) => {
@@ -390,14 +390,14 @@ export default function Reports() {
                     <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
-                        <p className="text-sm font-semibold text-gray-900 ml-2 shrink-0">{formatPrice(p.revenue)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{p.name}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-2 shrink-0">{formatPrice(p.revenue)}</p>
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
-                        <div className="flex-1 bg-gray-100 rounded-full h-1.5 mr-3">
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mr-3">
                           <div className="bg-primary rounded-full h-1.5" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-xs text-gray-500 shrink-0">{p.quantity} un ({pct}%)</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{p.quantity} un ({pct}%)</span>
                       </div>
                     </div>
                   </div>
@@ -405,13 +405,13 @@ export default function Reports() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-8">Sem vendas no periodo</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">Sem vendas no periodo</p>
           )}
         </div>
 
         {/* Payment Methods */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Formas de Pagamento</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Formas de Pagamento</h3>
           {byPayment.length > 0 ? (
             <>
               <div className="h-52">
@@ -434,11 +434,11 @@ export default function Reports() {
                     <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                        <span className="text-gray-700">{p.name}</span>
+                        <span className="text-gray-700 dark:text-gray-200">{p.name}</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-medium text-gray-900">{formatPrice(p.revenue)}</span>
-                        <span className="text-gray-400 ml-2">({pct}%)</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatPrice(p.revenue)}</span>
+                        <span className="text-gray-400 dark:text-gray-500 ml-2">({pct}%)</span>
                       </div>
                     </div>
                   );
@@ -446,13 +446,13 @@ export default function Reports() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-8">Sem dados</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">Sem dados</p>
           )}
         </div>
 
         {/* Order Status Breakdown */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Status</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pedidos por Status</h3>
           {byStatus.length > 0 ? (
             <div className="space-y-3">
               {byStatus.map((s: any, i: number) => {
@@ -460,72 +460,72 @@ export default function Reports() {
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-700 font-medium">{s.name}</span>
-                      <span className="text-gray-500">{s.count} ({pct}%)</span>
+                      <span className="text-gray-700 dark:text-gray-200 font-medium">{s.name}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{s.count} ({pct}%)</span>
                     </div>
-                    <div className="bg-gray-100 rounded-full h-2">
+                    <div className="bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 text-right">{formatPrice(s.revenue)}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 text-right">{formatPrice(s.revenue)}</p>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-8">Sem dados</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">Sem dados</p>
           )}
         </div>
       </div>
 
       {/* Delivery Person Stats */}
       <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Truck className="w-5 h-5 text-primary" />
             Entregas por Entregador
           </h3>
-          <p className="text-sm text-gray-500 mt-0.5">Quantidade, valor, porcentagem e tempo medio de entrega no periodo</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Quantidade, valor, porcentagem e tempo medio de entrega no periodo</p>
         </div>
         {deliveryPersons.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Entregador</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Veiculo</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Entregas</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">% do Total</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Valor Total</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tempo Medio</th>
+                <tr className="border-b border-gray-100 dark:border-gray-700">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entregador</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Veiculo</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entregas</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">% do Total</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Total</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tempo Medio</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {deliveryPersons.map((dp: any) => {
                   const pct = totalDPDeliveries > 0 ? ((dp.total_deliveries / totalDPDeliveries) * 100).toFixed(1) : '0';
                   return (
-                    <tr key={dp.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={dp.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                       <td className="px-5 py-3">
-                        <p className="text-sm font-medium text-gray-900">{dp.name}</p>
-                        <p className="text-xs text-gray-400">{dp.phone}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{dp.name}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{dp.phone}</p>
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">{dp.vehicle || '-'}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-300">{dp.vehicle || '-'}</td>
                       <td className="px-5 py-3 text-center">
-                        <span className="text-sm font-bold text-gray-900">{dp.total_deliveries}</span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{dp.total_deliveries}</span>
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                          <div className="w-16 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
                             <div className="bg-primary rounded-full h-1.5" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-sm font-medium text-gray-600">{pct}%</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{pct}%</span>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <span className="text-sm font-semibold text-gray-900">{formatPrice(dp.total_value)}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatPrice(dp.total_value)}</span>
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
-                          <Timer className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+                          <Timer className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                           {dp.avg_delivery_minutes > 0 ? `${dp.avg_delivery_minutes}min` : '-'}
                         </span>
                       </td>
@@ -533,11 +533,11 @@ export default function Reports() {
                   );
                 })}
                 {/* Totals row */}
-                <tr className="bg-gray-50 font-semibold">
-                  <td className="px-5 py-3 text-sm text-gray-900" colSpan={2}>Total</td>
-                  <td className="px-5 py-3 text-center text-sm text-gray-900">{totalDPDeliveries}</td>
-                  <td className="px-5 py-3 text-center text-sm text-gray-900">100%</td>
-                  <td className="px-5 py-3 text-right text-sm text-gray-900">
+                <tr className="bg-gray-50 dark:bg-slate-700/50 font-semibold">
+                  <td className="px-5 py-3 text-sm text-gray-900 dark:text-gray-100" colSpan={2}>Total</td>
+                  <td className="px-5 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{totalDPDeliveries}</td>
+                  <td className="px-5 py-3 text-center text-sm text-gray-900 dark:text-gray-100">100%</td>
+                  <td className="px-5 py-3 text-right text-sm text-gray-900 dark:text-gray-100">
                     {formatPrice(deliveryPersons.reduce((s: number, d: any) => s + d.total_value, 0))}
                   </td>
                   <td className="px-5 py-3" />
@@ -546,35 +546,35 @@ export default function Reports() {
             </table>
           </div>
         ) : (
-          <div className="py-8 text-center text-sm text-gray-400">Nenhuma entrega no periodo selecionado</div>
+          <div className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">Nenhuma entrega no periodo selecionado</div>
         )}
       </Card>
 
       {/* Closing Summary */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-green-600" />
           Fechamento do Periodo
         </h3>
-        <p className="text-sm text-gray-500 mb-5">Detalhamento financeiro completo</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Detalhamento financeiro completo</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Financial */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Resumo Financeiro</h4>
+            <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Resumo Financeiro</h4>
             <div className="space-y-2">
               {[
-                { label: 'Receita Bruta (s/ cancelados)', value: formatPrice(totalRevenue), color: 'text-gray-900' },
-                { label: 'Taxa de Entrega', value: formatPrice(totalDeliveryFee), color: 'text-gray-900' },
+                { label: 'Receita Bruta (s/ cancelados)', value: formatPrice(totalRevenue), color: 'text-gray-900 dark:text-gray-100' },
+                { label: 'Taxa de Entrega', value: formatPrice(totalDeliveryFee), color: 'text-gray-900 dark:text-gray-100' },
                 { label: 'Descontos', value: `-${formatPrice(totalDiscount)}`, color: 'text-red-600' },
-                { label: 'Total de Pedidos', value: String(totalOrders), color: 'text-gray-900' },
-                { label: 'Pedidos Validos', value: `${validOrders} (${totalOrders > 0 ? ((validOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-gray-900' },
-                { label: 'Entregues', value: `${deliveredOrders} (${totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-green-700' },
+                { label: 'Total de Pedidos', value: String(totalOrders), color: 'text-gray-900 dark:text-gray-100' },
+                { label: 'Pedidos Validos', value: `${validOrders} (${totalOrders > 0 ? ((validOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-gray-900 dark:text-gray-100' },
+                { label: 'Entregues', value: `${deliveredOrders} (${totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-green-700 dark:text-green-400' },
                 { label: 'Cancelados', value: `${cancelledOrders} (${cancellationRate}%)`, color: 'text-red-600' },
-                { label: 'Ticket Medio', value: formatPrice(avgTicket), color: 'text-gray-900' },
+                { label: 'Ticket Medio', value: formatPrice(avgTicket), color: 'text-gray-900 dark:text-gray-100' },
               ].map((row, i) => (
-                <div key={i} className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">{row.label}</span>
+                <div key={i} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{row.label}</span>
                   <span className={`text-sm font-semibold ${row.color}`}>{row.value}</span>
                 </div>
               ))}
@@ -583,41 +583,41 @@ export default function Reports() {
 
           {/* By Payment */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Por Forma de Pagamento</h4>
+            <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Por Forma de Pagamento</h4>
             <div className="space-y-2">
               {byPayment.map((p: any, i: number) => {
                 const pct = totalPaymentCount > 0 ? ((p.count / totalPaymentCount) * 100).toFixed(1) : '0';
                 return (
-                  <div key={i} className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">{p.name}</span>
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{p.name}</span>
                     <div className="text-right">
-                      <span className="text-sm font-semibold text-gray-900">{formatPrice(p.revenue)}</span>
-                      <span className="text-xs text-gray-400 ml-2">{p.count} · {pct}%</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatPrice(p.revenue)}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{p.count} · {pct}%</span>
                     </div>
                   </div>
                 );
               })}
-              {byPayment.length === 0 && <p className="text-sm text-gray-400 py-4 text-center">Sem dados</p>}
+              {byPayment.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">Sem dados</p>}
             </div>
           </div>
 
           {/* By Status */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Por Status</h4>
+            <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Por Status</h4>
             <div className="space-y-2">
               {byStatus.map((s: any, i: number) => {
                 const pct = totalOrders > 0 ? ((s.count / totalOrders) * 100).toFixed(1) : '0';
                 return (
-                  <div key={i} className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">{s.name}</span>
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{s.name}</span>
                     <div className="text-right">
-                      <span className="text-sm font-semibold text-gray-900">{formatPrice(s.revenue)}</span>
-                      <span className="text-xs text-gray-400 ml-2">{s.count} · {pct}%</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatPrice(s.revenue)}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{s.count} · {pct}%</span>
                     </div>
                   </div>
                 );
               })}
-              {byStatus.length === 0 && <p className="text-sm text-gray-400 py-4 text-center">Sem dados</p>}
+              {byStatus.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">Sem dados</p>}
             </div>
           </div>
         </div>

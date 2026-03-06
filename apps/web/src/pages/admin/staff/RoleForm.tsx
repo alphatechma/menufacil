@@ -144,13 +144,13 @@ export default function RoleForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <FormCard>
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Shield className="w-5 h-5 text-indigo-500" />
             Informacoes do Perfil
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
               Nome do perfil <span className="text-red-500">*</span>
             </label>
             <input
@@ -158,13 +158,13 @@ export default function RoleForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Atendente, Supervisor..."
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
               Descricao
             </label>
             <input
@@ -172,7 +172,7 @@ export default function RoleForm() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Breve descricao das responsabilidades"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
         </FormCard>
@@ -180,8 +180,8 @@ export default function RoleForm() {
         <FormCard>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Permissoes</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Permissoes</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 Selecione as permissoes que este perfil tera acesso.
                 <span className="ml-2 font-medium text-primary">
                   {selectedPermissions.size}/{permissions.length} selecionada(s)
@@ -219,7 +219,7 @@ export default function RoleForm() {
               return (
                 <div
                   key={group.moduleKey}
-                  className="border border-gray-200 rounded-xl overflow-hidden"
+                  className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
                 >
                   {/* Module header */}
                   <button
@@ -228,7 +228,7 @@ export default function RoleForm() {
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                       allSelected
                         ? 'bg-primary/5'
-                        : 'bg-gray-50 hover:bg-gray-100'
+                        : 'bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     <div
@@ -239,10 +239,10 @@ export default function RoleForm() {
                       </span>
                     </div>
                     <div className="flex-1">
-                      <span className="font-semibold text-gray-900 text-sm">
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                         {group.moduleName}
                       </span>
-                      <span className="text-xs text-gray-400 ml-2">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
                         {
                           group.permissions.filter((p) =>
                             selectedPermissions.has(p.id),
@@ -257,7 +257,7 @@ export default function RoleForm() {
                           ? 'bg-primary border-primary'
                           : someSelected
                             ? 'border-primary bg-primary/30'
-                            : 'border-gray-300'
+                            : 'border-gray-300 dark:border-gray-600'
                       }`}
                     >
                       {(allSelected || someSelected) && (
@@ -277,7 +277,7 @@ export default function RoleForm() {
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
                             isSelected
                               ? 'bg-primary/5 text-primary font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                           }`}
                         >
                           <input
@@ -290,7 +290,7 @@ export default function RoleForm() {
                             className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                               isSelected
                                 ? 'bg-primary border-primary'
-                                : 'border-gray-300'
+                                : 'border-gray-300 dark:border-gray-600'
                             }`}
                           >
                             {isSelected && (

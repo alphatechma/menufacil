@@ -76,18 +76,18 @@ export default function MyPlan() {
   const getPlanColor = (index: number, isCurrent: boolean) => {
     if (isCurrent) return 'border-primary ring-2 ring-primary/20';
     const colors = [
-      'border-gray-200 hover:border-gray-300',
-      'border-gray-200 hover:border-indigo-300',
-      'border-gray-200 hover:border-amber-300',
+      'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+      'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700',
+      'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-700',
     ];
     return colors[index] || colors[0];
   };
 
   const getPlanBadgeColor = (index: number) => {
     const colors = [
-      'bg-gray-100 text-gray-700',
-      'bg-indigo-100 text-indigo-700',
-      'bg-amber-100 text-amber-700',
+      'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200',
+      'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+      'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
     ];
     return colors[index] || colors[0];
   };
@@ -98,31 +98,31 @@ export default function MyPlan() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Meu Plano</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Meu Plano</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Gerencie seu plano e veja as funcionalidades disponiveis
         </p>
       </div>
 
       {/* Current Plan Summary */}
       {currentPlan && (
-        <div className="bg-gradient-to-r from-primary-50 to-orange-50 border border-primary/20 rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-primary-50 to-orange-50 dark:from-primary/10 dark:to-orange-900/10 border border-primary/20 rounded-2xl p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                 <Crown className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Plano atual</p>
-                <h2 className="text-xl font-bold text-gray-900">{currentPlan.name}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Plano atual</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{currentPlan.name}</h2>
               </div>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {formatPrice(currentPlan.price)}
-                <span className="text-base font-normal text-gray-500">/mes</span>
+                <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mes</span>
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {currentModules.length} modulo{currentModules.length !== 1 ? 's' : ''} ativo{currentModules.length !== 1 ? 's' : ''}
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function MyPlan() {
               return (
                 <span
                   key={key}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-primary/10 rounded-lg text-sm font-medium text-gray-700"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/80 dark:bg-slate-800/80 border border-primary/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200"
                 >
                   <Icon className="w-3.5 h-3.5 text-primary" />
                   {MODULE_LABELS[key] || key}
@@ -150,7 +150,7 @@ export default function MyPlan() {
       <div>
         <div className="flex items-center gap-2 mb-6">
           <Star className="w-5 h-5 text-amber-500" />
-          <h3 className="text-lg font-bold text-gray-900">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
             {plans.length > 1 ? 'Compare os planos' : 'Plano disponivel'}
           </h3>
         </div>
@@ -164,7 +164,7 @@ export default function MyPlan() {
             return (
               <div
                 key={plan.id}
-                className={`relative bg-white rounded-2xl border-2 p-6 transition-all ${getPlanColor(index, isCurrent)}`}
+                className={`relative bg-white dark:bg-slate-800 rounded-2xl border-2 p-6 transition-all ${getPlanColor(index, isCurrent)}`}
               >
                 {/* Badge */}
                 {isCurrent && (
@@ -182,18 +182,18 @@ export default function MyPlan() {
                     {plan.name}
                   </span>
                   <div className="mt-2">
-                    <span className="text-4xl font-bold text-gray-900">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
                       {formatPrice(plan.price)}
                     </span>
-                    <span className="text-gray-500">/mes</span>
+                    <span className="text-gray-500 dark:text-gray-400">/mes</span>
                   </div>
                   {plan.max_users ? (
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                       Ate {plan.max_users} usuario{plan.max_users > 1 ? 's' : ''}
                       {plan.max_products ? ` · ${plan.max_products} produtos` : ' · Produtos ilimitados'}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                       Usuarios ilimitados · Produtos ilimitados
                     </p>
                   )}
@@ -208,19 +208,19 @@ export default function MyPlan() {
                       <div
                         key={key}
                         className={`flex items-center gap-2.5 text-sm ${
-                          included ? 'text-gray-700' : 'text-gray-300'
+                          included ? 'text-gray-700 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600'
                         }`}
                       >
                         {included ? (
-                          <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-green-600" />
+                          <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
                           </div>
                         ) : (
-                          <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                            <XIcon className="w-3 h-3 text-gray-400" />
+                          <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+                            <XIcon className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                           </div>
                         )}
-                        <Icon className={`w-4 h-4 shrink-0 ${included ? 'text-gray-500' : 'text-gray-300'}`} />
+                        <Icon className={`w-4 h-4 shrink-0 ${included ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}`} />
                         <span className={included ? '' : 'line-through'}>
                           {MODULE_LABELS[key] || key}
                         </span>
@@ -233,7 +233,7 @@ export default function MyPlan() {
                 {isCurrent ? (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed"
+                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                   >
                     Plano atual
                   </button>
@@ -252,7 +252,7 @@ export default function MyPlan() {
                 ) : (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold bg-gray-50 text-gray-400 cursor-not-allowed"
+                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                   >
                     Plano inferior
                   </button>
@@ -264,14 +264,14 @@ export default function MyPlan() {
       </div>
 
       {/* Contact CTA */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center shrink-0">
             <MessageCircle className="w-6 h-6 text-green-600" />
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-gray-900">Precisa de ajuda para escolher?</h4>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100">Precisa de ajuda para escolher?</h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               Entre em contato com nosso time e encontraremos o plano ideal para o seu negocio.
             </p>
           </div>
