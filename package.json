@@ -11,6 +11,8 @@
     "build:api": "pnpm --filter api build",
     "build:web": "pnpm --filter web build",
     "build:super-admin": "pnpm --filter super-admin build",
+    "dev:waiter": "pnpm --filter @menufacil/waiter dev",
+    "build:waiter": "pnpm --filter @menufacil/waiter build",
     "db:seed": "pnpm --filter api seed",
     "db:migration:generate": "pnpm --filter api migration:generate",
     "db:migration:run": "pnpm --filter api migration:run",
