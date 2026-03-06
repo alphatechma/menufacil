@@ -14,6 +14,8 @@ import { User } from '../user/entities/user.entity';
 import { Customer } from '../customer/entities/customer.entity';
 import { Tenant } from '../tenant/entities/tenant.entity';
 import { Plan } from '../plan/entities/plan.entity';
+import { Role } from '../role/entities/role.entity';
+import { Permission } from '../permission/entities/permission.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterTenantDto } from './dto/register-tenant.dto';
@@ -31,6 +33,10 @@ export class AuthService {
     private readonly tenantRepository: Repository<Tenant>,
     @InjectRepository(Plan)
     private readonly planRepository: Repository<Plan>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
+    @InjectRepository(Permission)
+    private readonly permissionRepository: Repository<Permission>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource,
@@ -342,7 +348,17 @@ export class AuthService {
     });
     const tenant = await this.tenantRepository.save(tenantEntity);
 
-    // Create admin user
+    // Create default "Administrador" role with all permissions
+    const allPermissions = await this.permissionRepository.find();
+    const adminRole = await this.roleRepository.save({
+      name: 'Administrador',
+      description: 'Acesso completo a todas as funcionalidades',
+      tenant_id: tenant.id,
+      is_system_default: true,
+      permissions: allPermissions,
+    });
+
+    // Create admin user with the admin role
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.userRepository.save({
       name: dto.name,
@@ -350,6 +366,7 @@ export class AuthService {
       password_hash: passwordHash,
       system_role: UserRole.ADMIN,
       tenant_id: tenant.id,
+      role_id: adminRole.id,
       is_active: true,
     });
 
@@ -372,6 +389,8 @@ export class AuthService {
       ? { id: tenantWithPlan.plan.id, name: tenantWithPlan.plan.name, price: Number(tenantWithPlan.plan.price) }
       : null;
 
+    const permissions = allPermissions.map((p) => p.key);
+
     return {
       ...tokens,
       user: {
@@ -380,9 +399,11 @@ export class AuthService {
         email: user.email,
         role: user.system_role,
         tenant_id: tenant.id,
+        role_id: adminRole.id,
       },
       modules,
       plan,
+      permissions,
       tenant_slug: tenant.slug,
     };
   }

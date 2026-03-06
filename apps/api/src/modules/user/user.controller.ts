@@ -11,24 +11,23 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { CurrentTenant, CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Users')
 @ApiSecurity('tenant-slug')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('staff:create')
   @ApiOperation({ summary: 'Create a new staff user' })
   create(@Body() dto: CreateUserDto, @CurrentTenant('id') tenantId: string) {
     return this.userService.create(dto, tenantId);
@@ -44,7 +43,6 @@ export class UserController {
   }
 
   @Put('me/password')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Change own password' })
   changePassword(
     @CurrentUser('id') userId: string,
@@ -55,21 +53,21 @@ export class UserController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('staff:read')
   @ApiOperation({ summary: 'List all staff users' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.userService.findAll(tenantId);
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('staff:read')
   @ApiOperation({ summary: 'Get staff user by ID' })
   findById(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.userService.findById(id, tenantId);
   }
 
   @Put(':id')
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('staff:update')
   @ApiOperation({ summary: 'Update a staff user' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -80,7 +78,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('staff:delete')
   @ApiOperation({ summary: 'Deactivate a staff user' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.userService.remove(id, tenantId);

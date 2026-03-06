@@ -12,13 +12,13 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole, RewardType } from '@menufacil/shared';
+import { RewardType } from '@menufacil/shared';
 import { CouponService } from './coupon.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { CurrentTenant, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Coupons')
 @ApiSecurity('tenant-slug')
@@ -66,36 +66,36 @@ export class CouponController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('coupon:read')
   @ApiOperation({ summary: 'List all coupons' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.service.findAll(tenantId);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('coupon:read')
   @ApiOperation({ summary: 'Get coupon by ID' })
   findById(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.findById(id, tenantId);
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('coupon:create')
   @ApiOperation({ summary: 'Create a coupon' })
   create(@Body() dto: CreateCouponDto, @CurrentTenant('id') tenantId: string) {
     return this.service.create(dto, tenantId);
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('coupon:update')
   @ApiOperation({ summary: 'Update a coupon' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -106,9 +106,9 @@ export class CouponController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('coupon:delete')
   @ApiOperation({ summary: 'Delete a coupon' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.remove(id, tenantId);

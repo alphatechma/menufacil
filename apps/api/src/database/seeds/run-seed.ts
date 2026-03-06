@@ -195,6 +195,26 @@ async function seed() {
       { key: 'delivery_driver:read', name: 'Ver Minhas Entregas' },
       { key: 'delivery_driver:update', name: 'Atualizar Status da Entrega' },
     ],
+    staff: [
+      { key: 'staff:read', name: 'Ver Equipe' },
+      { key: 'staff:create', name: 'Criar Membro' },
+      { key: 'staff:update', name: 'Editar Membro' },
+      { key: 'staff:delete', name: 'Remover Membro' },
+    ],
+    roles: [
+      { key: 'role:read', name: 'Ver Perfis de Acesso' },
+      { key: 'role:create', name: 'Criar Perfil de Acesso' },
+      { key: 'role:update', name: 'Editar Perfil de Acesso' },
+      { key: 'role:delete', name: 'Remover Perfil de Acesso' },
+    ],
+    settings: [
+      { key: 'settings:read', name: 'Ver Configuracoes' },
+      { key: 'settings:update', name: 'Editar Configuracoes' },
+    ],
+    customization: [
+      { key: 'customization:read', name: 'Ver Personalizacao' },
+      { key: 'customization:update', name: 'Editar Personalizacao' },
+    ],
   };
 
   for (const [moduleKey, permissions] of Object.entries(permissionsByModule)) {
@@ -210,6 +230,9 @@ async function seed() {
     }
   }
   console.log('✅ Default permissions created');
+
+  // Fetch all permissions for the default admin role
+  const allPermissions = await permissionRepo.find();
 
   // ==========================================
   // DEMO RESTAURANTS
@@ -418,6 +441,21 @@ async function seed() {
 
     const tenantId = (tenant as any).id;
 
+    // ── Create default "Administrador" role with ALL permissions ──
+    const roleRepo = dataSource.getRepository('Role');
+    let adminRole = await roleRepo.findOne({ where: { name: 'Administrador', tenant_id: tenantId } });
+    if (!adminRole) {
+      adminRole = await roleRepo.save({
+        name: 'Administrador',
+        description: 'Acesso completo a todas as funcionalidades',
+        tenant_id: tenantId,
+        permissions: allPermissions,
+      });
+      console.log(`  ✅ Role "Administrador" created with ${allPermissions.length} permissions`);
+    } else {
+      console.log(`  ⏭️  Role "Administrador" already exists`);
+    }
+
     // ── Create admin user ──
     let admin = await userRepo.findOne({ where: { email: demo.admin.email } });
     if (!admin) {
@@ -427,11 +465,18 @@ async function seed() {
         password_hash: passwordHash,
         system_role: UserRole.ADMIN,
         tenant_id: tenantId,
+        role_id: (adminRole as any).id,
         is_active: true,
       });
-      console.log(`  ✅ Admin "${demo.admin.email}" created`);
+      console.log(`  ✅ Admin "${demo.admin.email}" created with role "Administrador"`);
     } else {
-      console.log(`  ⏭️  Admin "${demo.admin.email}" already exists`);
+      // Ensure existing admin has the role assigned
+      if (!(admin as any).role_id) {
+        await userRepo.update((admin as any).id, { role_id: (adminRole as any).id });
+        console.log(`  🔄 Admin "${demo.admin.email}" assigned role "Administrador"`);
+      } else {
+        console.log(`  ⏭️  Admin "${demo.admin.email}" already exists`);
+      }
     }
 
     // ── Create default customer ──

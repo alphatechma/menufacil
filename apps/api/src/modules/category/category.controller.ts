@@ -11,12 +11,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { CurrentTenant, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Categories')
 @ApiSecurity('tenant-slug')
@@ -31,9 +30,9 @@ export class CategoryController {
   }
 
   @Get('all')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('category:read')
   @ApiOperation({ summary: 'List all categories (admin)' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.categoryService.findAll(tenantId);
@@ -46,18 +45,18 @@ export class CategoryController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('category:create')
   @ApiOperation({ summary: 'Create a category' })
   create(@Body() dto: CreateCategoryDto, @CurrentTenant('id') tenantId: string) {
     return this.categoryService.create(dto, tenantId);
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('category:update')
   @ApiOperation({ summary: 'Update a category' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -68,9 +67,9 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('category:delete')
   @ApiOperation({ summary: 'Delete a category' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.categoryService.remove(id, tenantId);

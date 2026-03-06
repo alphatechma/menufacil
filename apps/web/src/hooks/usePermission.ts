@@ -1,6 +1,6 @@
 import { useAppSelector } from '@/store/hooks';
 
-const FULL_ACCESS_ROLES = ['super_admin', 'admin', 'SUPER_ADMIN', 'ADMIN'];
+const FULL_ACCESS_ROLES = ['super_admin', 'SUPER_ADMIN'];
 
 export function usePermission() {
   const { user, permissions, modules } = useAppSelector((s) => s.adminAuth);

@@ -12,12 +12,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { DeliveryZoneService } from './delivery-zone.service';
 import { CreateDeliveryZoneDto } from './dto/create-delivery-zone.dto';
 import { UpdateDeliveryZoneDto } from './dto/update-delivery-zone.dto';
-import { CurrentTenant, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Delivery Zones')
 @ApiSecurity('tenant-slug')
@@ -57,18 +56,18 @@ export class DeliveryZoneController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('delivery:create')
   @ApiOperation({ summary: 'Create a delivery zone' })
   create(@Body() dto: CreateDeliveryZoneDto, @CurrentTenant('id') tenantId: string) {
     return this.service.create(dto, tenantId);
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('delivery:update')
   @ApiOperation({ summary: 'Update a delivery zone' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -79,9 +78,9 @@ export class DeliveryZoneController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('delivery:delete')
   @ApiOperation({ summary: 'Delete a delivery zone' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.remove(id, tenantId);

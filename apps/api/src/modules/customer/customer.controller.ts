@@ -11,12 +11,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { CustomerService } from './customer.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { CreateCustomerDto } from './dto/create-customer.dto';
-import { CurrentTenant, CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Customers')
 @ApiSecurity('tenant-slug')
@@ -27,16 +26,16 @@ export class CustomerController {
   constructor(private readonly service: CustomerService) {}
 
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('customer:read')
   @ApiOperation({ summary: 'List all customers (admin)' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.service.findAllByTenant(tenantId);
   }
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('customer:create')
   @ApiOperation({ summary: 'Create a customer (admin)' })
   create(@Body() dto: CreateCustomerDto, @CurrentTenant('id') tenantId: string) {
     return this.service.create(dto, tenantId);
@@ -80,8 +79,8 @@ export class CustomerController {
   }
 
   @Get(':id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('customer:read')
   @ApiOperation({ summary: 'Get customer by ID (admin)' })
   findById(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.findById(id, tenantId);

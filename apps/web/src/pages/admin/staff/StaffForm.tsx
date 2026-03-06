@@ -72,7 +72,6 @@ export default function StaffForm() {
       if (isEditing) {
         const updateData: any = {
           name: data.name,
-          role: 'cashier', // base role for DB compat
           is_active: data.is_active,
           role_id: selectedRoleId,
         };
@@ -85,9 +84,8 @@ export default function StaffForm() {
           name: data.name,
           email: data.email,
           password: data.password!,
-          role: 'cashier', // base role for DB compat
+          role_id: selectedRoleId,
         }).unwrap();
-        // After creation, update to set role_id (workaround if create doesn't support role_id)
       }
       navigate('/admin/staff');
     } catch {

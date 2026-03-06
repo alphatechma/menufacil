@@ -11,38 +11,38 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { CurrentTenant, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Roles')
 @ApiSecurity('tenant-slug')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles(UserRole.ADMIN)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('roles')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   @Post()
+  @RequirePermissions('roles:create')
   @ApiOperation({ summary: 'Create a custom role' })
   create(@Body() dto: CreateRoleDto, @CurrentTenant('id') tenantId: string) {
     return this.roleService.create(dto, tenantId);
   }
 
   @Get()
+  @RequirePermissions('roles:read')
   @ApiOperation({ summary: 'List all roles' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.roleService.findAll(tenantId);
   }
 
   @Get('permissions')
+  @RequirePermissions('roles:read')
   @ApiOperation({ summary: 'List all available permissions' })
   async findPermissions() {
-    // Re-use permission repository via service - inject directly
     return this.roleService['permissionRepository'].find({
       relations: ['module'],
       order: { key: 'ASC' },
@@ -50,6 +50,7 @@ export class RoleController {
   }
 
   @Get(':id')
+  @RequirePermissions('roles:read')
   @ApiOperation({ summary: 'Get role by ID' })
   findById(
     @Param('id', ParseUUIDPipe) id: string,
@@ -59,6 +60,7 @@ export class RoleController {
   }
 
   @Put(':id')
+  @RequirePermissions('roles:update')
   @ApiOperation({ summary: 'Update a role' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -69,6 +71,7 @@ export class RoleController {
   }
 
   @Delete(':id')
+  @RequirePermissions('roles:delete')
   @ApiOperation({ summary: 'Delete a role' })
   remove(
     @Param('id', ParseUUIDPipe) id: string,

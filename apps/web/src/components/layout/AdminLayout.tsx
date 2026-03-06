@@ -112,9 +112,9 @@ const sidebarGroups: SidebarGroup[] = [
     label: 'Administracao',
     icon: Settings,
     items: [
-      { to: '/admin/staff', icon: UsersRound, label: 'Equipe', module: null, adminOnly: true },
-      { to: '/admin/customization', icon: Palette, label: 'Personalizar', module: null, adminOnly: true },
-      { to: '/admin/settings', icon: Settings, label: 'Configuracoes', module: null, adminOnly: true },
+      { to: '/admin/staff', icon: UsersRound, label: 'Equipe', module: null, permission: 'staff:read' },
+      { to: '/admin/customization', icon: Palette, label: 'Personalizar', module: null, permission: 'customization:read' },
+      { to: '/admin/settings', icon: Settings, label: 'Configuracoes', module: null, permission: 'settings:read' },
     ],
   },
 ];
@@ -158,7 +158,6 @@ export default function AdminLayout() {
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => {
-        if (item.adminOnly && !hasFullAccess) return false;
         if (item.module && !hasModule(item.module)) return false;
         if (item.permission && !hasPermission(item.permission)) return false;
         return true;

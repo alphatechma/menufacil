@@ -11,13 +11,12 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { ProductService } from './product.service';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ReorderProductsDto } from './dto/reorder-products.dto';
-import { CurrentTenant, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Products')
 @ApiSecurity('tenant-slug')
@@ -32,9 +31,9 @@ export class ProductController {
   }
 
   @Get('all')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:read')
   @ApiOperation({ summary: 'List all products (admin)' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.productService.findAll(tenantId);
@@ -56,27 +55,27 @@ export class ProductController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:create')
   @ApiOperation({ summary: 'Create a product' })
   create(@Body() dto: CreateProductDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.create(dto, tenantId);
   }
 
   @Put('reorder')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:update')
   @ApiOperation({ summary: 'Reorder products' })
   reorder(@Body() dto: ReorderProductsDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.reorder(dto, tenantId);
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:update')
   @ApiOperation({ summary: 'Update a product' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -87,9 +86,9 @@ export class ProductController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:delete')
   @ApiOperation({ summary: 'Delete a product' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.productService.remove(id, tenantId);
@@ -99,27 +98,27 @@ export class ProductController {
 @ApiTags('Extra Groups')
 @ApiSecurity('tenant-slug')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('extra-groups')
 export class ExtraGroupController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:read')
   @ApiOperation({ summary: 'List extra groups' })
   findAll(@CurrentTenant('id') tenantId: string) {
     return this.productService.findExtraGroups(tenantId);
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:create')
   @ApiOperation({ summary: 'Create an extra group' })
   create(@Body() dto: CreateExtraGroupDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.createExtraGroup(dto, tenantId);
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('product:delete')
   @ApiOperation({ summary: 'Delete an extra group' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.productService.removeExtraGroup(id, tenantId);

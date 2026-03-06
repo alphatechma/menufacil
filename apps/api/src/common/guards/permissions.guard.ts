@@ -24,8 +24,8 @@ export class PermissionsGuard implements CanActivate {
       return false;
     }
 
-    // SuperAdmin and general Admin have implicit rights
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
+    // Only SuperAdmin has implicit full access
+    if (user.role === UserRole.SUPER_ADMIN) {
       return true;
     }
 

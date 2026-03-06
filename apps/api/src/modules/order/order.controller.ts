@@ -11,13 +11,12 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AssignDeliveryPersonDto } from './dto/assign-delivery-person.dto';
-import { CurrentTenant, CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Orders')
 @ApiSecurity('tenant-slug')
@@ -28,6 +27,8 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:create')
   @ApiOperation({ summary: 'Create a new order (customer)' })
   create(
     @Body() dto: CreateOrderDto,
@@ -38,16 +39,16 @@ export class OrderController {
   }
 
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
   @ApiOperation({ summary: 'List all orders (admin)' })
   findByTenant(@CurrentTenant('id') tenantId: string) {
     return this.orderService.findByTenant(tenantId);
   }
 
   @Get('stats/dashboard')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
   @ApiOperation({ summary: 'Get dashboard/report data with real aggregated data' })
   getDashboard(
     @Query('since') since: string,
@@ -73,8 +74,8 @@ export class OrderController {
   }
 
   @Get('stats/performance')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
   @ApiOperation({ summary: 'Get order performance stats (avg times, ranking)' })
   getPerformanceStats(
     @Query('days') days: string,
@@ -90,14 +91,16 @@ export class OrderController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
   @ApiOperation({ summary: 'Get order by ID' })
   findById(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.orderService.findById(id, tenantId);
   }
 
   @Put(':id/status')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.KITCHEN)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:update')
   @ApiOperation({ summary: 'Update order status' })
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -108,8 +111,8 @@ export class OrderController {
   }
 
   @Put(':id/delivery-person')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:update')
   @ApiOperation({ summary: 'Assign delivery person to order' })
   assignDeliveryPerson(
     @Param('id', ParseUUIDPipe) id: string,

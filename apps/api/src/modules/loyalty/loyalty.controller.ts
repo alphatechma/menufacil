@@ -12,11 +12,10 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
-import { UserRole } from '@menufacil/shared';
 import { LoyaltyService } from './loyalty.service';
 import { CreateRewardDto } from './dto/create-reward.dto';
-import { CurrentTenant, CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Loyalty')
 @ApiSecurity('tenant-slug')
@@ -31,27 +30,27 @@ export class LoyaltyController {
   }
 
   @Get('rewards/all')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.KITCHEN)
+  @RequirePermissions('loyalty:read')
   @ApiOperation({ summary: 'List all rewards including inactive (admin)' })
   findAllRewards(@CurrentTenant('id') tenantId: string) {
     return this.service.findRewards(tenantId);
   }
 
   @Post('rewards')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('loyalty:create')
   @ApiOperation({ summary: 'Create a reward' })
   createReward(@Body() dto: CreateRewardDto, @CurrentTenant('id') tenantId: string) {
     return this.service.createReward(dto, tenantId);
   }
 
   @Put('rewards/:id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('loyalty:update')
   @ApiOperation({ summary: 'Update a reward' })
   updateReward(
     @Param('id', ParseUUIDPipe) id: string,
@@ -62,9 +61,9 @@ export class LoyaltyController {
   }
 
   @Delete('rewards/:id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('loyalty:delete')
   @ApiOperation({ summary: 'Delete a reward' })
   removeReward(@Param('id', ParseUUIDPipe) id: string, @CurrentTenant('id') tenantId: string) {
     return this.service.removeReward(id, tenantId);
@@ -94,9 +93,9 @@ export class LoyaltyController {
   }
 
   @Get('redemptions')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @RequirePermissions('loyalty:read')
   @ApiOperation({ summary: 'Get all redemptions (admin)' })
   allRedemptions(@CurrentTenant('id') tenantId: string) {
     return this.service.getAllRedemptions(tenantId);

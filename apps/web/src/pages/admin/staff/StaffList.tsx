@@ -1,20 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Shield, Monitor, ShoppingCart, ChefHat, UserCog, KeyRound } from 'lucide-react';
+import { Plus, Search, Shield, Monitor, KeyRound } from 'lucide-react';
 import { useGetStaffQuery, useDeleteStaffMutation } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-
-const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  super_admin: { label: 'Super Admin', color: 'bg-red-100 text-red-700', icon: <Shield className="w-3.5 h-3.5" /> },
-  admin: { label: 'Administrador', color: 'bg-purple-100 text-purple-700', icon: <Shield className="w-3.5 h-3.5" /> },
-  manager: { label: 'Gerente', color: 'bg-blue-100 text-blue-700', icon: <UserCog className="w-3.5 h-3.5" /> },
-  cashier: { label: 'Membro', color: 'bg-green-100 text-green-700', icon: <ShoppingCart className="w-3.5 h-3.5" /> },
-  kitchen: { label: 'Membro', color: 'bg-orange-100 text-orange-700', icon: <ChefHat className="w-3.5 h-3.5" /> },
-};
 
 export default function StaffList() {
   const navigate = useNavigate();
@@ -76,7 +68,7 @@ export default function StaffList() {
       ) : (
         <div className="space-y-3">
           {filtered.map((member: any) => {
-            const role = ROLE_CONFIG[member.system_role || member.role] || ROLE_CONFIG.cashier;
+            const roleName = member.role?.name || 'Sem perfil';
             return (
               <Card
                 key={member.id}
@@ -102,9 +94,9 @@ export default function StaffList() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${role.color}`}>
-                      {role.icon}
-                      {role.label}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                      <Shield className="w-3.5 h-3.5" />
+                      {roleName}
                     </span>
                     <button
                       onClick={(e) => {

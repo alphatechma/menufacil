@@ -22,9 +22,10 @@ export class UserService {
       name: dto.name,
       email: dto.email,
       password_hash: passwordHash,
-      system_role: dto.role || UserRole.ADMIN,
+      system_role: dto.role || UserRole.CASHIER,
       tenant_id: tenantId,
-    });
+      role_id: dto.role_id,
+    } as any);
 
     return this.userRepository.save(user);
   }
