@@ -1,115 +1,161 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
-import api from '../../services/api';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import {
+  useGetSystemModuleQuery,
+  useCreateSystemModuleMutation,
+  useUpdateSystemModuleMutation,
+} from '@/api/superAdminApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function FormSkeleton() {
+  return (
+    <Card className="max-w-2xl">
+      <CardHeader>
+        <Skeleton className="h-5 w-40" />
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+        <Skeleton className="h-10 w-28" />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SystemModuleForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isEditing = !!id;
 
+  const { data: mod, isLoading: loadingModule } = useGetSystemModuleQuery(id!, { skip: !isEditing });
+  const [createModule, { isLoading: creating }] = useCreateSystemModuleMutation();
+  const [updateModule, { isLoading: updating }] = useUpdateSystemModuleMutation();
+
   const [form, setForm] = useState({ key: '', name: '', description: '' });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: mod } = useQuery({
-    queryKey: ['system-module', id],
-    queryFn: async () => {
-      const response = await api.get(`/super-admin/system-modules/${id}`);
-      return response.data;
-    },
-    enabled: isEditing,
-  });
+  const saving = creating || updating;
 
   useEffect(() => {
     if (mod) {
-      setForm({ key: mod.key || '', name: mod.name || '', description: mod.description || '' });
+      setForm({
+        key: mod.key || '',
+        name: mod.name || '',
+        description: mod.description || '',
+      });
     }
   }, [mod]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
       if (isEditing) {
-        await api.put(`/super-admin/system-modules/${id}`, form);
+        await updateModule({ id: id!, data: form }).unwrap();
       } else {
-        await api.post('/super-admin/system-modules', form);
+        await createModule(form).unwrap();
       }
-      queryClient.invalidateQueries({ queryKey: ['system-modules'] });
       navigate('/system-modules');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar modulo');
-    } finally {
-      setLoading(false);
+      setError(err?.data?.message || 'Erro ao salvar modulo');
     }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-500" />
-        </button>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isEditing ? 'Editar Modulo' : 'Novo Modulo'}
-        </h1>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {isEditing ? 'Editar Modulo' : 'Novo Modulo'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isEditing
+              ? 'Atualize as informacoes do modulo.'
+              : 'Preencha os dados para criar um novo modulo.'}
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Key</label>
-          <input
-            type="text"
-            required
-            value={form.key}
-            onChange={(e) => setForm({ ...form, key: e.target.value })}
-            placeholder="delivery"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+      {isEditing && loadingModule ? (
+        <FormSkeleton />
+      ) : (
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle>Informacoes do Modulo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="key">Key</Label>
+                <Input
+                  id="key"
+                  required
+                  value={form.key}
+                  onChange={(e) => setForm({ ...form, key: e.target.value })}
+                  placeholder="delivery"
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome</label>
-          <input
-            type="text"
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Delivery"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Delivery"
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Descricao</label>
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descricao</Label>
+                <Textarea
+                  id="description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Descricao do modulo..."
+                  rows={3}
+                />
+              </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          {loading ? 'Salvando...' : 'Salvar'}
-        </button>
-      </form>
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

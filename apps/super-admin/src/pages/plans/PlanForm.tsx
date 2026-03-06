@@ -1,14 +1,40 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
-import api from '../../services/api';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import {
+  useGetPlanQuery,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useUpdatePlanModulesMutation,
+  useGetSystemModulesQuery,
+} from '@/api/superAdminApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 
 export default function PlanForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isEditing = !!id;
+
+  const { data: plan } = useGetPlanQuery(id!, { skip: !isEditing });
+  const { data: modules } = useGetSystemModulesQuery();
+
+  const [createPlan, { isLoading: isCreating }] = useCreatePlanMutation();
+  const [updatePlan, { isLoading: isUpdating }] = useUpdatePlanMutation();
+  const [updatePlanModules] = useUpdatePlanModulesMutation();
+
+  const isSaving = isCreating || isUpdating;
 
   const [form, setForm] = useState({
     name: '',
@@ -18,25 +44,7 @@ export default function PlanForm() {
     is_active: true,
   });
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const { data: plan } = useQuery({
-    queryKey: ['plan', id],
-    queryFn: async () => {
-      const response = await api.get(`/super-admin/plans/${id}`);
-      return response.data;
-    },
-    enabled: isEditing,
-  });
-
-  const { data: modules } = useQuery({
-    queryKey: ['system-modules'],
-    queryFn: async () => {
-      const response = await api.get('/super-admin/system-modules');
-      return response.data;
-    },
-  });
 
   useEffect(() => {
     if (plan) {
@@ -53,156 +61,231 @@ export default function PlanForm() {
 
   const toggleModule = (moduleId: string) => {
     setSelectedModules((prev) =>
-      prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId],
+      prev.includes(moduleId)
+        ? prev.filter((id) => id !== moduleId)
+        : [...prev, moduleId],
     );
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    const payload = {
+      name: form.name,
+      price: parseFloat(form.price),
+      max_users: form.max_users ? parseInt(form.max_users) : null,
+      max_products: form.max_products ? parseInt(form.max_products) : null,
+      is_active: form.is_active,
+    };
+
     try {
-      const payload = {
-        name: form.name,
-        price: parseFloat(form.price),
-        max_users: form.max_users ? parseInt(form.max_users) : null,
-        max_products: form.max_products ? parseInt(form.max_products) : null,
-        is_active: form.is_active,
-      };
+      let planId = id;
 
       if (isEditing) {
-        await api.put(`/super-admin/plans/${id}`, payload);
-        await api.put(`/super-admin/plans/${id}/modules`, { module_ids: selectedModules });
+        await updatePlan({ id: id!, data: payload }).unwrap();
       } else {
-        const response = await api.post('/super-admin/plans', payload);
-        await api.put(`/super-admin/plans/${response.data.id}/modules`, { module_ids: selectedModules });
+        const created = await createPlan(payload).unwrap();
+        planId = created.id;
       }
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
+
+      await updatePlanModules({
+        id: planId!,
+        module_ids: selectedModules,
+      }).unwrap();
+
       navigate('/plans');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar plano');
-    } finally {
-      setLoading(false);
+      setError(
+        err?.data?.message || err?.message || 'Erro ao salvar plano',
+      );
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-500" />
-        </button>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isEditing ? 'Editar Plano' : 'Novo Plano'}
-        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isEditing ? 'Editar Plano' : 'Novo Plano'}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {isEditing
+              ? 'Atualize as informações do plano.'
+              : 'Preencha as informações para criar um novo plano.'}
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome</label>
-          <input
-            type="text"
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* General Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Gerais</CardTitle>
+            <CardDescription>
+              Nome, preço e limites do plano.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                required
+                placeholder="Ex: Básico, Profissional, Enterprise"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Preco (R$)</label>
-          <input
-            type="number"
-            required
-            step="0.01"
-            min="0"
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Preço (R$)</Label>
+              <Input
+                id="price"
+                type="number"
+                required
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Max Usuarios <span className="text-gray-400">(vazio = ilimitado)</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={form.max_users}
-              onChange={(e) => setForm({ ...form, max_users: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Max Produtos <span className="text-gray-400">(vazio = ilimitado)</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={form.max_products}
-              onChange={(e) => setForm({ ...form, max_products: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="max_users">Max Usuários</Label>
+                <Input
+                  id="max_users"
+                  type="number"
+                  min="1"
+                  placeholder="Ilimitado"
+                  value={form.max_users}
+                  onChange={(e) =>
+                    setForm({ ...form, max_users: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Deixe vazio para ilimitado.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max_products">Max Produtos</Label>
+                <Input
+                  id="max_products"
+                  type="number"
+                  min="1"
+                  placeholder="Ilimitado"
+                  value={form.max_products}
+                  onChange={(e) =>
+                    setForm({ ...form, max_products: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Deixe vazio para ilimitado.
+                </p>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="is_active"
-            checked={form.is_active}
-            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            className="rounded border-gray-300 text-primary focus:ring-primary"
-          />
-          <label htmlFor="is_active" className="text-sm text-gray-700">Ativo</label>
-        </div>
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="is_active">Ativo</Label>
+                <p className="text-xs text-muted-foreground">
+                  Planos inativos não ficam disponíveis para novos
+                  estabelecimentos.
+                </p>
+              </div>
+              <Switch
+                id="is_active"
+                checked={form.is_active}
+                onCheckedChange={(checked) =>
+                  setForm({ ...form, is_active: checked })
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Modules */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Modulos do Sistema</label>
-          <div className="grid grid-cols-2 gap-2">
-            {modules?.map((mod: any) => (
-              <label
-                key={mod.id}
-                className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  selectedModules.includes(mod.id)
-                    ? 'border-primary bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedModules.includes(mod.id)}
-                  onChange={() => toggleModule(mod.id)}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{mod.name}</p>
-                  <p className="text-xs text-gray-500">{mod.key}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Módulos do Sistema</CardTitle>
+            <CardDescription>
+              Selecione quais módulos estarão disponíveis neste plano.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {modules && modules.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {modules.map((mod: any) => {
+                  const isChecked = selectedModules.includes(mod.id);
+                  return (
+                    <label
+                      key={mod.id}
+                      className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                          : 'border-border hover:border-muted-foreground/25'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => toggleModule(mod.id)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium leading-none">
+                          {mod.name}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {mod.key}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhum módulo cadastrado.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          {loading ? 'Salvando...' : 'Salvar'}
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {isSaving ? 'Salvando...' : 'Salvar'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/plans')}
+          >
+            Cancelar
+          </Button>
+        </div>
       </form>
     </div>
   );

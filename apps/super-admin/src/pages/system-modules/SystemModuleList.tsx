@@ -1,92 +1,162 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
-import api from '../../services/api';
+import { Plus, Pencil, Trash2, Boxes } from 'lucide-react';
+import { useGetSystemModulesQuery, useDeleteSystemModuleMutation } from '@/api/superAdminApi';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+function TableSkeleton() {
+  return (
+    <div className="space-y-3 p-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function SystemModuleList() {
-  const queryClient = useQueryClient();
+  const { data: modules, isLoading } = useGetSystemModulesQuery();
+  const [deleteModule] = useDeleteSystemModuleMutation();
 
-  const { data: modules, isLoading } = useQuery({
-    queryKey: ['system-modules'],
-    queryFn: async () => {
-      const response = await api.get('/super-admin/system-modules');
-      return response.data;
-    },
-  });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Deseja remover o modulo "${name}"?`)) return;
-    await api.delete(`/super-admin/system-modules/${id}`);
-    queryClient.invalidateQueries({ queryKey: ['system-modules'] });
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteModule(deleteTarget.id).unwrap();
+    } catch {
+      // error handled by RTK Query
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Modulos do Sistema</h1>
-        <Link
-          to="/system-modules/new"
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Modulo
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Modulos do Sistema</h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie os modulos disponiveis para os planos.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/system-modules/new">
+            <Plus className="h-4 w-4" />
+            Novo Modulo
+          </Link>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Key</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Nome</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Descricao</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Acoes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {modules?.map((mod: any) => (
-                  <tr key={mod.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <code className="px-2 py-0.5 rounded bg-gray-100 text-sm">{mod.key}</code>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{mod.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{mod.description || '-'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          to={`/system-modules/${mod.id}/edit`}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Boxes className="h-5 w-5 text-muted-foreground" />
+            Modulos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <TableSkeleton />
+          ) : modules && modules.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Key</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Descricao</TableHead>
+                  <TableHead className="text-right">Acoes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {modules.map((mod: any) => (
+                  <TableRow key={mod.id}>
+                    <TableCell>
+                      <code className="rounded bg-muted px-2 py-1 text-xs font-mono">
+                        {mod.key}
+                      </code>
+                    </TableCell>
+                    <TableCell className="font-medium">{mod.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {mod.description || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link to={`/system-modules/${mod.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget({ id: mod.id, name: mod.name })}
                         >
-                          <Pencil className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(mod.id, mod.name)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-                {modules?.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                      Nenhum modulo encontrado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Boxes className="h-10 w-10 mb-3 opacity-40" />
+              <p className="text-sm">Nenhum modulo encontrado</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover Modulo</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover o modulo{' '}
+              <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
+              Esta acao nao pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Removendo...' : 'Remover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

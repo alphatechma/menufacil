@@ -1,121 +1,142 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import api from '../services/api';
-import { useAuthStore } from '../store/authStore';
+import { LogIn, Eye, EyeOff, ShieldCheck, Loader2 } from 'lucide-react';
+import { useLoginMutation } from '@/api/superAdminApi';
+import { login } from '@/store/slices/authSlice';
+import { useAppDispatch } from '@/store/hooks';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const dispatch = useAppDispatch();
+  const [loginMutation, { isLoading }] = useLoginMutation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
-      const response = await api.post('/auth/super-admin/login', { email, password });
-      const { user, access_token, refresh_token } = response.data;
-      login(user, access_token, refresh_token);
+      const { user, access_token, refresh_token } = await loginMutation({
+        email,
+        password,
+      }).unwrap();
+
+      dispatch(
+        login({
+          user,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        }),
+      );
+
       navigate('/');
     } catch (err: any) {
       const message =
-        err.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
+        err?.data?.message ||
+        'Erro ao fazer login. Verifique suas credenciais.';
       setError(message);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-2xl mb-4">
+        <Card className="shadow-xl border-border">
+          <CardHeader className="text-center pb-2">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4 mx-auto">
               <ShieldCheck className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">MenuFacil</h1>
-            <p className="text-gray-500 mt-1">Super Admin</p>
-          </div>
+            <h1 className="text-2xl font-bold text-foreground">MenuFacil</h1>
+            <p className="text-muted-foreground mt-1">Super Admin</p>
+          </CardHeader>
 
-          {/* Error */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                E-mail
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="superadmin@menufacil.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Senha
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Sua senha"
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+          <CardContent>
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+                {error}
               </div>
-            </div>
+            )}
 
-            {/* Submit */}
-            <button
+            <form onSubmit={handleSubmit} className="space-y-5" id="login-form">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="superadmin@menufacil.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Sua senha"
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </CardContent>
+
+          <CardFooter>
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              form="login-form"
+              disabled={isLoading}
+              className="w-full"
+              size="lg"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Entrando...
+                </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
                   Entrar
                 </>
               )}
-            </button>
-          </form>
-        </div>
+            </Button>
+          </CardFooter>
+        </Card>
 
-        <p className="text-center text-sm text-gray-400 mt-6">
-          MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos
+          reservados.
         </p>
       </div>
     </div>

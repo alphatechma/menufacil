@@ -1,126 +1,152 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Eye } from 'lucide-react';
-import api from '../../services/api';
+import { useGetTenantsQuery } from '@/api/superAdminApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function TenantList() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['tenants', search, statusFilter],
-    queryFn: async () => {
-      const params: any = {};
-      if (search) params.search = search;
-      if (statusFilter) params.is_active = statusFilter;
-      const response = await api.get('/super-admin/tenants', { params });
-      return response.data;
-    },
+  const { data, isLoading } = useGetTenantsQuery({
+    search: search || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
   });
+
+  const tenants = Array.isArray(data) ? data : (data as any)?.data ?? [];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
-        <Link
-          to="/tenants/new"
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Tenant
-        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">Tenants</h1>
+        <Button asChild>
+          <Link to="/tenants/new">
+            <Plus className="h-4 w-4" />
+            Novo Tenant
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
             placeholder="Buscar por nome..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="pl-9"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-        >
-          <option value="">Todos</option>
-          <option value="true">Ativos</option>
-          <option value="false">Inativos</option>
-        </select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="true">Ativos</SelectItem>
+            <SelectItem value="false">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Nome</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Slug</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Plano</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Acoes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data?.data?.map((tenant: any) => (
-                  <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900">{tenant.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{tenant.slug}</td>
-                    <td className="px-4 py-3">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Lista de Tenants</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[120px]" />
+                  <Skeleton className="h-4 w-[100px]" />
+                  <Skeleton className="h-5 w-[60px] rounded-full" />
+                  <Skeleton className="h-4 w-[50px] ml-auto" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Nome</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right pr-6">Acoes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tenants.map((tenant: any) => (
+                  <TableRow key={tenant.id}>
+                    <TableCell className="pl-6 font-medium">
+                      {tenant.name}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {tenant.slug}
+                    </TableCell>
+                    <TableCell>
                       {tenant.plan ? (
-                        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary">
-                          {tenant.plan.name}
-                        </span>
+                        <Badge variant="secondary">{tenant.plan.name}</Badge>
                       ) : (
-                        <span className="text-gray-400">Sem plano</span>
+                        <span className="text-muted-foreground">Sem plano</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          tenant.is_active
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-red-50 text-red-700'
-                        }`}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={tenant.is_active ? 'default' : 'destructive'}
                       >
                         {tenant.is_active ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        to={`/tenants/${tenant.id}`}
-                        className="inline-flex items-center gap-1 text-primary hover:text-primary-dark transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Ver
-                      </Link>
-                    </td>
-                  </tr>
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/tenants/${tenant.id}`}>
+                          <Eye className="h-4 w-4" />
+                          Ver
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-                {data?.data?.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                {tenants.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       Nenhum tenant encontrado
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

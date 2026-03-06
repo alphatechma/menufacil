@@ -1,13 +1,28 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
-import api from '../../services/api';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import {
+  useGetTenantQuery,
+  useGetPlansQuery,
+  useCreateTenantMutation,
+  useUpdateTenantMutation,
+} from '@/api/superAdminApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 export default function TenantForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isEditing = !!id;
 
   const [form, setForm] = useState({
@@ -17,25 +32,14 @@ export default function TenantForm() {
     address: '',
     plan_id: '',
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: tenant } = useQuery({
-    queryKey: ['tenant', id],
-    queryFn: async () => {
-      const response = await api.get(`/super-admin/tenants/${id}`);
-      return response.data;
-    },
-    enabled: isEditing,
-  });
+  const { data: tenant } = useGetTenantQuery(id!, { skip: !isEditing });
+  const { data: plans } = useGetPlansQuery();
+  const [createTenant, { isLoading: isCreating }] = useCreateTenantMutation();
+  const [updateTenant, { isLoading: isUpdating }] = useUpdateTenantMutation();
 
-  const { data: plans } = useQuery({
-    queryKey: ['plans'],
-    queryFn: async () => {
-      const response = await api.get('/super-admin/plans');
-      return response.data;
-    },
-  });
+  const isSaving = isCreating || isUpdating;
 
   useEffect(() => {
     if (tenant) {
@@ -51,110 +55,132 @@ export default function TenantForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
       if (isEditing) {
-        await api.put(`/super-admin/tenants/${id}`, form);
+        await updateTenant({ id: id!, data: form }).unwrap();
       } else {
-        await api.post('/super-admin/tenants', form);
+        await createTenant(form).unwrap();
       }
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
       navigate('/tenants');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar tenant');
-    } finally {
-      setLoading(false);
+      setError(
+        err?.data?.message || err?.message || 'Erro ao salvar tenant'
+      );
     }
   };
 
+  const plansList = Array.isArray(plans) ? plans : [];
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-500" />
-        </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold tracking-tight">
           {isEditing ? 'Editar Tenant' : 'Novo Tenant'}
         </h1>
       </div>
 
+      {/* Error */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome</label>
-          <input
-            type="text"
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+      {/* Form */}
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle>Informacoes do Tenant</CardTitle>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Nome do restaurante"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Slug</label>
-          <input
-            type="text"
-            required
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            placeholder="meu-restaurante"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug">Slug</Label>
+              <Input
+                id="slug"
+                required
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                placeholder="meu-restaurante"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Telefone</label>
-          <input
-            type="text"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="(99) 99999-9999"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Endereco</label>
-          <input
-            type="text"
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Endereco</Label>
+              <Input
+                id="address"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Rua Exemplo, 123"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Plano</label>
-          <select
-            value={form.plan_id}
-            onChange={(e) => setForm({ ...form, plan_id: e.target.value })}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="">Sem plano</option>
-            {plans?.map((plan: any) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name} - R$ {Number(plan.price).toFixed(2)}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <Select
+                value={form.plan_id || 'none'}
+                onValueChange={(value) =>
+                  setForm({ ...form, plan_id: value === 'none' ? '' : value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um plano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem plano</SelectItem>
+                  {plansList.map((plan: any) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} - R$ {Number(plan.price).toFixed(2)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          {loading ? 'Salvando...' : 'Salvar'}
-        </button>
-      </form>
+            <Separator />
+
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {isSaving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

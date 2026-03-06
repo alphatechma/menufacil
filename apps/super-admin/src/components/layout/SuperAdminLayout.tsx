@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
@@ -7,17 +7,31 @@ import {
   Puzzle,
   Shield,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   Menu,
-  X,
+  ChevronLeft,
+  ChevronRight,
+  Moon,
+  Sun,
   ShieldCheck,
-  Bell,
 } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { logout } from '@/store/slices/authSlice';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
-const sidebarItems = [
+const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/tenants', icon: Building2, label: 'Tenants' },
   { to: '/plans', icon: CreditCard, label: 'Planos' },
@@ -26,137 +40,180 @@ const sidebarItems = [
   { to: '/settings', icon: Settings, label: 'Configuracoes' },
 ];
 
+function useDarkMode() {
+  const [dark, setDark] = useState(() => localStorage.getItem('sa-theme') === 'dark');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('sa-theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  return { dark, toggle: () => setDark((d) => !d) };
+}
+
 export default function SuperAdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const user = useAppSelector((s) => s.auth.user);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { dark, toggle: toggleDark } = useDarkMode();
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     navigate('/login');
   };
 
-  const SidebarContent = () => (
-    <>
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-gray-200 shrink-0">
-        <div className="flex items-center justify-center w-9 h-9 bg-primary rounded-lg shrink-0">
+  const sidebarContent = (mobile = false) => (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 px-4 h-16 shrink-0">
+        <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
-        {!collapsed && (
-          <span className="text-lg font-bold text-gray-900 whitespace-nowrap">MenuFacil</span>
+        {(!collapsed || mobile) && (
+          <span className="text-lg font-bold text-[hsl(var(--foreground))] whitespace-nowrap">
+            Super Admin
+          </span>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {sidebarItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            onClick={() => setMobileOpen(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-primary-50 text-primary'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              } ${collapsed ? 'justify-center' : ''}`
-            }
-          >
-            <item.icon className="w-5 h-5 shrink-0" />
-            {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-          </NavLink>
-        ))}
+      <Separator />
+
+      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        <TooltipProvider delayDuration={0}>
+          {NAV_ITEMS.map((item) => (
+            <Tooltip key={item.to}>
+              <TooltipTrigger asChild>
+                <NavLink
+                  to={item.to}
+                  end={item.to === '/'}
+                  onClick={() => mobile && setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]',
+                      collapsed && !mobile && 'justify-center px-2',
+                    )
+                  }
+                >
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  {(!collapsed || mobile) && <span>{item.label}</span>}
+                </NavLink>
+              </TooltipTrigger>
+              {collapsed && !mobile && (
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              )}
+            </Tooltip>
+          ))}
+        </TooltipProvider>
       </nav>
 
-      {/* User section */}
-      <div className="border-t border-gray-200 p-3 shrink-0">
-        <button
+      <Separator />
+
+      <div className="p-3">
+        {(!collapsed || mobile) ? (
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+              {user?.name?.charAt(0).toUpperCase() || 'S'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{user?.name}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">{user?.email}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center py-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+              {user?.name?.charAt(0).toUpperCase() || 'S'}
+            </div>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          className={cn(
+            'w-full mt-1 text-[hsl(var(--muted-foreground))] hover:text-red-600',
+            collapsed && !mobile ? 'justify-center px-2' : 'justify-start',
+          )}
           onClick={handleLogout}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all ${
-            collapsed ? 'justify-center' : ''
-          }`}
         >
-          <LogOut className="w-5 h-5 shrink-0" />
-          {!collapsed && <span>Sair</span>}
-        </button>
+          <LogOut className="w-4 h-4 shrink-0" />
+          {(!collapsed || mobile) && <span className="ml-2">Sair</span>}
+        </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-[hsl(var(--background))]">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-          collapsed ? 'w-[72px]' : 'w-64'
-        }`}
+        className={cn(
+          'hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] transition-all duration-200',
+          collapsed ? 'w-[68px]' : 'w-64',
+        )}
       >
-        <SidebarContent />
+        {sidebarContent(false)}
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col shadow-xl">
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
+      {/* Mobile Sidebar */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          {sidebarContent(true)}
+        </SheetContent>
+      </Sheet>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-
-            {/* Desktop collapse button */}
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              {collapsed ? (
-                <ChevronRight className="w-5 h-5" />
-              ) : (
-                <ChevronLeft className="w-5 h-5" />
-              )}
-            </button>
+      {/* Main content */}
+      <div className={cn('transition-all duration-200', collapsed ? 'lg:ml-[68px]' : 'lg:ml-64')}>
+        {/* Top bar */}
+        <header className="sticky top-0 z-20 h-16 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="hidden lg:inline-flex" onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </Button>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <button className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={toggleDark}>
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
 
-            {/* User info */}
-            <Link to="/settings" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 bg-primary-100 text-primary rounded-full flex items-center justify-center font-semibold text-sm">
-                {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-gray-900 leading-none">{user?.name || 'Super Admin'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Super Admin</p>
-              </div>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                    {user?.name?.charAt(0).toUpperCase() || 'S'}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  <p className="text-sm font-medium">{user?.name}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{user?.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configuracoes
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
