@@ -32,15 +32,14 @@ export default function Login() {
     try {
       const result = await login(data).unwrap();
 
-      const { user, access_token, refresh_token, tenant_slug, modules, plan } = result;
+      const { user, tenant_slug, modules, plan, permissions } = result;
 
       dispatch(
         adminLogin({
           user,
-          accessToken: access_token,
-          refreshToken: refresh_token,
           tenantSlug: tenant_slug,
           modules: modules || [],
+          permissions: permissions || [],
           plan: plan || null,
         }),
       );

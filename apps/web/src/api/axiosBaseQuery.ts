@@ -1,8 +1,7 @@
 import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
-import Cookies from 'js-cookie';
 import type { RootState } from '../store/index';
-import { setAdminTokens, adminLogout } from '../store/slices/adminAuthSlice';
+import { adminLogout } from '../store/slices/adminAuthSlice';
 
 export type AuthContext = 'admin' | 'customer' | 'public';
 
@@ -15,10 +14,13 @@ interface AxiosBaseQueryArgs {
   meta?: { authContext?: AuthContext; tenantSlug?: string };
 }
 
-const axiosInstance = axios.create({ baseURL: '/api' });
+const axiosInstance = axios.create({
+  baseURL: '/api',
+  withCredentials: true,
+});
 
 let isRefreshing = false;
-let refreshPromise: Promise<{ access_token: string; refresh_token: string }> | null = null;
+let refreshPromise: Promise<any> | null = null;
 
 export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> = async (
   args,
@@ -28,21 +30,13 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
   const state = api.getState() as RootState;
   const authContext = meta?.authContext ?? 'public';
 
-  // Set auth headers based on context
+  // Set tenant slug header
   if (authContext === 'admin') {
-    const { accessToken, tenantSlug } = state.adminAuth;
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
+    const { tenantSlug } = state.adminAuth;
     if (tenantSlug) {
       headers['X-Tenant-Slug'] = tenantSlug;
     }
   } else if (authContext === 'customer') {
-    const token = Cookies.get('customer_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    // Tenant slug from meta or from URL
     const slug = meta?.tenantSlug;
     if (slug) {
       headers['X-Tenant-Slug'] = slug;
@@ -55,45 +49,33 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
   } catch (axiosError) {
     const err = axiosError as AxiosError;
 
-    // Handle admin 401 with token refresh
+    // Handle admin 401 with token refresh via cookie
     if (err.response?.status === 401 && authContext === 'admin') {
-      const { refreshToken } = state.adminAuth;
-      if (refreshToken) {
-        try {
-          // Deduplicate concurrent refresh requests
-          if (!isRefreshing) {
-            isRefreshing = true;
-            refreshPromise = axios
-              .post('/api/auth/refresh', { refresh_token: refreshToken })
-              .then((res) => res.data);
-          }
-
-          const tokens = await refreshPromise!;
-          isRefreshing = false;
-          refreshPromise = null;
-
-          api.dispatch(setAdminTokens({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token }));
-
-          // Retry original request with new token
-          headers['Authorization'] = `Bearer ${tokens.access_token}`;
-          const retryResult = await axiosInstance({ url, method, data, params, headers });
-          return { data: retryResult.data };
-        } catch {
-          isRefreshing = false;
-          refreshPromise = null;
-          api.dispatch(adminLogout());
-          window.location.href = '/login';
-          return { error: { status: 401, data: 'Session expired' } };
+      try {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          refreshPromise = axiosInstance.post('/auth/refresh', {}).then((res) => res.data);
         }
-      } else {
+
+        await refreshPromise!;
+        isRefreshing = false;
+        refreshPromise = null;
+
+        // Retry original request (new cookies are set automatically)
+        const retryResult = await axiosInstance({ url, method, data, params, headers });
+        return { data: retryResult.data };
+      } catch {
+        isRefreshing = false;
+        refreshPromise = null;
         api.dispatch(adminLogout());
         window.location.href = '/login';
+        return { error: { status: 401, data: 'Session expired' } };
       }
     }
 
-    // Handle customer 401
+    // Handle customer 401 — clear cookies via backend
     if (err.response?.status === 401 && authContext === 'customer') {
-      Cookies.remove('customer_token', { path: '/' });
+      try { await axiosInstance.post('/auth/logout'); } catch { /* ignore */ }
       window.dispatchEvent(new CustomEvent('unauthorized'));
     }
 

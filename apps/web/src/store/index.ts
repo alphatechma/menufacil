@@ -12,10 +12,10 @@ const persistMiddleware: Middleware = (store) => (next) => (action) => {
 
   // Persist admin auth
   if (typeof action === 'object' && action !== null && 'type' in action && typeof (action as { type: string }).type === 'string' && (action as { type: string }).type.startsWith('adminAuth/')) {
-    const { user, accessToken, refreshToken, tenantSlug, modules, plan, isAuthenticated } = state.adminAuth;
+    const { user, tenantSlug, modules, permissions, plan, isAuthenticated } = state.adminAuth;
     localStorage.setItem(
       'menufacil-admin-auth',
-      JSON.stringify({ user, accessToken, refreshToken, tenantSlug, modules, plan, isAuthenticated }),
+      JSON.stringify({ user, tenantSlug, modules, permissions, plan, isAuthenticated }),
     );
   }
 

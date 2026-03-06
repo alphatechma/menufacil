@@ -6,6 +6,7 @@ export interface AdminUser {
   email: string;
   role: string;
   tenant_id: string;
+  role_id?: string | null;
 }
 
 export interface PlanInfo {
@@ -16,10 +17,9 @@ export interface PlanInfo {
 
 interface AdminAuthState {
   user: AdminUser | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   tenantSlug: string | null;
   modules: string[];
+  permissions: string[];
   plan: PlanInfo | null;
   isAuthenticated: boolean;
 }
@@ -46,10 +46,9 @@ const persisted = loadFromStorage();
 
 const initialState: AdminAuthState = {
   user: persisted.user ?? null,
-  accessToken: persisted.accessToken ?? null,
-  refreshToken: persisted.refreshToken ?? null,
   tenantSlug: persisted.tenantSlug ?? null,
   modules: persisted.modules ?? [],
+  permissions: persisted.permissions ?? [],
   plan: persisted.plan ?? null,
   isAuthenticated: persisted.isAuthenticated ?? false,
 };
@@ -62,33 +61,26 @@ const adminAuthSlice = createSlice({
       state,
       action: PayloadAction<{
         user: AdminUser;
-        accessToken: string;
-        refreshToken: string;
         tenantSlug: string;
         modules?: string[];
+        permissions?: string[];
         plan?: PlanInfo | null;
       }>,
     ) {
-      const { user, accessToken, refreshToken, tenantSlug, modules = [], plan = null } = action.payload;
+      const { user, tenantSlug, modules = [], permissions = [], plan = null } = action.payload;
       state.user = user;
-      state.accessToken = accessToken;
-      state.refreshToken = refreshToken;
       state.tenantSlug = tenantSlug;
       state.modules = modules.map((m: unknown) => (typeof m === 'string' ? m : (m as { key: string }).key));
+      state.permissions = permissions;
       state.plan = plan;
       state.isAuthenticated = true;
     },
     adminLogout(state) {
       state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
       state.modules = [];
+      state.permissions = [];
       state.plan = null;
       state.isAuthenticated = false;
-    },
-    setAdminTokens(state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
     },
     setTenantSlug(state, action: PayloadAction<string>) {
       state.tenantSlug = action.payload;
@@ -96,5 +88,5 @@ const adminAuthSlice = createSlice({
   },
 });
 
-export const { adminLogin, adminLogout, setAdminTokens, setTenantSlug } = adminAuthSlice.actions;
+export const { adminLogin, adminLogout, setTenantSlug } = adminAuthSlice.actions;
 export default adminAuthSlice.reducer;

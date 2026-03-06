@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { UserRole, IJwtPayload, IAuthTokens } from '@menufacil/shared';
 import { User } from '../user/entities/user.entity';
 import { Customer } from '../customer/entities/customer.entity';
@@ -33,12 +33,17 @@ export class AuthService {
     private readonly planRepository: Repository<Plan>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async loginSuperAdmin(dto: SuperAdminLoginDto): Promise<IAuthTokens & { user: { id: string; name: string; email: string; role: UserRole } }> {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email, system_role: UserRole.SUPER_ADMIN, is_active: true },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.email = :email', { email: dto.email })
+      .andWhere('user.system_role = :role', { role: UserRole.SUPER_ADMIN })
+      .andWhere('user.is_active = :active', { active: true })
+      .getOne();
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -68,9 +73,13 @@ export class AuthService {
   }
 
   async loginStaff(dto: LoginDto, tenantId: string) {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email, tenant_id: tenantId, is_active: true },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.email = :email', { email: dto.email })
+      .andWhere('user.tenant_id = :tenantId', { tenantId })
+      .andWhere('user.is_active = :active', { active: true })
+      .getOne();
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -100,6 +109,16 @@ export class AuthService {
       ? { id: tenant.plan.id, name: tenant.plan.name, price: Number(tenant.plan.price) }
       : null;
 
+    // Fetch user permissions from custom role
+    let permissions: string[] = [];
+    if (user.role_id) {
+      const roleWithPerms = await this.dataSource.query(
+        `SELECT p.key FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = $1`,
+        [user.role_id],
+      );
+      permissions = roleWithPerms.map((r: any) => r.key);
+    }
+
     return {
       ...tokens,
       user: {
@@ -108,9 +127,11 @@ export class AuthService {
         email: user.email,
         role: user.system_role,
         tenant_id: user.tenant_id,
+        role_id: user.role_id,
       },
       modules,
       plan,
+      permissions,
     };
   }
 
@@ -144,18 +165,43 @@ export class AuthService {
   }
 
   async loginCustomer(dto: CustomerLoginDto, tenantId: string): Promise<IAuthTokens & { customer: { id: string; name: string; phone: string; email: string | null } }> {
-    let customer = await this.customerRepository.findOne({
-      where: { phone: dto.phone, tenant_id: tenantId },
-    });
+    let customer: Customer | null = null;
 
-    // Auto-create customer if not found (phone-only login)
-    if (!customer) {
-      customer = this.customerRepository.create({
-        name: dto.name || dto.phone,
-        phone: dto.phone,
-        tenant_id: tenantId,
+    // Email + password login
+    if (dto.email && dto.password) {
+      customer = await this.customerRepository.findOne({
+        where: { email: dto.email, tenant_id: tenantId },
       });
-      customer = await this.customerRepository.save(customer);
+      if (!customer) {
+        throw new UnauthorizedException('Email ou senha incorretos');
+      }
+      if (!customer.password_hash) {
+        throw new BadRequestException('Esta conta nao possui senha. Entre pelo telefone e crie uma senha.');
+      }
+      const isPasswordValid = await bcrypt.compare(dto.password, customer.password_hash);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Email ou senha incorretos');
+      }
+    }
+    // Phone login (auto-create)
+    else if (dto.phone) {
+      customer = await this.customerRepository.findOne({
+        where: { phone: dto.phone, tenant_id: tenantId },
+      });
+
+      if (!customer) {
+        customer = this.customerRepository.create({
+          name: dto.name || dto.phone,
+          phone: dto.phone,
+          tenant_id: tenantId,
+        });
+        customer = await this.customerRepository.save(customer);
+      } else if (dto.name && dto.name !== customer.name) {
+        customer.name = dto.name;
+        customer = await this.customerRepository.save(customer);
+      }
+    } else {
+      throw new BadRequestException('Informe telefone ou email/senha para entrar');
     }
 
     const tokens = this.generateTokens({
@@ -206,9 +252,12 @@ export class AuthService {
   }
 
   async loginAdmin(dto: LoginDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email, is_active: true },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.email = :email', { email: dto.email })
+      .andWhere('user.is_active = :active', { active: true })
+      .getOne();
     if (!user || !user.tenant_id) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -230,6 +279,16 @@ export class AuthService {
     const plan = tenant?.plan
       ? { id: tenant.plan.id, name: tenant.plan.name, price: Number(tenant.plan.price) }
       : null;
+    // Fetch user permissions from custom role
+    let permissions: string[] = [];
+    if (user.role_id) {
+      const roleWithPerms = await this.dataSource.query(
+        `SELECT p.key FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = $1`,
+        [user.role_id],
+      );
+      permissions = roleWithPerms.map((r: any) => r.key);
+    }
+
     return {
       ...tokens,
       user: {
@@ -238,9 +297,11 @@ export class AuthService {
         email: user.email,
         role: user.system_role,
         tenant_id: user.tenant_id,
+        role_id: user.role_id,
       },
       modules,
       plan,
+      permissions,
       tenant_slug: tenant?.slug || '',
     };
   }
@@ -346,7 +407,7 @@ export class AuthService {
   private generateTokens(payload: IJwtPayload): IAuthTokens {
     return {
       access_token: this.jwtService.sign(payload, {
-        expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m'),
+        expiresIn: this.configService.get('JWT_EXPIRES_IN', '7d'),
       }),
       refresh_token: this.jwtService.sign(payload, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),

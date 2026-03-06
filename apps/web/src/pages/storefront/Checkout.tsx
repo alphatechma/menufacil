@@ -15,8 +15,9 @@ import {
   Loader2,
   Plus,
   Trash2,
+  Tag,
+  Check,
 } from 'lucide-react';
-import Cookies from 'js-cookie';
 import {
   useCustomerLoginMutation,
   useGetCustomerProfileQuery,
@@ -24,11 +25,13 @@ import {
   useRemoveCustomerAddressMutation,
   useCreateOrderMutation,
   useGetPublicDeliveryZonesQuery,
+  useLazyValidateCouponQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customerLoginSuccess } from '@/store/slices/customerAuthSlice';
 import { clearCart } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
+import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
 
 type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash';
 
@@ -82,6 +85,7 @@ export default function Checkout() {
 
   const cartItems = useAppSelector((state) => state.cart.items);
   const customerAuth = useAppSelector((state) => state.customerAuth);
+  const tenant = useAppSelector((state) => state.tenant.tenant);
 
   const [customerLogin, { isLoading: authLoading }] = useCustomerLoginMutation();
   const { data: customerProfile } = useGetCustomerProfileQuery(
@@ -95,6 +99,7 @@ export default function Checkout() {
     { slug: slug! },
     { skip: !slug },
   );
+  const [validateCoupon] = useLazyValidateCouponQuery();
 
   // Login form state
   const [loginPhone, setLoginPhone] = useState('');
@@ -116,6 +121,8 @@ export default function Checkout() {
 
   // Payment & order
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [needsChange, setNeedsChange] = useState(false);
+  const [changeAmount, setChangeAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -124,6 +131,13 @@ export default function Checkout() {
   const [zoneNotFound, setZoneNotFound] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
   const neighborhoodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Calculate totals
@@ -131,7 +145,7 @@ export default function Checkout() {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
     return sum + (item.unit_price + extrasTotal) * item.quantity;
   }, 0);
-  const total = subtotal + deliveryFee;
+  const total = subtotal + deliveryFee - couponDiscount;
 
   // Get item total
   const getItemTotal = (item: typeof cartItems[0]) => {
@@ -243,6 +257,29 @@ export default function Checkout() {
     lookupDeliveryFee(addr.neighborhood);
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const result = await validateCoupon({ slug: slug!, code: couponCode.trim(), total: subtotal }).unwrap();
+      setCouponDiscount(result.discount);
+      setAppliedCoupon(couponCode.trim().toUpperCase());
+    } catch (err: any) {
+      setCouponError(err?.data?.message || 'Cupom invalido');
+      setCouponDiscount(0);
+      setAppliedCoupon(null);
+    }
+    setCouponLoading(false);
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setCouponDiscount(0);
+    setAppliedCoupon(null);
+    setCouponError(null);
+  };
+
   const handleAddNewAddress = () => {
     setSelectedAddressId(null);
     setIsAddingNewAddress(true);
@@ -298,16 +335,16 @@ export default function Checkout() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginPhone.trim()) return;
+    if (!loginPhone.trim() || !loginName.trim()) return;
     setAuthError(null);
     try {
       const result = await customerLogin({
-        phone: loginPhone.trim(),
-        name: loginName.trim() || undefined,
+        phone: unmaskDigits(loginPhone),
+        name: loginName.trim(),
         slug: slug!,
       }).unwrap();
 
-      Cookies.set('customer_token', result.access_token, { expires: 30 });
+      // Cookie is set by backend (httpOnly)
       dispatch(customerLoginSuccess(result.customer));
     } catch (err: any) {
       setAuthError(err?.data?.message || 'Erro ao entrar. Tente novamente.');
@@ -351,16 +388,23 @@ export default function Checkout() {
         });
       }
 
+      const changeFor = paymentMethod === 'cash' && needsChange && parseFloat(changeAmount) > total
+        ? parseFloat(changeAmount)
+        : undefined;
+
       const orderData = {
         items: cartItems.map((item) => ({
           product_id: item.product_id,
           variation_id: item.variation_id,
+          variation_ids: item.variation_ids,
           quantity: item.quantity,
           extras: item.extras,
         })),
         address_id: selectedAddressId,
         address: selectedAddressId ? undefined : address,
         payment_method: paymentMethod,
+        coupon_code: appliedCoupon || undefined,
+        change_for: changeFor,
       };
 
       const result = await createOrder({ slug: slug!, data: orderData }).unwrap();
@@ -373,6 +417,34 @@ export default function Checkout() {
       );
     }
   };
+
+  // Block checkout if store is closed
+  if (tenant && !tenant.is_open) {
+    return (
+      <div className="px-4 pt-8 pb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+          <Clock className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Estamos fechados</h2>
+          <p className="text-sm text-gray-500 mb-2">
+            No momento nao estamos recebendo pedidos.
+          </p>
+          {tenant.next_open_label && (
+            <p className="text-sm font-semibold mb-6" style={{ color: 'var(--tenant-primary)' }}>
+              {tenant.next_open_label}
+            </p>
+          )}
+          {!tenant.next_open_label && <div className="mb-6" />}
+          <button
+            onClick={() => navigate(`/${slug}`)}
+            className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm"
+            style={{ backgroundColor: 'var(--tenant-primary)' }}
+          >
+            Voltar ao inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -438,7 +510,7 @@ export default function Checkout() {
                   <input
                     type="tel"
                     value={loginPhone}
-                    onChange={(e) => setLoginPhone(e.target.value)}
+                    onChange={(e) => setLoginPhone(maskPhone(e.target.value))}
                     placeholder="(11) 99999-1234"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
                     autoFocus
@@ -449,7 +521,7 @@ export default function Checkout() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Seu nome <span className="text-gray-400">(opcional)</span>
+                  Seu nome <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -459,13 +531,14 @@ export default function Checkout() {
                     onChange={(e) => setLoginName(e.target.value)}
                     placeholder="Como podemos te chamar?"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
+                    required
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={authLoading || !loginPhone.trim()}
+                disabled={authLoading || !loginPhone.trim() || !loginName.trim()}
                 className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
@@ -550,7 +623,8 @@ export default function Checkout() {
             )}
           </div>
 
-          {!isAddingNewAddress && customer?.addresses && customer.addresses.length > 0 ? (
+          {/* Saved addresses */}
+          {customer?.addresses && customer.addresses.length > 0 && !isAddingNewAddress && (
             <div className="space-y-3">
               {customer.addresses.map((addr: any) => (
                 <div
@@ -609,7 +683,10 @@ export default function Checkout() {
                 <span className="text-sm font-medium">Adicionar outro endereco</span>
               </button>
             </div>
-          ) : (
+          )}
+
+          {/* New address form — only when no saved addresses OR user clicked "Novo endereco" */}
+          {(isAddingNewAddress || !customer?.addresses || customer.addresses.length === 0) && (
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -632,7 +709,7 @@ export default function Checkout() {
                   <input
                     type="text"
                     value={address.zip_code}
-                    onChange={(e) => handleAddressChange('zip_code', e.target.value)}
+                    onChange={(e) => handleAddressChange('zip_code', maskCep(e.target.value))}
                     placeholder="00000-000"
                     maxLength={9}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
@@ -781,7 +858,13 @@ export default function Checkout() {
                     name="payment"
                     value={method.value}
                     checked={isSelected}
-                    onChange={() => setPaymentMethod(method.value)}
+                    onChange={() => {
+                      setPaymentMethod(method.value);
+                      if (method.value !== 'cash') {
+                        setNeedsChange(false);
+                        setChangeAmount('');
+                      }
+                    }}
                     className="sr-only"
                   />
                   <div
@@ -811,6 +894,128 @@ export default function Checkout() {
               );
             })}
           </div>
+
+          {/* Change section for cash */}
+          {paymentMethod === 'cash' && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-sm font-medium text-gray-700 mb-3">Precisa de troco?</p>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => { setNeedsChange(false); setChangeAmount(''); }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 ${
+                    !needsChange
+                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  Nao preciso
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNeedsChange(true)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 ${
+                    needsChange
+                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  Sim, preciso
+                </button>
+              </div>
+
+              {needsChange && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1.5">Troco para quanto?</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">R$</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min={total}
+                      value={changeAmount}
+                      onChange={(e) => setChangeAmount(e.target.value)}
+                      placeholder={formatPrice(Math.ceil(total / 10) * 10).replace('R$\u00a0', '')}
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
+                    />
+                  </div>
+                  {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) > total && (
+                    <p className="text-xs font-medium mt-2" style={{ color: 'var(--tenant-primary)' }}>
+                      Troco: {formatPrice(parseFloat(changeAmount) - total)}
+                    </p>
+                  )}
+                  {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) <= total && (
+                    <p className="text-xs font-medium text-red-500 mt-2">
+                      O valor deve ser maior que o total do pedido ({formatPrice(total)})
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Coupon */}
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Tag
+              className="w-5 h-5"
+              style={{ color: 'var(--tenant-primary)' }}
+            />
+            <h3 className="font-bold text-gray-900">Cupom de desconto</h3>
+          </div>
+
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-semibold text-green-700">{appliedCoupon}</span>
+                <span className="text-xs text-green-600">-{formatPrice(couponDiscount)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="text-xs font-medium text-red-500 hover:underline"
+              >
+                Remover
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponError(null);
+                  }}
+                  placeholder="Digite o codigo"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponCode.trim()}
+                  className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                  style={{ backgroundColor: 'var(--tenant-primary)' }}
+                >
+                  {couponLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Aplicar'
+                  )}
+                </button>
+              </div>
+              {couponError && (
+                <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {couponError}
+                </p>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Order Summary */}
@@ -877,6 +1082,12 @@ export default function Checkout() {
                 )}
               </span>
             </div>
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Desconto ({appliedCoupon})</span>
+                <span>-{formatPrice(couponDiscount)}</span>
+              </div>
+            )}
             {deliveryTime && !lookingUpFee && !zoneNotFound && (
               <div className="flex justify-between text-xs text-gray-400">
                 <span>Tempo estimado</span>
@@ -890,6 +1101,14 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatPrice(total)}</span>
             </div>
+            {paymentMethod === 'cash' && needsChange && parseFloat(changeAmount) > total && (
+              <div className="flex justify-between text-sm pt-1">
+                <span className="text-gray-500">Troco para {formatPrice(parseFloat(changeAmount))}</span>
+                <span className="font-semibold" style={{ color: 'var(--tenant-primary)' }}>
+                  {formatPrice(parseFloat(changeAmount) - total)}
+                </span>
+              </div>
+            )}
           </div>
         </section>
 
