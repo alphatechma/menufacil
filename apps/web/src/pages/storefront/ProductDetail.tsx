@@ -161,7 +161,7 @@ export default function ProductDetail() {
     const selected = product.variations?.filter((v: any) => selectedVariations.has(v.id)) || [];
     const variationName = selected.map((v: any) => v.name).join(' / ') || null;
     const variationId = selected[0]?.id || null;
-    const variationIds = selected.length > 1 ? selected.map((v: any) => v.id) : undefined;
+    const variationIds = selected.length > 0 ? selected.map((v: any) => v.id) : undefined;
 
     const extras: CartItemExtra[] = Array.from(selectedExtras.values());
 

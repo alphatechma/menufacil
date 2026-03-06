@@ -93,26 +93,33 @@ export class OrderService {
         throw new BadRequestException(`Produto nao encontrado: ${item.product_id}`);
       }
 
-      // Support multiple variations (e.g. pizza with 3 flavors)
-      const hasMultipleVariations = item.variation_ids && item.variation_ids.length > 1;
+      // Resolve variations - prefer variation_ids array over single variation_id
+      const varIds = (item.variation_ids && item.variation_ids.length > 0)
+        ? item.variation_ids
+        : (item.variation_id ? [item.variation_id] : []);
+
       let unitPrice: number;
       let variationName: string | null;
 
-      if (hasMultipleVariations) {
-        const resolvedVariations = item.variation_ids!
+      if (varIds.length > 0) {
+        const resolvedVariations = varIds
           .map((vid) => variationMap.get(vid))
           .filter(Boolean) as ProductVariation[];
-        unitPrice = resolvedVariations.reduce((sum, v) => sum + Number(v.price), 0);
-        variationName = resolvedVariations.map((v) => v.name).join(' / ');
+        if (resolvedVariations.length > 0) {
+          unitPrice = resolvedVariations.reduce((sum, v) => sum + Number(v.price), 0);
+          variationName = resolvedVariations.map((v) => v.name).join(' / ');
+        } else {
+          unitPrice = Number(product.base_price);
+          variationName = null;
+        }
       } else {
-        const variation = item.variation_id ? variationMap.get(item.variation_id) : null;
-        unitPrice = variation ? Number(variation.price) : Number(product.base_price);
-        variationName = variation ? variation.name : null;
+        unitPrice = Number(product.base_price);
+        variationName = null;
       }
 
       return {
         product_id: item.product_id,
-        variation_id: item.variation_id || null,
+        variation_id: varIds[0] || item.variation_id || null,
         product_name: product.name,
         variation_name: variationName,
         unit_price: unitPrice,
