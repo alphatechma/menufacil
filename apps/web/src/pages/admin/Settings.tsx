@@ -78,7 +78,23 @@ export default function Settings() {
         min_order_value: tenant.min_order_value ?? null,
       });
       if (tenant.business_hours && Object.keys(tenant.business_hours).length > 0) {
-        setBusinessHours({ ...DEFAULT_BUSINESS_HOURS, ...tenant.business_hours });
+        // Normalize legacy format: { open: "11:00", close: "23:00" } → { open: true, openTime: "11:00", closeTime: "23:00" }
+        const normalized: BusinessHours = {};
+        for (const [day, val] of Object.entries(tenant.business_hours as Record<string, any>)) {
+          if (typeof val.openTime === 'string') {
+            // Already in correct format
+            normalized[day] = val;
+          } else {
+            // Legacy format: open/close are time strings, or open is boolean with close
+            const isOpen = typeof val.open === 'boolean' ? val.open : !!val.open;
+            normalized[day] = {
+              open: isOpen,
+              openTime: typeof val.open === 'string' ? val.open : (val.openTime || '08:00'),
+              closeTime: val.close || val.closeTime || '22:00',
+            };
+          }
+        }
+        setBusinessHours({ ...DEFAULT_BUSINESS_HOURS, ...normalized });
       }
     }
   }, [tenant, reset]);
