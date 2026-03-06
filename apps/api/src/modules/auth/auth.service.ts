@@ -408,10 +408,15 @@ export class AuthService {
     };
   }
 
+  private get refreshSecret(): string {
+    return this.configService.get('JWT_REFRESH_SECRET')
+      || this.configService.get('JWT_SECRET', 'your-jwt-secret-change-in-production') + '-refresh';
+  }
+
   async refreshToken(refreshToken: string): Promise<IAuthTokens> {
     try {
       const payload = this.jwtService.verify<IJwtPayload>(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        secret: this.refreshSecret,
       });
 
       return this.generateTokens({
@@ -426,12 +431,13 @@ export class AuthService {
   }
 
   private generateTokens(payload: IJwtPayload): IAuthTokens {
+    const isWaiter = payload.role === UserRole.WAITER;
     return {
       access_token: this.jwtService.sign(payload, {
-        expiresIn: this.configService.get('JWT_EXPIRES_IN', '7d'),
+        expiresIn: isWaiter ? '7d' : this.configService.get('JWT_EXPIRES_IN', '1h'),
       }),
       refresh_token: this.jwtService.sign(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        secret: this.refreshSecret,
         expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
       }),
     };

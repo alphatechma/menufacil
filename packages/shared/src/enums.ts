@@ -4,6 +4,7 @@ export enum UserRole {
   MANAGER = 'manager',
   CASHIER = 'cashier',
   KITCHEN = 'kitchen',
+  WAITER = 'waiter',
 }
 
 export enum OrderStatus {
@@ -13,7 +14,15 @@ export enum OrderStatus {
   READY = 'ready',
   OUT_FOR_DELIVERY = 'out_for_delivery',
   DELIVERED = 'delivered',
+  PICKED_UP = 'picked_up',
+  SERVED = 'served',
   CANCELLED = 'cancelled',
+}
+
+export enum OrderType {
+  DELIVERY = 'delivery',
+  PICKUP = 'pickup',
+  DINE_IN = 'dine_in',
 }
 
 export enum PaymentMethod {

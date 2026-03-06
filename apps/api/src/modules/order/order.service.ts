@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { OrderStatus, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
+import { OrderStatus, OrderType, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
 import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
@@ -11,6 +11,7 @@ import { CustomerAddress } from '../customer/entities/customer-address.entity';
 import { DeliveryZoneService } from '../delivery-zone/delivery-zone.service';
 import { CouponService } from '../coupon/coupon.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
+import { EventsGateway } from '../../websocket/events.gateway';
 
 @Injectable()
 export class OrderService {
@@ -25,6 +26,7 @@ export class OrderService {
     private readonly deliveryZoneService: DeliveryZoneService,
     private readonly couponService: CouponService,
     private readonly loyaltyService: LoyaltyService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async create(dto: CreateOrderDto, customerId: string, tenantId: string): Promise<Order> {
@@ -77,9 +79,22 @@ export class OrderService {
       }
     }
 
+    const orderType = dto.order_type || OrderType.DELIVERY;
+
+    // For dine_in orders from staff (waiter), customer_id may not be a valid customer
+    // Set to null — the order is tied to the table_session instead
+    if (orderType === OrderType.DINE_IN) {
+      customerId = null as any;
+    }
+
+    // Skip address/delivery fee for pickup and dine-in
+    if (orderType !== OrderType.DELIVERY) {
+      resolvedAddress = null;
+    }
+
     // Calculate delivery fee from neighborhood
     let deliveryFee = 0;
-    if (resolvedAddress?.neighborhood) {
+    if (orderType === OrderType.DELIVERY && resolvedAddress?.neighborhood) {
       const result = await this.deliveryZoneService.findByNeighborhood(resolvedAddress.neighborhood, tenantId);
       if (result.zone) {
         deliveryFee = result.fee;
@@ -177,6 +192,9 @@ export class OrderService {
       delivery_fee: deliveryFee,
       discount,
       total,
+      order_type: orderType,
+      table_id: dto.table_id || undefined,
+      table_session_id: dto.table_session_id || undefined,
       address_snapshot: resolvedAddress as any,
       change_for: dto.change_for || undefined,
       notes: dto.notes,
@@ -184,7 +202,12 @@ export class OrderService {
     });
 
     const savedOrder = await this.orderRepository.save(order);
-    return this.findById(savedOrder.id, tenantId);
+    const fullOrder = await this.findById(savedOrder.id, tenantId);
+
+    // Emit WebSocket event for new order
+    this.eventsGateway.emitNewOrder(tenantId, fullOrder);
+
+    return fullOrder;
   }
 
   async findByTenant(tenantId: string): Promise<Order[]> {
@@ -220,6 +243,8 @@ export class OrderService {
       [OrderStatus.READY]: 'ready_at',
       [OrderStatus.OUT_FOR_DELIVERY]: 'out_for_delivery_at',
       [OrderStatus.DELIVERED]: 'delivered_at',
+      [OrderStatus.PICKED_UP]: 'picked_up_at',
+      [OrderStatus.SERVED]: 'served_at',
       [OrderStatus.CANCELLED]: 'cancelled_at',
     };
 
@@ -242,7 +267,12 @@ export class OrderService {
       }
     }
 
-    return this.findById(id, tenantId);
+    const updatedOrder = await this.findById(id, tenantId);
+
+    // Emit WebSocket event for status update
+    this.eventsGateway.emitOrderStatusUpdate(tenantId, id, updatedOrder);
+
+    return updatedOrder;
   }
 
   async getPerformanceStats(tenantId: string, days = 7) {
@@ -313,9 +343,10 @@ export class OrderService {
     until: string,
     filters: { status?: string; payment_method?: string; delivery_person_id?: string } = {},
   ) {
-    const sinceDate = new Date(since);
-    const untilDate = new Date(until);
-    untilDate.setHours(23, 59, 59, 999);
+    // Use date strings with explicit time to avoid timezone conversion issues
+    // "since" starts at 00:00:00 local time, "until" ends at 23:59:59 local time
+    const sinceDate = new Date(`${since}T00:00:00`);
+    const untilDate = new Date(`${until}T23:59:59.999`);
     return this.orderRepository.getDashboardData(tenantId, sinceDate, untilDate, filters);
   }
 }

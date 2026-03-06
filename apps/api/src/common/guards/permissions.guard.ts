@@ -24,8 +24,13 @@ export class PermissionsGuard implements CanActivate {
       return false;
     }
 
-    // Only SuperAdmin has implicit full access
+    // SuperAdmin has implicit full access
     if (user.role === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+
+    // Customers bypass permission checks (they access only customer-facing endpoints)
+    if (user.type === 'customer') {
       return true;
     }
 

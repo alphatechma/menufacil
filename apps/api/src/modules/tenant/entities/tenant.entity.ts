@@ -52,6 +52,22 @@ export class Tenant {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   min_order_value: number;
 
+  @Column({ type: 'jsonb', nullable: true, default: () => "'{\"sound_enabled\": true, \"sound_new_order\": true, \"sound_out_for_delivery\": true, \"sound_delivered\": true, \"push_enabled\": false}'" })
+  notification_settings: {
+    sound_enabled: boolean;
+    sound_new_order: boolean;
+    sound_out_for_delivery: boolean;
+    sound_delivered: boolean;
+    push_enabled: boolean;
+  };
+
+  @Column({ type: 'jsonb', nullable: true, default: () => "'{\"delivery\": true, \"pickup\": false, \"dine_in\": false}'" })
+  order_modes: {
+    delivery: boolean;
+    pickup: boolean;
+    dine_in: boolean;
+  };
+
   @Column({ default: true })
   is_active: boolean;
 

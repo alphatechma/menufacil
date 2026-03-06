@@ -80,4 +80,26 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .to(WEBSOCKET_ROOMS.tenantKds(tenantId))
       .emit(WEBSOCKET_EVENTS.KDS_NEW_ITEM, item);
   }
+
+  @SubscribeMessage('join:tenant-tables')
+  handleJoinTenantTables(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { tenantId: string },
+  ) {
+    const room = WEBSOCKET_ROOMS.tenantTables(data.tenantId);
+    client.join(room);
+    this.logger.log(`Client ${client.id} joined ${room}`);
+  }
+
+  emitTableStatusUpdate(tenantId: string, tableId: string, status: string) {
+    this.server
+      .to(WEBSOCKET_ROOMS.tenantTables(tenantId))
+      .emit(WEBSOCKET_EVENTS.TABLE_STATUS_UPDATED, { tableId, status });
+  }
+
+  emitNewReservation(tenantId: string, reservation: any) {
+    this.server
+      .to(WEBSOCKET_ROOMS.tenantOrders(tenantId))
+      .emit(WEBSOCKET_EVENTS.RESERVATION_NEW, reservation);
+  }
 }

@@ -51,4 +51,24 @@ export class CreateTenantDto {
   @IsOptional()
   @IsString()
   plan_id?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  notification_settings?: {
+    sound_enabled: boolean;
+    sound_new_order: boolean;
+    sound_out_for_delivery: boolean;
+    sound_delivered: boolean;
+    push_enabled: boolean;
+  };
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  order_modes?: {
+    delivery?: boolean;
+    pickup?: boolean;
+    dine_in?: boolean;
+  };
 }

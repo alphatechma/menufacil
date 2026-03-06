@@ -8,7 +8,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@menufacil/shared';
+import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Customer } from '../../customer/entities/customer.entity';
 import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
@@ -22,7 +22,7 @@ export class Order {
   @Column()
   tenant_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   customer_id: string;
 
   @Column()
@@ -30,6 +30,15 @@ export class Order {
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
+
+  @Column({ type: 'enum', enum: OrderType, default: OrderType.DELIVERY })
+  order_type: OrderType;
+
+  @Column({ nullable: true })
+  table_id: string;
+
+  @Column({ nullable: true })
+  table_session_id: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   subtotal: number;
@@ -43,7 +52,7 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total: number;
 
-  @Column({ type: 'enum', enum: PaymentMethod })
+  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
   payment_method: PaymentMethod;
 
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
@@ -78,6 +87,12 @@ export class Order {
 
   @Column({ type: 'timestamp', nullable: true })
   cancelled_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  picked_up_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  served_at: Date;
 
   @CreateDateColumn()
   created_at: Date;

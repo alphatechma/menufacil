@@ -22,9 +22,6 @@ import { Permission } from '../permission/entities/permission.entity';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET', 'your-jwt-secret-change-in-production'),
-        signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN', '15m'),
-        },
       }),
     }),
   ],

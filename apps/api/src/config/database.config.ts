@@ -14,4 +14,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   synchronize: configService.get('NODE_ENV') === 'development',
   migrationsRun: true,
   logging: configService.get('NODE_ENV') === 'development',
+  extra: {
+    options: '-c timezone=America/Sao_Paulo',
+  },
 });

@@ -12,6 +12,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         (request: Request) => {
+          // Use X-Auth-Context header to determine which cookie to use
+          const authContext = request?.headers?.['x-auth-context'] as string | undefined;
+          if (authContext === 'customer') {
+            return request?.cookies?.customer_token;
+          }
           return request?.cookies?.accessToken || request?.cookies?.customer_token;
         },
       ]),

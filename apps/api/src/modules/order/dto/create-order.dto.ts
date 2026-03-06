@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod } from '@menufacil/shared';
+import { PaymentMethod, OrderType } from '@menufacil/shared';
 
 export class OrderItemExtraDto {
   @ApiProperty({ example: 'Bacon' })
@@ -90,9 +90,10 @@ export class CreateOrderDto {
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
 
-  @ApiProperty({ enum: PaymentMethod })
+  @ApiPropertyOptional({ enum: PaymentMethod })
+  @IsOptional()
   @IsEnum(PaymentMethod)
-  payment_method: PaymentMethod;
+  payment_method?: PaymentMethod;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -120,4 +121,19 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ enum: OrderType })
+  @IsOptional()
+  @IsEnum(OrderType)
+  order_type?: OrderType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  table_id?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  table_session_id?: string;
 }

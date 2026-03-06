@@ -54,7 +54,11 @@ async function seed() {
   // ==========================================
   const moduleRepo = dataSource.getRepository('SystemModule');
   const defaultModules = [
+    // Modulos administrativos (disponiveis em todos os planos)
     { key: 'dashboard', name: 'Dashboard', description: 'Painel principal com metricas e resumo' },
+    { key: 'staff', name: 'Equipe', description: 'Gerenciamento de membros da equipe e perfis de acesso' },
+    { key: 'settings', name: 'Configuracoes', description: 'Configuracoes gerais e personalizacao da loja' },
+    // Modulos de funcionalidades (dependem do plano)
     { key: 'orders', name: 'Pedidos', description: 'Gerenciamento de pedidos' },
     { key: 'products', name: 'Produtos', description: 'Gerenciamento de produtos e cardapio' },
     { key: 'categories', name: 'Categorias', description: 'Gerenciamento de categorias' },
@@ -65,6 +69,9 @@ async function seed() {
     { key: 'kds', name: 'KDS', description: 'Kitchen Display System' },
     { key: 'reports', name: 'Relatorios', description: 'Relatorios e analytics' },
     { key: 'delivery_driver', name: 'Painel Entregador', description: 'Painel do entregador para acompanhar e concluir entregas' },
+    { key: 'pickup', name: 'Retirada', description: 'Pedidos para retirada no balcao' },
+    { key: 'dine_in', name: 'Atendimento Presencial', description: 'Mesas, comandas, reservas e mapa do salao' },
+    { key: 'waiter', name: 'Garcom', description: 'App do garcom para pedidos presenciais' },
   ];
 
   const savedModules: Record<string, any> = {};
@@ -90,21 +97,21 @@ async function seed() {
       price: 99,
       max_users: 3,
       max_products: 50,
-      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers'],
+      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'pickup'],
     },
     {
       name: 'Pro',
       price: 199,
       max_users: 10,
       max_products: 200,
-      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds', 'delivery_driver'],
+      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds', 'delivery_driver', 'pickup'],
     },
     {
       name: 'Enterprise',
       price: 399,
       max_users: null,
       max_products: null,
-      moduleKeys: ['dashboard', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports', 'delivery_driver'],
+      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports', 'delivery_driver', 'pickup', 'dine_in', 'waiter'],
     },
   ];
 
@@ -139,6 +146,31 @@ async function seed() {
   const permissionRepo = dataSource.getRepository('Permission');
 
   const permissionsByModule: Record<string, { key: string; name: string }[]> = {
+    // ── Modulos administrativos ──
+    dashboard: [
+      { key: 'dashboard:read', name: 'Ver Dashboard' },
+    ],
+    staff: [
+      // Equipe
+      { key: 'staff:read', name: 'Ver Equipe' },
+      { key: 'staff:create', name: 'Criar Membro' },
+      { key: 'staff:update', name: 'Editar Membro' },
+      { key: 'staff:delete', name: 'Remover Membro' },
+      // Perfis de Acesso
+      { key: 'roles:read', name: 'Ver Perfis de Acesso' },
+      { key: 'roles:create', name: 'Criar Perfil de Acesso' },
+      { key: 'roles:update', name: 'Editar Perfil de Acesso' },
+      { key: 'roles:delete', name: 'Remover Perfil de Acesso' },
+    ],
+    settings: [
+      // Configuracoes
+      { key: 'settings:read', name: 'Ver Configuracoes' },
+      { key: 'settings:update', name: 'Editar Configuracoes' },
+      // Personalizacao
+      { key: 'customization:read', name: 'Ver Personalizacao' },
+      { key: 'customization:update', name: 'Editar Personalizacao' },
+    ],
+    // ── Modulos de funcionalidades ──
     products: [
       { key: 'product:create', name: 'Criar Produto' },
       { key: 'product:read', name: 'Ver Produtos' },
@@ -188,32 +220,23 @@ async function seed() {
     reports: [
       { key: 'report:read', name: 'Ver Relatorios' },
     ],
-    dashboard: [
-      { key: 'dashboard:read', name: 'Ver Dashboard' },
-    ],
     delivery_driver: [
       { key: 'delivery_driver:read', name: 'Ver Minhas Entregas' },
       { key: 'delivery_driver:update', name: 'Atualizar Status da Entrega' },
     ],
-    staff: [
-      { key: 'staff:read', name: 'Ver Equipe' },
-      { key: 'staff:create', name: 'Criar Membro' },
-      { key: 'staff:update', name: 'Editar Membro' },
-      { key: 'staff:delete', name: 'Remover Membro' },
+    // ── Atendimento presencial (mesas + reservas + mapa) ──
+    dine_in: [
+      { key: 'table:create', name: 'Criar Mesa' },
+      { key: 'table:read', name: 'Ver Mesas' },
+      { key: 'table:update', name: 'Editar Mesa' },
+      { key: 'table:delete', name: 'Remover Mesa' },
+      { key: 'reservation:read', name: 'Ver Reservas' },
+      { key: 'reservation:update', name: 'Gerenciar Reservas' },
+      { key: 'floor_plan:read', name: 'Ver Mapa do Salao' },
+      { key: 'floor_plan:update', name: 'Editar Mapa do Salao' },
     ],
-    roles: [
-      { key: 'roles:read', name: 'Ver Perfis de Acesso' },
-      { key: 'roles:create', name: 'Criar Perfil de Acesso' },
-      { key: 'roles:update', name: 'Editar Perfil de Acesso' },
-      { key: 'roles:delete', name: 'Remover Perfil de Acesso' },
-    ],
-    settings: [
-      { key: 'settings:read', name: 'Ver Configuracoes' },
-      { key: 'settings:update', name: 'Editar Configuracoes' },
-    ],
-    customization: [
-      { key: 'customization:read', name: 'Ver Personalizacao' },
-      { key: 'customization:update', name: 'Editar Personalizacao' },
+    waiter: [
+      { key: 'waiter:access', name: 'Acessar App Garcom' },
     ],
   };
 
@@ -226,10 +249,24 @@ async function seed() {
           ...perm,
           module_id: mod?.id || null,
         });
+      } else if (mod && existing.module_id !== mod.id) {
+        // Update module_id for existing permissions that were reorganized
+        existing.module_id = mod.id;
+        await permissionRepo.save(existing);
       }
     }
   }
-  console.log('✅ Default permissions created');
+  console.log('✅ Default permissions created/updated');
+
+  // Clean up legacy modules that were merged into others
+  const legacyModuleKeys = ['roles', 'customization', 'tables', 'reservations', 'floor_plan'];
+  for (const legacyKey of legacyModuleKeys) {
+    const legacyMod = await moduleRepo.findOne({ where: { key: legacyKey } });
+    if (legacyMod) {
+      await moduleRepo.remove(legacyMod);
+      console.log(`🗑️  Removed legacy module "${legacyKey}" (merged into another module)`);
+    }
+  }
 
   // Fetch all permissions for the default admin role
   const allPermissions = await permissionRepo.find();
@@ -264,6 +301,7 @@ async function seed() {
         },
         min_order_value: 30,
         is_active: true,
+        order_modes: { delivery: true, pickup: true, dine_in: false },
       },
       planName: 'Basico',
       admin: {
@@ -312,6 +350,7 @@ async function seed() {
         },
         min_order_value: 25,
         is_active: true,
+        order_modes: { delivery: true, pickup: true, dine_in: false },
       },
       planName: 'Pro',
       admin: {
@@ -368,6 +407,7 @@ async function seed() {
         },
         min_order_value: 50,
         is_active: true,
+        order_modes: { delivery: true, pickup: true, dine_in: true },
       },
       planName: 'Enterprise',
       admin: {
@@ -465,6 +505,35 @@ async function seed() {
       }
     }
 
+    // ── Create default "Garcom" role with waiter permissions ──
+    const waiterPermKeys = [
+      'order:create', 'order:read', 'order:update',
+      'table:read', 'table:update',
+      'product:read', 'category:read',
+      'waiter:access',
+    ];
+    const waiterPerms = allPermissions.filter((p: any) => waiterPermKeys.includes(p.key));
+    let waiterRole = await roleRepo.findOne({ where: { name: 'Garcom', tenant_id: tenantId }, relations: ['permissions'] });
+    if (!waiterRole) {
+      waiterRole = await roleRepo.save({
+        name: 'Garcom',
+        description: 'Acesso ao app do garcom para pedidos presenciais',
+        tenant_id: tenantId,
+        permissions: waiterPerms,
+      });
+      console.log(`  ✅ Role "Garcom" created with ${waiterPerms.length} permissions`);
+    } else {
+      const existingKeys = new Set(((waiterRole as any).permissions || []).map((p: any) => p.key));
+      const missing = waiterPerms.filter((p: any) => !existingKeys.has(p.key));
+      if (missing.length > 0) {
+        (waiterRole as any).permissions = [...((waiterRole as any).permissions || []), ...missing];
+        await roleRepo.save(waiterRole);
+        console.log(`  🔄 Role "Garcom" updated with ${missing.length} new permissions`);
+      } else {
+        console.log(`  ⏭️  Role "Garcom" already up to date`);
+      }
+    }
+
     // ── Create admin user ──
     let admin = await userRepo.findOne({ where: { email: demo.admin.email } });
     if (!admin) {
@@ -556,6 +625,52 @@ async function seed() {
         console.log(`  ✅ ${(demo as any).deliveryZones.length} delivery zones created`);
       } else {
         console.log(`  ⏭️  Delivery zones already exist (${existingZones.length})`);
+      }
+    }
+
+    // ── Create demo tables for Enterprise tenant (Sushi Premium) ──
+    if (demo.tenant.slug === 'sushi-premium') {
+      const tableRepo = dataSource.getRepository('RestaurantTable');
+      const existingTables = await tableRepo.find({ where: { tenant_id: tenantId } });
+      if (existingTables.length === 0) {
+        const tables = [
+          { number: 1, label: 'Salao A', capacity: 2, tenant_id: tenantId },
+          { number: 2, label: 'Salao A', capacity: 4, tenant_id: tenantId },
+          { number: 3, label: 'Salao A', capacity: 4, tenant_id: tenantId },
+          { number: 4, label: 'Salao A', capacity: 6, tenant_id: tenantId },
+          { number: 5, label: 'Varanda', capacity: 2, tenant_id: tenantId },
+          { number: 6, label: 'Varanda', capacity: 4, tenant_id: tenantId },
+          { number: 7, label: 'Reservado', capacity: 8, tenant_id: tenantId },
+          { number: 8, label: 'Bar', capacity: 2, tenant_id: tenantId },
+        ];
+        for (const t of tables) {
+          await tableRepo.save(t);
+        }
+        console.log(`  ✅ 8 tables created for Sushi Premium`);
+      } else {
+        console.log(`  ⏭️  Tables already exist (${existingTables.length})`);
+      }
+
+      // ── Create demo waiter user ──
+      let waiterUser = await userRepo.findOne({ where: { email: 'garcom@sushipremium.com' } });
+      if (!waiterUser) {
+        waiterUser = await userRepo.save({
+          name: 'Garcom Demo',
+          email: 'garcom@sushipremium.com',
+          password_hash: passwordHash,
+          system_role: UserRole.WAITER,
+          tenant_id: tenantId,
+          role_id: (waiterRole as any).id,
+          is_active: true,
+        });
+        console.log(`  ✅ Waiter "garcom@sushipremium.com" created (senha: admin123)`);
+      } else {
+        if ((waiterUser as any).role_id !== (waiterRole as any).id) {
+          await userRepo.update((waiterUser as any).id, { role_id: (waiterRole as any).id });
+          console.log(`  🔄 Waiter "garcom@sushipremium.com" assigned role "Garcom"`);
+        } else {
+          console.log(`  ⏭️  Waiter "garcom@sushipremium.com" already exists`);
+        }
       }
     }
   }

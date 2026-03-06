@@ -22,6 +22,10 @@ import { PermissionModule } from './modules/permission/permission.module';
 import { SuperAdminDashboardModule } from './modules/super-admin-dashboard/super-admin-dashboard.module';
 import { DeliveryPersonModule } from './modules/delivery-person/delivery-person.module';
 import { RoleModule } from './modules/role/role.module';
+import { TableModule } from './modules/table/table.module';
+import { TableSessionModule } from './modules/table-session/table-session.module';
+import { ReservationModule } from './modules/reservation/reservation.module';
+import { FloorPlanModule } from './modules/floor-plan/floor-plan.module';
 
 @Module({
   imports: [
@@ -52,6 +56,10 @@ import { RoleModule } from './modules/role/role.module';
     SuperAdminDashboardModule,
     DeliveryPersonModule,
     RoleModule,
+    TableModule,
+    TableSessionModule,
+    ReservationModule,
+    FloorPlanModule,
   ],
 })
 export class AppModule implements NestModule {
