@@ -11,6 +11,10 @@ import {
   Pause,
   MapPin,
   ShoppingBag,
+  Clock,
+  ChefHat,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
@@ -21,17 +25,54 @@ import {
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
 import { cn } from '@/utils/cn';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
 
-type TabKey = 'queue' | 'preparing' | 'ready';
+interface ColumnConfig {
+  id: string;
+  title: string;
+  statuses: string[];
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  badgeBg: string;
+}
 
-const TABS: { key: TabKey; label: string; statuses: string[] }[] = [
-  { key: 'queue', label: 'Fila', statuses: ['pending', 'confirmed'] },
-  { key: 'preparing', label: 'Em Preparo', statuses: ['preparing'] },
-  { key: 'ready', label: 'Prontos', statuses: ['ready'] },
+const COLUMNS: ColumnConfig[] = [
+  {
+    id: 'pending',
+    title: 'Fila',
+    statuses: ['pending', 'confirmed'],
+    icon: <Clock className="w-5 h-5" />,
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    badgeBg: 'bg-amber-500',
+  },
+  {
+    id: 'preparing',
+    title: 'Em Preparo',
+    statuses: ['preparing'],
+    icon: <ChefHat className="w-5 h-5" />,
+    color: 'text-indigo-700',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    badgeBg: 'bg-indigo-500',
+  },
+  {
+    id: 'ready',
+    title: 'Prontos',
+    statuses: ['ready'],
+    icon: <Check className="w-5 h-5" />,
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
+    badgeBg: 'bg-emerald-500',
+  },
 ];
 
 const ORDER_TYPE_CONFIG: Record<string, {
@@ -85,19 +126,23 @@ function parseUTC(dateStr: string): Date {
   return new Date(dateStr + 'Z');
 }
 
-function getTimeSince(dateStr: string): { text: string; minutes: number } {
-  const now = new Date();
-  const created = parseUTC(dateStr);
-  const diffMs = now.getTime() - created.getTime();
-  const diffMin = Math.max(0, Math.floor(diffMs / 60000));
-  if (diffMin < 1) return { text: 'Agora', minutes: 0 };
-  if (diffMin < 60) return { text: `${diffMin} min`, minutes: diffMin };
-  const h = Math.floor(diffMin / 60);
-  const m = diffMin % 60;
-  return { text: `${h}h${m > 0 ? ` ${m}m` : ''}`, minutes: diffMin };
+function formatElapsed(dateStr: string): string {
+  const now = Date.now();
+  const created = parseUTC(dateStr).getTime();
+  const diffSec = Math.max(0, Math.floor((now - created) / 1000));
+  const h = Math.floor(diffSec / 3600);
+  const m = Math.floor((diffSec % 3600) / 60);
+  const s = diffSec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function getTimeColor(minutes: number) {
+function getElapsedMinutes(dateStr: string): number {
+  const now = Date.now();
+  const created = parseUTC(dateStr).getTime();
+  return Math.max(0, Math.floor((now - created) / 60000));
+}
+
+function getTimerHeaderColor(minutes: number) {
   if (minutes >= 20) return 'text-red-100 bg-red-500/40';
   if (minutes >= 10) return 'text-yellow-100 bg-yellow-500/40';
   return 'text-white/90 bg-white/20';
@@ -129,34 +174,34 @@ function getCardTitle(order: any): string {
   return order.customer?.name || 'Cliente';
 }
 
-// ─── TMA Panel ──────────────────────────────────────────────────────────────
+// ─── Live Timer Hook ────────────────────────────────────────────────────────
 
-function useLiveTMA(orders: any[]) {
+function useLiveTimer() {
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 15000);
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+}
 
+// ─── TMA Bar ────────────────────────────────────────────────────────────────
+
+function useLiveTMA(orders: any[]) {
   return useMemo(() => {
     const activeOrders = orders.filter((o: any) =>
       ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status),
     );
-
     if (activeOrders.length === 0) return { avgMinutes: 0, count: 0, oldest: 0 };
 
     const now = Date.now();
     let totalMinutes = 0;
     let oldest = 0;
-
     for (const o of activeOrders) {
-      const created = parseUTC(o.created_at).getTime();
-      const mins = Math.floor((now - created) / 60000);
+      const mins = Math.floor((now - parseUTC(o.created_at).getTime()) / 60000);
       totalMinutes += mins;
       if (mins > oldest) oldest = mins;
     }
-
     return {
       avgMinutes: Math.round(totalMinutes / activeOrders.length),
       count: activeOrders.length,
@@ -208,7 +253,7 @@ function TMABar({ orders }: { orders: any[] }) {
 
 function KDSOrderCard({
   order,
-  tab,
+  columnId,
   deliveryPersons,
   onStart,
   onFinish,
@@ -217,22 +262,23 @@ function KDSOrderCard({
   isUpdating,
 }: {
   order: any;
-  tab: TabKey;
+  columnId: string;
   deliveryPersons: any[];
   onStart?: () => void;
   onFinish?: () => void;
   onPause?: () => void;
-  onAssignDelivery?: (deliveryPersonId: string | null) => void;
+  onAssignDelivery?: (orderId: string) => void;
   isUpdating: boolean;
 }) {
   const config = ORDER_TYPE_CONFIG[order.order_type] || DEFAULT_TYPE_CONFIG;
-  const time = order.created_at ? getTimeSince(order.created_at) : { text: '-', minutes: 0 };
-  const timeColor = getTimeColor(time.minutes);
+  const minutes = order.created_at ? getElapsedMinutes(order.created_at) : 0;
+  const elapsed = order.created_at ? formatElapsed(order.created_at) : '00:00:00';
+  const timerHeaderColor = getTimerHeaderColor(minutes);
   const title = getCardTitle(order);
   const orderNum = order.order_number || order.id?.slice(0, 6);
 
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
       {/* Colored Header */}
       <div className={cn('px-4 py-3', config.headerBg)}>
         <div className="flex items-center justify-between">
@@ -252,8 +298,8 @@ function KDSOrderCard({
             <span className={cn('text-xs', config.headerText, 'opacity-80')}>
               {order.created_at ? formatTime(order.created_at) : ''}
             </span>
-            <span className={cn('px-2 py-0.5 rounded-md text-xs font-bold', timeColor)}>
-              {time.text}
+            <span className={cn('px-2 py-0.5 rounded-md text-xs font-black font-mono tabular-nums', timerHeaderColor)}>
+              {elapsed}
             </span>
           </div>
         </div>
@@ -270,7 +316,7 @@ function KDSOrderCard({
               const hasDetails = variation || extras.length > 0 || item.notes;
 
               return (
-                <tr key={idx} className="group">
+                <tr key={idx}>
                   <td className="py-2 pr-3 align-top w-8">
                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-muted text-foreground text-sm font-black">
                       {item.quantity}
@@ -303,7 +349,7 @@ function KDSOrderCard({
         </table>
       </div>
 
-      {/* Notes */}
+      {/* Order Notes */}
       {order.notes && (
         <div className="mx-4 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
           <p className="text-xs font-bold text-yellow-800">OBS: {order.notes}</p>
@@ -323,29 +369,31 @@ function KDSOrderCard({
       )}
 
       {/* Delivery person assignment */}
-      {tab === 'ready' && order.order_type === 'delivery' && onAssignDelivery && (
+      {columnId === 'ready' && order.order_type === 'delivery' && onAssignDelivery && (
         <div className="px-4 pb-3">
-          <select
-            className="w-full text-sm rounded-lg border border-border px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
-            value={order.delivery_person_id || ''}
-            onChange={(e) => onAssignDelivery(e.target.value || null)}
-          >
-            <option value="">Selecionar entregador...</option>
-            {deliveryPersons
-              .filter((p: any) => p.is_active)
-              .map((p: any) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} {p.vehicle ? `(${p.vehicle})` : ''}
-                </option>
-              ))}
-          </select>
+          {order.delivery_person_id ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Truck className="w-4 h-4" />
+              <span className="font-medium">
+                {deliveryPersons.find((p: any) => p.id === order.delivery_person_id)?.name || 'Entregador'}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={() => onAssignDelivery(order.id)}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm bg-primary hover:bg-primary-dark text-white transition-colors active:scale-95"
+            >
+              <Truck className="w-4 h-4" />
+              Selecionar Entregador
+            </button>
+          )}
         </div>
       )}
 
       {/* Action Buttons */}
-      {(tab === 'queue' || tab === 'preparing') && (
+      {(columnId === 'pending' || columnId === 'preparing') && (
         <div className="px-4 pb-4 flex items-center gap-2">
-          {tab === 'queue' && onStart && (
+          {columnId === 'pending' && onStart && (
             <button
               onClick={onStart}
               disabled={isUpdating}
@@ -355,7 +403,7 @@ function KDSOrderCard({
               Iniciar
             </button>
           )}
-          {tab === 'preparing' && onPause && (
+          {columnId === 'preparing' && onPause && (
             <button
               onClick={onPause}
               disabled={isUpdating}
@@ -384,22 +432,19 @@ function KDSOrderCard({
 // ─── Main KDS Component ─────────────────────────────────────────────────────
 
 export default function KDS() {
-  const [, setTick] = useState(0);
-  const [activeTab, setActiveTab] = useState<TabKey>('queue');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [deliveryModal, setDeliveryModal] = useState<string | null>(null);
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState('');
+
+  // Live timer — re-renders every second for HH:MM:SS
+  useLiveTimer();
 
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [assignDeliveryPerson] = useAssignDeliveryPersonMutation();
-
-  // Update time displays every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleRefetch = useCallback(() => {
     refetch();
@@ -410,11 +455,11 @@ export default function KDS() {
     'order:status-updated': handleRefetch,
   });
 
-  const tabOrders = useMemo(() => {
-    const result: Record<TabKey, any[]> = { queue: [], preparing: [], ready: [] };
-    for (const tab of TABS) {
-      result[tab.key] = orders
-        .filter((o: any) => tab.statuses.includes(o.status))
+  const columnOrders = useMemo(() => {
+    const result: Record<string, any[]> = {};
+    for (const col of COLUMNS) {
+      result[col.id] = orders
+        .filter((o: any) => col.statuses.includes(o.status))
         .sort(
           (a: any, b: any) =>
             parseUTC(a.created_at).getTime() - parseUTC(b.created_at).getTime(),
@@ -423,13 +468,11 @@ export default function KDS() {
     return result;
   }, [orders]);
 
-  const tabCounts = useMemo(() => ({
-    queue: tabOrders.queue.length,
-    preparing: tabOrders.preparing.length,
-    ready: tabOrders.ready.length,
-  }), [tabOrders]);
-
-  const totalQueue = tabCounts.queue + tabCounts.preparing;
+  const totalActive = useMemo(() => {
+    return orders.filter((o: any) =>
+      ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status),
+    ).length;
+  }, [orders]);
 
   const handleStart = async (orderId: string) => {
     setUpdatingOrderId(orderId);
@@ -466,11 +509,26 @@ export default function KDS() {
     setUpdatingOrderId(null);
   };
 
-  const handleAssignDelivery = async (orderId: string, deliveryPersonId: string | null) => {
-    await assignDeliveryPerson({ orderId, delivery_person_id: deliveryPersonId });
+  const handleOpenDeliveryModal = (orderId: string) => {
+    setSelectedDeliveryPerson('');
+    setDeliveryModal(orderId);
   };
 
-  const currentOrders = tabOrders[activeTab];
+  const handleConfirmDelivery = async () => {
+    if (!deliveryModal || !selectedDeliveryPerson) return;
+    setUpdatingOrderId(deliveryModal);
+    try {
+      await assignDeliveryPerson({ orderId: deliveryModal, delivery_person_id: selectedDeliveryPerson }).unwrap();
+      await updateStatus({ id: deliveryModal, status: 'out_for_delivery' }).unwrap();
+    } catch {
+      // ignore
+    }
+    setUpdatingOrderId(null);
+    setDeliveryModal(null);
+    setSelectedDeliveryPerson('');
+  };
+
+  const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
 
   if (isLoading) return <ListPageSkeleton />;
 
@@ -480,7 +538,7 @@ export default function KDS() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-black text-foreground">
-            {totalQueue} Pedido{totalQueue !== 1 ? 's' : ''} na Fila
+            {totalActive} Pedido{totalActive !== 1 ? 's' : ''} na Fila
           </h1>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
@@ -500,64 +558,153 @@ export default function KDS() {
         <TMABar orders={orders} />
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-5 bg-muted p-1 rounded-xl w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2',
-              activeTab === tab.key
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {tab.label}
-            {tabCounts[tab.key] > 0 && (
-              <span className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center',
-                activeTab === tab.key
-                  ? tab.key === 'queue' ? 'bg-amber-100 text-amber-700' : tab.key === 'preparing' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
-                  : 'bg-muted-foreground/20 text-muted-foreground',
-              )}>
-                {tabCounts[tab.key]}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Kanban Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {COLUMNS.map((column) => {
+          const colOrders = columnOrders[column.id] || [];
+          return (
+            <div key={column.id} className="flex flex-col">
+              {/* Column Header */}
+              <div className={cn(column.bgColor, 'rounded-t-2xl px-4 py-3 border-2 border-b-0', column.borderColor)}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={column.color}>{column.icon}</span>
+                    <h2 className={cn('font-black text-base', column.color)}>{column.title}</h2>
+                  </div>
+                  <span className={cn(column.badgeBg, 'text-white text-sm font-black px-3 py-0.5 rounded-full min-w-[28px] text-center')}>
+                    {colOrders.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Column Body */}
+              <div className={cn('flex-1 rounded-b-2xl border-2 border-t-0 p-3 space-y-3 min-h-[300px]', column.borderColor, `${column.bgColor}/30`)}>
+                {colOrders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <Package className="w-12 h-12 mb-2 opacity-30" />
+                    <p className="text-sm font-bold">Nenhum pedido</p>
+                  </div>
+                ) : (
+                  colOrders.map((order: any) => (
+                    <KDSOrderCard
+                      key={order.id}
+                      order={order}
+                      columnId={column.id}
+                      deliveryPersons={deliveryPersons}
+                      isUpdating={updatingOrderId === order.id}
+                      onStart={
+                        column.id === 'pending'
+                          ? () => handleStart(order.id)
+                          : undefined
+                      }
+                      onFinish={
+                        column.id !== 'ready'
+                          ? () => handleFinish(order.id)
+                          : undefined
+                      }
+                      onPause={
+                        column.id === 'preparing'
+                          ? () => handlePause(order.id)
+                          : undefined
+                      }
+                      onAssignDelivery={
+                        column.id === 'ready' && order.order_type === 'delivery'
+                          ? handleOpenDeliveryModal
+                          : undefined
+                      }
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Grid */}
-      {currentOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-          <Package className="w-16 h-16 mb-4 opacity-30" />
-          <p className="text-lg font-bold">Nenhum pedido</p>
-          <p className="text-sm">
-            {activeTab === 'queue' && 'Nenhum pedido novo na fila'}
-            {activeTab === 'preparing' && 'Nenhum pedido em preparo'}
-            {activeTab === 'ready' && 'Nenhum pedido pronto'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {currentOrders.map((order: any) => (
-            <KDSOrderCard
-              key={order.id}
-              order={order}
-              tab={activeTab}
-              deliveryPersons={deliveryPersons}
-              isUpdating={updatingOrderId === order.id}
-              onStart={activeTab === 'queue' ? () => handleStart(order.id) : undefined}
-              onFinish={activeTab !== 'ready' ? () => handleFinish(order.id) : undefined}
-              onPause={activeTab === 'preparing' ? () => handlePause(order.id) : undefined}
-              onAssignDelivery={
-                activeTab === 'ready' && order.order_type === 'delivery'
-                  ? (dpId) => handleAssignDelivery(order.id, dpId)
-                  : undefined
-              }
-            />
-          ))}
+      {/* Modal: Selecionar Entregador */}
+      {deliveryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDeliveryModal(null)} />
+          <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Selecionar Entregador</h3>
+              </div>
+              <button
+                onClick={() => setDeliveryModal(null)}
+                className="p-1 hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-muted-foreground mb-4">
+                Selecione o entregador antes de enviar o pedido para entrega.
+              </p>
+
+              {activeDeliveryPersons.length === 0 ? (
+                <div className="text-center py-6">
+                  <Truck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum entregador ativo cadastrado.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {activeDeliveryPersons.map((person: any) => (
+                    <label
+                      key={person.id}
+                      className={cn(
+                        'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                        selectedDeliveryPerson === person.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-border/80',
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="delivery_person"
+                        value={person.id}
+                        checked={selectedDeliveryPerson === person.id}
+                        onChange={() => setSelectedDeliveryPerson(person.id)}
+                        className="sr-only"
+                      />
+                      <div className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center',
+                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground',
+                      )}>
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{person.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {person.phone}
+                          {person.vehicle && ` · ${person.vehicle}`}
+                        </p>
+                      </div>
+                      {selectedDeliveryPerson === person.id && (
+                        <Check className="w-5 h-5 text-primary" />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted">
+              <Button variant="outline" onClick={() => setDeliveryModal(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmDelivery}
+                disabled={!selectedDeliveryPerson || updatingOrderId === deliveryModal}
+                loading={updatingOrderId === deliveryModal}
+              >
+                <Truck className="w-4 h-4" />
+                <span className="ml-1">Enviar para entrega</span>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
