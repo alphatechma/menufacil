@@ -139,6 +139,22 @@ Variaveis criticas para producao:
 | `MINIO_SECRET_KEY` | Chave secreta do MinIO |
 | `API_URL` | URL da API para os frontends |
 
+## Seed do Banco de Dados
+
+Apos o primeiro deploy, rode o seed para criar as permissoes, planos e o usuario super admin:
+
+```bash
+pnpm db:seed
+# ou diretamente:
+pnpm --filter api seed
+```
+
+No Easypanel, execute via terminal do servico da API:
+
+```bash
+node dist/database/seeds/run-seed.js
+```
+
 ## Build Manual
 
 Para buildar um app individualmente:
