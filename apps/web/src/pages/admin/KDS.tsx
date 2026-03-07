@@ -1,96 +1,84 @@
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import {
-  Clock,
-  Check,
-  ChefHat,
-  AlertTriangle,
-  User,
   Truck,
   Package,
   UtensilsCrossed,
-  Phone,
-  Timer,
-  Zap,
-  BarChart3,
-  ChevronDown,
-  ChevronUp,
-  TrendingUp,
   Play,
   CheckCircle2,
   Volume2,
   VolumeX,
   Gauge,
+  Pause,
+  MapPin,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
   useUpdateOrderStatusMutation,
   useGetDeliveryPersonsQuery,
   useAssignDeliveryPersonMutation,
-  useGetOrderPerformanceStatsQuery,
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
+import { cn } from '@/utils/cn';
 
-interface ColumnConfig {
-  id: string;
-  title: string;
-  statuses: string[];
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  badgeBg: string;
-  action?: { label: string; nextStatus: string; icon: React.ReactNode; btnClass: string };
-}
+// ─── Types & Constants ──────────────────────────────────────────────────────
 
-const COLUMNS: ColumnConfig[] = [
-  {
-    id: 'pending',
-    title: 'Novos Pedidos',
-    statuses: ['pending', 'confirmed'],
-    icon: <Clock className="w-6 h-6" />,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    badgeBg: 'bg-amber-500',
-    action: {
-      label: 'Iniciar Preparo',
-      nextStatus: 'preparing',
-      icon: <Play className="w-5 h-5" />,
-      btnClass: 'bg-indigo-600 hover:bg-indigo-700 text-white',
-    },
-  },
-  {
-    id: 'preparing',
-    title: 'Em Preparo',
-    statuses: ['preparing'],
-    icon: <ChefHat className="w-6 h-6" />,
-    color: 'text-indigo-700',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    badgeBg: 'bg-indigo-500',
-    action: {
-      label: 'Pronto!',
-      nextStatus: 'ready',
-      icon: <CheckCircle2 className="w-5 h-5" />,
-      btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-    },
-  },
-  {
-    id: 'ready',
-    title: 'Prontos p/ Entrega',
-    statuses: ['ready'],
-    icon: <Check className="w-6 h-6" />,
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    badgeBg: 'bg-emerald-500',
-  },
+type TabKey = 'queue' | 'preparing' | 'ready';
+
+const TABS: { key: TabKey; label: string; statuses: string[] }[] = [
+  { key: 'queue', label: 'Fila', statuses: ['pending', 'confirmed'] },
+  { key: 'preparing', label: 'Em Preparo', statuses: ['preparing'] },
+  { key: 'ready', label: 'Prontos', statuses: ['ready'] },
 ];
 
-/** Parse date ensuring UTC interpretation (server returns UTC without Z suffix) */
+const ORDER_TYPE_CONFIG: Record<string, {
+  label: string;
+  headerBg: string;
+  headerText: string;
+  badgeBg: string;
+  badgeText: string;
+  icon: React.ReactNode;
+}> = {
+  dine_in: {
+    label: 'Mesa',
+    headerBg: 'bg-amber-400',
+    headerText: 'text-white',
+    badgeBg: 'bg-white/30',
+    badgeText: 'text-white',
+    icon: <UtensilsCrossed className="w-4 h-4" />,
+  },
+  pickup: {
+    label: 'Retirada',
+    headerBg: 'bg-emerald-500',
+    headerText: 'text-white',
+    badgeBg: 'bg-white/30',
+    badgeText: 'text-white',
+    icon: <ShoppingBag className="w-4 h-4" />,
+  },
+  delivery: {
+    label: 'Entrega',
+    headerBg: 'bg-rose-400',
+    headerText: 'text-white',
+    badgeBg: 'bg-white/30',
+    badgeText: 'text-white',
+    icon: <Truck className="w-4 h-4" />,
+  },
+};
+
+const DEFAULT_TYPE_CONFIG = {
+  label: 'Pedido',
+  headerBg: 'bg-blue-400',
+  headerText: 'text-white',
+  badgeBg: 'bg-white/30',
+  badgeText: 'text-white',
+  icon: <Package className="w-4 h-4" />,
+};
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function parseUTC(dateStr: string): Date {
   if (!dateStr) return new Date();
   if (dateStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateStr)) return new Date(dateStr);
@@ -105,13 +93,14 @@ function getTimeSince(dateStr: string): { text: string; minutes: number } {
   if (diffMin < 1) return { text: 'Agora', minutes: 0 };
   if (diffMin < 60) return { text: `${diffMin} min`, minutes: diffMin };
   const h = Math.floor(diffMin / 60);
-  return { text: `${h}h${diffMin % 60 > 0 ? ` ${diffMin % 60}m` : ''}`, minutes: diffMin };
+  const m = diffMin % 60;
+  return { text: `${h}h${m > 0 ? ` ${m}m` : ''}`, minutes: diffMin };
 }
 
-function getUrgencyStyle(minutes: number) {
-  if (minutes >= 30) return { ring: 'ring-red-400 ring-2', badge: 'bg-red-100 text-red-700 border-red-200', pulse: true };
-  if (minutes >= 15) return { ring: 'ring-amber-300 ring-1', badge: 'bg-amber-50 text-amber-700 border-amber-200', pulse: false };
-  return { ring: '', badge: 'bg-muted text-muted-foreground border-border', pulse: false };
+function getTimeColor(minutes: number) {
+  if (minutes >= 20) return 'text-red-100 bg-red-500/40';
+  if (minutes >= 10) return 'text-yellow-100 bg-yellow-500/40';
+  return 'text-white/90 bg-white/20';
 }
 
 function formatMinutes(minutes: number): string {
@@ -122,7 +111,26 @@ function formatMinutes(minutes: number): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
-/** Compute live TMA from active orders */
+function formatTime(dateStr: string): string {
+  const d = parseUTC(dateStr);
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getCardTitle(order: any): string {
+  if (order.order_type === 'dine_in' && order.table?.number) {
+    return `Mesa ${String(order.table.number).padStart(2, '0')}`;
+  }
+  if (order.order_type === 'delivery') {
+    return order.customer?.name || 'Entrega';
+  }
+  if (order.order_type === 'pickup') {
+    return order.customer?.name || 'Retirada';
+  }
+  return order.customer?.name || 'Cliente';
+}
+
+// ─── TMA Panel ──────────────────────────────────────────────────────────────
+
 function useLiveTMA(orders: any[]) {
   const [, setTick] = useState(0);
 
@@ -157,293 +165,205 @@ function useLiveTMA(orders: any[]) {
   }, [orders]);
 }
 
-function getTMAColor(avgMinutes: number): { bg: string; text: string; ring: string; label: string } {
-  if (avgMinutes <= 10) return { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', ring: 'ring-emerald-200 dark:ring-emerald-800', label: 'Excelente' };
-  if (avgMinutes <= 20) return { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-800', label: 'Bom' };
-  if (avgMinutes <= 30) return { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-800', label: 'Atencao' };
-  return { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', ring: 'ring-red-300 dark:ring-red-800', label: 'Critico' };
+function getTMAColor(avgMinutes: number) {
+  if (avgMinutes <= 10) return { text: 'text-emerald-600', label: 'Excelente' };
+  if (avgMinutes <= 20) return { text: 'text-blue-600', label: 'Bom' };
+  if (avgMinutes <= 30) return { text: 'text-amber-600', label: 'Atencao' };
+  return { text: 'text-red-600', label: 'Critico' };
 }
 
-function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
-  const liveTMA = useLiveTMA(orders);
-  const tmaStyle = getTMAColor(liveTMA.avgMinutes);
-  const historicalTMA = perfStats?.avg_total_time || 0;
+function TMABar({ orders }: { orders: any[] }) {
+  const tma = useLiveTMA(orders);
+  const style = getTMAColor(tma.avgMinutes);
 
-  if (liveTMA.count === 0 && !historicalTMA) return null;
+  if (tma.count === 0) return null;
 
   return (
-    <div className={`rounded-2xl border-2 ${tmaStyle.ring} ${tmaStyle.bg} p-4 flex items-center gap-5`}>
-      {/* Live TMA - Main metric */}
-      <div className="flex items-center gap-3">
-        <div className={`w-14 h-14 rounded-2xl ${tmaStyle.bg} ring-2 ${tmaStyle.ring} flex items-center justify-center`}>
-          <Gauge className={`w-7 h-7 ${tmaStyle.text}`} />
-        </div>
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">TMA Atual</p>
-          <div className="flex items-baseline gap-2">
-            <span className={`text-3xl font-black ${tmaStyle.text}`}>
-              {liveTMA.count > 0 ? formatMinutes(liveTMA.avgMinutes) : '--'}
-            </span>
-            {liveTMA.count > 0 && (
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tmaStyle.bg} ${tmaStyle.text} ring-1 ${tmaStyle.ring}`}>
-                {tmaStyle.label}
-              </span>
-            )}
-          </div>
-        </div>
+    <div className="flex items-center gap-6 px-4 py-2.5 bg-card rounded-xl border border-border">
+      <div className="flex items-center gap-2">
+        <Gauge className={cn('w-5 h-5', style.text)} />
+        <span className="text-xs font-bold text-muted-foreground uppercase">TMA</span>
+        <span className={cn('text-lg font-black', style.text)}>
+          {formatMinutes(tma.avgMinutes)}
+        </span>
+        <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full bg-muted', style.text)}>
+          {style.label}
+        </span>
       </div>
-
-      {/* Separator */}
-      <div className="w-px h-12 bg-muted" />
-
-      {/* Quick stats */}
-      <div className="flex items-center gap-6">
-        <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pedidos Ativos</p>
-          <p className="text-xl font-black text-foreground">{liveTMA.count}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mais Antigo</p>
-          <p className={`text-xl font-black ${liveTMA.oldest >= 30 ? 'text-red-600' : liveTMA.oldest >= 15 ? 'text-amber-600' : 'text-foreground'}`}>
-            {liveTMA.count > 0 ? formatMinutes(liveTMA.oldest) : '--'}
-          </p>
-        </div>
-        {historicalTMA > 0 && (
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">TMA 7 dias</p>
-            <p className="text-xl font-black text-gray-600 dark:text-gray-300">{formatMinutes(historicalTMA)}</p>
-          </div>
-        )}
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="font-bold text-foreground">{tma.count}</span> ativos
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        Mais antigo:
+        <span className={cn('font-bold', tma.oldest >= 20 ? 'text-red-600' : tma.oldest >= 10 ? 'text-amber-600' : 'text-foreground')}>
+          {formatMinutes(tma.oldest)}
+        </span>
       </div>
     </div>
   );
 }
 
+// ─── Order Card ─────────────────────────────────────────────────────────────
+
 function KDSOrderCard({
   order,
-  column,
+  tab,
   deliveryPersons,
-  onAction,
+  onStart,
+  onFinish,
+  onPause,
   onAssignDelivery,
   isUpdating,
 }: {
   order: any;
-  column: ColumnConfig;
+  tab: TabKey;
   deliveryPersons: any[];
-  onAction?: () => void;
+  onStart?: () => void;
+  onFinish?: () => void;
+  onPause?: () => void;
   onAssignDelivery?: (deliveryPersonId: string | null) => void;
   isUpdating: boolean;
 }) {
+  const config = ORDER_TYPE_CONFIG[order.order_type] || DEFAULT_TYPE_CONFIG;
   const time = order.created_at ? getTimeSince(order.created_at) : { text: '-', minutes: 0 };
-  const urgency = getUrgencyStyle(time.minutes);
-  const showDelivery = column.id === 'ready';
+  const timeColor = getTimeColor(time.minutes);
+  const title = getCardTitle(order);
+  const orderNum = order.order_number || order.id?.slice(0, 6);
 
   return (
-    <div
-      className={`bg-card rounded-2xl border-2 overflow-hidden transition-all ${urgency.ring} ${
-        urgency.pulse ? 'animate-pulse-subtle' : ''
-      } ${column.borderColor}`}
-    >
-      {/* Card Header - Order number + Time */}
-      <div className={`${column.bgColor} px-4 py-3 flex items-center justify-between`}>
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-black text-foreground">
-            #{order.order_number || order.id?.slice(0, 6)}
+    <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {/* Colored Header */}
+      <div className={cn('px-4 py-3', config.headerBg)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {config.icon}
+            <span className={cn('text-base font-black', config.headerText)}>{title}</span>
+          </div>
+          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-bold', config.badgeBg, config.badgeText)}>
+            {config.label}
           </span>
-          {order.status === 'pending' && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-600 animate-bounce">
-              NOVO
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className={cn('text-sm font-bold', config.headerText)}>
+            Pedido #{orderNum}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className={cn('text-xs', config.headerText, 'opacity-80')}>
+              {order.created_at ? formatTime(order.created_at) : ''}
             </span>
-          )}
-        </div>
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold ${urgency.badge}`}>
-          {time.minutes >= 30 && <AlertTriangle className="w-3.5 h-3.5" />}
-          <Timer className="w-3.5 h-3.5" />
-          {time.text}
-        </div>
-      </div>
-
-      {/* Items - The main focus for kitchen */}
-      <div className="px-4 py-3">
-        <div className="space-y-2">
-          {order.items?.map((item: any, idx: number) => (
-            <div key={idx} className="flex items-start gap-3">
-              <div className="shrink-0 w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black">
-                {item.quantity}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-foreground leading-snug">
-                  {item.product_name || item.product?.name || item.name}
-                </p>
-                {(item.variation_name || item.variation?.name) && (
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
-                    {item.variation_name || item.variation?.name}
-                  </p>
-                )}
-                {item.extras && item.extras.length > 0 && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                    + {item.extras.map((e: any) => e.name).join(', ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Notes - Very visible for kitchen */}
-      {order.notes && (
-        <div className="mx-4 mb-3 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-700 rounded-xl px-4 py-3">
-          <div className="flex items-start gap-2">
-            <UtensilsCrossed className="w-4 h-4 text-yellow-700 dark:text-yellow-400 shrink-0 mt-0.5" />
-            <p className="text-sm font-bold text-yellow-800 dark:text-yellow-300">{order.notes}</p>
+            <span className={cn('px-2 py-0.5 rounded-md text-xs font-bold', timeColor)}>
+              {time.text}
+            </span>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Customer info - Small, secondary */}
-      <div className="px-4 pb-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <User className="w-3.5 h-3.5" />
-        <span className="truncate">{order.customer?.name || 'Cliente'}</span>
-        {order.customer?.phone && (
-          <a
-            href={`tel:${order.customer.phone}`}
-            className="flex items-center gap-1 text-primary font-medium hover:underline ml-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Phone className="w-3 h-3" />
-            {order.customer.phone}
-          </a>
+      {/* Items */}
+      <div className="px-4 py-3">
+        <div className="space-y-1.5">
+          {order.items?.map((item: any, idx: number) => {
+            const name = item.product_name || item.product?.name || item.name || 'Produto';
+            const variation = item.variation_name || item.variation?.name;
+            return (
+              <div key={idx} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-muted-foreground font-medium shrink-0">{item.quantity}x</span>
+                  <span className="font-medium text-foreground truncate">{name}</span>
+                </div>
+                {variation && (
+                  <span className="text-xs text-muted-foreground shrink-0 ml-2">{variation}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Extras */}
+        {order.items?.some((item: any) => item.extras?.length > 0) && (
+          <div className="mt-2 space-y-1">
+            {order.items
+              .filter((item: any) => item.extras?.length > 0)
+              .map((item: any, idx: number) => (
+                <p key={idx} className="text-xs text-amber-600 font-medium">
+                  + {item.extras.map((e: any) => e.extra_name || e.name).join(', ')}
+                </p>
+              ))}
+          </div>
         )}
       </div>
 
-      {/* Delivery person assignment */}
-      {showDelivery && onAssignDelivery && (
-        <div className="px-4 pb-3 pt-1">
-          <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-muted-foreground shrink-0" />
-            <select
-              className="flex-1 text-sm rounded-xl border-2 border-border px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
-              value={order.delivery_person_id || ''}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                onAssignDelivery(e.target.value || null);
-              }}
-            >
-              <option value="">Selecionar entregador...</option>
-              {deliveryPersons
-                .filter((p: any) => p.is_active)
-                .map((p: any) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.vehicle ? `(${p.vehicle})` : ''}
-                  </option>
-                ))}
-            </select>
-          </div>
+      {/* Notes */}
+      {order.notes && (
+        <div className="mx-4 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+          <p className="text-xs font-bold text-yellow-800">OBS: {order.notes}</p>
         </div>
       )}
 
-      {/* Action Button - Big and clear */}
-      {column.action && onAction && (
-        <div className="px-4 pb-4 pt-1">
-          <button
-            onClick={onAction}
-            disabled={isUpdating}
-            className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-base transition-all disabled:opacity-50 ${column.action.btnClass}`}
-          >
-            {column.action.icon}
-            {column.action.label}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PerformancePanel({ stats }: { stats: any }) {
-  const [expanded, setExpanded] = useState(false);
-
-  if (!stats || stats.total_completed === 0) return null;
-
-  const metrics = [
-    { label: 'Tempo Total', value: formatMinutes(stats.avg_total_time), icon: Clock, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
-    { label: 'Espera', value: formatMinutes(stats.avg_wait_time), icon: Timer, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
-    { label: 'Preparo', value: formatMinutes(stats.avg_prep_time), icon: ChefHat, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
-    { label: 'Entrega', value: formatMinutes(stats.avg_delivery_time), icon: Truck, color: 'text-green-600 bg-green-50 dark:bg-green-900/20' },
-    { label: 'Mais Rapido', value: formatMinutes(stats.fastest_order), icon: Zap, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Mais Lento', value: formatMinutes(stats.slowest_order), icon: AlertTriangle, color: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
-  ];
-
-  return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-accent transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-primary" />
-          <span className="font-bold text-foreground">Performance Historica</span>
-          <span className="text-xs text-muted-foreground font-medium">
-            {stats.period_days}d - {stats.total_completed} entregues
+      {/* Delivery address */}
+      {order.order_type === 'delivery' && order.address_snapshot && (
+        <div className="mx-4 mb-3 flex items-start gap-1.5 text-xs text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            {order.address_snapshot.street}
+            {order.address_snapshot.number ? `, ${order.address_snapshot.number}` : ''}
+            {order.address_snapshot.neighborhood ? ` - ${order.address_snapshot.neighborhood}` : ''}
           </span>
         </div>
-        {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-      </button>
+      )}
 
-      {expanded && (
-        <div className="px-5 pb-5 space-y-4">
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {metrics.map((m) => (
-              <div key={m.label} className="rounded-xl border border-border p-3 text-center">
-                <div className={`w-8 h-8 rounded-lg ${m.color} flex items-center justify-center mx-auto mb-2`}>
-                  <m.icon className="w-4 h-4" />
-                </div>
-                <p className="text-lg font-black text-foreground">{m.value}</p>
-                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{m.label}</p>
-              </div>
-            ))}
-          </div>
+      {/* Delivery person assignment */}
+      {tab === 'ready' && order.order_type === 'delivery' && onAssignDelivery && (
+        <div className="px-4 pb-3">
+          <select
+            className="w-full text-sm rounded-lg border border-border px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
+            value={order.delivery_person_id || ''}
+            onChange={(e) => onAssignDelivery(e.target.value || null)}
+          >
+            <option value="">Selecionar entregador...</option>
+            {deliveryPersons
+              .filter((p: any) => p.is_active)
+              .map((p: any) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} {p.vehicle ? `(${p.vehicle})` : ''}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
-          {(stats.ranking_fastest?.length > 0 || stats.ranking_slowest?.length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {stats.ranking_fastest?.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-                    <Zap className="w-4 h-4 text-emerald-500" /> Top Rapidos
-                  </h4>
-                  <div className="space-y-1">
-                    {stats.ranking_fastest.map((r: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-foreground">#{r.order_number}</span>
-                        </div>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMinutes(r.total_time)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {stats.ranking_slowest?.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4 text-red-500" /> Mais Lentos
-                  </h4>
-                  <div className="space-y-1">
-                    {stats.ranking_slowest.map((r: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-50/50 dark:bg-red-900/10 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-foreground">#{r.order_number}</span>
-                        </div>
-                        <span className="font-bold text-red-600 dark:text-red-400">{formatMinutes(r.total_time)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+      {/* Action Buttons */}
+      {(tab === 'queue' || tab === 'preparing') && (
+        <div className="px-4 pb-4 flex items-center gap-2">
+          {tab === 'queue' && onStart && (
+            <button
+              onClick={onStart}
+              disabled={isUpdating}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50 active:scale-95"
+            >
+              <Play className="w-4 h-4" />
+              Iniciar
+            </button>
+          )}
+          {tab === 'preparing' && onPause && (
+            <button
+              onClick={onPause}
+              disabled={isUpdating}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50 active:scale-95"
+            >
+              <Pause className="w-4 h-4" />
+              Pausar
+            </button>
+          )}
+          {onFinish && (
+            <button
+              onClick={onFinish}
+              disabled={isUpdating}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors disabled:opacity-50 active:scale-95"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Finalizar
+            </button>
           )}
         </div>
       )}
@@ -451,15 +371,17 @@ function PerformancePanel({ stats }: { stats: any }) {
   );
 }
 
+// ─── Main KDS Component ─────────────────────────────────────────────────────
+
 export default function KDS() {
   const [, setTick] = useState(0);
+  const [activeTab, setActiveTab] = useState<TabKey>('queue');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
-  const { data: perfStats } = useGetOrderPerformanceStatsQuery({ days: 7 });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [assignDeliveryPerson] = useAssignDeliveryPersonMutation();
 
@@ -478,32 +400,58 @@ export default function KDS() {
     'order:status-updated': handleRefetch,
   });
 
-  const columnOrders = useMemo(() => {
-    const result: Record<string, any[]> = {};
-    COLUMNS.forEach((col) => {
-      result[col.id] = orders
-        .filter((o: any) => col.statuses.includes(o.status))
+  const tabOrders = useMemo(() => {
+    const result: Record<TabKey, any[]> = { queue: [], preparing: [], ready: [] };
+    for (const tab of TABS) {
+      result[tab.key] = orders
+        .filter((o: any) => tab.statuses.includes(o.status))
         .sort(
           (a: any, b: any) =>
             parseUTC(a.created_at).getTime() - parseUTC(b.created_at).getTime(),
         );
-    });
+    }
     return result;
   }, [orders]);
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const tabCounts = useMemo(() => ({
+    queue: tabOrders.queue.length,
+    preparing: tabOrders.preparing.length,
+    ready: tabOrders.ready.length,
+  }), [tabOrders]);
+
+  const totalQueue = tabCounts.queue + tabCounts.preparing;
+
+  const handleStart = async (orderId: string) => {
     setUpdatingOrderId(orderId);
     try {
-      // For pending orders, first confirm then prepare
       const order = orders.find((o: any) => o.id === orderId);
-      if (order?.status === 'pending' && newStatus === 'preparing') {
+      if (order?.status === 'pending') {
         await updateStatus({ id: orderId, status: 'confirmed' }).unwrap();
-        // Auto-print receipt when confirming order for kitchen
         if (order) printOrderReceipt(order);
       }
-      await updateStatus({ id: orderId, status: newStatus }).unwrap();
+      await updateStatus({ id: orderId, status: 'preparing' }).unwrap();
     } catch {
-      // Status transition failed
+      // ignore
+    }
+    setUpdatingOrderId(null);
+  };
+
+  const handleFinish = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await updateStatus({ id: orderId, status: 'ready' }).unwrap();
+    } catch {
+      // ignore
+    }
+    setUpdatingOrderId(null);
+  };
+
+  const handlePause = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await updateStatus({ id: orderId, status: 'confirmed' }).unwrap();
+    } catch {
+      // ignore
     }
     setUpdatingOrderId(null);
   };
@@ -512,105 +460,96 @@ export default function KDS() {
     await assignDeliveryPerson({ orderId, delivery_person_id: deliveryPersonId });
   };
 
-  const pendingCount = columnOrders.pending?.length || 0;
+  const currentOrders = tabOrders[activeTab];
 
   if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div className="min-h-[calc(100vh-120px)]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg">
-            <ChefHat className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-foreground">Cozinha</h1>
-            <p className="text-sm text-muted-foreground">
-              {pendingCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600 animate-pulse">
-                  {pendingCount} novo(s)!
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-black text-foreground">
+            {totalQueue} Pedido{totalQueue !== 1 ? 's' : ''} na Fila
+          </h1>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2.5 rounded-xl border transition-colors ${
-              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
-            }`}
+            className={cn(
+              'p-2 rounded-lg border transition-colors',
+              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground',
+            )}
             title={soundEnabled ? 'Som ativado' : 'Som desativado'}
           >
-            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* TMA Panel - Tempo Medio de Atendimento */}
-      <div className="mb-5">
-        <TMAPanel orders={orders} perfStats={perfStats} />
+      {/* TMA Bar */}
+      <div className="mb-4">
+        <TMABar orders={orders} />
       </div>
 
-      {/* Performance Panel */}
-      <div className="mb-5">
-        <PerformancePanel stats={perfStats} />
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-5 bg-muted p-1 rounded-xl w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2',
+              activeTab === tab.key
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {tab.label}
+            {tabCounts[tab.key] > 0 && (
+              <span className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center',
+                activeTab === tab.key
+                  ? tab.key === 'queue' ? 'bg-amber-100 text-amber-700' : tab.key === 'preparing' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                  : 'bg-muted-foreground/20 text-muted-foreground',
+              )}>
+                {tabCounts[tab.key]}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Kanban Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {COLUMNS.map((column) => {
-          const colOrders = columnOrders[column.id] || [];
-          return (
-            <div key={column.id} className="flex flex-col">
-              {/* Column Header */}
-              <div className={`${column.bgColor} rounded-t-2xl px-5 py-4 border-2 border-b-0 ${column.borderColor}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`${column.color}`}>{column.icon}</div>
-                    <h2 className={`font-black text-lg ${column.color}`}>{column.title}</h2>
-                  </div>
-                  <span className={`${column.badgeBg} text-white text-sm font-black px-3 py-1 rounded-full min-w-[32px] text-center`}>
-                    {colOrders.length}
-                  </span>
-                </div>
-              </div>
-
-              {/* Column Body */}
-              <div className={`flex-1 ${column.bgColor}/30 rounded-b-2xl border-2 border-t-0 ${column.borderColor} p-3 space-y-3 min-h-[300px]`}>
-                {colOrders.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-300 dark:text-gray-600">
-                    <Package className="w-14 h-14 mb-3 opacity-50" />
-                    <p className="text-sm font-bold text-muted-foreground">Nenhum pedido</p>
-                  </div>
-                ) : (
-                  colOrders.map((order: any) => (
-                    <KDSOrderCard
-                      key={order.id}
-                      order={order}
-                      column={column}
-                      deliveryPersons={deliveryPersons}
-                      isUpdating={updatingOrderId === order.id}
-                      onAction={
-                        column.action
-                          ? () => handleStatusChange(order.id, column.action!.nextStatus)
-                          : undefined
-                      }
-                      onAssignDelivery={
-                        column.id === 'ready'
-                          ? (dpId) => handleAssignDelivery(order.id, dpId)
-                          : undefined
-                      }
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Grid */}
+      {currentOrders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+          <Package className="w-16 h-16 mb-4 opacity-30" />
+          <p className="text-lg font-bold">Nenhum pedido</p>
+          <p className="text-sm">
+            {activeTab === 'queue' && 'Nenhum pedido novo na fila'}
+            {activeTab === 'preparing' && 'Nenhum pedido em preparo'}
+            {activeTab === 'ready' && 'Nenhum pedido pronto'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {currentOrders.map((order: any) => (
+            <KDSOrderCard
+              key={order.id}
+              order={order}
+              tab={activeTab}
+              deliveryPersons={deliveryPersons}
+              isUpdating={updatingOrderId === order.id}
+              onStart={activeTab === 'queue' ? () => handleStart(order.id) : undefined}
+              onFinish={activeTab !== 'ready' ? () => handleFinish(order.id) : undefined}
+              onPause={activeTab === 'preparing' ? () => handlePause(order.id) : undefined}
+              onAssignDelivery={
+                activeTab === 'ready' && order.order_type === 'delivery'
+                  ? (dpId) => handleAssignDelivery(order.id, dpId)
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
