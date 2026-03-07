@@ -31,6 +31,10 @@ export const baseApi = createApi({
     'TableSessions',
     'Reservations',
     'FloorPlans',
+    'WhatsappStatus',
+    'WhatsappTemplates',
+    'WhatsappConversations',
+    'WhatsappMessages',
   ],
   endpoints: () => ({}),
 });

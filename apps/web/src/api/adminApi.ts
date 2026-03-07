@@ -364,6 +364,48 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['FloorPlans'],
     }),
 
+    // WhatsApp
+    connectWhatsapp: builder.mutation<{ qrcode?: string; pairingCode?: string; instance: any }, void>({
+      query: () => ({ url: '/whatsapp/instance/connect', method: 'POST', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappStatus'],
+    }),
+    disconnectWhatsapp: builder.mutation<void, void>({
+      query: () => ({ url: '/whatsapp/instance/disconnect', method: 'POST', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappStatus'],
+    }),
+    getWhatsappStatus: builder.query<{ status: string; phone_number: string | null }, void>({
+      query: () => ({ url: '/whatsapp/instance/status', meta: { authContext: 'admin' as const } }),
+      providesTags: ['WhatsappStatus'],
+    }),
+    getWhatsappTemplates: builder.query<any[], void>({
+      query: () => ({ url: '/whatsapp/templates', meta: { authContext: 'admin' as const } }),
+      providesTags: ['WhatsappTemplates'],
+    }),
+    createWhatsappTemplate: builder.mutation<any, { name: string; type: string; content: string; is_active?: boolean }>({
+      query: (body) => ({ url: '/whatsapp/templates', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappTemplates'],
+    }),
+    updateWhatsappTemplate: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/whatsapp/templates/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappTemplates'],
+    }),
+    deleteWhatsappTemplate: builder.mutation<void, string>({
+      query: (id) => ({ url: `/whatsapp/templates/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappTemplates'],
+    }),
+    getWhatsappConversations: builder.query<any[], void>({
+      query: () => ({ url: '/whatsapp/conversations', meta: { authContext: 'admin' as const } }),
+      providesTags: ['WhatsappConversations'],
+    }),
+    getWhatsappMessages: builder.query<any[], string>({
+      query: (phone) => ({ url: `/whatsapp/conversations/${phone}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['WhatsappMessages'],
+    }),
+    sendWhatsappMessage: builder.mutation<any, { phone: string; content: string }>({
+      query: (body) => ({ url: '/whatsapp/messages/send', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappConversations'],
+    }),
+
     // Upload
     uploadImage: builder.mutation<{ url: string }, FormData>({
       query: (formData) => ({
@@ -459,4 +501,14 @@ export const {
   useCreateFloorPlanMutation,
   useUpdateFloorPlanMutation,
   useDeleteFloorPlanMutation,
+  useConnectWhatsappMutation,
+  useDisconnectWhatsappMutation,
+  useGetWhatsappStatusQuery,
+  useGetWhatsappTemplatesQuery,
+  useCreateWhatsappTemplateMutation,
+  useUpdateWhatsappTemplateMutation,
+  useDeleteWhatsappTemplateMutation,
+  useGetWhatsappConversationsQuery,
+  useGetWhatsappMessagesQuery,
+  useSendWhatsappMessageMutation,
 } = adminApi;
