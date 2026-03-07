@@ -5,7 +5,7 @@ import { useGetStaffQuery, useDeleteStaffMutation } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 
@@ -32,7 +32,7 @@ export default function StaffList() {
     setDeleteTarget(null);
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>

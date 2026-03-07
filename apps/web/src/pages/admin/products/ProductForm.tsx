@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 
 export default function ProductForm() {
@@ -110,7 +110,7 @@ export default function ProductForm() {
     }
   };
 
-  if (isEditing && isLoadingProduct) return <PageSpinner />;
+  if (isEditing && isLoadingProduct) return <FormPageSkeleton />;
 
   return (
     <div>

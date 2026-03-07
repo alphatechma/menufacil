@@ -12,7 +12,7 @@ import { useGetCustomerQuery } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone } from '@/utils/formatPhone';
 
@@ -30,7 +30,7 @@ export default function CustomerDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: customer, isLoading } = useGetCustomerQuery(id!);
 
-  if (isLoading || !customer) return <PageSpinner />;
+  if (isLoading || !customer) return <DetailPageSkeleton />;
 
   return (
     <div>

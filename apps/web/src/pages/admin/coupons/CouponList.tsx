@@ -6,7 +6,7 @@ import { useGetCouponsQuery, useDeleteCouponMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
@@ -43,7 +43,7 @@ export default function CouponList() {
     }
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>

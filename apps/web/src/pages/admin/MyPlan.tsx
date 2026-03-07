@@ -18,7 +18,7 @@ import {
 import { useGetPublicPlansQuery } from '@/api/adminApi';
 import { useAppSelector } from '@/store/hooks';
 import { formatPrice } from '@/utils/formatPrice';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 
 interface PlanModule {
   id: string;
@@ -92,7 +92,7 @@ export default function MyPlan() {
     return colors[index] || colors[0];
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <SettingsPageSkeleton />;
 
   return (
     <div className="space-y-8">

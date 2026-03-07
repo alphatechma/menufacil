@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 
 const staffSchema = z.object({
@@ -96,7 +96,7 @@ export default function StaffForm() {
     }
   };
 
-  if (isEditing && isLoadingMember) return <PageSpinner />;
+  if (isEditing && isLoadingMember) return <FormPageSkeleton />;
 
   return (
     <div>

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 
 const MODULE_LABELS: Record<string, { name: string; color: string }> = {
@@ -129,7 +129,7 @@ export default function RoleForm() {
     }
   };
 
-  if ((isEditing && isLoadingRole) || isLoadingPermissions) return <PageSpinner />;
+  if ((isEditing && isLoadingRole) || isLoadingPermissions) return <FormPageSkeleton />;
 
   return (
     <div>

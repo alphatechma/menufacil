@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 export default function DeliveryZoneForm() {
   const { id } = useParams<{ id: string }>();
@@ -94,7 +94,7 @@ export default function DeliveryZoneForm() {
     }
   };
 
-  if (isEditing && isLoadingZone) return <PageSpinner />;
+  if (isEditing && isLoadingZone) return <FormPageSkeleton />;
 
   return (
     <div>

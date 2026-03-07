@@ -30,7 +30,7 @@ import {
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
 
 interface ColumnConfig {
@@ -514,7 +514,7 @@ export default function KDS() {
 
   const pendingCount = columnOrders.pending?.length || 0;
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div className="min-h-[calc(100vh-120px)]">

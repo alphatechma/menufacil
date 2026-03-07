@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 
 export default function CategoryForm() {
@@ -66,7 +66,7 @@ export default function CategoryForm() {
     }
   };
 
-  if (isEditing && isLoadingCategory) return <PageSpinner />;
+  if (isEditing && isLoadingCategory) return <FormPageSkeleton />;
 
   return (
     <div>

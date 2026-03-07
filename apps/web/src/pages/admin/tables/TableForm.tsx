@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 const tableSchema = z.object({
   number: z.coerce
@@ -87,7 +87,7 @@ export default function TableForm() {
     }
   };
 
-  if (isEditing && isLoadingTables) return <PageSpinner />;
+  if (isEditing && isLoadingTables) return <FormPageSkeleton />;
 
   return (
     <div>

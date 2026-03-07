@@ -27,7 +27,7 @@ import {
   Legend,
 } from 'recharts';
 import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery } from '@/api/adminApi';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
@@ -139,7 +139,7 @@ export default function Reports() {
     setDeliveryPersonFilter('');
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <SettingsPageSkeleton />;
 
   const totalRevenue = Number(dashboard?.totals?.total_revenue || 0);
   const totalOrders = Number(dashboard?.totals?.total_orders || 0);

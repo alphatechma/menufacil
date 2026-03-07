@@ -26,7 +26,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
 import { toast } from 'sonner';
@@ -159,7 +159,7 @@ export default function OrderDetail() {
     toast.success('Pedido cancelado');
   };
 
-  if (isLoading || !order) return <PageSpinner />;
+  if (isLoading || !order) return <DetailPageSkeleton />;
 
   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const nextStatus = statusFlow[order.status];

@@ -12,7 +12,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 
 const PRESET_COLORS = [
   '#FF6B35', '#E53E3E', '#DD6B20', '#D69E2E',
@@ -104,7 +104,7 @@ export default function Customization() {
     }
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <SettingsPageSkeleton />;
 
   const customerBase = (window as any).__RUNTIME_CONFIG__?.CUSTOMER_URL || 'https://app-menufacil.maistechtecnologia.com.br';
   const storeUrl = `${customerBase}/${watchedSlug}`;

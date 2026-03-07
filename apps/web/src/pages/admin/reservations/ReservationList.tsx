@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { FormCard } from '@/components/ui/FormCard';
 import { FormField } from '@/components/ui/FormField';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 
 // --- Types ---
 
@@ -280,7 +280,7 @@ export default function ReservationList() {
 
   // --- Render ---
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>

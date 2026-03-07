@@ -18,7 +18,7 @@ import { useAppSelector } from '@/store/hooks';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
@@ -108,7 +108,7 @@ export default function TableList() {
     printWindow.document.close();
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>

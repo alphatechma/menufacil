@@ -22,7 +22,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Tabs } from '@/components/ui/Tabs';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPrice } from '@/utils/formatPrice';
 import { toast } from 'sonner';
@@ -227,7 +227,7 @@ export default function OrderList() {
 
   const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>

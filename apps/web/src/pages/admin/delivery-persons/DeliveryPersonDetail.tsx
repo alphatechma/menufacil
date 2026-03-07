@@ -13,7 +13,7 @@ import { useGetDeliveryPersonQuery } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPrice } from '@/utils/formatPrice';
 
@@ -31,7 +31,7 @@ export default function DeliveryPersonDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: person, isLoading } = useGetDeliveryPersonQuery(id!);
 
-  if (isLoading || !person) return <PageSpinner />;
+  if (isLoading || !person) return <DetailPageSkeleton />;
 
   const activeOrders = person.orders?.filter(
     (o: any) => o.status === 'out_for_delivery' || o.status === 'ready',

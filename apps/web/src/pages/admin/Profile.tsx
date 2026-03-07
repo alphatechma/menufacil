@@ -10,7 +10,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Button } from '@/components/ui/Button';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 
 const SYSTEM_ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Administrador',
@@ -122,7 +122,7 @@ export default function Profile() {
     }
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <SettingsPageSkeleton />;
 
   return (
     <div className="space-y-6">

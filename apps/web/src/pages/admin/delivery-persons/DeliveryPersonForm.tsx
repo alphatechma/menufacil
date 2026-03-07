@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 const COMMISSION_TYPES = [
   { value: 'none', label: 'Sem comissao', desc: 'Entregador nao recebe comissao por entrega' },
@@ -84,7 +84,7 @@ export default function DeliveryPersonForm() {
     }
   };
 
-  if (isEditing && isLoadingPerson) return <PageSpinner />;
+  if (isEditing && isLoadingPerson) return <FormPageSkeleton />;
 
   return (
     <div>

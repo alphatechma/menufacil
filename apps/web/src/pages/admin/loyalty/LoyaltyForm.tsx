@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 export default function LoyaltyForm() {
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function LoyaltyForm() {
     }
   };
 
-  if (isEditing && loadingRewards) return <PageSpinner />;
+  if (isEditing && loadingRewards) return <FormPageSkeleton />;
 
   return (
     <div>

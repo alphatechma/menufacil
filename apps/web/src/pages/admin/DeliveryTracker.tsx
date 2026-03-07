@@ -23,7 +23,7 @@ import { useAppSelector } from '@/store/hooks';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 
 function getElapsedMinutes(dateStr: string): number {
@@ -92,7 +92,7 @@ export default function DeliveryTracker() {
     await updateStatus({ id: orderId, status: 'delivered' }).unwrap();
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   const avgDeliveryTime = perfStats?.avg_delivery_time ?? 0;
   const totalDelivered = perfStats?.total_completed ?? 0;

@@ -23,7 +23,7 @@ import {
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
 import { formatPrice } from '@/utils/formatPrice';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 
 /** Parse date ensuring UTC interpretation (server returns UTC without Z suffix) */
 function parseUTC(dateStr: string): Date {
@@ -141,7 +141,7 @@ export default function MyDeliveries() {
     setConfirmingOrderId(null);
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   if (!myDeliveryPerson) {
     return (

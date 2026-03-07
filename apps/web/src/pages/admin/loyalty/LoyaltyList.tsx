@@ -10,7 +10,7 @@ import {
 } from '@/api/adminApi';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { Toggle } from '@/components/ui/Toggle';
@@ -83,7 +83,7 @@ export default function LoyaltyList() {
     return 'Produto';
   };
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
 
   return (
     <div>
@@ -235,8 +235,8 @@ export default function LoyaltyList() {
         {activeTab === 'history' && (
           <>
             {loadingRedemptions ? (
-              <div className="flex items-center justify-center py-12">
-                <PageSpinner />
+              <div className="p-6">
+                <ListPageSkeleton rows={3} />
               </div>
             ) : redemptions.length === 0 ? (
               <div className="p-8">

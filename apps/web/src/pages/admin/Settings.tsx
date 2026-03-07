@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { selectNotificationSettings, updateSettings } from '@/store/slices/notificationSlice';
 import { playTestSound } from '@/utils/notificationSounds';
 import { isQzAvailable, listPrinters, getSelectedPrinter, selectPrinter, printOrder } from '@/utils/printService';
@@ -217,7 +217,7 @@ export default function Settings() {
 
   const hasDineInModule = Array.isArray(modules) && modules.includes('dine_in');
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) return <SettingsPageSkeleton />;
 
   if (!tenantSlug) {
     return <ErrorAlert message="Slug do tenant nao encontrado. Faca login novamente." />;

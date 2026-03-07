@@ -17,7 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   useGetTablesQuery,
@@ -274,7 +274,7 @@ export default function FloorPlanEditor() {
 
   // --- Loading ---
   if (tablesLoading || plansLoading) {
-    return <PageSpinner />;
+    return <FormPageSkeleton />;
   }
 
   // --- Selected table info ---
