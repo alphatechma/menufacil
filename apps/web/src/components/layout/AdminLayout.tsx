@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderTree,
@@ -476,13 +476,15 @@ export default function AdminLayout() {
 
           <div className="flex items-center gap-1">
             {tenantSlug && (
-              <Link
-                to={`/${tenantSlug}`}
+              <a
+                href={`/${tenantSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span className="hidden sm:inline">Vitrine</span>
-              </Link>
+              </a>
             )}
 
             <button
