@@ -164,6 +164,32 @@ export default function Settings() {
     }
   }, [tenant, reset]);
 
+  // Auto-detect printer when switching to impressora tab
+  useEffect(() => {
+    if (activeTab !== 'impressora' || printerAvailable !== null) return;
+    let cancelled = false;
+    (async () => {
+      setPrinterLoading(true);
+      try {
+        const available = await isQzAvailable();
+        if (cancelled) return;
+        setPrinterAvailable(available);
+        if (available) {
+          const printers = await listPrinters();
+          if (cancelled) return;
+          setPrinterList(printers);
+          const selected = await getSelectedPrinter();
+          if (cancelled) return;
+          setCurrentPrinter(selected);
+        }
+      } catch {
+        if (!cancelled) setPrinterAvailable(false);
+      }
+      if (!cancelled) setPrinterLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, printerAvailable]);
+
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(''), 3000);
@@ -617,7 +643,7 @@ export default function Settings() {
                           ? 'Verificando...'
                           : printerAvailable
                           ? 'Conectado'
-                          : 'Nao detectado — instale o QZ Tray'}
+                          : 'Nao detectado — verifique se o QZ Tray esta rodando e se o certificado foi adicionado'}
                       </p>
                     </div>
                   </div>
@@ -900,8 +926,9 @@ export default function Settings() {
                   <div className="flex gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">2</span>
                     <div>
-                      <p>Baixe o <a href="/certs/menufacil-qz.crt" download className="text-primary font-medium hover:underline inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" />certificado</a> e instale no QZ Tray:</p>
-                      <p className="text-xs mt-1">Abra o QZ Tray {'>'} <strong>Advanced</strong> {'>'} <strong>Site Manager</strong> {'>'} <strong>+</strong> {'>'} selecione o arquivo <code className="px-1.5 py-0.5 bg-muted rounded text-xs">menufacil-qz.crt</code></p>
+                      <p>Baixe o <a href="/certs/menufacil-qz.crt" download className="text-primary font-medium hover:underline inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" />certificado</a> e adicione ao QZ Tray:</p>
+                      <p className="text-xs mt-1">Clique no icone do QZ Tray (bandeja do sistema) {'>'} <strong>Advanced</strong> {'>'} <strong>Site Manager</strong> {'>'} <strong>+</strong> {'>'} selecione o arquivo <code className="px-1.5 py-0.5 bg-muted rounded text-xs">menufacil-qz.crt</code></p>
+                      <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">Apos adicionar o certificado, reinicie o QZ Tray e recarregue esta pagina.</p>
                     </div>
                   </div>
                   <div className="flex gap-3">

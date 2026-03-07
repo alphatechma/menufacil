@@ -85,7 +85,7 @@ let _certPromise: Promise<string> | null = null;
 
 function fetchCertificate(): Promise<string> {
   if (!_certPromise) {
-    _certPromise = fetch('/certs/menufacil-qz.crt')
+    _certPromise = fetch('/certs/menufacil-qz.crt', { cache: 'no-store', headers: { 'Content-Type': 'text/plain' } })
       .then((r) => {
         if (!r.ok) throw new Error('Certificate not found');
         return r.text();
@@ -98,10 +98,19 @@ function fetchCertificate(): Promise<string> {
   return _certPromise;
 }
 
+let _securitySetup = false;
+
 function setupSecurity() {
-  qz.security.setCertificatePromise(() => fetchCertificate());
+  if (_securitySetup) return;
+  _securitySetup = true;
+
+  qz.security.setCertificatePromise((resolve: (value: string) => void, reject: (reason?: any) => void) => {
+    fetchCertificate().then(resolve).catch(reject);
+  });
   qz.security.setSignatureAlgorithm('SHA512');
-  qz.security.setSignaturePromise(() => Promise.resolve(''));
+  qz.security.setSignaturePromise((_toSign: string, resolve: (value: string) => void) => {
+    resolve('');
+  });
 }
 
 async function ensureConnected(): Promise<boolean> {
@@ -119,15 +128,21 @@ async function ensureConnected(): Promise<boolean> {
   _connecting = (async () => {
     try {
       setupSecurity();
-      await qz.websocket.connect();
+      await qz.websocket.connect({
+        retries: 2,
+        delay: 1,
+      });
       _connected = true;
 
       qz.websocket.setClosedCallbacks(() => {
         _connected = false;
         _connecting = null;
+        _securitySetup = false;
       });
-    } catch {
+    } catch (err) {
       _connected = false;
+      _securitySetup = false;
+      console.error('[QZ Tray] Falha ao conectar:', err);
       throw new Error('QZ Tray nao encontrado. Verifique se esta instalado e rodando.');
     }
   })();
