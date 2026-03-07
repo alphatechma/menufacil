@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Building2, ChevronDown } from 'lucide-react';
 import { useGetUnitsQuery } from '@/api/adminApi';
+import { baseApi } from '@/api/baseApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedUnit, selectSelectedUnitId } from '@/store/slices/uiSlice';
 import { usePermission } from '@/hooks/usePermission';
 import { cn } from '@/utils/cn';
+
+const UNIT_SCOPED_TAGS = [
+  'Orders', 'Dashboard', 'DeliveryZones', 'DeliveryPersons',
+  'Tables', 'TableSessions', 'FloorPlans', 'Reservations',
+  'Staff', 'WhatsappStatus',
+] as const;
 
 export function UnitSelector() {
   const { hasModule } = usePermission();
@@ -21,6 +28,12 @@ export function UnitSelector() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const handleSelectUnit = (unitId: string | null) => {
+    dispatch(setSelectedUnit(unitId));
+    dispatch(baseApi.util.invalidateTags([...UNIT_SCOPED_TAGS]));
+    setOpen(false);
+  };
 
   if (!units || units.length === 0) return null;
 
@@ -42,7 +55,7 @@ export function UnitSelector() {
       {open && (
         <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-lg py-1 z-50">
           <button
-            onClick={() => { dispatch(setSelectedUnit(null)); setOpen(false); }}
+            onClick={() => handleSelectUnit(null)}
             className={cn(
               'w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors',
               !selectedUnitId && 'bg-primary/5 text-primary font-medium',
@@ -53,7 +66,7 @@ export function UnitSelector() {
           {units.map((unit: any) => (
             <button
               key={unit.id}
-              onClick={() => { dispatch(setSelectedUnit(unit.id)); setOpen(false); }}
+              onClick={() => handleSelectUnit(unit.id)}
               className={cn(
                 'w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors',
                 selectedUnitId === unit.id && 'bg-primary/5 text-primary font-medium',
