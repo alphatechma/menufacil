@@ -238,6 +238,11 @@ async function seed() {
     waiter: [
       { key: 'waiter:access', name: 'Acessar App Garcom' },
     ],
+    // ── WhatsApp (sem modulo de plano — disponivel para todos) ──
+    whatsapp: [
+      { key: 'whatsapp:manage', name: 'Gerenciar WhatsApp' },
+      { key: 'whatsapp:chat', name: 'Chat WhatsApp' },
+    ],
   };
 
   for (const [moduleKey, permissions] of Object.entries(permissionsByModule)) {
@@ -508,6 +513,7 @@ async function seed() {
           'reservation:read', 'reservation:update',
           'delivery:read', 'delivery:update',
           'settings:read',
+          'whatsapp:chat',
         ],
       },
       {

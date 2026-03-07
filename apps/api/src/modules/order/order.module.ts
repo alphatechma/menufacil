@@ -12,6 +12,7 @@ import { OrderRepository } from './order.repository';
 import { DeliveryZoneModule } from '../delivery-zone/delivery-zone.module';
 import { CouponModule } from '../coupon/coupon.module';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LoyaltyModule } from '../loyalty/loyalty.module';
     DeliveryZoneModule,
     CouponModule,
     LoyaltyModule,
+    WhatsappModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, OrderRepository],

@@ -81,6 +81,16 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit(WEBSOCKET_EVENTS.KDS_NEW_ITEM, item);
   }
 
+  @SubscribeMessage('join:tenant-whatsapp')
+  handleJoinTenantWhatsapp(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { tenantId: string },
+  ) {
+    const room = WEBSOCKET_ROOMS.tenantWhatsapp(data.tenantId);
+    client.join(room);
+    this.logger.log(`Client ${client.id} joined ${room}`);
+  }
+
   @SubscribeMessage('join:tenant-tables')
   handleJoinTenantTables(
     @ConnectedSocket() client: Socket,

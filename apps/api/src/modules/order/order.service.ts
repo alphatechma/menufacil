@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { OrderStatus, OrderType, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
@@ -12,9 +12,12 @@ import { DeliveryZoneService } from '../delivery-zone/delivery-zone.service';
 import { CouponService } from '../coupon/coupon.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { EventsGateway } from '../../websocket/events.gateway';
+import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.service';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     private readonly orderRepository: OrderRepository,
     @InjectRepository(Product)
@@ -27,6 +30,7 @@ export class OrderService {
     private readonly couponService: CouponService,
     private readonly loyaltyService: LoyaltyService,
     private readonly eventsGateway: EventsGateway,
+    private readonly whatsappMessageService: WhatsappMessageService,
   ) {}
 
   async create(dto: CreateOrderDto, customerId: string, tenantId: string): Promise<Order> {
@@ -271,6 +275,11 @@ export class OrderService {
 
     // Emit WebSocket event for status update
     this.eventsGateway.emitOrderStatusUpdate(tenantId, id, updatedOrder);
+
+    // Send WhatsApp notification (fire-and-forget)
+    this.whatsappMessageService
+      .sendOrderNotification(updatedOrder)
+      .catch((err) => this.logger.warn(`WhatsApp notification failed: ${err.message}`));
 
     return updatedOrder;
   }
