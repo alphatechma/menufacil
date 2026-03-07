@@ -457,6 +457,8 @@ async function seed() {
     },
   ];
 
+  const roleRepo = dataSource.getRepository('Role');
+
   for (const demo of demoRestaurants) {
     // ── Create or update tenant ──
     let tenant = await tenantRepo.findOne({ where: { slug: demo.tenant.slug } });
@@ -481,58 +483,101 @@ async function seed() {
 
     const tenantId = (tenant as any).id;
 
-    // ── Create default "Administrador" role with ALL permissions ──
-    const roleRepo = dataSource.getRepository('Role');
-    let adminRole = await roleRepo.findOne({ where: { name: 'Administrador', tenant_id: tenantId }, relations: ['permissions'] });
-    if (!adminRole) {
-      adminRole = await roleRepo.save({
+    // ── Create default roles ──
+
+    const defaultRoles = [
+      {
         name: 'Administrador',
         description: 'Acesso completo a todas as funcionalidades',
-        tenant_id: tenantId,
-        permissions: allPermissions,
-      });
-      console.log(`  ✅ Role "Administrador" created with ${allPermissions.length} permissions`);
-    } else {
-      // Update permissions to include any new ones
-      const existingKeys = new Set(((adminRole as any).permissions || []).map((p: any) => p.key));
-      const missing = allPermissions.filter((p: any) => !existingKeys.has(p.key));
-      if (missing.length > 0) {
-        (adminRole as any).permissions = [...((adminRole as any).permissions || []), ...missing];
-        await roleRepo.save(adminRole);
-        console.log(`  🔄 Role "Administrador" updated with ${missing.length} new permissions (total: ${allPermissions.length})`);
+        permissionKeys: allPermissions.map((p: any) => p.key),
+      },
+      {
+        name: 'Gerente',
+        description: 'Gerenciamento de pedidos, equipe, produtos e relatorios',
+        permissionKeys: [
+          'dashboard:read',
+          'order:create', 'order:read', 'order:update', 'order:cancel',
+          'product:create', 'product:read', 'product:update', 'product:delete',
+          'category:create', 'category:read', 'category:update', 'category:delete',
+          'customer:read', 'customer:update',
+          'staff:read', 'staff:create', 'staff:update',
+          'coupon:create', 'coupon:read', 'coupon:update', 'coupon:delete',
+          'report:read',
+          'kds:read', 'kds:update',
+          'table:read', 'table:update',
+          'reservation:read', 'reservation:update',
+          'delivery:read', 'delivery:update',
+          'settings:read',
+        ],
+      },
+      {
+        name: 'Caixa',
+        description: 'Registro e acompanhamento de pedidos e pagamentos',
+        permissionKeys: [
+          'order:create', 'order:read', 'order:update',
+          'product:read', 'category:read',
+          'customer:read', 'customer:create',
+          'coupon:read',
+          'table:read',
+        ],
+      },
+      {
+        name: 'Cozinha',
+        description: 'Visualizacao e atualizacao de pedidos no KDS',
+        permissionKeys: [
+          'order:read', 'order:update',
+          'kds:read', 'kds:update',
+          'product:read', 'category:read',
+        ],
+      },
+      {
+        name: 'Garcom',
+        description: 'App do garcom para pedidos presenciais e gestao de mesas',
+        permissionKeys: [
+          'order:create', 'order:read', 'order:update',
+          'table:read', 'table:update',
+          'product:read', 'category:read',
+          'waiter:access',
+        ],
+      },
+      {
+        name: 'Entregador',
+        description: 'Visualizacao e atualizacao de entregas atribuidas',
+        permissionKeys: [
+          'delivery_driver:read', 'delivery_driver:update',
+          'order:read',
+        ],
+      },
+    ];
+
+    const savedRoles: Record<string, any> = {};
+    for (const roleDef of defaultRoles) {
+      const rolePerms = allPermissions.filter((p: any) => roleDef.permissionKeys.includes(p.key));
+      let role = await roleRepo.findOne({ where: { name: roleDef.name, tenant_id: tenantId }, relations: ['permissions'] });
+      if (!role) {
+        role = await roleRepo.save({
+          name: roleDef.name,
+          description: roleDef.description,
+          tenant_id: tenantId,
+          permissions: rolePerms,
+        });
+        console.log(`  ✅ Role "${roleDef.name}" created with ${rolePerms.length} permissions`);
       } else {
-        console.log(`  ⏭️  Role "Administrador" already up to date (${allPermissions.length} permissions)`);
+        const existingKeys = new Set(((role as any).permissions || []).map((p: any) => p.key));
+        const missing = rolePerms.filter((p: any) => !existingKeys.has(p.key));
+        if (missing.length > 0) {
+          (role as any).permissions = [...((role as any).permissions || []), ...missing];
+          await roleRepo.save(role);
+          console.log(`  🔄 Role "${roleDef.name}" updated with ${missing.length} new permissions`);
+        } else {
+          console.log(`  ⏭️  Role "${roleDef.name}" already up to date`);
+        }
       }
+      savedRoles[roleDef.name] = role;
     }
 
-    // ── Create default "Garcom" role with waiter permissions ──
-    const waiterPermKeys = [
-      'order:create', 'order:read', 'order:update',
-      'table:read', 'table:update',
-      'product:read', 'category:read',
-      'waiter:access',
-    ];
-    const waiterPerms = allPermissions.filter((p: any) => waiterPermKeys.includes(p.key));
-    let waiterRole = await roleRepo.findOne({ where: { name: 'Garcom', tenant_id: tenantId }, relations: ['permissions'] });
-    if (!waiterRole) {
-      waiterRole = await roleRepo.save({
-        name: 'Garcom',
-        description: 'Acesso ao app do garcom para pedidos presenciais',
-        tenant_id: tenantId,
-        permissions: waiterPerms,
-      });
-      console.log(`  ✅ Role "Garcom" created with ${waiterPerms.length} permissions`);
-    } else {
-      const existingKeys = new Set(((waiterRole as any).permissions || []).map((p: any) => p.key));
-      const missing = waiterPerms.filter((p: any) => !existingKeys.has(p.key));
-      if (missing.length > 0) {
-        (waiterRole as any).permissions = [...((waiterRole as any).permissions || []), ...missing];
-        await roleRepo.save(waiterRole);
-        console.log(`  🔄 Role "Garcom" updated with ${missing.length} new permissions`);
-      } else {
-        console.log(`  ⏭️  Role "Garcom" already up to date`);
-      }
-    }
+    const adminRole = savedRoles['Administrador'];
+    const waiterRole = savedRoles['Garcom'];
 
     // ── Create admin user ──
     let admin = await userRepo.findOne({ where: { email: demo.admin.email } });
