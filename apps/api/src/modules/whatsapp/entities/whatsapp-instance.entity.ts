@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 import { WhatsappInstanceStatus } from '@menufacil/shared';
 
 @Entity('whatsapp_instances')
@@ -17,6 +18,9 @@ export class WhatsappInstance {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column({ unique: true })
   instance_name: string;
@@ -40,4 +44,8 @@ export class WhatsappInstance {
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 }

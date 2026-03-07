@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 
 @Entity('delivery_zones')
 export class DeliveryZone {
@@ -14,6 +15,9 @@ export class DeliveryZone {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column()
   name: string;
@@ -36,4 +40,8 @@ export class DeliveryZone {
   @ManyToOne(() => Tenant, (tenant) => tenant.delivery_zones)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 }

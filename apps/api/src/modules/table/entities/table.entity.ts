@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 
 export enum TableStatus {
   AVAILABLE = 'available',
@@ -23,6 +24,9 @@ export class RestaurantTable {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column()
   number: number;
@@ -54,4 +58,8 @@ export class RestaurantTable {
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 }

@@ -12,6 +12,7 @@ import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from '@menufacil
 import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Customer } from '../../customer/entities/customer.entity';
 import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 import { OrderItem } from './order-item.entity';
 
 @Entity('orders')
@@ -21,6 +22,9 @@ export class Order {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column({ nullable: true })
   customer_id: string;
@@ -103,6 +107,10 @@ export class Order {
   @ManyToOne(() => Tenant, (tenant) => tenant.orders)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })

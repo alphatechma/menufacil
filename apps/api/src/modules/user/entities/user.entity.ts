@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { UserRole } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 import { Role } from '../../role/entities/role.entity';
 
 @Entity('users')
@@ -18,6 +19,9 @@ export class User {
 
   @Column({ nullable: true })
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column()
   name: string;
@@ -50,4 +54,8 @@ export class User {
   @ManyToOne(() => Tenant, (tenant) => tenant.users)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 }

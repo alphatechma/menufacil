@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 import { Order } from '../../order/entities/order.entity';
 import { User } from '../../user/entities/user.entity';
 
@@ -19,6 +20,9 @@ export class DeliveryPerson {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column()
   name: string;
@@ -50,6 +54,10 @@ export class DeliveryPerson {
   @ManyToOne(() => Tenant, (tenant) => tenant.delivery_persons)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'user_id' })

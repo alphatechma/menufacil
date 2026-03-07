@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 
 export enum ReservationStatus {
   PENDING = 'pending',
@@ -24,6 +25,9 @@ export class Reservation {
 
   @Column()
   tenant_id: string;
+
+  @Column({ nullable: true })
+  unit_id: string;
 
   @Column({ nullable: true })
   table_id: string;
@@ -64,4 +68,8 @@ export class Reservation {
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
+
+  @ManyToOne(() => TenantUnit, { nullable: true })
+  @JoinColumn({ name: 'unit_id' })
+  unit: TenantUnit;
 }
