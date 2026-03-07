@@ -72,6 +72,7 @@ async function seed() {
     { key: 'pickup', name: 'Retirada', description: 'Pedidos para retirada no balcao' },
     { key: 'dine_in', name: 'Atendimento Presencial', description: 'Mesas, comandas, reservas e mapa do salao' },
     { key: 'waiter', name: 'Garcom', description: 'App do garcom para pedidos presenciais' },
+    { key: 'multi_unit', name: 'Multi-Unidade', description: 'Suporte a multiplas unidades/filiais' },
   ];
 
   const savedModules: Record<string, any> = {};
@@ -104,14 +105,14 @@ async function seed() {
       price: 199,
       max_users: 10,
       max_products: 200,
-      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds', 'delivery_driver', 'pickup'],
+      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'kds', 'delivery_driver', 'pickup', 'multi_unit'],
     },
     {
       name: 'Enterprise',
       price: 399,
       max_users: null,
       max_products: null,
-      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports', 'delivery_driver', 'pickup', 'dine_in', 'waiter'],
+      moduleKeys: ['dashboard', 'staff', 'settings', 'orders', 'products', 'categories', 'customers', 'delivery', 'coupons', 'loyalty', 'kds', 'reports', 'delivery_driver', 'pickup', 'dine_in', 'waiter', 'multi_unit'],
     },
   ];
 
@@ -237,6 +238,14 @@ async function seed() {
     ],
     waiter: [
       { key: 'waiter:access', name: 'Acessar App Garcom' },
+    ],
+    // ── Multi-Unidade ──
+    multi_unit: [
+      { key: 'unit:read', name: 'Ver Unidades' },
+      { key: 'unit:create', name: 'Criar Unidade' },
+      { key: 'unit:update', name: 'Editar Unidade' },
+      { key: 'unit:delete', name: 'Remover Unidade' },
+      { key: 'unit:manage', name: 'Gerenciar Unidades' },
     ],
     // ── WhatsApp (sem modulo de plano — disponivel para todos) ──
     whatsapp: [
@@ -514,6 +523,7 @@ async function seed() {
           'delivery:read', 'delivery:update',
           'settings:read',
           'whatsapp:chat',
+          'unit:read',
         ],
       },
       {
