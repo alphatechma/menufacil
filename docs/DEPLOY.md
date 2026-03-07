@@ -85,13 +85,17 @@ No Easypanel, cada app e criado como um servico separado.
   - `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
   - `JWT_SECRET`, `JWT_REFRESH_SECRET`
 
-### 2. Web
+### 2. Web (Admin + Storefront)
 
 - **Tipo:** App (Dockerfile)
 - **Dockerfile:** `apps/web/Dockerfile`
 - **Porta:** 80
 - **Variaveis de ambiente:**
   - `API_URL` — URL interna da API (ex: `http://api:3000`)
+- **IMPORTANTE:** O painel admin foi migrado para dentro do `apps/web`. O app
+  antigo `apps/admin` esta **descontinuado** e nao deve ser usado para deploy.
+  Se o Easypanel ainda aponta para `apps/admin/Dockerfile`, atualize para
+  `apps/web/Dockerfile`.
 
 ### 3. Super Admin
 
