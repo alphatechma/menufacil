@@ -35,12 +35,20 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
     if (tenantSlug) {
       headers['X-Tenant-Slug'] = tenantSlug;
     }
+    const { selectedUnitId } = state.ui;
+    if (selectedUnitId) {
+      headers['X-Unit-Id'] = selectedUnitId;
+    }
   } else if (authContext === 'customer') {
     const slug = meta?.tenantSlug;
     if (slug) {
       headers['X-Tenant-Slug'] = slug;
     }
     headers['X-Auth-Context'] = 'customer';
+    const customerUnitId = state.tenant?.selectedUnitId;
+    if (customerUnitId) {
+      headers['X-Unit-Id'] = customerUnitId;
+    }
   }
 
   try {

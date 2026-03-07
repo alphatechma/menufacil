@@ -22,6 +22,7 @@ interface UiState {
   mobileMenuOpen: boolean;
   themeMode: ThemeMode;
   isDark: boolean;
+  selectedUnitId: string | null;
 }
 
 const themeMode = getInitialTheme();
@@ -31,6 +32,7 @@ const initialState: UiState = {
   mobileMenuOpen: false,
   themeMode,
   isDark: resolveIsDark(themeMode),
+  selectedUnitId: null,
 };
 
 const uiSlice = createSlice({
@@ -55,6 +57,9 @@ const uiSlice = createSlice({
       state.themeMode = next;
       state.isDark = !state.isDark;
     },
+    setSelectedUnit(state, action: PayloadAction<string | null>) {
+      state.selectedUnitId = action.payload;
+    },
   },
 });
 
@@ -62,6 +67,7 @@ export const selectSidebarCollapsed = (state: RootState) => state.ui.sidebarColl
 export const selectMobileMenuOpen = (state: RootState) => state.ui.mobileMenuOpen;
 export const selectIsDark = (state: RootState) => state.ui.isDark;
 export const selectThemeMode = (state: RootState) => state.ui.themeMode;
+export const selectSelectedUnitId = (state: RootState) => state.ui.selectedUnitId;
 
-export const { toggleSidebar, toggleMobileMenu, closeMobileMenu, setThemeMode, toggleDarkMode } = uiSlice.actions;
+export const { toggleSidebar, toggleMobileMenu, closeMobileMenu, setThemeMode, toggleDarkMode, setSelectedUnit } = uiSlice.actions;
 export default uiSlice.reducer;

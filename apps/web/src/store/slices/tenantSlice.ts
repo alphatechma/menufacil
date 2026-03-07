@@ -32,10 +32,12 @@ export interface Tenant {
 
 interface TenantState {
   tenant: Tenant | null;
+  selectedUnitId: string | null;
 }
 
 const initialState: TenantState = {
   tenant: null,
+  selectedUnitId: null,
 };
 
 const tenantSlice = createSlice({
@@ -48,6 +50,9 @@ const tenantSlice = createSlice({
     clearTenant(state) {
       state.tenant = null;
     },
+    setSelectedUnitId(state, action: PayloadAction<string | null>) {
+      state.selectedUnitId = action.payload;
+    },
   },
 });
 
@@ -58,5 +63,7 @@ export const selectHasModule = (state: RootState, key: string) => {
   return tenant.plan.modules.some((m) => m.key === key);
 };
 
-export const { setTenant, clearTenant } = tenantSlice.actions;
+export const selectSelectedUnitId = (state: RootState) => state.tenant.selectedUnitId;
+
+export const { setTenant, clearTenant, setSelectedUnitId } = tenantSlice.actions;
 export default tenantSlice.reducer;
