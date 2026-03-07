@@ -135,9 +135,9 @@ export default function TenantList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <Button variant="ghost" size="sm" asChild className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="sm" asChild>
                         <Link to={`/tenants/${tenant.id}`}>
-                          <Eye className="h-4 w-4 mr-1" />
+                          <Eye className="h-4 w-4" />
                           Ver
                         </Link>
                       </Button>
