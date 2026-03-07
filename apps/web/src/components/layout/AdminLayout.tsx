@@ -45,6 +45,7 @@ import NotificationPanel from '@/components/ui/NotificationPanel';
 import { selectToasts } from '@/store/slices/notificationSlice';
 import { cn } from '@/utils/cn';
 import { Separator } from '@/components/ui/Separator';
+import { UnitSelector } from '@/components/layout/UnitSelector';
 
 interface SidebarItem {
   to: string;
@@ -477,6 +478,7 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-1">
+            <UnitSelector />
             {tenantSlug && (
               <a
                 href={`/${tenantSlug}`}
