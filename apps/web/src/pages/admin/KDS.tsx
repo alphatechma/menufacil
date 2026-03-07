@@ -277,8 +277,22 @@ function KDSOrderCard({
   const title = getCardTitle(order);
   const orderNum = order.order_number || order.id?.slice(0, 6);
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', order.id);
+    e.dataTransfer.effectAllowed = 'move';
+    (e.currentTarget as HTMLElement).style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = '1';
+  };
+
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+    <div
+      draggable={!isUpdating}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm cursor-grab active:cursor-grabbing">
       {/* Colored Header */}
       <div className={cn('px-4 py-3', config.headerBg)}>
         <div className="flex items-center justify-between">
@@ -530,6 +544,53 @@ export default function KDS() {
 
   const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
 
+  // Drag & drop: map column id → target status
+  const COLUMN_TARGET_STATUS: Record<string, string> = {
+    pending: 'confirmed',
+    preparing: 'preparing',
+    ready: 'ready',
+  };
+
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+
+  const handleDrop = async (e: React.DragEvent, targetColumnId: string) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    const orderId = e.dataTransfer.getData('text/plain');
+    if (!orderId) return;
+
+    const order = orders.find((o: any) => o.id === orderId);
+    if (!order) return;
+
+    // Find which column it's currently in
+    const currentColumn = COLUMNS.find((col) => col.statuses.includes(order.status));
+    if (!currentColumn || currentColumn.id === targetColumnId) return;
+
+    const targetStatus = COLUMN_TARGET_STATUS[targetColumnId];
+    setUpdatingOrderId(orderId);
+    try {
+      // Moving to preparing: confirm first if pending
+      if (targetColumnId === 'preparing' && order.status === 'pending') {
+        await updateStatus({ id: orderId, status: 'confirmed' }).unwrap();
+        printOrderReceipt(order);
+      }
+      await updateStatus({ id: orderId, status: targetStatus }).unwrap();
+    } catch {
+      // ignore
+    }
+    setUpdatingOrderId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverColumn !== columnId) setDragOverColumn(columnId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverColumn(null);
+  };
+
   if (isLoading) return <ListPageSkeleton />;
 
   return (
@@ -578,7 +639,16 @@ export default function KDS() {
               </div>
 
               {/* Column Body */}
-              <div className={cn('flex-1 rounded-b-2xl border-2 border-t-0 p-3 space-y-3 min-h-[300px]', column.borderColor, `${column.bgColor}/30`)}>
+              <div
+                onDrop={(e) => handleDrop(e, column.id)}
+                onDragOver={(e) => handleDragOver(e, column.id)}
+                onDragLeave={handleDragLeave}
+                className={cn(
+                  'flex-1 rounded-b-2xl border-2 border-t-0 p-3 space-y-3 min-h-[300px] transition-colors',
+                  column.borderColor,
+                  `${column.bgColor}/30`,
+                  dragOverColumn === column.id && 'ring-2 ring-primary ring-inset bg-primary/5',
+                )}>
                 {colOrders.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                     <Package className="w-12 h-12 mb-2 opacity-30" />
