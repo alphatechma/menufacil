@@ -15,6 +15,7 @@ import {
   useCreateUnitMutation,
   useUpdateUnitMutation,
 } from '@/api/adminApi';
+import { ErrorAlert } from '@/components/ui/ErrorAlert';
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatorio'),
@@ -32,8 +33,8 @@ export default function UnitForm() {
   const isEditing = !!id;
 
   const { data: unit, isLoading: loadingUnit } = useGetUnitQuery(id!, { skip: !id });
-  const [createUnit, { isLoading: creating }] = useCreateUnitMutation();
-  const [updateUnit, { isLoading: updating }] = useUpdateUnitMutation();
+  const [createUnit, { isLoading: creating, error: createError }] = useCreateUnitMutation();
+  const [updateUnit, { isLoading: updating, error: updateError }] = useUpdateUnitMutation();
 
   const { control, handleSubmit, reset, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -66,13 +67,27 @@ export default function UnitForm() {
     }
   }, [nameValue, isEditing, setValue]);
 
+  const apiError = createError || updateError;
+  const errorMessage = apiError
+    ? (apiError as any)?.data?.message
+      ? Array.isArray((apiError as any).data.message)
+        ? (apiError as any).data.message.join(', ')
+        : (apiError as any).data.message
+      : 'Erro ao salvar unidade'
+    : null;
+
   const onSubmit = async (data: FormData) => {
-    if (isEditing) {
-      await updateUnit({ id: id!, data });
-    } else {
-      await createUnit(data);
+    try {
+      if (isEditing) {
+        await updateUnit({ id: id!, data }).unwrap();
+      } else {
+        const { is_active, ...createData } = data;
+        await createUnit(createData).unwrap();
+      }
+      navigate('/admin/units');
+    } catch {
+      // error is captured by RTK Query state
     }
-    navigate('/admin/units');
   };
 
   if (isEditing && loadingUnit) {
@@ -88,6 +103,7 @@ export default function UnitForm() {
 
       <Card className="max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          {errorMessage && <ErrorAlert message={errorMessage} />}
           <FormField control={control} name="name" label="Nome da Unidade">
             {(field) => <Input {...field} placeholder="Ex: Unidade Centro" />}
           </FormField>
