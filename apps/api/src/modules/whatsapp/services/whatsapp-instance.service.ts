@@ -1,0 +1,110 @@
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { WhatsappInstance } from '../entities/whatsapp-instance.entity';
+import { WhatsappInstanceStatus, WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from '@menufacil/shared';
+import { EvolutionApiService } from './evolution-api.service';
+import { EventsGateway } from '../../../websocket/events.gateway';
+
+@Injectable()
+export class WhatsappInstanceService {
+  private readonly logger = new Logger(WhatsappInstanceService.name);
+
+  constructor(
+    @InjectRepository(WhatsappInstance)
+    private readonly instanceRepo: Repository<WhatsappInstance>,
+    private readonly evolutionApi: EvolutionApiService,
+    private readonly eventsGateway: EventsGateway,
+  ) {}
+
+  async connect(tenantId: string, tenantSlug: string): Promise<{ qrcode?: string; pairingCode?: string; instance: WhatsappInstance }> {
+    let instance = await this.instanceRepo.findOne({ where: { tenant_id: tenantId } });
+    const instanceName = `menufacil-${tenantSlug}`;
+
+    if (!instance) {
+      await this.evolutionApi.createInstance(instanceName);
+      await this.evolutionApi.setWebhook(instanceName);
+      instance = this.instanceRepo.create({
+        tenant_id: tenantId,
+        instance_name: instanceName,
+        status: WhatsappInstanceStatus.CONNECTING,
+      });
+      await this.instanceRepo.save(instance);
+    } else if (instance.status === WhatsappInstanceStatus.CONNECTED) {
+      throw new BadRequestException('WhatsApp already connected');
+    } else {
+      instance.status = WhatsappInstanceStatus.CONNECTING;
+      await this.instanceRepo.save(instance);
+    }
+
+    const connectResult = await this.evolutionApi.connectInstance(instanceName);
+    return { qrcode: connectResult.base64 || connectResult.code, pairingCode: connectResult.pairingCode, instance };
+  }
+
+  async disconnect(tenantId: string): Promise<void> {
+    const instance = await this.instanceRepo.findOne({ where: { tenant_id: tenantId } });
+    if (!instance) throw new BadRequestException('No WhatsApp instance found');
+
+    try {
+      await this.evolutionApi.logoutInstance(instance.instance_name);
+      await this.evolutionApi.deleteInstance(instance.instance_name);
+    } catch (err) {
+      this.logger.warn(`Error disconnecting Evolution API instance: ${err.message}`);
+    }
+
+    instance.status = WhatsappInstanceStatus.DISCONNECTED;
+    instance.phone_number = null;
+    await this.instanceRepo.save(instance);
+    this.emitStatusUpdate(tenantId, instance);
+  }
+
+  async getStatus(tenantId: string): Promise<{ status: WhatsappInstanceStatus; phone_number: string | null }> {
+    const instance = await this.instanceRepo.findOne({ where: { tenant_id: tenantId } });
+    if (!instance) return { status: WhatsappInstanceStatus.DISCONNECTED, phone_number: null };
+
+    if (instance.status === WhatsappInstanceStatus.CONNECTING) {
+      try {
+        const state = await this.evolutionApi.getConnectionState(instance.instance_name);
+        if (state.instance?.state === 'open') {
+          instance.status = WhatsappInstanceStatus.CONNECTED;
+          const instances = await this.evolutionApi.fetchInstance(instance.instance_name);
+          if (instances?.[0]?.instance?.owner) {
+            instance.phone_number = instances[0].instance.owner.replace('@s.whatsapp.net', '');
+          }
+          await this.instanceRepo.save(instance);
+        }
+      } catch { /* Evolution API might not have the instance yet */ }
+    }
+
+    return { status: instance.status, phone_number: instance.phone_number };
+  }
+
+  async handleConnectionUpdate(instanceName: string, state: string, phoneNumber?: string): Promise<void> {
+    const instance = await this.instanceRepo.findOne({ where: { instance_name: instanceName } });
+    if (!instance) return;
+
+    if (state === 'open') {
+      instance.status = WhatsappInstanceStatus.CONNECTED;
+      if (phoneNumber) instance.phone_number = phoneNumber.replace('@s.whatsapp.net', '');
+    } else if (state === 'close') {
+      instance.status = WhatsappInstanceStatus.DISCONNECTED;
+    }
+
+    await this.instanceRepo.save(instance);
+    this.emitStatusUpdate(instance.tenant_id, instance);
+  }
+
+  async getInstanceByTenantId(tenantId: string): Promise<WhatsappInstance | null> {
+    return this.instanceRepo.findOne({ where: { tenant_id: tenantId } });
+  }
+
+  async getInstanceByName(instanceName: string): Promise<WhatsappInstance | null> {
+    return this.instanceRepo.findOne({ where: { instance_name: instanceName } });
+  }
+
+  private emitStatusUpdate(tenantId: string, instance: WhatsappInstance) {
+    this.eventsGateway.server
+      .to(WEBSOCKET_ROOMS.tenantWhatsapp(tenantId))
+      .emit(WEBSOCKET_EVENTS.WHATSAPP_STATUS_UPDATE, { status: instance.status, phone_number: instance.phone_number });
+  }
+}
