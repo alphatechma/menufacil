@@ -12,9 +12,13 @@ export class TableService {
     private readonly tableRepo: Repository<RestaurantTable>,
   ) {}
 
-  async findAll(tenantId: string): Promise<RestaurantTable[]> {
+  async findAll(tenantId: string, unitId?: string | null): Promise<RestaurantTable[]> {
+    const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
     return this.tableRepo.find({
-      where: { tenant_id: tenantId },
+      where,
       order: { sort_order: 'ASC', number: 'ASC' },
     });
   }
@@ -29,13 +33,14 @@ export class TableService {
     return this.tableRepo.findOne({ where: { number, tenant_id: tenantId } });
   }
 
-  async create(dto: CreateTableDto, tenantId: string): Promise<RestaurantTable> {
+  async create(dto: CreateTableDto, tenantId: string, unitId?: string | null): Promise<RestaurantTable> {
     const existing = await this.findByNumber(dto.number, tenantId);
     if (existing) throw new ConflictException(`Mesa ${dto.number} ja existe`);
 
     const table = this.tableRepo.create({
       ...dto,
       tenant_id: tenantId,
+      unit_id: unitId || undefined,
     });
     return this.tableRepo.save(table);
   }

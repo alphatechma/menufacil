@@ -18,8 +18,12 @@ export class DeliveryZoneRepository {
     return this.repo.save(zone);
   }
 
-  async findByTenant(tenantId: string): Promise<DeliveryZone[]> {
-    return this.repo.find({ where: { tenant_id: tenantId } });
+  async findByTenant(tenantId: string, unitId?: string | null): Promise<DeliveryZone[]> {
+    const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
+    return this.repo.find({ where });
   }
 
   async findById(id: string, tenantId: string): Promise<DeliveryZone | null> {

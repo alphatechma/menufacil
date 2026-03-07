@@ -8,17 +8,18 @@ import { DeliveryZone } from './entities/delivery-zone.entity';
 export class DeliveryZoneService {
   constructor(private readonly repository: DeliveryZoneRepository) {}
 
-  async create(dto: CreateDeliveryZoneDto, tenantId: string): Promise<DeliveryZone> {
+  async create(dto: CreateDeliveryZoneDto, tenantId: string, unitId?: string | null): Promise<DeliveryZone> {
     const zone = this.repository.create({
       ...dto,
       polygon: dto.polygon || [],
       tenant_id: tenantId,
+      unit_id: unitId || undefined,
     });
     return this.repository.save(zone);
   }
 
-  async findAll(tenantId: string): Promise<DeliveryZone[]> {
-    return this.repository.findByTenant(tenantId);
+  async findAll(tenantId: string, unitId?: string | null): Promise<DeliveryZone[]> {
+    return this.repository.findByTenant(tenantId, unitId);
   }
 
   async findById(id: string, tenantId: string): Promise<DeliveryZone> {

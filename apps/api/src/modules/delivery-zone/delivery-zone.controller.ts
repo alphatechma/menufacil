@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagg
 import { DeliveryZoneService } from './delivery-zone.service';
 import { CreateDeliveryZoneDto } from './dto/create-delivery-zone.dto';
 import { UpdateDeliveryZoneDto } from './dto/update-delivery-zone.dto';
-import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Delivery Zones')
@@ -26,8 +26,8 @@ export class DeliveryZoneController {
 
   @Get()
   @ApiOperation({ summary: 'List delivery zones' })
-  findAll(@CurrentTenant('id') tenantId: string) {
-    return this.service.findAll(tenantId);
+  findAll(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.findAll(tenantId, unitId);
   }
 
   @Get('by-neighborhood')
@@ -60,8 +60,8 @@ export class DeliveryZoneController {
   @ApiBearerAuth()
   @RequirePermissions('delivery:create')
   @ApiOperation({ summary: 'Create a delivery zone' })
-  create(@Body() dto: CreateDeliveryZoneDto, @CurrentTenant('id') tenantId: string) {
-    return this.service.create(dto, tenantId);
+  create(@Body() dto: CreateDeliveryZoneDto, @CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.create(dto, tenantId, unitId);
   }
 
   @Put(':id')

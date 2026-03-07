@@ -15,7 +15,7 @@ import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
 import { ReservationStatus } from './entities/reservation.entity';
-import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Reservations')
@@ -31,10 +31,11 @@ export class ReservationController {
   @ApiOperation({ summary: 'List reservations for tenant' })
   findAll(
     @CurrentTenant('id') tenantId: string,
+    @CurrentUnit() unitId: string | null,
     @Query('date') date?: string,
     @Query('status') status?: ReservationStatus,
   ) {
-    return this.service.findByTenant(tenantId, { date, status });
+    return this.service.findByTenant(tenantId, { date, status }, unitId);
   }
 
   @Post()
@@ -43,8 +44,9 @@ export class ReservationController {
   create(
     @Body() dto: CreateReservationDto,
     @CurrentTenant('id') tenantId: string,
+    @CurrentUnit() unitId: string | null,
   ) {
-    return this.service.create(dto, tenantId);
+    return this.service.create(dto, tenantId, unitId);
   }
 
   @Patch(':id/status')

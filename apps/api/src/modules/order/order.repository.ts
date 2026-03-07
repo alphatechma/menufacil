@@ -24,9 +24,13 @@ export class OrderRepository {
     return this.repo.save(order);
   }
 
-  async findByTenant(tenantId: string): Promise<Order[]> {
+  async findByTenant(tenantId: string, unitId?: string | null): Promise<Order[]> {
+    const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
     return this.repo.find({
-      where: { tenant_id: tenantId },
+      where,
       relations: ['items', 'items.extras', 'customer', 'delivery_person'],
       order: { created_at: 'DESC' },
     });

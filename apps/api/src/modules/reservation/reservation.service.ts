@@ -11,10 +11,11 @@ export class ReservationService {
     private readonly reservationRepo: Repository<Reservation>,
   ) {}
 
-  async create(dto: CreateReservationDto, tenantId: string): Promise<Reservation> {
+  async create(dto: CreateReservationDto, tenantId: string, unitId?: string | null): Promise<Reservation> {
     const reservation = this.reservationRepo.create({
       ...dto,
       tenant_id: tenantId,
+      unit_id: unitId || undefined,
     });
     return this.reservationRepo.save(reservation);
   }
@@ -22,8 +23,12 @@ export class ReservationService {
   async findByTenant(
     tenantId: string,
     filters?: { date?: string; status?: ReservationStatus },
+    unitId?: string | null,
   ): Promise<Reservation[]> {
     const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
     if (filters?.date) where.date = filters.date;
     if (filters?.status) where.status = filters.status;
 

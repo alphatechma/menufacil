@@ -15,7 +15,7 @@ import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AssignDeliveryPersonDto } from './dto/assign-delivery-person.dto';
-import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Orders')
@@ -34,16 +34,17 @@ export class OrderController {
     @Body() dto: CreateOrderDto,
     @CurrentUser('id') userId: string,
     @CurrentTenant('id') tenantId: string,
+    @CurrentUnit() unitId: string | null,
   ) {
-    return this.orderService.create(dto, userId, tenantId);
+    return this.orderService.create(dto, userId, tenantId, unitId);
   }
 
   @Get()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('order:read')
   @ApiOperation({ summary: 'List all orders (admin)' })
-  findByTenant(@CurrentTenant('id') tenantId: string) {
-    return this.orderService.findByTenant(tenantId);
+  findByTenant(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.orderService.findByTenant(tenantId, unitId);
   }
 
   @Get('stats/dashboard')

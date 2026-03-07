@@ -33,7 +33,7 @@ export class OrderService {
     private readonly whatsappMessageService: WhatsappMessageService,
   ) {}
 
-  async create(dto: CreateOrderDto, customerId: string, tenantId: string): Promise<Order> {
+  async create(dto: CreateOrderDto, customerId: string, tenantId: string, unitId?: string | null): Promise<Order> {
     const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId);
 
     // Resolve products from DB
@@ -188,6 +188,7 @@ export class OrderService {
     const order = this.orderRepository.create({
       tenant_id: tenantId,
       customer_id: customerId,
+      unit_id: unitId || undefined,
       order_number: orderNumber,
       status: OrderStatus.PENDING,
       payment_method: dto.payment_method,
@@ -214,8 +215,8 @@ export class OrderService {
     return fullOrder;
   }
 
-  async findByTenant(tenantId: string): Promise<Order[]> {
-    return this.orderRepository.findByTenant(tenantId);
+  async findByTenant(tenantId: string, unitId?: string | null): Promise<Order[]> {
+    return this.orderRepository.findByTenant(tenantId, unitId);
   }
 
   async findByCustomer(customerId: string, tenantId: string): Promise<Order[]> {

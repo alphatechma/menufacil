@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagg
 import { DeliveryPersonService } from './delivery-person.service';
 import { CreateDeliveryPersonDto } from './dto/create-delivery-person.dto';
 import { UpdateDeliveryPersonDto } from './dto/update-delivery-person.dto';
-import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Delivery Persons')
@@ -28,8 +28,8 @@ export class DeliveryPersonController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions('delivery:read')
   @ApiOperation({ summary: 'List delivery persons' })
-  findAll(@CurrentTenant('id') tenantId: string) {
-    return this.service.findAll(tenantId);
+  findAll(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.findAll(tenantId, unitId);
   }
 
   @Get(':id')
@@ -44,8 +44,8 @@ export class DeliveryPersonController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions('delivery:create')
   @ApiOperation({ summary: 'Create a delivery person' })
-  create(@Body() dto: CreateDeliveryPersonDto, @CurrentTenant('id') tenantId: string) {
-    return this.service.create(dto, tenantId);
+  create(@Body() dto: CreateDeliveryPersonDto, @CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.create(dto, tenantId, unitId);
   }
 
   @Put(':id')

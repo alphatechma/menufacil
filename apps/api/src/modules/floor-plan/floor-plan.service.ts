@@ -12,9 +12,13 @@ export class FloorPlanService {
     private readonly floorPlanRepo: Repository<FloorPlan>,
   ) {}
 
-  async findByTenant(tenantId: string): Promise<FloorPlan[]> {
+  async findByTenant(tenantId: string, unitId?: string | null): Promise<FloorPlan[]> {
+    const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
     return this.floorPlanRepo.find({
-      where: { tenant_id: tenantId },
+      where,
       order: { created_at: 'ASC' },
     });
   }
@@ -27,10 +31,11 @@ export class FloorPlanService {
     return plan;
   }
 
-  async create(dto: CreateFloorPlanDto, tenantId: string): Promise<FloorPlan> {
+  async create(dto: CreateFloorPlanDto, tenantId: string, unitId?: string | null): Promise<FloorPlan> {
     const plan = this.floorPlanRepo.create({
       ...dto,
       tenant_id: tenantId,
+      unit_id: unitId || undefined,
     });
     return this.floorPlanRepo.save(plan);
   }

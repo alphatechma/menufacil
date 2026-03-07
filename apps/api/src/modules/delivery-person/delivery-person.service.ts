@@ -8,16 +8,17 @@ import { DeliveryPerson } from './entities/delivery-person.entity';
 export class DeliveryPersonService {
   constructor(private readonly repository: DeliveryPersonRepository) {}
 
-  async create(dto: CreateDeliveryPersonDto, tenantId: string): Promise<DeliveryPerson> {
+  async create(dto: CreateDeliveryPersonDto, tenantId: string, unitId?: string | null): Promise<DeliveryPerson> {
     const entity = this.repository.create({
       ...dto,
       tenant_id: tenantId,
+      unit_id: unitId || undefined,
     });
     return this.repository.save(entity);
   }
 
-  async findAll(tenantId: string): Promise<DeliveryPerson[]> {
-    return this.repository.findByTenant(tenantId);
+  async findAll(tenantId: string, unitId?: string | null): Promise<DeliveryPerson[]> {
+    return this.repository.findByTenant(tenantId, unitId);
   }
 
   async findById(id: string, tenantId: string): Promise<DeliveryPerson> {

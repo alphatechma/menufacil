@@ -18,9 +18,13 @@ export class DeliveryPersonRepository {
     return this.repo.save(entity);
   }
 
-  async findByTenant(tenantId: string): Promise<DeliveryPerson[]> {
+  async findByTenant(tenantId: string, unitId?: string | null): Promise<DeliveryPerson[]> {
+    const where: any = { tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
     return this.repo.find({
-      where: { tenant_id: tenantId },
+      where,
       order: { name: 'ASC' },
     });
   }

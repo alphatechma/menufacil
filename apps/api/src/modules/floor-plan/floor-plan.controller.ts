@@ -14,7 +14,7 @@ import { ApiTags, ApiBearerAuth, ApiSecurity, ApiOperation } from '@nestjs/swagg
 import { FloorPlanService } from './floor-plan.service';
 import { CreateFloorPlanDto } from './dto/create-floor-plan.dto';
 import { UpdateFloorPlanDto } from './dto/update-floor-plan.dto';
-import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Floor Plans')
@@ -28,8 +28,8 @@ export class FloorPlanController {
   @Get()
   @RequirePermissions('floor_plan:read')
   @ApiOperation({ summary: 'List floor plans for tenant' })
-  findAll(@CurrentTenant('id') tenantId: string) {
-    return this.service.findByTenant(tenantId);
+  findAll(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.findByTenant(tenantId, unitId);
   }
 
   @Get(':id')
@@ -48,8 +48,9 @@ export class FloorPlanController {
   create(
     @Body() dto: CreateFloorPlanDto,
     @CurrentTenant('id') tenantId: string,
+    @CurrentUnit() unitId: string | null,
   ) {
-    return this.service.create(dto, tenantId);
+    return this.service.create(dto, tenantId, unitId);
   }
 
   @Patch(':id')

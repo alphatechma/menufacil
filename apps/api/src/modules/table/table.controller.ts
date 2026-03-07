@@ -15,7 +15,7 @@ import { TableService } from './table.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { TableStatus } from './entities/table.entity';
-import { CurrentTenant, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Tables')
@@ -29,8 +29,8 @@ export class TableController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions('table:read')
   @ApiOperation({ summary: 'List all tables' })
-  findAll(@CurrentTenant('id') tenantId: string) {
-    return this.service.findAll(tenantId);
+  findAll(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.findAll(tenantId, unitId);
   }
 
   @Get(':id')
@@ -45,8 +45,8 @@ export class TableController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions('table:create')
   @ApiOperation({ summary: 'Create a table' })
-  create(@Body() dto: CreateTableDto, @CurrentTenant('id') tenantId: string) {
-    return this.service.create(dto, tenantId);
+  create(@Body() dto: CreateTableDto, @CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
+    return this.service.create(dto, tenantId, unitId);
   }
 
   @Patch(':id')
