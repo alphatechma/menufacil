@@ -23,4 +23,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  @ApiPropertyOptional({ description: 'Unit ID the user is assigned to (null = all units)' })
+  @IsOptional()
+  @IsUUID()
+  unit_id?: string | null;
 }

@@ -3,13 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Shield, Check, AlertCircle } from 'lucide-react';
+import { Shield, Check, AlertCircle, Building2 } from 'lucide-react';
 import {
   useGetStaffMemberQuery,
   useCreateStaffMutation,
   useUpdateStaffMutation,
   useGetRolesQuery,
+  useGetUnitsQuery,
 } from '@/api/adminApi';
+import { usePermission } from '@/hooks/usePermission';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { Toggle } from '@/components/ui/Toggle';
@@ -36,6 +38,8 @@ export default function StaffForm() {
 
   const { data: member, isLoading: isLoadingMember } = useGetStaffMemberQuery(id!, { skip: !isEditing });
   const { data: customRoles = [] } = useGetRolesQuery();
+  const { hasModule } = usePermission();
+  const { data: units = [] } = useGetUnitsQuery(undefined, { skip: !hasModule('multi_unit') });
   const [createStaff, { isLoading: isCreating, error: createError }] = useCreateStaffMutation();
   const [updateStaff, { isLoading: isUpdating, error: updateError }] = useUpdateStaffMutation();
 
@@ -53,6 +57,7 @@ export default function StaffForm() {
   });
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
 
   useEffect(() => {
     if (member) {
@@ -63,6 +68,7 @@ export default function StaffForm() {
         is_active: member.is_active ?? true,
       });
       setSelectedRoleId(member.role_id || null);
+      setSelectedUnitId(member.unit_id || null);
     }
   }, [member, reset]);
 
@@ -75,6 +81,7 @@ export default function StaffForm() {
           name: data.name,
           is_active: data.is_active,
           role_id: selectedRoleId,
+          unit_id: selectedUnitId,
         };
         if (data.password) {
           updateData.password = data.password;
@@ -87,6 +94,7 @@ export default function StaffForm() {
           email: data.email,
           password: data.password!,
           role_id: selectedRoleId,
+          unit_id: selectedUnitId,
         }).unwrap();
         toast.success('Membro criado com sucesso');
       }
@@ -234,6 +242,75 @@ export default function StaffForm() {
             <p className="text-xs text-red-500 mt-2">Selecione um perfil de acesso</p>
           )}
         </FormCard>
+
+        {units.length > 0 && (
+          <FormCard>
+            <div className="flex items-center gap-2 mb-1">
+              <Building2 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Unidade</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Selecione a unidade que este membro pode acessar. Deixe em "Todas" para acesso global.
+            </p>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setSelectedUnitId(null)}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
+                  !selectedUnitId
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                    : 'border-border hover:border-border'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  !selectedUnitId ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                }`}>
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Todas as unidades</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Acesso a dados de todas as unidades</p>
+                </div>
+                {!selectedUnitId && <Check className="w-5 h-5 text-primary shrink-0" />}
+              </button>
+
+              {units.map((unit: any) => {
+                const isSelected = selectedUnitId === unit.id;
+                return (
+                  <button
+                    key={unit.id}
+                    type="button"
+                    onClick={() => setSelectedUnitId(unit.id)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border hover:border-border'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      isSelected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">
+                        {unit.name}
+                        {unit.is_headquarters && (
+                          <span className="ml-1.5 text-xs text-muted-foreground font-normal">(Matriz)</span>
+                        )}
+                      </p>
+                      {unit.address && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{unit.address}</p>
+                      )}
+                    </div>
+                    {isSelected && <Check className="w-5 h-5 text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </FormCard>
+        )}
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => navigate('/admin/staff')}>

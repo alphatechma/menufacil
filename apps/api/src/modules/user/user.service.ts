@@ -25,6 +25,7 @@ export class UserService {
       system_role: dto.role || UserRole.CASHIER,
       tenant_id: tenantId,
       role_id: dto.role_id,
+      unit_id: dto.unit_id || null,
     } as any);
 
     return this.userRepository.save(user);
@@ -44,10 +45,11 @@ export class UserService {
 
   async update(id: string, dto: UpdateUserDto, tenantId: string): Promise<User> {
     await this.findById(id, tenantId);
-    const { role, role_id, ...rest } = dto as any;
+    const { role, role_id, unit_id, ...rest } = dto as any;
     const updateData: any = { ...rest };
     if (role) updateData.system_role = role;
     if (role_id !== undefined) updateData.role_id = role_id;
+    if (unit_id !== undefined) updateData.unit_id = unit_id;
     await this.userRepository.update(id, tenantId, updateData);
     return this.findById(id, tenantId);
   }

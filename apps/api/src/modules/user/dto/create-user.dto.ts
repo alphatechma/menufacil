@@ -26,4 +26,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsUUID()
   role_id?: string;
+
+  @ApiPropertyOptional({ description: 'Unit ID the user is assigned to (null = all units)' })
+  @IsOptional()
+  @IsUUID()
+  unit_id?: string | null;
 }

@@ -100,6 +100,11 @@ export default function StaffList() {
                   </div>
 
                   <div className="flex items-center gap-3">
+                    {member.unit && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                        {member.unit.name}
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
                       <Shield className="w-3.5 h-3.5" />
                       {roleName}

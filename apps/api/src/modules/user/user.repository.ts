@@ -13,7 +13,7 @@ export class UserRepository {
   async findAllByTenant(tenantId: string): Promise<User[]> {
     return this.repo.find({
       where: { tenant_id: tenantId },
-      relations: ['role'],
+      relations: ['role', 'unit'],
       order: { created_at: 'DESC' },
     });
   }
@@ -21,7 +21,7 @@ export class UserRepository {
   async findById(id: string, tenantId: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id, tenant_id: tenantId },
-      relations: ['role', 'role.permissions'],
+      relations: ['role', 'role.permissions', 'unit'],
     });
   }
 
