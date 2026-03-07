@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw, Copy, ChefHat, Download } from 'lucide-react';
-import { useGetTenantBySlugQuery, useUpdateTenantMutation } from '@/api/adminApi';
+import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw, Copy, ChefHat, Download, MessageCircle, QrCode, WifiOff } from 'lucide-react';
+import { useGetTenantBySlugQuery, useUpdateTenantMutation, useConnectWhatsappMutation, useDisconnectWhatsappMutation, useGetWhatsappStatusQuery } from '@/api/adminApi';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { cn } from '@/utils/cn';
 import { settingsSchema, type SettingsFormData } from '@/schemas/admin/settingsSchema';
@@ -54,6 +55,7 @@ const SETTINGS_TABS = [
   { key: 'notificacoes', label: 'Notificacoes' },
   { key: 'plano', label: 'Plano' },
   { key: 'impressora', label: 'Impressora' },
+  { key: 'whatsapp', label: 'WhatsApp' },
 ];
 
 const MODULE_LABELS: Record<string, string> = {
@@ -70,6 +72,78 @@ const MODULE_LABELS: Record<string, string> = {
   pickup: 'Retirada',
   dine_in: 'Consumo no Local',
 };
+
+function WhatsappSettingsTab() {
+  const navigate = useNavigate();
+  const { data: status, isLoading: statusLoading, refetch } = useGetWhatsappStatusQuery();
+  const [connect, { isLoading: connecting, data: connectData }] = useConnectWhatsappMutation();
+  const [disconnect, { isLoading: disconnecting }] = useDisconnectWhatsappMutation();
+
+  const isConnected = status?.status === 'connected';
+  const isConnecting = status?.status === 'connecting' || connecting;
+
+  useEffect(() => {
+    if (!isConnecting) return;
+    const interval = setInterval(() => refetch(), 3000);
+    return () => clearInterval(interval);
+  }, [isConnecting, refetch]);
+
+  return (
+    <FormCard title="WhatsApp" description="Conecte seu numero de WhatsApp para enviar mensagens automaticas aos clientes.">
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className={cn('w-3 h-3 rounded-full', isConnected ? 'bg-success' : isConnecting ? 'bg-warning animate-pulse' : 'bg-gray-300')} />
+          <span className="text-sm font-medium text-foreground">
+            {isConnected ? 'Conectado' : isConnecting ? 'Conectando...' : 'Desconectado'}
+          </span>
+          {status?.phone_number && (
+            <span className="text-sm text-muted-foreground">({status.phone_number})</span>
+          )}
+        </div>
+
+        {isConnecting && connectData?.qrcode && (
+          <div className="flex flex-col items-center gap-4 p-6 bg-muted rounded-xl">
+            <p className="text-sm text-muted-foreground">Escaneie o QR Code com seu WhatsApp</p>
+            <img
+              src={connectData.qrcode.startsWith('data:') ? connectData.qrcode : `data:image/png;base64,${connectData.qrcode}`}
+              alt="QR Code WhatsApp"
+              className="w-64 h-64 rounded-lg"
+            />
+            {connectData?.pairingCode && (
+              <p className="text-sm text-muted-foreground">
+                Codigo de pareamento: <span className="font-mono font-bold text-foreground">{connectData.pairingCode}</span>
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          {!isConnected ? (
+            <Button onClick={() => connect()} loading={connecting} disabled={connecting}>
+              <QrCode className="w-4 h-4 mr-2" />
+              Conectar WhatsApp
+            </Button>
+          ) : (
+            <Button variant="danger" onClick={() => disconnect()} loading={disconnecting}>
+              <WifiOff className="w-4 h-4 mr-2" />
+              Desconectar
+            </Button>
+          )}
+        </div>
+
+        {isConnected && (
+          <button
+            onClick={() => navigate('/admin/whatsapp')}
+            className="flex items-center gap-2 text-sm text-primary hover:text-primary-dark transition-colors"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Gerenciar Templates e Conversas
+          </button>
+        )}
+      </div>
+    </FormCard>
+  );
+}
 
 export default function Settings() {
   const dispatch = useAppDispatch();
@@ -967,6 +1041,8 @@ export default function Settings() {
               </FormCard>
             </div>
           )}
+
+          {activeTab === 'whatsapp' && <WhatsappSettingsTab />}
 
           {activeTab === 'horarios' && (
             <div className="space-y-6 max-w-2xl">

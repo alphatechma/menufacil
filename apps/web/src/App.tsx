@@ -43,6 +43,7 @@ const TableList = lazy(() => import('@/pages/admin/tables/TableList'));
 const TableForm = lazy(() => import('@/pages/admin/tables/TableForm'));
 const FloorPlanEditor = lazy(() => import('@/pages/admin/tables/FloorPlanEditor'));
 const ReservationList = lazy(() => import('@/pages/admin/reservations/ReservationList'));
+const WhatsappPage = lazy(() => import('@/pages/admin/whatsapp/WhatsappPage'));
 
 // Customer / storefront pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="customization" element={<Customization />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="whatsapp" element={<WhatsappPage />} />
           <Route path="profile" element={<Profile />} />
           <Route path="plano" element={<MyPlan />} />
           <Route path="tables" element={<TableList />} />

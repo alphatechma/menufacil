@@ -29,6 +29,7 @@ import {
   UsersRound,
   Navigation,
   Bike,
+  MessageCircle,
   ChevronDown,
   Sun,
   Moon,
@@ -116,6 +117,7 @@ const sidebarGroups: SidebarGroup[] = [
     icon: Ticket,
     items: [
       { to: '/admin/coupons', icon: Ticket, label: 'Cupons', module: 'coupons', permission: 'coupon:read' },
+      { to: '/admin/whatsapp', icon: MessageCircle, label: 'WhatsApp', module: null, permission: 'whatsapp:chat' },
     ],
   },
   {
