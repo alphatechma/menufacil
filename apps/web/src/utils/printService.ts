@@ -104,13 +104,9 @@ function setupSecurity() {
   if (_securitySetup) return;
   _securitySetup = true;
 
-  qz.security.setCertificatePromise((resolve: (value: string) => void, reject: (reason?: any) => void) => {
-    fetchCertificate().then(resolve).catch(reject);
-  });
+  qz.security.setCertificatePromise(() => fetchCertificate());
   qz.security.setSignatureAlgorithm('SHA512');
-  qz.security.setSignaturePromise((_toSign: string, resolve: (value: string) => void) => {
-    resolve('');
-  });
+  qz.security.setSignaturePromise(() => Promise.resolve(''));
 }
 
 async function ensureConnected(): Promise<boolean> {
