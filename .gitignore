@@ -44,3 +44,7 @@ out/
 # Apps/Uploads
 uploads/
 temp/
+
+# Private keys
+*.key
+*.pem

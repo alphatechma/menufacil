@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw, Copy, ChefHat, Download } from 'lucide-react';
 import { useGetTenantBySlugQuery, useUpdateTenantMutation } from '@/api/adminApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { cn } from '@/utils/cn';
@@ -98,6 +98,24 @@ export default function Settings() {
   const [currentPrinter, setCurrentPrinter] = useState<string | null>(null);
   const [printerLoading, setPrinterLoading] = useState(false);
   const [printerTestOk, setPrinterTestOk] = useState<boolean | null>(null);
+
+  // Printer settings (persisted in localStorage)
+  const [autoPrint, setAutoPrint] = useState(() => {
+    try { return localStorage.getItem('menufacil_auto_print') !== 'false'; } catch { return true; }
+  });
+  const [printCopies, setPrintCopies] = useState(() => {
+    try { return parseInt(localStorage.getItem('menufacil_print_copies') || '1', 10); } catch { return 1; }
+  });
+  const [printKitchen, setPrintKitchen] = useState(() => {
+    try { return localStorage.getItem('menufacil_print_kitchen') === 'true'; } catch { return false; }
+  });
+  const [kitchenPrinter, setKitchenPrinter] = useState<string | null>(() => {
+    try { return localStorage.getItem('menufacil_kitchen_printer'); } catch { return null; }
+  });
+
+  const savePrinterSetting = (key: string, value: string) => {
+    try { localStorage.setItem(key, value); } catch { /* ignore */ }
+  };
 
   const { control, handleSubmit, reset } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -579,6 +597,7 @@ export default function Settings() {
                 na maquina.
               </p>
 
+              {/* QZ Tray Connection Status */}
               <FormCard>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -630,12 +649,13 @@ export default function Settings() {
                 </div>
               </FormCard>
 
+              {/* Printer Selection */}
               {printerAvailable && (
                 <FormCard>
                   <div>
-                    <h3 className="text-sm font-bold text-foreground mb-1">Impressora Termica</h3>
+                    <h3 className="text-sm font-bold text-foreground mb-1">Impressora do Caixa</h3>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Selecione a impressora que sera usada para imprimir os pedidos automaticamente.
+                      Impressora principal usada para imprimir cupons e recibos dos pedidos.
                     </p>
                   </div>
 
@@ -727,17 +747,172 @@ export default function Settings() {
                 </FormCard>
               )}
 
+              {/* Kitchen Printer */}
+              {printerAvailable && printerList.length > 0 && (
+                <FormCard>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        'w-9 h-9 rounded-xl flex items-center justify-center',
+                        printKitchen ? 'bg-primary/10' : 'bg-muted',
+                      )}>
+                        <ChefHat className={cn(
+                          'w-5 h-5',
+                          printKitchen ? 'text-primary' : 'text-muted-foreground',
+                        )} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Impressora da Cozinha</p>
+                        <p className="text-xs text-muted-foreground">Imprimir via separada para a cozinha ao aceitar pedido</p>
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={printKitchen}
+                      onChange={(checked) => {
+                        setPrintKitchen(checked);
+                        savePrinterSetting('menufacil_print_kitchen', String(checked));
+                      }}
+                    />
+                  </div>
+
+                  {printKitchen && (
+                    <div className="mt-4 pt-4 border-t border-border space-y-2">
+                      {printerList.map((name) => (
+                        <label
+                          key={`kitchen-${name}`}
+                          className={cn(
+                            'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                            kitchenPrinter === name
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-border/80',
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="kitchen-printer"
+                            value={name}
+                            checked={kitchenPrinter === name}
+                            onChange={() => {
+                              setKitchenPrinter(name);
+                              savePrinterSetting('menufacil_kitchen_printer', name);
+                            }}
+                            className="sr-only"
+                          />
+                          <ChefHat className={cn(
+                            'w-5 h-5',
+                            kitchenPrinter === name ? 'text-primary' : 'text-muted-foreground',
+                          )} />
+                          <span className={cn(
+                            'text-sm font-medium flex-1',
+                            kitchenPrinter === name ? 'text-foreground' : 'text-muted-foreground',
+                          )}>
+                            {name}
+                          </span>
+                          {kitchenPrinter === name && (
+                            <Check className="w-5 h-5 text-primary" />
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </FormCard>
+              )}
+
+              {/* Print Options */}
               <FormCard>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground mb-1">Como funciona</h3>
+                  <h3 className="text-sm font-bold text-foreground mb-1">Opcoes de Impressao</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Configure o comportamento da impressao de pedidos.
+                  </p>
                 </div>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>1. Instale o <strong>QZ Tray</strong> no computador do caixa/cozinha</p>
-                  <p>2. Conecte a impressora termica (USB ou rede)</p>
-                  <p>3. Clique em <strong>Detectar</strong> e selecione a impressora</p>
-                  <p>4. Ao aceitar um pedido, ele sera impresso automaticamente</p>
+
+                <div className="space-y-4">
+                  {/* Auto-print toggle */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        'w-9 h-9 rounded-xl flex items-center justify-center',
+                        autoPrint ? 'bg-primary/10' : 'bg-muted',
+                      )}>
+                        <Printer className={cn(
+                          'w-5 h-5',
+                          autoPrint ? 'text-primary' : 'text-muted-foreground',
+                        )} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Impressao automatica</p>
+                        <p className="text-xs text-muted-foreground">Imprimir automaticamente ao aceitar pedido</p>
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={autoPrint}
+                      onChange={(checked) => {
+                        setAutoPrint(checked);
+                        savePrinterSetting('menufacil_auto_print', String(checked));
+                      }}
+                    />
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  {/* Number of copies */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-muted">
+                        <Copy className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Numero de copias</p>
+                        <p className="text-xs text-muted-foreground">Quantidade de vias impressas por pedido</p>
+                      </div>
+                    </div>
+                    <select
+                      value={printCopies}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setPrintCopies(val);
+                        savePrinterSetting('menufacil_print_copies', String(val));
+                      }}
+                      className="px-3 py-2 border border-border bg-card text-foreground rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value={1}>1 via</option>
+                      <option value={2}>2 vias</option>
+                      <option value={3}>3 vias</option>
+                    </select>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+              </FormCard>
+
+              {/* Setup Instructions */}
+              <FormCard>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">Como configurar</h3>
+                </div>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex gap-3">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">1</span>
+                    <div>
+                      <p>Baixe e instale o <a href="https://qz.io/download/" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">QZ Tray</a> no computador</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">2</span>
+                    <div>
+                      <p>Baixe o <a href="/certs/menufacil-qz.crt" download className="text-primary font-medium hover:underline inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" />certificado</a> e instale no QZ Tray:</p>
+                      <p className="text-xs mt-1">Abra o QZ Tray {'>'} <strong>Advanced</strong> {'>'} <strong>Site Manager</strong> {'>'} <strong>+</strong> {'>'} selecione o arquivo <code className="px-1.5 py-0.5 bg-muted rounded text-xs">menufacil-qz.crt</code></p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">3</span>
+                    <p>Conecte a impressora termica (USB ou rede) e clique em <strong>Detectar</strong></p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">4</span>
+                    <p>Selecione a impressora e faca um teste de impressao</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 p-3 bg-muted rounded-xl">
                   Se o QZ Tray nao estiver instalado, o sistema usa o dialogo de impressao do navegador como fallback.
                 </p>
               </FormCard>

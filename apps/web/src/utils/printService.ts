@@ -81,19 +81,25 @@ function savePrinter(name: string) {
   }
 }
 
-/** Skip certificate validation for local dev (QZ Tray self-signed). */
+let _certPromise: Promise<string> | null = null;
+
+function fetchCertificate(): Promise<string> {
+  if (!_certPromise) {
+    _certPromise = fetch('/certs/menufacil-qz.crt')
+      .then((r) => {
+        if (!r.ok) throw new Error('Certificate not found');
+        return r.text();
+      })
+      .catch(() => {
+        _certPromise = null;
+        return '';
+      });
+  }
+  return _certPromise;
+}
+
 function setupSecurity() {
-  qz.security.setCertificatePromise(() =>
-    Promise.resolve(
-      '-----BEGIN CERTIFICATE-----\n' +
-      'MIIBszCCAVqgAwIBAgIJALSOMm7SaEKpMAoGCCqGSM49BAMCMBgxFjAUBgNVBAMM\n' +
-      'DW1lbnVmYWNpbC5hcHAwHhcNMjUwMTAxMDAwMDAwWhcNMzUwMTAxMDAwMDAwWjAY\n' +
-      'MRYwFAYDVQQDDA1tZW51ZmFjaWwuYXBwMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD\n' +
-      'QgAEDummy+CertificateForDevOnly+NotUsedInProduction+AAAAAAAAAAAAAA==\n' +
-      '-----END CERTIFICATE-----',
-    ),
-  );
-  // No signature needed for unsigned mode
+  qz.security.setCertificatePromise(() => fetchCertificate());
   qz.security.setSignatureAlgorithm('SHA512');
   qz.security.setSignaturePromise(() => Promise.resolve(''));
 }
@@ -181,6 +187,34 @@ export async function getSelectedPrinter(): Promise<string | null> {
 export function selectPrinter(name: string) {
   _selectedPrinter = name;
   savePrinter(name);
+}
+
+/** Check if auto-print is enabled. */
+export function isAutoPrintEnabled(): boolean {
+  try {
+    return localStorage.getItem('menufacil_auto_print') !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+/** Get the configured number of print copies. */
+export function getPrintCopies(): number {
+  try {
+    return parseInt(localStorage.getItem('menufacil_print_copies') || '1', 10);
+  } catch {
+    return 1;
+  }
+}
+
+/** Get the kitchen printer name (null if disabled). */
+export function getKitchenPrinter(): string | null {
+  try {
+    if (localStorage.getItem('menufacil_print_kitchen') !== 'true') return null;
+    return localStorage.getItem('menufacil_kitchen_printer');
+  } catch {
+    return null;
+  }
 }
 
 // ─── ESC/POS Receipt Builder ─────────────────────────────────────────────────
@@ -394,7 +428,6 @@ export async function printOrder(order: PrintableOrder, tenantName?: string): Pr
 
     let printer = await getSelectedPrinter();
     if (!printer) {
-      // Fallback: use default printer
       printer = await qz.printers.getDefault();
       if (printer) {
         _selectedPrinter = printer;
@@ -405,13 +438,24 @@ export async function printOrder(order: PrintableOrder, tenantName?: string): Pr
     if (!printer) throw new Error('No printer found');
 
     const receipt = buildReceipt(order, tenantName);
-    const config = qz.configs.create(printer, { encoding: 'CP860' });
+    const config = qz.configs.create(printer, { encoding: 'CP860', copies: getPrintCopies() });
     const data = [{ type: 'raw', format: 'plain', data: receipt }];
 
     await qz.print(config, data);
+
+    // Print to kitchen printer if configured
+    const kitchenPrinterName = getKitchenPrinter();
+    if (kitchenPrinterName) {
+      try {
+        const kitchenConfig = qz.configs.create(kitchenPrinterName, { encoding: 'CP860' });
+        await qz.print(kitchenConfig, data);
+      } catch {
+        // Kitchen print failure should not affect main print result
+      }
+    }
+
     return true;
   } catch {
-    // Fallback to browser print dialog
     printOrderBrowser(order, tenantName);
     return false;
   }
