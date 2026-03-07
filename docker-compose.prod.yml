@@ -41,6 +41,16 @@ services:
     environment:
       API_URL: http://api:3000
 
+  waiter:
+    build:
+      context: .
+      dockerfile: apps/waiter/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '83:80'
+    environment:
+      API_URL: http://api:3000
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
