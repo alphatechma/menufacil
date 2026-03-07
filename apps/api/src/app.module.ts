@@ -28,6 +28,7 @@ import { ReservationModule } from './modules/reservation/reservation.module';
 import { FloorPlanModule } from './modules/floor-plan/floor-plan.module';
 import { QzTrayModule } from './modules/qz-tray/qz-tray.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
+import { UnitModule } from './modules/unit/unit.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
     FloorPlanModule,
     QzTrayModule,
     WhatsappModule,
+    UnitModule,
   ],
 })
 export class AppModule implements NestModule {
