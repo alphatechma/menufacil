@@ -87,10 +87,18 @@ function setupSecurity() {
   if (_securitySetup) return;
   _securitySetup = true;
 
+  // Callback pattern: new Promise(handler) — must call resolve()
   // Certificado vazio = QZ Tray mostra popup para usuario aceitar manualmente
-  qz.security.setCertificatePromise(() => Promise.resolve(''));
+  qz.security.setCertificatePromise(function (resolve: (value: string) => void) {
+    resolve('');
+  });
   qz.security.setSignatureAlgorithm('SHA512');
-  qz.security.setSignaturePromise(() => Promise.resolve(''));
+  // Nested callback pattern: factory(toSign) must return function(resolve, reject)
+  qz.security.setSignaturePromise(function (_toSign: string) {
+    return function (resolve: (value: string) => void) {
+      resolve('');
+    };
+  });
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {

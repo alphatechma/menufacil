@@ -8,9 +8,18 @@ declare module 'qz-tray' {
       setErrorCallbacks(callback: (evt?: any) => void): void;
     };
     security: {
-      setCertificatePromise(fn: () => Promise<string>): void;
+      setCertificatePromise(
+        fn:
+          | ((resolve: (cert: string) => void, reject: (err: any) => void) => void)
+          | (() => Promise<string>)
+          | Promise<string>,
+      ): void;
       setSignatureAlgorithm(algorithm: string): void;
-      setSignaturePromise(fn: (toSign: string) => Promise<string>): void;
+      setSignaturePromise(
+        fn:
+          | ((toSign: string) => (resolve: (sig: string) => void, reject: (err: any) => void) => void)
+          | ((toSign: string) => Promise<string>),
+      ): void;
     };
     printers: {
       find(query?: string): Promise<string | string[]>;
