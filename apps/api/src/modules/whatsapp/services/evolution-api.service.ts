@@ -41,6 +41,12 @@ export class EvolutionApiService {
       readMessages: false,
       readStatus: false,
       syncFullHistory: false,
+      webhook: {
+        url: this.webhookUrl,
+        byEvents: true,
+        base64: false,
+        events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'QRCODE_UPDATED'],
+      },
     });
   }
 
@@ -76,10 +82,25 @@ export class EvolutionApiService {
 
   async sendTextMessage(instanceName: string, phone: string, text: string): Promise<any> {
     return this.request('POST', `/message/sendText/${instanceName}`, {
-      number: phone,
+      number: this.normalizePhone(phone),
       text,
       delay: 1000,
       linkPreview: true,
     });
+  }
+
+  /**
+   * Garante formato internacional: 55XXXXXXXXXXX
+   * Remove caracteres não numéricos, adiciona 55 se necessário.
+   */
+  private normalizePhone(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('55') && digits.length >= 12) {
+      return digits;
+    }
+    if (digits.length === 10 || digits.length === 11) {
+      return `55${digits}`;
+    }
+    return digits;
   }
 }

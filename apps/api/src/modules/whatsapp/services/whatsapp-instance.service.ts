@@ -23,7 +23,6 @@ export class WhatsappInstanceService {
 
     if (!instance) {
       await this.evolutionApi.createInstance(instanceName);
-      await this.evolutionApi.setWebhook(instanceName);
       instance = this.instanceRepo.create({
         tenant_id: tenantId,
         instance_name: instanceName,
