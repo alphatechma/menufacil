@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogIn, UtensilsCrossed } from 'lucide-react';
+import { LogIn, UtensilsCrossed, ChefHat, ShieldCheck, BarChart3 } from 'lucide-react';
+import { toast } from 'sonner';
 import { loginSchema, type LoginFormData } from '@/schemas/admin/loginSchema';
 import { useAdminLoginMutation } from '@/api/adminApi';
 import { adminLogin } from '@/store/slices/adminAuthSlice';
@@ -44,73 +45,138 @@ export default function Login() {
         }),
       );
 
+      toast.success('Login realizado com sucesso!');
       navigate('/admin');
     } catch (err: any) {
       const message =
         err?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
       setError(message);
+      toast.error(message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 px-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 dark:bg-primary/10 rounded-2xl mb-4">
-              <UtensilsCrossed className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">MenuFacil</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Painel Administrativo</p>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email */}
-            <FormField control={control} name="email" label="E-mail" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="email"
-                  placeholder="admin@exemplo.com"
-                />
-              )}
-            </FormField>
-
-            {/* Password */}
-            <FormField control={control} name="password" label="Senha" required>
-              {(field) => (
-                <PasswordInput
-                  {...field}
-                  placeholder="Sua senha"
-                />
-              )}
-            </FormField>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              loading={isLoading}
-              className="w-full py-3"
-              size="lg"
-            >
-              <LogIn className="w-5 h-5" />
-              Entrar
-            </Button>
-          </form>
+    <div className="min-h-screen flex bg-background">
+      {/* Branding Panel - visible on desktop */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary relative flex-col justify-between p-12 overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 -left-10 w-72 h-72 rounded-full bg-white" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-white" />
+          <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-white" />
         </div>
 
-        <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-6">
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
+              <UtensilsCrossed className="w-7 h-7 text-primary-foreground" />
+            </div>
+            <span className="text-2xl font-bold text-primary-foreground">MenuFacil</span>
+          </div>
+        </div>
+
+        <div className="relative z-10 space-y-8">
+          <h2 className="text-4xl font-bold text-primary-foreground leading-tight">
+            Gerencie seu restaurante com facilidade
+          </h2>
+          <p className="text-primary-foreground/80 text-lg max-w-md">
+            Pedidos, cardapio, entregas e muito mais em uma unica plataforma.
+          </p>
+
+          <div className="space-y-4 pt-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm">
+                <ChefHat className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-primary-foreground/90 text-sm font-medium">
+                Cardapio digital completo
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm">
+                <ShieldCheck className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-primary-foreground/90 text-sm font-medium">
+                Controle de equipe e permissoes
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm">
+                <BarChart3 className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-primary-foreground/90 text-sm font-medium">
+                Relatorios e insights em tempo real
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p className="relative z-10 text-primary-foreground/60 text-sm">
           MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
         </p>
+      </div>
+
+      {/* Login Form Panel */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl border border-border p-8">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4">
+                <UtensilsCrossed className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">MenuFacil</h1>
+              <p className="text-muted-foreground mt-1">Painel Administrativo</p>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {/* Email */}
+              <FormField control={control} name="email" label="E-mail" required>
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="email"
+                    placeholder="admin@exemplo.com"
+                  />
+                )}
+              </FormField>
+
+              {/* Password */}
+              <FormField control={control} name="password" label="Senha" required>
+                {(field) => (
+                  <PasswordInput
+                    {...field}
+                    placeholder="Sua senha"
+                  />
+                )}
+              </FormField>
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                loading={isLoading}
+                className="w-full py-3"
+                size="lg"
+              >
+                <LogIn className="w-5 h-5" />
+                Entrar
+              </Button>
+            </form>
+          </div>
+
+          {/* Footer - visible only on mobile */}
+          <p className="text-center text-sm text-muted-foreground mt-6 lg:hidden">
+            MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
+          </p>
+        </div>
       </div>
     </div>
   );

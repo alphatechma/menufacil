@@ -23,6 +23,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { toast } from 'sonner';
 
 export default function ProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -86,12 +87,14 @@ export default function ProductForm() {
     try {
       if (isEditing) {
         await updateProduct({ id: id!, data }).unwrap();
+        toast.success('Produto atualizado com sucesso');
       } else {
         await createProduct(data).unwrap();
+        toast.success('Produto criado com sucesso');
       }
       navigate('/admin/products');
     } catch {
-      // Error is captured by RTK Query and displayed via ErrorAlert
+      toast.error('Erro ao salvar o produto');
     }
   };
 
@@ -126,7 +129,7 @@ export default function ProductForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Info */}
         <FormCard>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Informacoes Basicas</h2>
+          <h2 className="text-lg font-semibold text-foreground">Informacoes Basicas</h2>
 
           <FormField control={control} name="name" label="Nome" required>
             {(field) => (
@@ -204,7 +207,7 @@ export default function ProductForm() {
 
         {/* Image */}
         <FormCard>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Imagem</h2>
+          <h2 className="text-lg font-semibold text-foreground">Imagem</h2>
 
           <FormField control={control} name="image_url" label="Imagem do Produto">
             {(field) => (
@@ -219,7 +222,7 @@ export default function ProductForm() {
         {/* Variations */}
         <FormCard>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Variacoes</h2>
+            <h2 className="text-lg font-semibold text-foreground">Variacoes</h2>
             <Button
               type="button"
               variant="outline"
@@ -256,20 +259,20 @@ export default function ProductForm() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Min=0, Max=0: opcional. Min=1, Max=1: obrigatorio (selecao unica). Min=1, Max=2: escolher de 1 a 2.
           </p>
 
           {fields.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Nenhuma variacao cadastrada. Adicione variacoes como tamanhos ou sabores.
             </p>
           ) : (
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                <div key={field.id} className="flex items-start gap-4 p-4 bg-muted/50 rounded-xl">
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
                       Nome
                     </label>
                     <Input
@@ -278,7 +281,7 @@ export default function ProductForm() {
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
                       Preco
                     </label>
                     <PriceInput
@@ -289,7 +292,7 @@ export default function ProductForm() {
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="mt-7 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                    className="mt-7 p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -301,10 +304,10 @@ export default function ProductForm() {
 
         {/* Extra Groups */}
         <FormCard>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Grupos de Extras</h2>
+          <h2 className="text-lg font-semibold text-foreground">Grupos de Extras</h2>
 
           {extraGroups.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Nenhum grupo de extras disponivel.
             </p>
           ) : (
@@ -312,18 +315,18 @@ export default function ProductForm() {
               {extraGroups.map((group: any) => (
                 <label
                   key={group.id}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent cursor-pointer transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={watchedExtraGroupIds?.includes(group.id) ?? false}
                     onChange={() => handleToggleExtraGroup(group.id)}
-                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-primary focus:ring-primary"
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                   />
                   <div>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{group.name}</span>
+                    <span className="font-medium text-foreground">{group.name}</span>
                     {group.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{group.description}</p>
+                      <p className="text-xs text-muted-foreground">{group.description}</p>
                     )}
                   </div>
                 </label>

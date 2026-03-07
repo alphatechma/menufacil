@@ -111,7 +111,7 @@ function getTimeSince(dateStr: string): { text: string; minutes: number } {
 function getUrgencyStyle(minutes: number) {
   if (minutes >= 30) return { ring: 'ring-red-400 ring-2', badge: 'bg-red-100 text-red-700 border-red-200', pulse: true };
   if (minutes >= 15) return { ring: 'ring-amber-300 ring-1', badge: 'bg-amber-50 text-amber-700 border-amber-200', pulse: false };
-  return { ring: '', badge: 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600', pulse: false };
+  return { ring: '', badge: 'bg-muted text-muted-foreground border-border', pulse: false };
 }
 
 function formatMinutes(minutes: number): string {
@@ -179,7 +179,7 @@ function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
           <Gauge className={`w-7 h-7 ${tmaStyle.text}`} />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">TMA Atual</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">TMA Atual</p>
           <div className="flex items-baseline gap-2">
             <span className={`text-3xl font-black ${tmaStyle.text}`}>
               {liveTMA.count > 0 ? formatMinutes(liveTMA.avgMinutes) : '--'}
@@ -194,23 +194,23 @@ function TMAPanel({ orders, perfStats }: { orders: any[]; perfStats: any }) {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-12 bg-gray-200 dark:bg-gray-700" />
+      <div className="w-px h-12 bg-muted" />
 
       {/* Quick stats */}
       <div className="flex items-center gap-6">
         <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pedidos Ativos</p>
-          <p className="text-xl font-black text-gray-900 dark:text-gray-100">{liveTMA.count}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pedidos Ativos</p>
+          <p className="text-xl font-black text-foreground">{liveTMA.count}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Mais Antigo</p>
-          <p className={`text-xl font-black ${liveTMA.oldest >= 30 ? 'text-red-600' : liveTMA.oldest >= 15 ? 'text-amber-600' : 'text-gray-900 dark:text-gray-100'}`}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mais Antigo</p>
+          <p className={`text-xl font-black ${liveTMA.oldest >= 30 ? 'text-red-600' : liveTMA.oldest >= 15 ? 'text-amber-600' : 'text-foreground'}`}>
             {liveTMA.count > 0 ? formatMinutes(liveTMA.oldest) : '--'}
           </p>
         </div>
         {historicalTMA > 0 && (
           <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">TMA 7 dias</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">TMA 7 dias</p>
             <p className="text-xl font-black text-gray-600 dark:text-gray-300">{formatMinutes(historicalTMA)}</p>
           </div>
         )}
@@ -240,14 +240,14 @@ function KDSOrderCard({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-800 rounded-2xl border-2 overflow-hidden transition-all ${urgency.ring} ${
+      className={`bg-card rounded-2xl border-2 overflow-hidden transition-all ${urgency.ring} ${
         urgency.pulse ? 'animate-pulse-subtle' : ''
       } ${column.borderColor}`}
     >
       {/* Card Header - Order number + Time */}
       <div className={`${column.bgColor} px-4 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
-          <span className="text-xl font-black text-gray-900 dark:text-gray-100">
+          <span className="text-xl font-black text-foreground">
             #{order.order_number || order.id?.slice(0, 6)}
           </span>
           {order.status === 'pending' && (
@@ -272,7 +272,7 @@ function KDSOrderCard({
                 {item.quantity}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">
+                <p className="text-base font-bold text-foreground leading-snug">
                   {item.product_name || item.product?.name || item.name}
                 </p>
                 {(item.variation_name || item.variation?.name) && (
@@ -302,7 +302,7 @@ function KDSOrderCard({
       )}
 
       {/* Customer info - Small, secondary */}
-      <div className="px-4 pb-2 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+      <div className="px-4 pb-2 flex items-center gap-2 text-xs text-muted-foreground">
         <User className="w-3.5 h-3.5" />
         <span className="truncate">{order.customer?.name || 'Cliente'}</span>
         {order.customer?.phone && (
@@ -321,9 +321,9 @@ function KDSOrderCard({
       {showDelivery && onAssignDelivery && (
         <div className="px-4 pb-3 pt-1">
           <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
+            <Truck className="w-4 h-4 text-muted-foreground shrink-0" />
             <select
-              className="flex-1 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
+              className="flex-1 text-sm rounded-xl border-2 border-border px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
               value={order.delivery_person_id || ''}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
@@ -376,31 +376,31 @@ function PerformancePanel({ stats }: { stats: any }) {
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-accent transition-colors"
       >
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
-          <span className="font-bold text-gray-900 dark:text-gray-100">Performance Historica</span>
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-bold text-foreground">Performance Historica</span>
+          <span className="text-xs text-muted-foreground font-medium">
             {stats.period_days}d - {stats.total_completed} entregues
           </span>
         </div>
-        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />}
+        {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
       </button>
 
       {expanded && (
         <div className="px-5 pb-5 space-y-4">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {metrics.map((m) => (
-              <div key={m.label} className="rounded-xl border border-gray-100 dark:border-gray-700 p-3 text-center">
+              <div key={m.label} className="rounded-xl border border-border p-3 text-center">
                 <div className={`w-8 h-8 rounded-lg ${m.color} flex items-center justify-center mx-auto mb-2`}>
                   <m.icon className="w-4 h-4" />
                 </div>
-                <p className="text-lg font-black text-gray-900 dark:text-gray-100">{m.value}</p>
-                <p className="text-[9px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{m.label}</p>
+                <p className="text-lg font-black text-foreground">{m.value}</p>
+                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{m.label}</p>
               </div>
             ))}
           </div>
@@ -409,7 +409,7 @@ function PerformancePanel({ stats }: { stats: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stats.ranking_fastest?.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
                     <Zap className="w-4 h-4 text-emerald-500" /> Top Rapidos
                   </h4>
                   <div className="space-y-1">
@@ -417,7 +417,7 @@ function PerformancePanel({ stats }: { stats: any }) {
                       <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 text-sm">
                         <div className="flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-gray-700 dark:text-gray-200">#{r.order_number}</span>
+                          <span className="font-medium text-foreground">#{r.order_number}</span>
                         </div>
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMinutes(r.total_time)}</span>
                       </div>
@@ -427,7 +427,7 @@ function PerformancePanel({ stats }: { stats: any }) {
               )}
               {stats.ranking_slowest?.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4 text-red-500" /> Mais Lentos
                   </h4>
                   <div className="space-y-1">
@@ -435,7 +435,7 @@ function PerformancePanel({ stats }: { stats: any }) {
                       <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-50/50 dark:bg-red-900/10 text-sm">
                         <div className="flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                          <span className="font-medium text-gray-700 dark:text-gray-200">#{r.order_number}</span>
+                          <span className="font-medium text-foreground">#{r.order_number}</span>
                         </div>
                         <span className="font-bold text-red-600 dark:text-red-400">{formatMinutes(r.total_time)}</span>
                       </div>
@@ -525,8 +525,8 @@ export default function KDS() {
             <ChefHat className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">Cozinha</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <h1 className="text-2xl font-black text-foreground">Cozinha</h1>
+            <p className="text-sm text-muted-foreground">
               {pendingCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600 animate-pulse">
                   {pendingCount} novo(s)!
@@ -540,7 +540,7 @@ export default function KDS() {
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`p-2.5 rounded-xl border transition-colors ${
-              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500'
+              soundEnabled ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
             }`}
             title={soundEnabled ? 'Som ativado' : 'Som desativado'}
           >
@@ -583,7 +583,7 @@ export default function KDS() {
                 {colOrders.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-gray-300 dark:text-gray-600">
                     <Package className="w-14 h-14 mb-3 opacity-50" />
-                    <p className="text-sm font-bold text-gray-400 dark:text-gray-500">Nenhum pedido</p>
+                    <p className="text-sm font-bold text-muted-foreground">Nenhum pedido</p>
                   </div>
                 ) : (
                   colOrders.map((order: any) => (

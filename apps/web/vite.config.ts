@@ -22,4 +22,23 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          redux: ['@reduxjs/toolkit', 'react-redux'],
+          recharts: ['recharts'],
+          radix: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-label',
+          ],
+        },
+      },
+    },
+  },
 });

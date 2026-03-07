@@ -47,14 +47,14 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
 
   if (value) {
     return (
-      <div className={cn('relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600', className)}>
+      <div className={cn('relative w-full h-48 rounded-xl overflow-hidden border border-border', className)}>
         <img src={value} alt="Upload" className="w-full h-full object-cover" />
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
+          className="absolute top-2 right-2 p-1.5 bg-background/90 rounded-full shadow-sm hover:bg-background transition-colors"
         >
-          <X className="w-4 h-4 text-gray-600" />
+          <X className="h-4 w-4 text-foreground" />
         </button>
       </div>
     );
@@ -64,7 +64,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
     <label
       className={cn(
         'flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors',
-        dragActive ? 'border-primary bg-primary-50' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
+        dragActive ? 'border-primary bg-primary-50' : 'border-input hover:border-muted-foreground',
         isLoading && 'opacity-50 pointer-events-none',
         className,
       )}
@@ -76,11 +76,11 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
       onDrop={handleDrop}
     >
       {isLoading ? (
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       ) : (
         <>
-          <Upload className="w-8 h-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Clique ou arraste uma imagem</p>
+          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Clique ou arraste uma imagem</p>
         </>
       )}
       <input type="file" accept="image/*" className="hidden" onChange={handleInputChange} />

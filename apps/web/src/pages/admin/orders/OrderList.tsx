@@ -25,6 +25,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPrice } from '@/utils/formatPrice';
+import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<
   string,
@@ -191,22 +192,37 @@ export default function OrderList() {
       return;
     }
 
-    await updateStatus({ id: orderId, status: nextStatus }).unwrap();
+    try {
+      await updateStatus({ id: orderId, status: nextStatus }).unwrap();
+      toast.success('Status do pedido atualizado!');
+    } catch {
+      toast.error('Erro ao atualizar status do pedido.');
+    }
   };
 
   const handleConfirmDelivery = async () => {
     if (!deliveryModal || !selectedDeliveryPerson) return;
-    await updateStatus({
-      id: deliveryModal.orderId,
-      status: 'out_for_delivery',
-      delivery_person_id: selectedDeliveryPerson,
-    }).unwrap();
+    try {
+      await updateStatus({
+        id: deliveryModal.orderId,
+        status: 'out_for_delivery',
+        delivery_person_id: selectedDeliveryPerson,
+      }).unwrap();
+      toast.success('Pedido enviado para entrega!');
+    } catch {
+      toast.error('Erro ao enviar pedido para entrega.');
+    }
     setDeliveryModal(null);
     setSelectedDeliveryPerson('');
   };
 
   const handleCancel = async (orderId: string) => {
-    await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
+    try {
+      await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
+      toast.success('Pedido cancelado.');
+    } catch {
+      toast.error('Erro ao cancelar pedido.');
+    }
   };
 
   const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
@@ -216,7 +232,7 @@ export default function OrderList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pedidos</h1>
+        <h1 className="text-2xl font-bold text-foreground">Pedidos</h1>
       </div>
 
       <div className="mb-4">
@@ -242,45 +258,45 @@ export default function OrderList() {
           }
         />
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Pedido
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Cliente
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Itens
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Total
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Tempo
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Data
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Acoes
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {filtered.map((order: any) => {
                   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
                   const flow = getStatusFlow(order.order_type);
                   const nextStatus = flow[order.status];
 
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                    <tr key={order.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4">
                         <Link
                           to={`/admin/orders/${order.id}`}
@@ -289,13 +305,13 @@ export default function OrderList() {
                           #{order.order_number}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
+                      <td className="px-6 py-4 text-sm text-foreground">
                         {order.customer?.name || 'Cliente nao informado'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {order.items?.length || 0} item(s)
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <td className="px-6 py-4 text-sm font-medium text-foreground">
                         {formatPrice(order.total || 0)}
                       </td>
                       <td className="px-6 py-4">
@@ -307,7 +323,7 @@ export default function OrderList() {
                       <td className="px-6 py-4">
                         {(() => {
                           const elapsed = getElapsedTime(order);
-                          if (!elapsed) return <span className="text-xs text-gray-400 dark:text-gray-500">-</span>;
+                          if (!elapsed) return <span className="text-xs text-muted-foreground">-</span>;
                           const color = getTimeColor(order);
                           return (
                             <span className={`text-xs font-semibold flex items-center gap-1 ${color}`}>
@@ -317,7 +333,7 @@ export default function OrderList() {
                           );
                         })()}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {order.created_at
                           ? new Date(order.created_at).toLocaleDateString('pt-BR', {
                               day: '2-digit',
@@ -375,29 +391,29 @@ export default function OrderList() {
       {deliveryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setDeliveryModal(null)} />
-          <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <Truck className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selecionar Entregador</h3>
+                <h3 className="text-lg font-semibold text-foreground">Selecionar Entregador</h3>
               </div>
               <button
                 onClick={() => setDeliveryModal(null)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-1 hover:bg-muted/50 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Selecione o entregador antes de enviar o pedido para entrega.
               </p>
 
               {activeDeliveryPersons.length === 0 ? (
                 <div className="text-center py-6">
                   <Truck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum entregador ativo cadastrado.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum entregador ativo cadastrado.</p>
                   <Link
                     to="/admin/delivery-persons"
                     className="text-sm text-primary hover:underline mt-1 inline-block"
@@ -413,7 +429,7 @@ export default function OrderList() {
                       className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                         selectedDeliveryPerson === person.id
                           ? 'border-primary bg-primary/5'
-                          : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
+                          : 'border-border hover:border-border/80'
                       }`}
                     >
                       <input
@@ -425,13 +441,13 @@ export default function OrderList() {
                         className="sr-only"
                       />
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                         <Truck className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{person.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-medium text-foreground">{person.name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {person.phone}
                           {person.vehicle && ` · ${person.vehicle}`}
                         </p>
@@ -445,7 +461,7 @@ export default function OrderList() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-700/50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted">
               <Button variant="outline" onClick={() => setDeliveryModal(null)}>
                 Cancelar
               </Button>

@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { toast } from 'sonner';
 
 export default function CategoryForm() {
   const { id } = useParams<{ id: string }>();
@@ -54,12 +55,14 @@ export default function CategoryForm() {
     try {
       if (isEditing) {
         await updateCategory({ id: id!, data }).unwrap();
+        toast.success('Categoria atualizada com sucesso');
       } else {
         await createCategory(data).unwrap();
+        toast.success('Categoria criada com sucesso');
       }
       navigate('/admin/categories');
     } catch {
-      // Error is captured by RTK Query and displayed via ErrorAlert
+      toast.error('Erro ao salvar a categoria');
     }
   };
 

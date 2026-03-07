@@ -128,31 +128,31 @@ export default function Profile() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Meu Perfil</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie suas informacoes pessoais e senha</p>
+        <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
+        <p className="text-muted-foreground mt-1">Gerencie suas informacoes pessoais e senha</p>
       </div>
 
       {/* Profile Info Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-2xl">
             {profile?.name?.charAt(0)?.toUpperCase() || 'A'}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{profile?.name}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{profile?.name}</h2>
             <div className="flex items-center gap-4 mt-1">
-              <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4" />
                 {profile?.email}
               </span>
-              <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4" />
                 {getRoleLabel(profile?.system_role || '')}
                 {profile?.role?.name && ` - ${profile.role.name}`}
               </span>
             </div>
             {profile?.created_at && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Membro desde {new Date(profile.created_at).toLocaleDateString('pt-BR')}
               </p>
             )}
@@ -171,8 +171,8 @@ export default function Profile() {
           }
         >
           <div className="flex items-center gap-2 mb-2">
-            <User className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Informacoes Pessoais</h3>
+            <User className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Informacoes Pessoais</h3>
           </div>
 
           {nameSuccess && (
@@ -193,21 +193,21 @@ export default function Profile() {
             </FormField>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <Input
                 value={profile?.email || ''}
                 disabled
-                className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                className="bg-muted text-muted-foreground cursor-not-allowed"
               />
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">O email nao pode ser alterado.</p>
+              <p className="mt-1 text-xs text-muted-foreground">O email nao pode ser alterado.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Funcao</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Funcao</label>
               <Input
                 value={getRoleLabel(profile?.system_role || '')}
                 disabled
-                className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                className="bg-muted text-muted-foreground cursor-not-allowed"
               />
             </div>
           </div>
@@ -225,8 +225,8 @@ export default function Profile() {
           }
         >
           <div className="flex items-center gap-2 mb-2">
-            <Lock className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Alterar Senha</h3>
+            <Lock className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Alterar Senha</h3>
           </div>
 
           {passwordSuccess && (
@@ -271,10 +271,10 @@ export default function Profile() {
       </form>
 
       {/* Access Profile & Permissions */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-2 mb-4">
           <KeyRound className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Perfil de Acesso</h3>
+          <h3 className="text-lg font-semibold text-foreground">Perfil de Acesso</h3>
         </div>
 
         <div className="flex items-center gap-3 mb-4">
@@ -305,18 +305,18 @@ export default function Profile() {
           </div>
         ) : Object.keys(permissionsByModule).length > 0 ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Suas permissoes no sistema:</p>
+            <p className="text-sm text-muted-foreground">Suas permissoes no sistema:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.entries(permissionsByModule).map(([mod, actions]) => (
-                <div key={mod} className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1.5">
+                <div key={mod} className="bg-muted rounded-xl p-3 border border-border">
+                  <p className="text-sm font-semibold text-foreground mb-1.5">
                     {MODULE_LABELS[mod] || mod}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {actions.map((action) => (
                       <span
                         key={action}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card border border-border text-xs text-muted-foreground"
                       >
                         <Check className="w-3 h-3 text-green-500" />
                         {ACTION_LABELS[action] || action}
@@ -328,7 +328,7 @@ export default function Profile() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma permissao personalizada configurada.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma permissao personalizada configurada.</p>
         )}
       </div>
     </div>

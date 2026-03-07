@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useGetCouponQuery, useCreateCouponMutation, useUpdateCouponMutation } from '@/api/adminApi';
 import { couponSchema, type CouponFormData } from '@/schemas/admin/couponSchema';
+import { toast } from 'sonner';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -60,9 +61,10 @@ export default function CouponForm() {
       } else {
         await createCoupon(data).unwrap();
       }
+      toast.success(isEditing ? 'Cupom atualizado com sucesso!' : 'Cupom criado com sucesso!');
       navigate('/admin/coupons');
     } catch {
-      // Error is captured by RTK Query and displayed via ErrorAlert
+      toast.error('Erro ao salvar o cupom. Tente novamente.');
     }
   };
 

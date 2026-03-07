@@ -84,9 +84,9 @@ const STATUS_COLORS: Record<Table['status'], { bg: string; border: string; text:
     text: 'text-yellow-700 dark:text-yellow-400',
   },
   maintenance: {
-    bg: 'bg-gray-200 dark:bg-gray-700',
+    bg: 'bg-muted',
     border: 'border-gray-400 dark:border-gray-500',
-    text: 'text-gray-600 dark:text-gray-400',
+    text: 'text-muted-foreground',
   },
 };
 
@@ -317,7 +317,7 @@ export default function FloorPlanEditor() {
           {/* Floor plan selector */}
           {(floorPlans as FloorPlan[]).length > 0 && (
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <label className="text-sm font-medium text-foreground whitespace-nowrap">
                 Planta:
               </label>
               <Select
@@ -364,7 +364,7 @@ export default function FloorPlanEditor() {
               ref={canvasRef}
               className={cn(
                 'relative min-h-[500px] flex-1 rounded-2xl border-2 border-dashed',
-                'bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-gray-700',
+                'bg-muted border-border',
                 'overflow-hidden select-none',
                 dragState && 'cursor-grabbing',
               )}
@@ -385,7 +385,7 @@ export default function FloorPlanEditor() {
 
               {layoutItems.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Arraste mesas do painel lateral para posiciona-las
                   </p>
                 </div>
@@ -432,7 +432,7 @@ export default function FloorPlanEditor() {
                     >
                       {table.number}
                     </span>
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground mt-0.5">
                       {table.capacity}p
                     </span>
                   </div>
@@ -448,12 +448,12 @@ export default function FloorPlanEditor() {
           {selectedTable && selectedItem && (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-sm font-semibold text-foreground">
                   Mesa {selectedTable.number}
                 </h3>
                 <button
                   onClick={() => setSelectedTableId(null)}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -462,33 +462,33 @@ export default function FloorPlanEditor() {
               <div className="space-y-2 text-sm">
                 {selectedTable.label && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Rotulo</span>
-                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                    <span className="text-muted-foreground">Rotulo</span>
+                    <span className="text-foreground font-medium">
                       {selectedTable.label}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Capacidade</span>
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">
+                  <span className="text-muted-foreground">Capacidade</span>
+                  <span className="text-foreground font-medium">
                     {selectedTable.capacity} pessoas
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500 dark:text-gray-400">Status</span>
+                  <span className="text-muted-foreground">Status</span>
                   <Badge variant={BADGE_VARIANT[selectedTable.status]}>
                     {STATUS_LABELS[selectedTable.status]}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Formato</span>
-                  <span className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+                  <span className="text-muted-foreground">Formato</span>
+                  <span className="text-foreground font-medium capitalize">
                     {selectedItem.shape === 'rectangle' ? 'Retangulo' : 'Circulo'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Posicao</span>
-                  <span className="text-gray-900 dark:text-gray-100 font-medium text-xs">
+                  <span className="text-muted-foreground">Posicao</span>
+                  <span className="text-foreground font-medium text-xs">
                     x:{selectedItem.x} y:{selectedItem.y}
                   </span>
                 </div>
@@ -535,8 +535,8 @@ export default function FloorPlanEditor() {
           {/* Unplaced tables */}
           <Card className="p-4 flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center gap-2 mb-3">
-              <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <GripVertical className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
                 Mesas Disponiveis
               </h3>
               <Badge variant="default" className="ml-auto">
@@ -546,7 +546,7 @@ export default function FloorPlanEditor() {
 
             {unplacedTables.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   {activeTables.length === 0
                     ? 'Nenhuma mesa cadastrada'
                     : 'Todas as mesas foram posicionadas'}
@@ -561,9 +561,9 @@ export default function FloorPlanEditor() {
                       key={table.id}
                       className={cn(
                         'flex items-center justify-between p-3 rounded-xl border transition-colors',
-                        'bg-white dark:bg-slate-700/50',
-                        'border-gray-100 dark:border-gray-700',
-                        'hover:border-gray-200 dark:hover:border-gray-600',
+                        'bg-card',
+                        'border-border',
+                        'hover:border-input',
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -579,13 +579,13 @@ export default function FloorPlanEditor() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <p className="text-sm font-medium text-foreground">
                             Mesa {table.number}
                             {table.label ? ` - ${table.label}` : ''}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <Users className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <Users className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
                               {table.capacity}
                             </span>
                             <Badge
@@ -615,7 +615,7 @@ export default function FloorPlanEditor() {
 
           {/* Legend */}
           <Card className="p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Legenda
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -629,7 +629,7 @@ export default function FloorPlanEditor() {
                         STATUS_COLORS[status].border,
                       )}
                     />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       {label}
                     </span>
                   </div>
@@ -651,7 +651,7 @@ export default function FloorPlanEditor() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Nome da Planta
             </label>
             <input
@@ -660,10 +660,10 @@ export default function FloorPlanEditor() {
               onChange={(e) => setNewPlanName(e.target.value)}
               placeholder="Ex: Salao Principal, Terraco, Area VIP..."
               className={cn(
-                'w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl',
-                'text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-700',
+                'w-full px-4 py-3 border border-input rounded-xl',
+                'text-foreground bg-card',
                 'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                'transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500',
+                'transition-all placeholder:text-muted-foreground',
               )}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newPlanName.trim()) handleCreatePlan();

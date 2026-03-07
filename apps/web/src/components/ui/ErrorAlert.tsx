@@ -1,3 +1,4 @@
+import { AlertCircle } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 interface ErrorAlertProps {
@@ -7,7 +8,8 @@ interface ErrorAlertProps {
 
 export function ErrorAlert({ message, className }: ErrorAlertProps) {
   return (
-    <div className={cn('p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm', className)}>
+    <div className={cn('flex items-center gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive text-sm', className)}>
+      <AlertCircle className="h-4 w-4 shrink-0" />
       {message}
     </div>
   );

@@ -157,8 +157,8 @@ export default function ReservationList() {
       header: 'Cliente',
       render: (r: Reservation) => (
         <div>
-          <p className="font-medium text-gray-900 dark:text-gray-100">{r.customer_name}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+          <p className="font-medium text-foreground">{r.customer_name}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
             <Phone className="w-3 h-3" />
             {r.customer_phone}
           </p>
@@ -169,8 +169,8 @@ export default function ReservationList() {
       key: 'party_size',
       header: 'Pessoas',
       render: (r: Reservation) => (
-        <span className="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300">
-          <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+        <span className="inline-flex items-center gap-1 text-foreground">
+          <Users className="w-4 h-4 text-muted-foreground" />
           {r.party_size}
         </span>
       ),
@@ -179,7 +179,7 @@ export default function ReservationList() {
       key: 'date',
       header: 'Data',
       render: (r: Reservation) => (
-        <span className="text-gray-700 dark:text-gray-300">
+        <span className="text-foreground">
           {new Date(r.date + 'T00:00:00').toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
@@ -192,8 +192,8 @@ export default function ReservationList() {
       key: 'time',
       header: 'Horario',
       render: (r: Reservation) => (
-        <span className="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300">
-          <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+        <span className="inline-flex items-center gap-1 text-foreground">
+          <Clock className="w-4 h-4 text-muted-foreground" />
           {r.time_start}
         </span>
       ),
@@ -211,12 +211,12 @@ export default function ReservationList() {
       header: 'Observacoes',
       render: (r: Reservation) =>
         r.notes ? (
-          <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate" title={r.notes}>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground max-w-[200px] truncate" title={r.notes}>
             <StickyNote className="w-3 h-3 shrink-0" />
             {r.notes}
           </span>
         ) : (
-          <span className="text-gray-400 dark:text-gray-500">-</span>
+          <span className="text-muted-foreground">-</span>
         ),
     },
     {
@@ -268,7 +268,7 @@ export default function ReservationList() {
                 disabled={isUpdating}
                 title="No-show"
               >
-                <UserX className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                <UserX className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="hidden sm:inline ml-1">No-show</span>
               </Button>
             </>
@@ -297,7 +297,7 @@ export default function ReservationList() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <CalendarDays className="w-4 h-4 text-muted-foreground" />
           <Input
             type="date"
             value={dateFilter}

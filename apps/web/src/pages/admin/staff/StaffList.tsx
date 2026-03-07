@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { toast } from 'sonner';
 
 export default function StaffList() {
   const navigate = useNavigate();
@@ -22,7 +23,12 @@ export default function StaffList() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await deleteStaff(deleteTarget.id);
+    try {
+      await deleteStaff(deleteTarget.id).unwrap();
+      toast.success('Membro desativado com sucesso!');
+    } catch {
+      toast.error('Erro ao desativar membro.');
+    }
     setDeleteTarget(null);
   };
 
@@ -48,22 +54,22 @@ export default function StaffList() {
 
       <Card className="p-4 mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome ou email..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
       </Card>
 
       {filtered.length === 0 ? (
         <Card className="p-12 text-center">
-          <Monitor className="w-12 h-12 text-gray-200 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum membro encontrado</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Adicione membros da equipe para gerenciar o acesso ao sistema.</p>
+          <Monitor className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">Nenhum membro encontrado</p>
+          <p className="text-sm text-muted-foreground mt-1">Adicione membros da equipe para gerenciar o acesso ao sistema.</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -82,14 +88,14 @@ export default function StaffList() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{member.name}</h3>
+                        <h3 className="font-semibold text-foreground">{member.name}</h3>
                         {!member.is_active && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600">
                             Inativo
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
                     </div>
                   </div>
 
@@ -103,7 +109,7 @@ export default function StaffList() {
                         e.stopPropagation();
                         setDeleteTarget({ id: member.id, name: member.name });
                       }}
-                      className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

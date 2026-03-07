@@ -2,14 +2,15 @@ import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@/utils/cn';
 
 const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...props }, ref) => {
+  ({ className, type, ...props }, ref) => {
     return (
       <input
-        ref={ref}
+        type={type}
         className={cn(
-          'w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all',
+          'flex h-11 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
+        ref={ref}
         {...props}
       />
     );

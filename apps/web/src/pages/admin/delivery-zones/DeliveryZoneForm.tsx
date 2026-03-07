@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useGetDeliveryZoneQuery, useCreateDeliveryZoneMutation, useUpdateDeliveryZoneMutation } from '@/api/adminApi';
 import { deliveryZoneSchema, type DeliveryZoneFormData } from '@/schemas/admin/deliveryZoneSchema';
+import { toast } from 'sonner';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { PriceInput } from '@/components/ui/PriceInput';
@@ -86,9 +87,10 @@ export default function DeliveryZoneForm() {
       } else {
         await createZone(data).unwrap();
       }
+      toast.success(isEditing ? 'Zona de entrega atualizada com sucesso!' : 'Zona de entrega criada com sucesso!');
       navigate('/admin/delivery-zones');
     } catch {
-      // Error is captured by RTK Query and displayed via ErrorAlert
+      toast.error('Erro ao salvar a zona de entrega. Tente novamente.');
     }
   };
 
@@ -168,7 +170,7 @@ export default function DeliveryZoneForm() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-foreground">
               Bairros <span className="text-red-500 ml-0.5">*</span>
             </label>
             <div className="flex gap-2">

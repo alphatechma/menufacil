@@ -7,7 +7,7 @@ const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElem
       <select
         ref={ref}
         className={cn(
-          'w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all',
+          'flex h-11 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}

@@ -5,11 +5,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLText
   ({ className, ...props }, ref) => {
     return (
       <textarea
-        ref={ref}
         className={cn(
-          'w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none',
+          'flex min-h-[80px] w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 resize-none',
           className,
         )}
+        ref={ref}
         {...props}
       />
     );

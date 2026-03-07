@@ -24,7 +24,8 @@ import {
   Bar,
 } from 'recharts';
 import { useGetDashboardDataQuery, useGetOrdersQuery, useGetCustomersQuery } from '@/api/adminApi';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
 
@@ -40,8 +41,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.
 
 const tooltipStyle = {
   borderRadius: '12px',
-  border: '1px solid #e5e7eb',
+  border: '1px solid hsl(var(--border))',
   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+  backgroundColor: 'hsl(var(--card))',
+  color: 'hsl(var(--foreground))',
 };
 
 function formatDateRange() {
@@ -60,7 +63,45 @@ export default function Dashboard() {
   const { data: orders = [] } = useGetOrdersQuery(undefined, { refetchOnMountOrArgChange: true });
   const { data: customers = [] } = useGetCustomersQuery();
 
-  if (isLoading) return <PageSpinner />;
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-5">
+                <Skeleton className="w-10 h-10 rounded-xl" />
+                <Skeleton className="h-7 w-24 mt-3" />
+                <Skeleton className="h-4 w-32 mt-1" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-5">
+                <Skeleton className="h-5 w-40 mb-4" />
+                <Skeleton className="h-64 w-full rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-5">
+            <Skeleton className="h-5 w-40 mb-4" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full mt-2" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const totalRevenue = Number(dashboard?.totals?.total_revenue || 0);
   const totalOrders = Number(dashboard?.totals?.total_orders || 0);
@@ -85,136 +126,146 @@ export default function Dashboard() {
       label: 'Receita (7 dias)',
       value: formatPrice(totalRevenue),
       icon: DollarSign,
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      bgColor: 'bg-green-50 dark:bg-green-950/40',
       iconColor: 'text-green-600',
     },
     {
       label: 'Pedidos (7 dias)',
       value: String(validOrders),
       icon: ShoppingCart,
-      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+      bgColor: 'bg-orange-50 dark:bg-orange-950/40',
       iconColor: 'text-primary',
     },
     {
       label: 'Ticket Medio',
       value: formatPrice(avgTicket),
       icon: TrendingUp,
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/40',
       iconColor: 'text-blue-600',
     },
     {
       label: 'Clientes',
       value: String(customers.length),
       icon: Users,
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      bgColor: 'bg-purple-50 dark:bg-purple-950/40',
       iconColor: 'text-purple-600',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-        <p className="text-gray-500 mt-1 dark:text-gray-400">Visao geral do seu restaurante</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Visao geral do seu restaurante</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
-              <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-            </div>
-            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
-          </div>
+          <Card key={stat.label} className="rounded-xl">
+            <CardContent className="p-5">
+              <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
+                <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+              </div>
+              <p className="mt-3 text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receita (7 dias)</h3>
-          <div className="h-64">
-            {revenueData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#FF6B35" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(v) => `R$${v}`} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatPrice(value), 'Receita']} />
-                  <Area type="monotone" dataKey="revenue" stroke="#FF6B35" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
-            )}
-          </div>
-        </div>
+        <Card className="rounded-xl">
+          <CardHeader className="p-5 pb-0">
+            <CardTitle>Receita (7 dias)</CardTitle>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="h-64">
+              {revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `R$${v}`} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatPrice(value), 'Receita']} />
+                    <Area type="monotone" dataKey="revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pedidos por Dia</h3>
-          <div className="h-64">
-            {ordersChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ordersChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="pedidos" fill="#FF6B35" radius={[6, 6, 0, 0]} name="Pedidos" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Sem dados no periodo</div>
-            )}
-          </div>
-        </div>
+        <Card className="rounded-xl">
+          <CardHeader className="p-5 pb-0">
+            <CardTitle>Pedidos por Dia</CardTitle>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="h-64">
+              {ordersChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={ordersChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="pedidos" fill="hsl(var(--chart-1))" radius={[6, 6, 0, 0]} name="Pedidos" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pedidos Recentes</h3>
+      <Card className="rounded-xl">
+        <CardHeader className="px-5 py-4 flex-row items-center justify-between space-y-0 border-b border-border">
+          <CardTitle>Pedidos Recentes</CardTitle>
           <Link to="/admin/orders" className="text-sm text-primary hover:underline">Ver todos</Link>
-        </div>
+        </CardHeader>
         {recentOrders.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pedido</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                <tr className="border-b border-border">
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedido</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Total</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {recentOrders.map((order: any) => {
                   const status = STATUS_LABELS[order.status] || STATUS_LABELS.pending;
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                    <tr key={order.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-5 py-3.5">
                         <Link to={`/admin/orders/${order.id}`} className="text-sm font-medium text-primary hover:underline">
                           #{order.order_number}
                         </Link>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-300">{order.customer?.name || '-'}</td>
-                      <td className="px-5 py-3.5 text-sm font-medium text-gray-900 dark:text-gray-100">{formatPrice(order.total || 0)}</td>
+                      <td className="px-5 py-3.5 text-sm text-muted-foreground">{order.customer?.name || '-'}</td>
+                      <td className="px-5 py-3.5 text-sm font-medium text-foreground">{formatPrice(order.total || 0)}</td>
                       <td className="px-5 py-3.5">
                         <Badge className={status.color}>
                           {status.icon}
                           <span className="ml-1">{status.label}</span>
                         </Badge>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
                         {order.created_at ? new Date(order.created_at.endsWith('Z') ? order.created_at : order.created_at + 'Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
                     </tr>
@@ -224,9 +275,9 @@ export default function Dashboard() {
             </table>
           </div>
         ) : (
-          <div className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum pedido registrado</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido registrado</div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGetDeliveryZonesQuery, useDeleteDeliveryZoneMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -28,6 +29,9 @@ export default function DeliveryZoneList() {
     if (!deleteTarget) return;
     try {
       await deleteZone(deleteTarget.id).unwrap();
+      toast.success('Zona de entrega excluida com sucesso!');
+    } catch {
+      toast.error('Erro ao excluir zona de entrega. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }
@@ -38,7 +42,7 @@ export default function DeliveryZoneList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Zonas de Entrega</h1>
+        <h1 className="text-2xl font-bold text-foreground">Zonas de Entrega</h1>
         <Link to="/admin/delivery-zones/new">
           <Button>
             <Plus className="w-4 h-4" />
@@ -76,58 +80,58 @@ export default function DeliveryZoneList() {
           }
         />
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Taxa
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Bairros
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Tempo Estimado
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Acoes
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {filtered.map((zone: any) => (
-                  <tr key={zone.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                  <tr key={zone.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
                           <MapPin className="w-5 h-5 text-blue-500" />
                         </div>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{zone.name}</span>
+                        <span className="font-medium text-foreground">{zone.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
+                    <td className="px-6 py-4 text-sm text-foreground">
                       {formatPrice(zone.fee)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {zone.neighborhoods?.length ?? 0} bairro{(zone.neighborhoods?.length ?? 0) !== 1 ? 's' : ''}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {zone.min_delivery_time}-{zone.max_delivery_time} min
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <Link to={`/admin/delivery-zones/${zone.id}/edit`}>
-                          <button className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
+                          <button className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
                         </Link>
                         <button
                           onClick={() => setDeleteTarget({ id: zone.id, name: zone.name })}
-                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                          className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

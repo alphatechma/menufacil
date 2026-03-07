@@ -12,7 +12,7 @@ const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInput
           ref={ref}
           type={show ? 'text' : 'password'}
           className={cn(
-            'w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all',
+            'flex h-11 w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
           {...props}
@@ -20,9 +20,9 @@ const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInput
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         >
-          {show ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>
       </div>
     );

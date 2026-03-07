@@ -1,6 +1,6 @@
-import { Modal } from './Modal';
-import { Button } from './Button';
 import { AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './Modal';
+import { Button } from './Button';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -14,22 +14,24 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({ open, onClose, onConfirm, title = 'Confirmar', message, confirmLabel = 'Confirmar', loading }: ConfirmDialogProps) {
   return (
-    <Modal open={open} onClose={onClose}>
-      <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
-          <AlertTriangle className="h-6 w-6 text-red-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{message}</p>
-        <div className="flex gap-3 justify-center">
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader className="items-center text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 mb-2">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex-row justify-center gap-3 pt-4">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
           <Button variant="danger" onClick={onConfirm} loading={loading}>
             {confirmLabel}
           </Button>
-        </div>
-      </div>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

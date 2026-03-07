@@ -5,14 +5,14 @@ const PriceInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputEle
   ({ className, ...props }, ref) => {
     return (
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">R$</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
         <input
           ref={ref}
           type="number"
           step="0.01"
           min="0"
           className={cn(
-            'w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all',
+            'flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
           {...props}

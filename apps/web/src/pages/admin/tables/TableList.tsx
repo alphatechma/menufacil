@@ -153,32 +153,32 @@ export default function TableList() {
           }
         />
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Numero
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Identificacao
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Capacidade
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Ativa
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Acoes
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {filtered.map((table: any) => {
                   const status = statusConfig[table.status] ?? statusConfig.available;
                   const isActive = table.is_active !== false;
@@ -186,24 +186,24 @@ export default function TableList() {
                   return (
                     <tr
                       key={table.id}
-                      className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        <span className="font-semibold text-foreground">
                           #{table.number}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {table.label || '-'}
                       </td>
                       <td className="px-6 py-4">
                         {table.capacity ? (
-                          <span className="inline-flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
-                            <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                            <Users className="w-4 h-4 text-muted-foreground" />
                             {table.capacity}
                           </span>
                         ) : (
-                          <span className="text-sm text-gray-400 dark:text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             -
                           </span>
                         )}
@@ -223,13 +223,13 @@ export default function TableList() {
                             onClick={() =>
                               setQrTable({ id: table.id, number: table.number })
                             }
-                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-primary transition-colors"
                             title="QR Code"
                           >
                             <QrCode className="w-4 h-4" />
                           </button>
                           <Link to={`/admin/tables/${table.id}/edit`}>
-                            <button className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
+                            <button className="p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-primary transition-colors">
                               <Pencil className="w-4 h-4" />
                             </button>
                           </Link>
@@ -240,7 +240,7 @@ export default function TableList() {
                                 number: table.number,
                               })
                             }
-                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -269,7 +269,7 @@ export default function TableList() {
               className="w-64 h-64"
             />
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center break-all">
+          <p className="text-sm text-muted-foreground text-center break-all">
             {qrUrl}
           </p>
           <Button onClick={handlePrintQr} className="w-full">

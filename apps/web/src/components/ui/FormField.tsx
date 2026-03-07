@@ -26,14 +26,14 @@ export function FormField<T extends FieldValues>({ control, name, label, require
       render={({ field, fieldState }) => (
         <div className={cn('space-y-1.5', className)}>
           {label && (
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-foreground">
               {label}
-              {required && <span className="text-red-500 ml-0.5">*</span>}
+              {required && <span className="text-destructive ml-0.5">*</span>}
             </label>
           )}
           {children(field)}
           {fieldState.error && (
-            <p className="text-xs text-red-500">{fieldState.error.message}</p>
+            <p className="text-xs text-destructive">{fieldState.error.message}</p>
           )}
         </div>
       )}

@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { formatPrice } from '@/utils/formatPrice';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
+import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<
   string,
@@ -132,6 +133,7 @@ export default function OrderDetail() {
     }
 
     await updateStatus({ id: order.id, status: nextStatus }).unwrap();
+    toast.success(`Status atualizado para ${STATUS_CONFIG[nextStatus]?.label || nextStatus}`);
 
     // Auto-print receipt when confirming order (pending -> confirmed)
     if (order.status === 'pending' && nextStatus === 'confirmed') {
@@ -146,6 +148,7 @@ export default function OrderDetail() {
       status: 'out_for_delivery',
       delivery_person_id: selectedDeliveryPerson,
     }).unwrap();
+    toast.success('Pedido enviado para entrega');
     setDeliveryModal(false);
     setSelectedDeliveryPerson('');
   };
@@ -153,6 +156,7 @@ export default function OrderDetail() {
   const handleCancel = async () => {
     if (!order) return;
     await updateStatus({ id: order.id, status: 'cancelled' }).unwrap();
+    toast.success('Pedido cancelado');
   };
 
   if (isLoading || !order) return <PageSpinner />;
@@ -204,7 +208,7 @@ export default function OrderDetail() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Status do Pedido</p>
+                <p className="text-sm text-muted-foreground mb-1">Status do Pedido</p>
                 <Badge className={config.color}>
                   {config.icon}
                   <span className="ml-1">{config.label}</span>
@@ -212,15 +216,15 @@ export default function OrderDetail() {
               </div>
               {order.order_type && (
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Tipo</p>
-                  <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                  <p className="text-sm text-muted-foreground mb-1">Tipo</p>
+                  <Badge className="bg-muted text-foreground">
                     {ORDER_TYPE_LABELS[order.order_type] || order.order_type}
                   </Badge>
                 </div>
               )}
               <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Data do Pedido</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm text-muted-foreground mb-1">Data do Pedido</p>
+                <p className="text-sm font-medium text-foreground">
                   {order.created_at
                     ? new Date(order.created_at).toLocaleDateString('pt-BR', {
                         day: '2-digit',
@@ -238,26 +242,26 @@ export default function OrderDetail() {
           {/* Items */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <ShoppingCart className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">
                 Itens do Pedido
               </h2>
             </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="divide-y divide-border">
               {order.items?.map((item: any, idx: number) => (
                 <div key={idx} className="py-3 flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="font-medium text-foreground">
                       {item.quantity}x{' '}
                       {item.product_name || item.product?.name || item.name}
                     </p>
                     {(item.variation_name || item.variation?.name) && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         Variacao: {item.variation_name || item.variation?.name}
                       </p>
                     )}
                     {item.extras && item.extras.length > 0 && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         Extras:{' '}
                         {item.extras
                           .map(
@@ -268,12 +272,12 @@ export default function OrderDetail() {
                       </p>
                     )}
                     {item.notes && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 italic">
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">
                         Obs: {item.notes}
                       </p>
                     )}
                   </div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 ml-4">
+                  <p className="text-sm font-medium text-foreground ml-4">
                     {formatPrice(
                       (() => {
                         const unitPrice = Number(item.unit_price || item.price || 0);
@@ -290,13 +294,13 @@ export default function OrderDetail() {
             </div>
 
             {/* Totals */}
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
-              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatPrice(Number(order.subtotal) || 0)}</span>
               </div>
               {Number(order.delivery_fee) > 0 && (
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Taxa de Entrega</span>
                   <span>{formatPrice(Number(order.delivery_fee))}</span>
                 </div>
@@ -307,7 +311,7 @@ export default function OrderDetail() {
                   <span>-{formatPrice(Number(order.discount))}</span>
                 </div>
               )}
-              <div className="flex justify-between text-base font-semibold text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between text-base font-semibold text-foreground pt-2 border-t border-border">
                 <span>Total</span>
                 <span>{formatPrice(Number(order.total) || 0)}</span>
               </div>
@@ -320,21 +324,21 @@ export default function OrderDetail() {
           {/* Customer Info */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cliente</h2>
+              <User className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">Cliente</h2>
             </div>
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
                   Nome
                 </p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-foreground">
                   {order.customer?.name || 'Nao informado'}
                 </p>
               </div>
               {order.customer?.phone && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     Telefone
                   </p>
                   <a
@@ -348,10 +352,10 @@ export default function OrderDetail() {
               )}
               {order.customer?.email && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     Email
                   </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-200">{order.customer.email}</p>
+                  <p className="text-sm text-foreground">{order.customer.email}</p>
                 </div>
               )}
             </div>
@@ -360,23 +364,23 @@ export default function OrderDetail() {
           {/* Payment */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pagamento</h2>
+              <CreditCard className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">Pagamento</h2>
             </div>
             <div className="space-y-2">
               {order.payment_method && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     Metodo
                   </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium text-foreground">
                     {PAYMENT_LABELS[order.payment_method] || order.payment_method}
                   </p>
                 </div>
               )}
               {order.payment_status && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     Status
                   </p>
                   <p
@@ -396,14 +400,14 @@ export default function OrderDetail() {
                     Troco
                   </p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Cliente paga com</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                    <span className="text-muted-foreground">Cliente paga com</span>
+                    <span className="font-medium text-foreground">
                       {formatPrice(Number(order.change_for))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
-                    <span className="text-gray-600 dark:text-gray-300">Total do pedido</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                    <span className="text-muted-foreground">Total do pedido</span>
+                    <span className="font-medium text-foreground">
                       {formatPrice(Number(order.total))}
                     </span>
                   </div>
@@ -422,28 +426,28 @@ export default function OrderDetail() {
           {order.address_snapshot && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Endereco</h2>
+                <MapPin className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Endereco</h2>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-200">
+              <p className="text-sm text-foreground">
                 {order.address_snapshot.street}
                 {order.address_snapshot.number
                   ? `, ${order.address_snapshot.number}`
                   : ''}
               </p>
               {order.address_snapshot.complement && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {order.address_snapshot.complement}
                 </p>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {order.address_snapshot.neighborhood}
                 {order.address_snapshot.city
                   ? ` - ${order.address_snapshot.city}`
                   : ''}
               </p>
               {(order.address_snapshot.zip_code || order.address_snapshot.zipcode) && (
-                <p className="text-sm text-gray-400 dark:text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   CEP: {order.address_snapshot.zip_code || order.address_snapshot.zipcode}
                 </p>
               )}
@@ -453,17 +457,17 @@ export default function OrderDetail() {
           {!order.address_snapshot && order.address && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Endereco</h2>
+                <MapPin className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Endereco</h2>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-200">
+              <p className="text-sm text-foreground">
                 {order.address.street}
                 {order.address.number ? `, ${order.address.number}` : ''}
               </p>
               {order.address.complement && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{order.address.complement}</p>
+                <p className="text-sm text-muted-foreground">{order.address.complement}</p>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {order.address.neighborhood}
                 {order.address.city ? ` - ${order.address.city}` : ''}
               </p>
@@ -474,18 +478,18 @@ export default function OrderDetail() {
           {isDeliveryOrder && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Truck className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Entregador</h2>
+                <Truck className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Entregador</h2>
               </div>
 
               {activeDeliveryPersons.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Nenhum entregador cadastrado.
                 </p>
               ) : (
                 <>
                   <select
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-600 px-3 py-2.5 text-sm bg-white dark:bg-slate-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    className="w-full rounded-xl border border-border px-3 py-2.5 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                     value={order.delivery_person_id || ''}
                     onChange={async (e) => {
                       const value = e.target.value || null;
@@ -503,8 +507,8 @@ export default function OrderDetail() {
                     ))}
                   </select>
                   {order.delivery_person && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2">
-                      <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                       <a
                         href={`tel:${order.delivery_person.phone}`}
                         className="text-primary hover:underline"
@@ -512,7 +516,7 @@ export default function OrderDetail() {
                         {order.delivery_person.phone}
                       </a>
                       {order.delivery_person.vehicle && (
-                        <span className="text-gray-400 dark:text-gray-500">
+                        <span className="text-muted-foreground">
                           | {order.delivery_person.vehicle}
                         </span>
                       )}
@@ -527,12 +531,12 @@ export default function OrderDetail() {
           {order.notes && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">
                   Observacoes
                 </h2>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-sm text-foreground bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 rounded-lg p-3">
                 {order.notes}
               </p>
             </Card>
@@ -540,7 +544,7 @@ export default function OrderDetail() {
 
           {/* Timeline */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
               Historico
             </h2>
             <div className="space-y-3">
@@ -559,7 +563,7 @@ export default function OrderDetail() {
                     key={s.key}
                     className="flex items-center justify-between text-sm"
                   >
-                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <div
                         className={`w-2 h-2 rounded-full ${
                           s.key === 'cancelled_at' ? 'bg-red-400' : 'bg-green-400'
@@ -571,7 +575,7 @@ export default function OrderDetail() {
                       className={
                         s.key === 'cancelled_at'
                           ? 'text-red-600'
-                          : 'text-gray-700 dark:text-gray-200'
+                          : 'text-foreground'
                       }
                     >
                       {new Date(order[s.key]).toLocaleString('pt-BR')}
@@ -587,29 +591,29 @@ export default function OrderDetail() {
       {deliveryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setDeliveryModal(false)} />
-          <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <Truck className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selecionar Entregador</h3>
+                <h3 className="text-lg font-semibold text-foreground">Selecionar Entregador</h3>
               </div>
               <button
                 onClick={() => setDeliveryModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-1 hover:bg-accent rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Selecione o entregador antes de enviar o pedido para entrega.
               </p>
 
               {activeDeliveryPersons.length === 0 ? (
                 <div className="text-center py-6">
                   <Truck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum entregador ativo cadastrado.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum entregador ativo cadastrado.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -619,7 +623,7 @@ export default function OrderDetail() {
                       className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                         selectedDeliveryPerson === person.id
                           ? 'border-primary bg-primary/5'
-                          : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
+                          : 'border-border hover:border-border'
                       }`}
                     >
                       <input
@@ -631,13 +635,13 @@ export default function OrderDetail() {
                         className="sr-only"
                       />
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        selectedDeliveryPerson === person.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                         <Truck className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{person.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-medium text-foreground">{person.name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {person.phone}
                           {person.vehicle && ` · ${person.vehicle}`}
                         </p>
@@ -651,7 +655,7 @@ export default function OrderDetail() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-700/50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted/50">
               <Button variant="outline" onClick={() => setDeliveryModal(false)}>
                 Cancelar
               </Button>

@@ -41,7 +41,7 @@ function formatMinutes(minutes: number): string {
 function getUrgencyStyle(minutes: number): string {
   if (minutes >= 45) return 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20';
   if (minutes >= 30) return 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20';
-  return 'border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800';
+  return 'border-border bg-card';
 }
 
 function getTimeBadgeStyle(minutes: number): string {
@@ -101,16 +101,16 @@ export default function DeliveryTracker() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <Truck className="w-7 h-7 text-primary" />
             Entregas
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Acompanhe os pedidos em entrega em tempo real
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl">
+          <div className="text-sm font-medium text-muted-foreground bg-card border border-border px-4 py-2 rounded-xl">
             <span className="font-bold text-primary">{activeDeliveries.length}</span> em entrega
           </div>
         </div>
@@ -122,35 +122,35 @@ export default function DeliveryTracker() {
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center mx-auto mb-2">
             <Truck className="w-5 h-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{activeDeliveries.length}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Em Entrega</p>
+          <p className="text-2xl font-bold text-foreground">{activeDeliveries.length}</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Em Entrega</p>
         </Card>
         <Card className="p-4 text-center">
           <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 flex items-center justify-center mx-auto mb-2">
             <Clock className="w-5 h-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatMinutes(avgDeliveryTime)}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Tempo Medio</p>
+          <p className="text-2xl font-bold text-foreground">{formatMinutes(avgDeliveryTime)}</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tempo Medio</p>
         </Card>
         <Card className="p-4 text-center">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center mx-auto mb-2">
             <Zap className="w-5 h-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatMinutes(perfStats?.fastest_order ?? 0)}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Mais Rapido</p>
+          <p className="text-2xl font-bold text-foreground">{formatMinutes(perfStats?.fastest_order ?? 0)}</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Mais Rapido</p>
         </Card>
         <Card className="p-4 text-center">
           <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 flex items-center justify-center mx-auto mb-2">
             <Check className="w-5 h-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalDelivered}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Entregues (7d)</p>
+          <p className="text-2xl font-bold text-foreground">{totalDelivered}</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Entregues (7d)</p>
         </Card>
       </div>
 
       {/* Active Deliveries */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
           Em Entrega Agora
         </h2>
@@ -158,8 +158,8 @@ export default function DeliveryTracker() {
         {activeDeliveries.length === 0 ? (
           <Card className="p-12 text-center">
             <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum pedido em entrega no momento</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Pedidos apareceraoaqui quando forem enviados para entrega</p>
+            <p className="text-muted-foreground font-medium">Nenhum pedido em entrega no momento</p>
+            <p className="text-sm text-muted-foreground mt-1">Pedidos apareceraoaqui quando forem enviados para entrega</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -178,7 +178,7 @@ export default function DeliveryTracker() {
                   <div className="flex items-center justify-between mb-3">
                     <Link
                       to={`/admin/orders/${order.id}`}
-                      className="text-lg font-bold text-gray-900 dark:text-gray-100 hover:text-primary transition-colors"
+                      className="text-lg font-bold text-foreground hover:text-primary transition-colors"
                     >
                       #{order.order_number}
                     </Link>
@@ -190,8 +190,8 @@ export default function DeliveryTracker() {
                   </div>
 
                   {/* Customer */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                    <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">{order.customer?.name || 'Cliente'}</span>
                     {order.customer?.phone && (
                       <a href={`tel:${order.customer.phone}`} className="text-primary hover:underline flex items-center gap-1 ml-auto">
@@ -203,14 +203,14 @@ export default function DeliveryTracker() {
 
                   {/* Address */}
                   {order.address_snapshot && (
-                    <div className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground mb-3">
+                      <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div>
                         <p>
                           {order.address_snapshot.street}
                           {order.address_snapshot.number ? `, ${order.address_snapshot.number}` : ''}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {order.address_snapshot.neighborhood}
                           {order.address_snapshot.city ? ` - ${order.address_snapshot.city}` : ''}
                         </p>
@@ -219,19 +219,19 @@ export default function DeliveryTracker() {
                   )}
 
                   {/* Items summary */}
-                  <div className="bg-white/70 dark:bg-slate-700/50 rounded-xl px-3 py-2 mb-3 border border-gray-100 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{order.items?.length || 0} item(s)</p>
+                  <div className="bg-muted/70 rounded-xl px-3 py-2 mb-3 border border-border">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">{order.items?.length || 0} item(s)</p>
                     <div className="space-y-0.5">
                       {order.items?.slice(0, 3).map((item: any, idx: number) => (
-                        <p key={idx} className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                        <p key={idx} className="text-xs text-muted-foreground truncate">
                           {item.quantity}x {item.product_name || item.product?.name}
                         </p>
                       ))}
                       {order.items?.length > 3 && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">+{order.items.length - 3} mais</p>
+                        <p className="text-xs text-muted-foreground">+{order.items.length - 3} mais</p>
                       )}
                     </div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1 pt-1 border-t border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-semibold text-foreground mt-1 pt-1 border-t border-border">
                       {formatPrice(order.total || 0)}
                     </p>
                   </div>
@@ -243,8 +243,8 @@ export default function DeliveryTracker() {
                         <Truck className="w-4 h-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{order.delivery_person.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="font-medium text-foreground text-sm">{order.delivery_person.name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {order.delivery_person.phone}
                           {order.delivery_person.vehicle && ` · ${order.delivery_person.vehicle}`}
                         </p>
@@ -278,7 +278,7 @@ export default function DeliveryTracker() {
       {/* Recent Delivered */}
       {recentDelivered.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Check className="w-5 h-5 text-green-600" />
             Entregues Recentemente
           </h2>
@@ -286,35 +286,35 @@ export default function DeliveryTracker() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pedido</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entregador</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tempo de Entrega</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entregue em</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pedido</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entregador</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tempo de Entrega</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entregue em</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                <tbody className="divide-y divide-border">
                   {recentDelivered.map((order: any) => {
                     const deliveryTime = order.out_for_delivery_at && order.delivered_at
                       ? Math.round((new Date(order.delivered_at).getTime() - new Date(order.out_for_delivery_at).getTime()) / 60000)
                       : null;
 
                     return (
-                      <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                      <tr key={order.id} className="hover:bg-accent transition-colors">
                         <td className="px-5 py-3">
                           <Link to={`/admin/orders/${order.id}`} className="font-medium text-primary hover:underline">
                             #{order.order_number}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                        <td className="px-5 py-3 text-sm text-foreground">
                           {order.customer?.name || '-'}
                         </td>
-                        <td className="px-5 py-3 text-sm text-gray-700 dark:text-gray-200">
+                        <td className="px-5 py-3 text-sm text-foreground">
                           {order.delivery_person?.name || '-'}
                         </td>
-                        <td className="px-5 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <td className="px-5 py-3 text-sm font-medium text-foreground">
                           {formatPrice(order.total || 0)}
                         </td>
                         <td className="px-5 py-3">
@@ -324,10 +324,10 @@ export default function DeliveryTracker() {
                               <span className="ml-1">{formatMinutes(deliveryTime)}</span>
                             </Badge>
                           ) : (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">
+                        <td className="px-5 py-3 text-sm text-muted-foreground">
                           {order.delivered_at
                             ? new Date(order.delivered_at).toLocaleString('pt-BR', {
                                 day: '2-digit',

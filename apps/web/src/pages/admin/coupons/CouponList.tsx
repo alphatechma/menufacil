@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Ticket } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGetCouponsQuery, useDeleteCouponMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -34,6 +35,9 @@ export default function CouponList() {
     if (!deleteTarget) return;
     try {
       await deleteCoupon(deleteTarget.id).unwrap();
+      toast.success('Cupom excluido com sucesso!');
+    } catch {
+      toast.error('Erro ao excluir cupom. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }
@@ -44,7 +48,7 @@ export default function CouponList() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cupons</h1>
+        <h1 className="text-2xl font-bold text-foreground">Cupons</h1>
         <Link to="/admin/coupons/new">
           <Button>
             <Plus className="w-4 h-4" />
@@ -82,39 +86,39 @@ export default function CouponList() {
           }
         />
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Codigo
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Tipo
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Valor
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Pedido Min
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Usos
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Validade
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Acoes
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {filtered.map((coupon: any) => (
-                  <tr key={coupon.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                  <tr key={coupon.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{coupon.code}</span>
+                      <span className="font-medium text-foreground">{coupon.code}</span>
                     </td>
                     <td className="px-6 py-4">
                       {coupon.discount_type === 'percent' ? (
@@ -123,30 +127,30 @@ export default function CouponList() {
                         <Badge variant="success">Fixo</Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
+                    <td className="px-6 py-4 text-sm text-foreground">
                       {coupon.discount_type === 'percent'
                         ? `${coupon.discount_value}%`
                         : formatPrice(coupon.discount_value)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {coupon.min_order ? formatPrice(coupon.min_order) : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {coupon.current_uses ?? 0}/{coupon.max_uses ?? '\u221E'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {formatDate(coupon.valid_from)} - {formatDate(coupon.valid_until)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <Link to={`/admin/coupons/${coupon.id}/edit`}>
-                          <button className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-primary transition-colors">
+                          <button className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
                         </Link>
                         <button
                           onClick={() => setDeleteTarget({ id: coupon.id, code: coupon.code })}
-                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                          className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

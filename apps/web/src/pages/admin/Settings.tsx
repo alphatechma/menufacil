@@ -226,8 +226,8 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Configuracoes</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie as configuracoes do seu restaurante</p>
+        <h1 className="text-2xl font-bold text-foreground">Configuracoes</h1>
+        <p className="text-muted-foreground mt-1">Gerencie as configuracoes do seu restaurante</p>
       </div>
 
       {successMessage && (
@@ -240,7 +240,7 @@ export default function Settings() {
         <ErrorAlert message="Erro ao salvar configuracoes. Tente novamente." className="mb-2" />
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-xl border border-border">
         <Tabs
           tabs={SETTINGS_TABS}
           activeTab={activeTab}
@@ -304,15 +304,15 @@ export default function Settings() {
 
           {activeTab === 'notificacoes' && (
             <div className="space-y-6 max-w-2xl">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Configure como voce recebe notificacoes sobre novos pedidos e atualizacoes.
               </p>
 
               {/* Master Sound Toggle */}
               <FormCard>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Sons de Notificacao</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Toque sons quando eventos importantes acontecerem</p>
+                  <h3 className="text-base font-bold text-foreground">Sons de Notificacao</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Toque sons quando eventos importantes acontecerem</p>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between py-2">
@@ -320,11 +320,11 @@ export default function Settings() {
                       {notifSettings.soundEnabled ? (
                         <Volume2 className="w-5 h-5 text-primary" />
                       ) : (
-                        <VolumeX className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        <VolumeX className="w-5 h-5 text-muted-foreground" />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Ativar sons</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Controle geral de todos os sons</p>
+                        <p className="text-sm font-medium text-foreground">Ativar sons</p>
+                        <p className="text-xs text-muted-foreground">Controle geral de todos os sons</p>
                       </div>
                     </div>
                     <Toggle
@@ -334,11 +334,11 @@ export default function Settings() {
                   </div>
 
                   {notifSettings.soundEnabled && (
-                    <div className="ml-8 space-y-3 border-l-2 border-gray-100 dark:border-gray-700 pl-4">
+                    <div className="ml-8 space-y-3 border-l-2 border-border pl-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Novo pedido</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">Toca quando um novo pedido chega</p>
+                          <p className="text-sm font-medium text-foreground">Novo pedido</p>
+                          <p className="text-xs text-muted-foreground">Toca quando um novo pedido chega</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -357,8 +357,8 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Saiu para entrega</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">Toca quando um pedido sai para entrega</p>
+                          <p className="text-sm font-medium text-foreground">Saiu para entrega</p>
+                          <p className="text-xs text-muted-foreground">Toca quando um pedido sai para entrega</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -377,8 +377,8 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Pedido entregue</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">Toca quando um pedido e entregue</p>
+                          <p className="text-sm font-medium text-foreground">Pedido entregue</p>
+                          <p className="text-xs text-muted-foreground">Toca quando um pedido e entregue</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -402,15 +402,15 @@ export default function Settings() {
               {/* Push Notifications */}
               <FormCard>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Notificacoes Push</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Receba notificacoes mesmo quando o navegador esta em segundo plano</p>
+                  <h3 className="text-base font-bold text-foreground">Notificacoes Push</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receba notificacoes mesmo quando o navegador esta em segundo plano</p>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
-                    <Bell className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <Bell className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Ativar notificacoes push</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">O navegador pedira permissao na primeira vez</p>
+                      <p className="text-sm font-medium text-foreground">Ativar notificacoes push</p>
+                      <p className="text-xs text-muted-foreground">O navegador pedira permissao na primeira vez</p>
                     </div>
                   </div>
                   <Toggle
@@ -430,7 +430,7 @@ export default function Settings() {
 
           {activeTab === 'modos' && (
             <div className="space-y-6 max-w-2xl">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Escolha quais modos de pedido estao disponiveis para seus clientes.
               </p>
 
@@ -443,8 +443,8 @@ export default function Settings() {
                         <Truck className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Entrega</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Configure as zonas de entrega na aba Delivery</p>
+                        <p className="text-sm font-medium text-foreground">Entrega</p>
+                        <p className="text-xs text-muted-foreground">Configure as zonas de entrega na aba Delivery</p>
                       </div>
                     </div>
                     <Toggle
@@ -454,7 +454,7 @@ export default function Settings() {
                     />
                   </div>
 
-                  <div className="h-px bg-gray-100 dark:bg-gray-700" />
+                  <div className="h-px bg-border" />
 
                   {/* Pickup */}
                   <div className="flex items-center justify-between py-3">
@@ -463,8 +463,8 @@ export default function Settings() {
                         <Store className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Retirada no Balcao</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Clientes podem retirar o pedido no restaurante</p>
+                        <p className="text-sm font-medium text-foreground">Retirada no Balcao</p>
+                        <p className="text-xs text-muted-foreground">Clientes podem retirar o pedido no restaurante</p>
                       </div>
                     </div>
                     <Toggle
@@ -474,29 +474,29 @@ export default function Settings() {
                     />
                   </div>
 
-                  <div className="h-px bg-gray-100 dark:bg-gray-700" />
+                  <div className="h-px bg-border" />
 
                   {/* Dine In */}
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'flex items-center justify-center w-9 h-9 rounded-xl',
-                        hasDineInModule ? 'bg-primary/10' : 'bg-gray-100 dark:bg-gray-700'
+                        hasDineInModule ? 'bg-primary/10' : 'bg-muted'
                       )}>
                         <UtensilsCrossed className={cn(
                           'w-5 h-5',
-                          hasDineInModule ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                          hasDineInModule ? 'text-primary' : 'text-muted-foreground'
                         )} />
                       </div>
                       <div>
                         <p className={cn(
                           'text-sm font-medium',
-                          hasDineInModule ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'
+                          hasDineInModule ? 'text-foreground' : 'text-muted-foreground'
                         )}>Consumo no Local</p>
                         {hasDineInModule ? (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Mesas, comanda digital e reservas</p>
+                          <p className="text-xs text-muted-foreground">Mesas, comanda digital e reservas</p>
                         ) : (
-                          <p className="text-xs text-gray-400 dark:text-gray-500">Disponivel no plano Enterprise</p>
+                          <p className="text-xs text-muted-foreground">Disponivel no plano Enterprise</p>
                         )}
                       </div>
                     </div>
@@ -513,7 +513,7 @@ export default function Settings() {
 
           {activeTab === 'plano' && (
             <div className="space-y-6 max-w-2xl">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Veja os detalhes do plano contratado e os modulos disponiveis.
               </p>
 
@@ -523,11 +523,11 @@ export default function Settings() {
                     <Crown className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    <h3 className="text-lg font-bold text-foreground">
                       {plan?.name || 'Sem plano'}
                     </h3>
                     {plan?.price != null && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         R$ {plan.price.toFixed(2).replace('.', ',')}/mes
                       </p>
                     )}
@@ -537,8 +537,8 @@ export default function Settings() {
 
               <FormCard>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">Modulos Inclusos</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <h3 className="text-base font-bold text-foreground mb-1">Modulos Inclusos</h3>
+                  <p className="text-xs text-muted-foreground">
                     Funcionalidades disponiveis no seu plano atual
                   </p>
                 </div>
@@ -557,7 +557,7 @@ export default function Settings() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum modulo disponivel.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum modulo disponivel.</p>
                 )}
               </FormCard>
             </div>
@@ -565,7 +565,7 @@ export default function Settings() {
 
           {activeTab === 'impressora' && (
             <div className="space-y-6 max-w-2xl">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Configure a impressora termica para impressao automatica de pedidos.
                 Necessario instalar o{' '}
                 <a
@@ -584,16 +584,16 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       'w-10 h-10 rounded-xl flex items-center justify-center',
-                      printerAvailable === true ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-gray-700',
+                      printerAvailable === true ? 'bg-green-100 dark:bg-green-900/20' : 'bg-muted',
                     )}>
                       <Printer className={cn(
                         'w-5 h-5',
-                        printerAvailable === true ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500',
+                        printerAvailable === true ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                       )} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">QZ Tray</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-sm font-bold text-foreground">QZ Tray</p>
+                      <p className="text-xs text-muted-foreground">
                         {printerAvailable === null
                           ? 'Verificando...'
                           : printerAvailable
@@ -633,8 +633,8 @@ export default function Settings() {
               {printerAvailable && (
                 <FormCard>
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Impressora Termica</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <h3 className="text-sm font-bold text-foreground mb-1">Impressora Termica</h3>
+                    <p className="text-xs text-muted-foreground mb-3">
                       Selecione a impressora que sera usada para imprimir os pedidos automaticamente.
                     </p>
                   </div>
@@ -648,7 +648,7 @@ export default function Settings() {
                             'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
                             currentPrinter === name
                               ? 'border-primary bg-primary/5'
-                              : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600',
+                              : 'border-border hover:border-border/80',
                           )}
                         >
                           <input
@@ -664,11 +664,11 @@ export default function Settings() {
                           />
                           <Printer className={cn(
                             'w-5 h-5',
-                            currentPrinter === name ? 'text-primary' : 'text-gray-400 dark:text-gray-500',
+                            currentPrinter === name ? 'text-primary' : 'text-muted-foreground',
                           )} />
                           <span className={cn(
                             'text-sm font-medium flex-1',
-                            currentPrinter === name ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300',
+                            currentPrinter === name ? 'text-foreground' : 'text-muted-foreground',
                           )}>
                             {name}
                           </span>
@@ -679,13 +679,13 @@ export default function Settings() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Nenhuma impressora encontrada. Clique em "Detectar" acima.
                     </p>
                   )}
 
                   {currentPrinter && (
-                    <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                    <div className="pt-4 border-t border-border flex items-center gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -729,15 +729,15 @@ export default function Settings() {
 
               <FormCard>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Como funciona</h3>
+                  <h3 className="text-sm font-bold text-foreground mb-1">Como funciona</h3>
                 </div>
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <p>1. Instale o <strong>QZ Tray</strong> no computador do caixa/cozinha</p>
                   <p>2. Conecte a impressora termica (USB ou rede)</p>
                   <p>3. Clique em <strong>Detectar</strong> e selecione a impressora</p>
                   <p>4. Ao aceitar um pedido, ele sera impresso automaticamente</p>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Se o QZ Tray nao estiver instalado, o sistema usa o dialogo de impressao do navegador como fallback.
                 </p>
               </FormCard>
@@ -746,7 +746,7 @@ export default function Settings() {
 
           {activeTab === 'horarios' && (
             <div className="space-y-6 max-w-2xl">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Configure os horarios de funcionamento do seu restaurante para cada dia da semana.
               </p>
 
@@ -764,8 +764,8 @@ export default function Settings() {
                       key={day.key}
                       className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border transition-colors ${
                         hours.open
-                          ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800'
-                          : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-700/50'
+                          ? 'border-border bg-card'
+                          : 'border-border bg-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3 sm:w-48 shrink-0">
@@ -775,7 +775,7 @@ export default function Settings() {
                         />
                         <span
                           className={`text-sm font-medium ${
-                            hours.open ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'
+                            hours.open ? 'text-foreground' : 'text-muted-foreground'
                           }`}
                         >
                           {day.label}
@@ -790,27 +790,27 @@ export default function Settings() {
                             onChange={(e) =>
                               updateBusinessHour(day.key, 'openTime', e.target.value)
                             }
-                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="px-3 py-2 border border-border bg-card text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
-                          <span className="text-gray-400 dark:text-gray-500 text-sm">ate</span>
+                          <span className="text-muted-foreground text-sm">ate</span>
                           <input
                             type="time"
                             value={hours.closeTime}
                             onChange={(e) =>
                               updateBusinessHour(day.key, 'closeTime', e.target.value)
                             }
-                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="px-3 py-2 border border-border bg-card text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 dark:text-gray-500 ml-auto">Fechado</span>
+                        <span className="text-sm text-muted-foreground ml-auto">Fechado</span>
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="pt-4 border-t border-border">
                 <Button onClick={handleSaveHorarios} loading={savingHours}>
                   <Save className="w-4 h-4" />
                   Salvar Horarios
