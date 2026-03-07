@@ -636,6 +636,7 @@ export default function Settings() {
                           setPrinterList(printers);
                           const selected = await getSelectedPrinter();
                           setCurrentPrinter(selected);
+                          showSuccess('Conectado ao QZ Tray com sucesso! ' + printers.length + ' impressora(s) encontrada(s).');
                         }
                       } catch {
                         setPrinterAvailable(false);
