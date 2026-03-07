@@ -2,10 +2,11 @@ import { useEffect } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 import { Store } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setTenant } from '@/store/slices/tenantSlice';
-import { useGetPublicTenantQuery } from '@/api/customerApi';
+import { setTenant, setSelectedUnitId } from '@/store/slices/tenantSlice';
+import { useGetPublicTenantQuery, useGetPublicUnitsQuery } from '@/api/customerApi';
 import { useTenantBranding } from '@/hooks/useTenantBranding';
 import { Spinner } from '@/components/ui/Spinner';
+import { UnitSelectorModal } from '@/components/storefront/UnitSelectorModal';
 
 const DAY_MAP: Record<number, string> = {
   0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
@@ -108,8 +109,20 @@ export function TenantProvider() {
   const { slug } = useParams<{ slug: string }>();
   const dispatch = useAppDispatch();
   const tenant = useAppSelector((s) => s.tenant.tenant);
+  const selectedUnitId = useAppSelector((s) => s.tenant.selectedUnitId);
 
   const { data, isLoading, error } = useGetPublicTenantQuery(slug!, { skip: !slug });
+  const { data: units } = useGetPublicUnitsQuery(slug!, { skip: !slug || !data });
+
+  // Restore selected unit from localStorage on mount
+  useEffect(() => {
+    if (slug) {
+      const stored = localStorage.getItem(`menufacil-unit-${slug}`);
+      if (stored) {
+        dispatch(setSelectedUnitId(stored));
+      }
+    }
+  }, [slug, dispatch]);
 
   useEffect(() => {
     if (data) {
@@ -117,6 +130,24 @@ export function TenantProvider() {
       dispatch(setTenant({ ...data, is_open, next_open_label, hours_label }));
     }
   }, [data, dispatch]);
+
+  // Override store status with unit-specific business_hours when a unit is selected
+  useEffect(() => {
+    if (data && units && selectedUnitId) {
+      const selectedUnit = units.find((u: any) => u.id === selectedUnitId);
+      if (selectedUnit?.business_hours) {
+        const { is_open, next_open_label, hours_label } = computeStoreStatus(selectedUnit.business_hours);
+        dispatch(setTenant({ ...data, is_open, next_open_label, hours_label }));
+      }
+    }
+  }, [selectedUnitId, units, data, dispatch]);
+
+  const handleSelectUnit = (unitId: string) => {
+    dispatch(setSelectedUnitId(unitId));
+    if (slug) {
+      localStorage.setItem(`menufacil-unit-${slug}`, unitId);
+    }
+  };
 
   useTenantBranding(tenant);
 
@@ -141,6 +172,17 @@ export function TenantProvider() {
         </div>
       </div>
     );
+  }
+
+  // Show unit selector if tenant has units and none is selected
+  if (units && units.length > 0 && !selectedUnitId) {
+    const storedUnit = slug ? localStorage.getItem(`menufacil-unit-${slug}`) : null;
+    const validStored = storedUnit && units.find((u: any) => u.id === storedUnit);
+    if (validStored) {
+      handleSelectUnit(storedUnit!);
+    } else {
+      return <UnitSelectorModal units={units} onSelect={handleSelectUnit} />;
+    }
   }
 
   return <Outlet />;

@@ -1,9 +1,10 @@
 import { type ReactNode, useEffect } from 'react';
 import { Link, Outlet, useParams, useLocation } from 'react-router-dom';
-import { ShoppingBag, Home, UtensilsCrossed, User } from 'lucide-react';
+import { ShoppingBag, Home, UtensilsCrossed, User, MapPin } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectTotalItems, openDrawer } from '@/store/slices/cartSlice';
-import { selectTenant } from '@/store/slices/tenantSlice';
+import { selectTenant, setSelectedUnitId } from '@/store/slices/tenantSlice';
+import { useGetPublicUnitsQuery } from '@/api/customerApi';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 
 export function CustomerLayout({ children }: { children?: ReactNode }) {
@@ -12,6 +13,16 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
   const dispatch = useAppDispatch();
   const tenant = useAppSelector(selectTenant);
   const totalItems = useAppSelector(selectTotalItems);
+  const selectedUnitId = useAppSelector((s) => s.tenant.selectedUnitId);
+  const { data: units } = useGetPublicUnitsQuery(slug!, { skip: !slug });
+  const selectedUnit = units?.find((u: any) => u.id === selectedUnitId);
+
+  const handleChangeUnit = () => {
+    dispatch(setSelectedUnitId(null));
+    if (slug) {
+      localStorage.removeItem(`menufacil-unit-${slug}`);
+    }
+  };
 
   useEffect(() => {
     document.title = tenant?.name || 'MenuFacil';
@@ -50,6 +61,17 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
               )}
             </div>
           </Link>
+
+          {selectedUnit && (
+            <button
+              onClick={handleChangeUnit}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span className="max-w-[100px] truncate">{selectedUnit.name}</span>
+              <span className="text-[var(--tenant-primary)] font-medium ml-0.5">Trocar</span>
+            </button>
+          )}
 
           <button
             onClick={() => dispatch(openDrawer())}
