@@ -17,6 +17,8 @@ export const WEBSOCKET_EVENTS = {
   ORDER_TRACKING_UPDATE: 'order:tracking-update',
   TABLE_STATUS_UPDATED: 'table:status-updated',
   RESERVATION_NEW: 'reservation:new',
+  WHATSAPP_MESSAGE_NEW: 'whatsapp:message-new',
+  WHATSAPP_STATUS_UPDATE: 'whatsapp:status-update',
 } as const;
 
 export const WEBSOCKET_ROOMS = {
@@ -24,6 +26,7 @@ export const WEBSOCKET_ROOMS = {
   tenantKds: (tenantId: string) => `tenant:${tenantId}:kds`,
   order: (orderId: string) => `order:${orderId}`,
   tenantTables: (tenantId: string) => `tenant:${tenantId}:tables`,
+  tenantWhatsapp: (tenantId: string) => `tenant:${tenantId}:whatsapp`,
 } as const;
 
 export const PAGINATION_DEFAULTS = {

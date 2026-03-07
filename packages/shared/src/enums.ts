@@ -61,3 +61,33 @@ export enum RewardType {
   DISCOUNT_FIXED = 'discount_fixed',
   FREE_PRODUCT = 'free_product',
 }
+
+export enum WhatsappInstanceStatus {
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+}
+
+export enum WhatsappTemplateType {
+  WELCOME = 'welcome',
+  ORDER_CONFIRMED = 'order_confirmed',
+  ORDER_PREPARING = 'order_preparing',
+  ORDER_READY = 'order_ready',
+  ORDER_OUT_FOR_DELIVERY = 'order_out_for_delivery',
+  ORDER_DELIVERED = 'order_delivered',
+  ORDER_CANCELLED = 'order_cancelled',
+  MARKETING = 'marketing',
+  CUSTOM = 'custom',
+}
+
+export enum WhatsappMessageDirection {
+  INBOUND = 'inbound',
+  OUTBOUND = 'outbound',
+}
+
+export enum WhatsappMessageStatus {
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  READ = 'read',
+  FAILED = 'failed',
+}
