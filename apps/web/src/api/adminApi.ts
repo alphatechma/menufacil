@@ -406,6 +406,28 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['WhatsappConversations'],
     }),
 
+    // Units
+    getUnits: builder.query<any[], void>({
+      query: () => ({ url: '/units', method: 'GET', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Units'],
+    }),
+    getUnit: builder.query<any, string>({
+      query: (id) => ({ url: `/units/${id}`, method: 'GET', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Units'],
+    }),
+    createUnit: builder.mutation<any, any>({
+      query: (data) => ({ url: '/units', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Units'],
+    }),
+    updateUnit: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/units/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Units'],
+    }),
+    deleteUnit: builder.mutation<void, string>({
+      query: (id) => ({ url: `/units/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Units'],
+    }),
+
     // Upload
     uploadImage: builder.mutation<{ url: string }, FormData>({
       query: (formData) => ({
@@ -511,4 +533,9 @@ export const {
   useGetWhatsappConversationsQuery,
   useGetWhatsappMessagesQuery,
   useSendWhatsappMessageMutation,
+  useGetUnitsQuery,
+  useGetUnitQuery,
+  useCreateUnitMutation,
+  useUpdateUnitMutation,
+  useDeleteUnitMutation,
 } = adminApi;

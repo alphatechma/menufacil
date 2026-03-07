@@ -176,6 +176,11 @@ export const customerApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Public Units
+    getPublicUnits: builder.query<any[], string>({
+      query: (tenantSlug) => ({ url: `/public/units/${tenantSlug}`, method: 'GET' }),
+    }),
+
     // Public Reservation
     createPublicReservation: builder.mutation<any, { slug: string; data: any }>({
       query: ({ slug, data }) => ({
@@ -214,4 +219,5 @@ export const {
   useGetPublicTableQuery,
   useJoinTableMutation,
   useCreatePublicReservationMutation,
+  useGetPublicUnitsQuery,
 } = customerApi;
