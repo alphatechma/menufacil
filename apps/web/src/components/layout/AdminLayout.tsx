@@ -29,6 +29,7 @@ import {
   UsersRound,
   Navigation,
   Bike,
+  Building2,
   MessageCircle,
   ChevronDown,
   Sun,
@@ -134,6 +135,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: 'Administracao',
     icon: Settings,
     items: [
+      { to: '/admin/units', icon: Building2, label: 'Unidades', module: 'multi_unit', permission: 'unit:read' },
       { to: '/admin/staff', icon: UsersRound, label: 'Equipe', module: null, permission: 'staff:read' },
       { to: '/admin/customization', icon: Palette, label: 'Personalizar', module: null, permission: 'customization:read' },
       { to: '/admin/settings', icon: Settings, label: 'Configuracoes', module: null, permission: 'settings:read' },

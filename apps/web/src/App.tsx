@@ -44,6 +44,8 @@ const TableForm = lazy(() => import('@/pages/admin/tables/TableForm'));
 const FloorPlanEditor = lazy(() => import('@/pages/admin/tables/FloorPlanEditor'));
 const ReservationList = lazy(() => import('@/pages/admin/reservations/ReservationList'));
 const WhatsappPage = lazy(() => import('@/pages/admin/whatsapp/WhatsappPage'));
+const UnitsList = lazy(() => import('@/pages/admin/units/UnitsList'));
+const UnitForm = lazy(() => import('@/pages/admin/units/UnitForm'));
 
 // Customer / storefront pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -128,6 +130,9 @@ export default function App() {
           <Route path="tables/:id/edit" element={<TableForm />} />
           <Route path="floor-plan" element={<FloorPlanEditor />} />
           <Route path="reservations" element={<ReservationList />} />
+          <Route path="units" element={<UnitsList />} />
+          <Route path="units/new" element={<UnitForm />} />
+          <Route path="units/:id" element={<UnitForm />} />
         </Route>
 
         {/* Tenant storefront routes — /:slug AFTER static routes */}
