@@ -926,9 +926,30 @@ export default function Settings() {
                   <div className="flex gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">2</span>
                     <div>
-                      <p>Baixe o <a href="/certs/menufacil-qz.crt" download className="text-primary font-medium hover:underline inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" />certificado</a> e adicione ao QZ Tray:</p>
-                      <p className="text-xs mt-1">Clique no icone do QZ Tray (bandeja do sistema) {'>'} <strong>Advanced</strong> {'>'} <strong>Site Manager</strong> {'>'} <strong>+</strong> {'>'} selecione o arquivo <code className="px-1.5 py-0.5 bg-muted rounded text-xs">menufacil-qz.crt</code></p>
-                      <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">Apos adicionar o certificado, reinicie o QZ Tray e recarregue esta pagina.</p>
+                      <p>Execute o script de configuracao automatica:</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <a href="/api/qz-tray/setup-script?os=windows" download className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors">
+                          <Download className="w-3.5 h-3.5" />Windows (.bat)
+                        </a>
+                        <a href="/api/qz-tray/setup-script?os=linux" download className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors">
+                          <Download className="w-3.5 h-3.5" />Linux (.sh)
+                        </a>
+                        <a href="/api/qz-tray/setup-script?os=macos" download className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors">
+                          <Download className="w-3.5 h-3.5" />macOS (.sh)
+                        </a>
+                      </div>
+                      <p className="text-xs mt-2 text-muted-foreground">O script instala o certificado e reinicia o QZ Tray automaticamente. No Windows, execute como Administrador.</p>
+                      <details className="mt-2">
+                        <summary className="text-xs cursor-pointer text-primary hover:underline">Configuracao manual</summary>
+                        <div className="mt-1 text-xs space-y-1">
+                          <p>1. Baixe o <a href="/api/qz-tray/certificate/download" download className="text-primary font-medium hover:underline inline-flex items-center gap-1"><Download className="w-3 h-3" />certificado</a></p>
+                          <p>2. Copie para a pasta <code className="px-1 py-0.5 bg-muted rounded">auth/</code> do QZ Tray:</p>
+                          <p className="pl-3">Windows: <code className="px-1 py-0.5 bg-muted rounded">C:\Program Files\QZ Tray\auth\</code></p>
+                          <p className="pl-3">Linux: <code className="px-1 py-0.5 bg-muted rounded">/opt/qz-tray/auth/</code></p>
+                          <p className="pl-3">macOS: <code className="px-1 py-0.5 bg-muted rounded">/Applications/QZ Tray.app/Contents/Resources/auth/</code></p>
+                          <p>3. Reinicie o QZ Tray</p>
+                        </div>
+                      </details>
                     </div>
                   </div>
                   <div className="flex gap-3">
