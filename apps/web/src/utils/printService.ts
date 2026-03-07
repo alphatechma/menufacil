@@ -109,6 +109,15 @@ function setupSecurity() {
   qz.security.setSignaturePromise(() => Promise.resolve(''));
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms),
+    ),
+  ]);
+}
+
 async function ensureConnected(): Promise<boolean> {
   if (_connected && qz.websocket.isActive()) return true;
 
@@ -124,10 +133,7 @@ async function ensureConnected(): Promise<boolean> {
   _connecting = (async () => {
     try {
       setupSecurity();
-      await qz.websocket.connect({
-        retries: 2,
-        delay: 1,
-      });
+      await withTimeout(qz.websocket.connect({ retries: 0, delay: 0 }), 5000);
       _connected = true;
 
       qz.websocket.setClosedCallbacks(() => {
@@ -137,9 +143,10 @@ async function ensureConnected(): Promise<boolean> {
       });
     } catch (err) {
       _connected = false;
+      _connecting = null;
       _securitySetup = false;
       console.error('[QZ Tray] Falha ao conectar:', err);
-      throw new Error('QZ Tray nao encontrado. Verifique se esta instalado e rodando.');
+      throw new Error('QZ Tray nao encontrado.');
     }
   })();
 
