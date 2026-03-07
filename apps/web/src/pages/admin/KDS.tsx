@@ -261,36 +261,46 @@ function KDSOrderCard({
 
       {/* Items */}
       <div className="px-4 py-3">
-        <div className="space-y-1.5">
-          {order.items?.map((item: any, idx: number) => {
-            const name = item.product_name || item.product?.name || item.name || 'Produto';
-            const variation = item.variation_name || item.variation?.name;
-            return (
-              <div key={idx} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-muted-foreground font-medium shrink-0">{item.quantity}x</span>
-                  <span className="font-medium text-foreground truncate">{name}</span>
-                </div>
-                {variation && (
-                  <span className="text-xs text-muted-foreground shrink-0 ml-2">{variation}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <table className="w-full">
+          <tbody className="divide-y divide-border">
+            {order.items?.map((item: any, idx: number) => {
+              const name = item.product_name || item.product?.name || item.name || 'Produto';
+              const variation = item.variation_name || item.variation?.name;
+              const extras = item.extras?.filter((e: any) => e.extra_name || e.name) || [];
+              const hasDetails = variation || extras.length > 0 || item.notes;
 
-        {/* Extras */}
-        {order.items?.some((item: any) => item.extras?.length > 0) && (
-          <div className="mt-2 space-y-1">
-            {order.items
-              .filter((item: any) => item.extras?.length > 0)
-              .map((item: any, idx: number) => (
-                <p key={idx} className="text-xs text-amber-600 font-medium">
-                  + {item.extras.map((e: any) => e.extra_name || e.name).join(', ')}
-                </p>
-              ))}
-          </div>
-        )}
+              return (
+                <tr key={idx} className="group">
+                  <td className="py-2 pr-3 align-top w-8">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-muted text-foreground text-sm font-black">
+                      {item.quantity}
+                    </span>
+                  </td>
+                  <td className="py-2 align-top">
+                    <p className="text-sm font-bold text-foreground leading-snug">{name}</p>
+                    {hasDetails && (
+                      <div className="mt-0.5 space-y-0.5">
+                        {variation && (
+                          <p className="text-xs text-muted-foreground">{variation}</p>
+                        )}
+                        {extras.length > 0 && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                            {extras.map((e: any) => `+ ${e.extra_name || e.name}`).join(', ')}
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-yellow-700 dark:text-yellow-400 italic">
+                            Obs: {item.notes}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Notes */}
