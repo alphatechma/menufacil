@@ -119,7 +119,11 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function ensureConnected(): Promise<boolean> {
-  if (_connected && qz.websocket.isActive()) return true;
+  // Already connected
+  if (qz.websocket.isActive()) {
+    _connected = true;
+    return true;
+  }
 
   if (_connecting) {
     try {
@@ -139,12 +143,10 @@ async function ensureConnected(): Promise<boolean> {
       qz.websocket.setClosedCallbacks(() => {
         _connected = false;
         _connecting = null;
-        _securitySetup = false;
       });
     } catch (err) {
       _connected = false;
       _connecting = null;
-      _securitySetup = false;
       console.error('[QZ Tray] Falha ao conectar:', err);
       throw new Error('QZ Tray nao encontrado.');
     }
