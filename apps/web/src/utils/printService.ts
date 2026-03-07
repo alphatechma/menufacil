@@ -81,30 +81,14 @@ function savePrinter(name: string) {
   }
 }
 
-let _certPromise: Promise<string> | null = null;
-
-function fetchCertificate(): Promise<string> {
-  if (!_certPromise) {
-    _certPromise = fetch('/certs/menufacil-qz.crt', { cache: 'no-store', headers: { 'Content-Type': 'text/plain' } })
-      .then((r) => {
-        if (!r.ok) throw new Error('Certificate not found');
-        return r.text();
-      })
-      .catch(() => {
-        _certPromise = null;
-        return '';
-      });
-  }
-  return _certPromise;
-}
-
 let _securitySetup = false;
 
 function setupSecurity() {
   if (_securitySetup) return;
   _securitySetup = true;
 
-  qz.security.setCertificatePromise(() => fetchCertificate());
+  // Certificado vazio = QZ Tray mostra popup para usuario aceitar manualmente
+  qz.security.setCertificatePromise(() => Promise.resolve(''));
   qz.security.setSignatureAlgorithm('SHA512');
   qz.security.setSignaturePromise(() => Promise.resolve(''));
 }
