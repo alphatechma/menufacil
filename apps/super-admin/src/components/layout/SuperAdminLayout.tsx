@@ -138,32 +138,41 @@ export default function SuperAdminLayout() {
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         <TooltipProvider delayDuration={0}>
-          {NAV_ITEMS.map((item) => (
-            <Tooltip key={item.to}>
-              <TooltipTrigger asChild>
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/'}
-                  onClick={() => mobile && setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
-                      isActive
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]',
-                      collapsed && !mobile && 'justify-center px-2',
-                    )
-                  }
-                >
-                  <item.icon className="w-5 h-5 shrink-0" />
-                  {(!collapsed || mobile) && <span>{item.label}</span>}
-                </NavLink>
-              </TooltipTrigger>
-              {collapsed && !mobile && (
-                <TooltipContent side="right">{item.label}</TooltipContent>
-              )}
-            </Tooltip>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const link = (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                onClick={() => mobile && setMobileOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                    isActive
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    collapsed && !mobile && 'justify-center px-2',
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                {(!collapsed || mobile) && <span>{item.label}</span>}
+              </NavLink>
+            );
+
+            if (collapsed && !mobile) {
+              return (
+                <Tooltip key={item.to}>
+                  <TooltipTrigger asChild>
+                    <div>{link}</div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{item.label}</TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return link;
+          })}
         </TooltipProvider>
       </nav>
 
