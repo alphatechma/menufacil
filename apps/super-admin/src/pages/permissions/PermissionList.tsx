@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useGetPermissionsQuery,
   useGetSystemModulesQuery,
@@ -67,8 +68,9 @@ export default function PermissionList() {
     setDeleting(true);
     try {
       await deletePermission(deleteTarget.id).unwrap();
+      toast.success('Permissao removida!');
     } catch {
-      // error handled by RTK Query
+      toast.error('Erro ao remover permissao.');
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -86,7 +88,7 @@ export default function PermissionList() {
   const sortedGroups = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Permissoes</h1>

@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useGetSystemModuleQuery,
   useCreateSystemModuleMutation,
@@ -10,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function FormSkeleton() {
@@ -18,20 +20,15 @@ function FormSkeleton() {
     <Card className="max-w-2xl">
       <CardHeader>
         <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-64" />
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-20 w-full" />
-        </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
         <Skeleton className="h-10 w-28" />
       </CardContent>
     </Card>
@@ -69,26 +66,30 @@ export default function SystemModuleForm() {
     try {
       if (isEditing) {
         await updateModule({ id: id!, data: form }).unwrap();
+        toast.success('Modulo atualizado!');
       } else {
         await createModule(form).unwrap();
+        toast.success('Modulo criado com sucesso!');
       }
       navigate('/system-modules');
     } catch (err: any) {
-      setError(err?.data?.message || 'Erro ao salvar modulo');
+      const msg = err?.data?.message || 'Erro ao salvar modulo';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
             {isEditing ? 'Editar Modulo' : 'Novo Modulo'}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {isEditing
               ? 'Atualize as informacoes do modulo.'
               : 'Preencha os dados para criar um novo modulo.'}
@@ -97,7 +98,8 @@ export default function SystemModuleForm() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-scale-in">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           {error}
         </div>
       )}
@@ -108,29 +110,37 @@ export default function SystemModuleForm() {
         <Card className="max-w-2xl">
           <CardHeader>
             <CardTitle>Informacoes do Modulo</CardTitle>
+            <CardDescription>Defina a chave, nome e descricao do modulo.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <Separator />
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="key">Key</Label>
-                <Input
-                  id="key"
-                  required
-                  value={form.key}
-                  onChange={(e) => setForm({ ...form, key: e.target.value })}
-                  placeholder="delivery"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="key">Key *</Label>
+                  <Input
+                    id="key"
+                    required
+                    value={form.key}
+                    onChange={(e) => setForm({ ...form, key: e.target.value })}
+                    placeholder="delivery"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    Identificador unico, sem espacos.
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Delivery"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Delivery"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -144,14 +154,21 @@ export default function SystemModuleForm() {
                 />
               </div>
 
-              <Button type="submit" disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {saving ? 'Salvando...' : 'Salvar'}
-              </Button>
+              <Separator />
+
+              <div className="flex items-center gap-3">
+                <Button type="submit" disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate('/system-modules')}>
+                  Cancelar
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

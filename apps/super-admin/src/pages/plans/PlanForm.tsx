@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useGetPlanQuery,
   useCreatePlanMutation,
@@ -67,6 +68,15 @@ export default function PlanForm() {
     );
   };
 
+  const toggleAll = () => {
+    if (!modules) return;
+    if (selectedModules.length === modules.length) {
+      setSelectedModules([]);
+    } else {
+      setSelectedModules(modules.map((m: any) => m.id));
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -94,65 +104,60 @@ export default function PlanForm() {
         module_ids: selectedModules,
       }).unwrap();
 
+      toast.success(isEditing ? 'Plano atualizado!' : 'Plano criado com sucesso!');
       navigate('/plans');
     } catch (err: any) {
-      setError(
-        err?.data?.message || err?.message || 'Erro ao salvar plano',
-      );
+      const msg = err?.data?.message || err?.message || 'Erro ao salvar plano';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl animate-fade-in">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-        >
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
             {isEditing ? 'Editar Plano' : 'Novo Plano'}
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {isEditing
-              ? 'Atualize as informações do plano.'
-              : 'Preencha as informações para criar um novo plano.'}
+              ? 'Atualize as informacoes do plano.'
+              : 'Preencha as informacoes para criar um novo plano.'}
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-scale-in">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* General Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Informações Gerais</CardTitle>
-            <CardDescription>
-              Nome, preço e limites do plano.
-            </CardDescription>
+            <CardTitle>Informacoes Gerais</CardTitle>
+            <CardDescription>Nome, preco e limites do plano.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name">Nome *</Label>
               <Input
                 id="name"
                 required
-                placeholder="Ex: Básico, Profissional, Enterprise"
+                placeholder="Ex: Basico, Profissional, Enterprise"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Preço (R$)</Label>
+              <Label htmlFor="price">Preco (R$) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -167,19 +172,17 @@ export default function PlanForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="max_users">Max Usuários</Label>
+                <Label htmlFor="max_users">Max Usuarios</Label>
                 <Input
                   id="max_users"
                   type="number"
                   min="1"
                   placeholder="Ilimitado"
                   value={form.max_users}
-                  onChange={(e) =>
-                    setForm({ ...form, max_users: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, max_users: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Deixe vazio para ilimitado.
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Vazio = ilimitado
                 </p>
               </div>
               <div className="space-y-2">
@@ -190,12 +193,10 @@ export default function PlanForm() {
                   min="1"
                   placeholder="Ilimitado"
                   value={form.max_products}
-                  onChange={(e) =>
-                    setForm({ ...form, max_products: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, max_products: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Deixe vazio para ilimitado.
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Vazio = ilimitado
                 </p>
               </div>
             </div>
@@ -203,31 +204,36 @@ export default function PlanForm() {
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+              <div>
                 <Label htmlFor="is_active">Ativo</Label>
-                <p className="text-xs text-muted-foreground">
-                  Planos inativos não ficam disponíveis para novos
-                  estabelecimentos.
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Planos inativos nao ficam disponiveis para novos estabelecimentos.
                 </p>
               </div>
               <Switch
                 id="is_active"
                 checked={form.is_active}
-                onCheckedChange={(checked) =>
-                  setForm({ ...form, is_active: checked })
-                }
+                onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Modules */}
         <Card>
           <CardHeader>
-            <CardTitle>Módulos do Sistema</CardTitle>
-            <CardDescription>
-              Selecione quais módulos estarão disponíveis neste plano.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Modulos do Sistema</CardTitle>
+                <CardDescription>
+                  Selecione quais modulos estarao disponiveis neste plano.
+                </CardDescription>
+              </div>
+              {modules && modules.length > 0 && (
+                <Button type="button" variant="outline" size="sm" onClick={toggleAll}>
+                  {selectedModules.length === modules.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {modules && modules.length > 0 ? (
@@ -237,10 +243,10 @@ export default function PlanForm() {
                   return (
                     <label
                       key={mod.id}
-                      className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                      className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all duration-150 ${
                         isChecked
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                          : 'border-border hover:border-muted-foreground/25'
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
+                          : 'border-[hsl(var(--border))] hover:border-[hsl(var(--muted-foreground))]/25 hover:bg-[hsl(var(--muted))]/50'
                       }`}
                     >
                       <Checkbox
@@ -248,11 +254,11 @@ export default function PlanForm() {
                         onCheckedChange={() => toggleModule(mod.id)}
                         className="mt-0.5"
                       />
-                      <div className="space-y-0.5">
-                        <span className="text-sm font-medium leading-none">
+                      <div>
+                        <span className="text-sm font-medium leading-none text-[hsl(var(--foreground))]">
                           {mod.name}
                         </span>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
                           {mod.key}
                         </p>
                       </div>
@@ -261,14 +267,13 @@ export default function PlanForm() {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Nenhum módulo cadastrado.
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Nenhum modulo cadastrado.
               </p>
             )}
           </CardContent>
         </Card>
 
-        {/* Actions */}
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={isSaving}>
             {isSaving ? (
@@ -278,11 +283,7 @@ export default function PlanForm() {
             )}
             {isSaving ? 'Salvando...' : 'Salvar'}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/plans')}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate('/plans')}>
             Cancelar
           </Button>
         </div>

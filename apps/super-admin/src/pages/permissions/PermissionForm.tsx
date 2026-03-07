@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useGetPermissionQuery,
   useGetSystemModulesQuery,
@@ -86,17 +87,21 @@ export default function PermissionForm() {
 
       if (isEditing) {
         await updatePermission({ id: id!, data: payload }).unwrap();
+        toast.success('Permissao atualizada!');
       } else {
         await createPermission(payload).unwrap();
+        toast.success('Permissao criada!');
       }
       navigate('/permissions');
     } catch (err: any) {
-      setError(err?.data?.message || 'Erro ao salvar permissao');
+      const msg = err?.data?.message || 'Erro ao salvar permissao';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
@@ -179,14 +184,19 @@ export default function PermissionForm() {
                 </p>
               </div>
 
-              <Button type="submit" disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {saving ? 'Salvando...' : 'Salvar'}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button type="submit" disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate('/permissions')}>
+                  Cancelar
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

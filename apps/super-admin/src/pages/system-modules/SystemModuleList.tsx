@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Boxes } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGetSystemModulesQuery, useDeleteSystemModuleMutation } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,8 +50,9 @@ export default function SystemModuleList() {
     setDeleting(true);
     try {
       await deleteModule(deleteTarget.id).unwrap();
+      toast.success('Modulo removido!');
     } catch {
-      // error handled by RTK Query
+      toast.error('Erro ao remover modulo.');
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -58,7 +60,7 @@ export default function SystemModuleList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Modulos do Sistema</h1>
@@ -130,7 +132,8 @@ export default function SystemModuleList() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Boxes className="h-10 w-10 mb-3 opacity-40" />
-              <p className="text-sm">Nenhum modulo encontrado</p>
+              <p className="text-sm font-medium">Nenhum modulo encontrado</p>
+              <p className="text-xs mt-1 opacity-70">Crie o primeiro modulo do sistema.</p>
             </div>
           )}
         </CardContent>
