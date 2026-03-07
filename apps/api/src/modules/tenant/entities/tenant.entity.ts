@@ -19,6 +19,7 @@ import { Coupon } from '../../coupon/entities/coupon.entity';
 import { LoyaltyReward } from '../../loyalty/entities/loyalty-reward.entity';
 import { ExtraGroup } from '../../product/entities/extra-group.entity';
 import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
+import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
 
 @Entity('tenants')
 export class Tenant {
@@ -116,4 +117,7 @@ export class Tenant {
 
   @OneToMany(() => DeliveryPerson, (dp) => dp.tenant)
   delivery_persons: DeliveryPerson[];
+
+  @OneToMany(() => TenantUnit, (unit) => unit.tenant)
+  units: TenantUnit[];
 }
