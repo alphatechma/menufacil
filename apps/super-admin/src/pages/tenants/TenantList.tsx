@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Building2 } from 'lucide-react';
+import { Plus, Search, Eye, Building2, Phone, MapPin } from 'lucide-react';
 import { useGetTenantsQuery } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +98,7 @@ export default function TenantList() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="pl-6">Tenant</TableHead>
+                  <TableHead>Contato</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right pr-6">Acoes</TableHead>
@@ -105,23 +106,47 @@ export default function TenantList() {
               </TableHeader>
               <TableBody>
                 {tenants.map((tenant: any) => (
-                  <TableRow key={tenant.id} className="group">
+                  <TableRow key={tenant.id}>
                     <TableCell className="pl-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Building2 className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium text-[hsl(var(--foreground))]">{tenant.name}</p>
-                          <p className="text-xs text-[hsl(var(--muted-foreground))]">{tenant.slug}</p>
+                          <p className="font-medium text-foreground">{tenant.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{tenant.slug}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
+                      <div className="space-y-1 text-sm">
+                        {tenant.phone ? (
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            <span>{tenant.phone}</span>
+                          </div>
+                        ) : null}
+                        {tenant.address ? (
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate max-w-[200px]">{tenant.address}</span>
+                          </div>
+                        ) : null}
+                        {!tenant.phone && !tenant.address && (
+                          <span className="text-muted-foreground">&mdash;</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {tenant.plan ? (
-                        <Badge variant="secondary">{tenant.plan.name}</Badge>
+                        <div>
+                          <Badge variant="secondary">{tenant.plan.name}</Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            R$ {Number(tenant.plan.price).toFixed(2)}/mes
+                          </p>
+                        </div>
                       ) : (
-                        <span className="text-sm text-[hsl(var(--muted-foreground))]">&mdash;</span>
+                        <span className="text-sm text-muted-foreground">&mdash;</span>
                       )}
                     </TableCell>
                     <TableCell>
