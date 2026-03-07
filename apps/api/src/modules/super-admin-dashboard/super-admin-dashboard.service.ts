@@ -22,6 +22,7 @@ export class SuperAdminDashboardService {
         COUNT(*)::int as total_orders,
         COALESCE(SUM(total), 0)::numeric as total_revenue
       FROM orders
+      WHERE status != 'cancelled'
     `);
 
     const tenantsByPlan = await this.dataSource.query(`
