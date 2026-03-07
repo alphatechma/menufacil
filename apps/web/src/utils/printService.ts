@@ -87,16 +87,30 @@ function setupSecurity() {
   if (_securitySetup) return;
   _securitySetup = true;
 
-  // Callback pattern: new Promise(handler) — must call resolve()
-  // Certificado vazio = QZ Tray mostra popup para usuario aceitar manualmente
-  qz.security.setCertificatePromise(function (resolve: (value: string) => void) {
-    resolve('');
+  // Busca certificado público do backend
+  qz.security.setCertificatePromise(function (
+    resolve: (value: string) => void,
+    reject: (err: unknown) => void,
+  ) {
+    fetch('/api/qz-tray/certificate')
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
+      .then((data) => resolve(data.certificate || ''))
+      .catch(reject);
   });
+
   qz.security.setSignatureAlgorithm('SHA512');
-  // Nested callback pattern: factory(toSign) must return function(resolve, reject)
-  qz.security.setSignaturePromise(function (_toSign: string) {
-    return function (resolve: (value: string) => void) {
-      resolve('');
+
+  // Busca assinatura do backend (chave privada fica no servidor)
+  qz.security.setSignaturePromise(function (toSign: string) {
+    return function (resolve: (value: string) => void, reject: (err: unknown) => void) {
+      fetch('/api/qz-tray/sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: toSign }),
+      })
+        .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
+        .then((data) => resolve(data.signature || ''))
+        .catch(reject);
     };
   });
 }

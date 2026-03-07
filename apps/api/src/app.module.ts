@@ -26,6 +26,7 @@ import { TableModule } from './modules/table/table.module';
 import { TableSessionModule } from './modules/table-session/table-session.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { FloorPlanModule } from './modules/floor-plan/floor-plan.module';
+import { QzTrayModule } from './modules/qz-tray/qz-tray.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { FloorPlanModule } from './modules/floor-plan/floor-plan.module';
     TableSessionModule,
     ReservationModule,
     FloorPlanModule,
+    QzTrayModule,
   ],
 })
 export class AppModule implements NestModule {
