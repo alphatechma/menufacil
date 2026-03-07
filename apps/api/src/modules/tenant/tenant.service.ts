@@ -1,17 +1,22 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { TenantRepository } from './tenant.repository';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { Tenant } from './entities/tenant.entity';
+import { TenantUnit } from '../unit/entities/tenant-unit.entity';
 
 @Injectable()
 export class TenantService {
+  private readonly logger = new Logger(TenantService.name);
+
   constructor(
     private readonly tenantRepository: TenantRepository,
     @InjectRepository(Tenant)
     private readonly repo: Repository<Tenant>,
+    @InjectRepository(TenantUnit)
+    private readonly unitRepo: Repository<TenantUnit>,
   ) {}
 
   async create(dto: CreateTenantDto): Promise<Tenant> {
@@ -21,7 +26,26 @@ export class TenantService {
     }
 
     const tenant = this.tenantRepository.create(dto);
-    return this.tenantRepository.save(tenant);
+    const saved = await this.tenantRepository.save(tenant);
+
+    // Auto-create headquarters unit
+    try {
+      const unit = this.unitRepo.create({
+        tenant_id: saved.id,
+        name: 'Matriz',
+        slug: 'matriz',
+        address: (dto as any).address || null,
+        phone: (dto as any).phone || null,
+        is_active: true,
+        is_headquarters: true,
+      });
+      await this.unitRepo.save(unit);
+      this.logger.log(`Auto-created headquarters unit for tenant "${saved.slug}"`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to auto-create headquarters unit: ${err.message}`);
+    }
+
+    return saved;
   }
 
   async findAll(): Promise<Tenant[]> {

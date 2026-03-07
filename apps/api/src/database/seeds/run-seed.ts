@@ -689,6 +689,26 @@ async function seed() {
       }
     }
 
+    // ── Create headquarters unit ──
+    const unitRepo = dataSource.getRepository('TenantUnit');
+    const existingUnit = await unitRepo.findOne({ where: { tenant_id: tenantId, is_headquarters: true } });
+    if (!existingUnit) {
+      await unitRepo.save({
+        tenant_id: tenantId,
+        name: 'Matriz',
+        slug: 'matriz',
+        address: demo.tenant.address || null,
+        phone: demo.tenant.phone || null,
+        business_hours: demo.tenant.business_hours || null,
+        order_modes: demo.tenant.order_modes || null,
+        is_active: true,
+        is_headquarters: true,
+      });
+      console.log(`  ✅ Headquarters unit created`);
+    } else {
+      console.log(`  ⏭️  Headquarters unit already exists`);
+    }
+
     // ── Create demo tables for Enterprise tenant (Sushi Premium) ──
     if (demo.tenant.slug === 'sushi-premium') {
       const tableRepo = dataSource.getRepository('RestaurantTable');

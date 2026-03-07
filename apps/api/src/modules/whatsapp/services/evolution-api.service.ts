@@ -9,7 +9,7 @@ export class EvolutionApiService {
   private readonly webhookUrl: string;
 
   constructor(private configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('EVOLUTION_API_URL', 'http://localhost:8080');
+    this.baseUrl = this.configService.get<string>('EVOLUTION_API_URL', 'http://localhost:8080').replace(/\/+$/, '');
     this.apiKey = this.configService.get<string>('EVOLUTION_API_KEY', '');
     this.webhookUrl = this.configService.get<string>('EVOLUTION_WEBHOOK_URL', '');
   }
