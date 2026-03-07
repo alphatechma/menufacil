@@ -22,6 +22,10 @@ export class CreateUnitDto {
     { open: boolean; openTime: string; closeTime: string }
   >;
 
+  @IsBoolean()
+  @IsOptional()
+  is_active?: boolean;
+
   @IsObject()
   @IsOptional()
   order_modes?: { delivery: boolean; pickup: boolean; dine_in: boolean };

@@ -81,8 +81,7 @@ export default function UnitForm() {
       if (isEditing) {
         await updateUnit({ id: id!, data }).unwrap();
       } else {
-        const { is_active, ...createData } = data;
-        await createUnit(createData).unwrap();
+        await createUnit(data).unwrap();
       }
       navigate('/admin/units');
     } catch {
@@ -120,11 +119,9 @@ export default function UnitForm() {
             {(field) => <Input {...field} placeholder="(11) 99999-0000" />}
           </FormField>
 
-          {isEditing && (
-            <FormField control={control} name="is_active" label="Ativa">
-              {(field) => <Toggle checked={field.value} onChange={field.onChange} />}
-            </FormField>
-          )}
+          <FormField control={control} name="is_active" label="Ativa">
+            {(field) => <Toggle checked={field.value} onChange={field.onChange} />}
+          </FormField>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="ghost" onClick={() => navigate('/admin/units')}>
