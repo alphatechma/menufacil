@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { getDatabaseConfig } from './config/database.config';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { UnitMiddleware } from './common/middleware/unit.middleware';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -71,5 +72,6 @@ import { UnitModule } from './modules/unit/unit.module';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer.apply(UnitMiddleware).forRoutes('*');
   }
 }
