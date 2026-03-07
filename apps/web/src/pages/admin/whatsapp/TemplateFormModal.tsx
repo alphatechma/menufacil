@@ -83,11 +83,11 @@ export default function TemplateFormModal({ open, onClose, template }: Props) {
     <Modal open={open} onClose={onClose} title={isEditing ? 'Editar Template' : 'Novo Template'}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={control} name="name" label="Nome">
-          {({ field }) => <Input {...field} placeholder="Nome do template" />}
+          {(field) => <Input {...field} placeholder="Nome do template" />}
         </FormField>
 
         <FormField control={control} name="type" label="Tipo">
-          {({ field }) => (
+          {(field) => (
             <Select {...field}>
               {TEMPLATE_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -97,7 +97,7 @@ export default function TemplateFormModal({ open, onClose, template }: Props) {
         </FormField>
 
         <FormField control={control} name="content" label="Conteudo">
-          {({ field }) => <Textarea {...field} rows={4} placeholder="Digite a mensagem..." />}
+          {(field) => <Textarea {...field} rows={4} placeholder="Digite a mensagem..." />}
         </FormField>
 
         <div className="text-xs text-muted-foreground">
@@ -114,7 +114,7 @@ export default function TemplateFormModal({ open, onClose, template }: Props) {
         )}
 
         <FormField control={control} name="is_active" label="Ativo">
-          {({ field }) => <Toggle checked={field.value} onChange={field.onChange} />}
+          {(field) => <Toggle checked={field.value} onChange={field.onChange} />}
         </FormField>
 
         <div className="flex justify-end gap-3 pt-2">

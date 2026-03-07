@@ -75,7 +75,7 @@ const MODULE_LABELS: Record<string, string> = {
 
 function WhatsappSettingsTab() {
   const navigate = useNavigate();
-  const { data: status, isLoading: statusLoading, refetch } = useGetWhatsappStatusQuery();
+  const { data: status, refetch } = useGetWhatsappStatusQuery();
   const [connect, { isLoading: connecting, data: connectData }] = useConnectWhatsappMutation();
   const [disconnect, { isLoading: disconnecting }] = useDisconnectWhatsappMutation();
 
@@ -89,8 +89,12 @@ function WhatsappSettingsTab() {
   }, [isConnecting, refetch]);
 
   return (
-    <FormCard title="WhatsApp" description="Conecte seu numero de WhatsApp para enviar mensagens automaticas aos clientes.">
+    <FormCard>
       <div className="space-y-6">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">WhatsApp</h3>
+          <p className="text-sm text-muted-foreground">Conecte seu numero de WhatsApp para enviar mensagens automaticas aos clientes.</p>
+        </div>
         <div className="flex items-center gap-3">
           <div className={cn('w-3 h-3 rounded-full', isConnected ? 'bg-success' : isConnecting ? 'bg-warning animate-pulse' : 'bg-gray-300')} />
           <span className="text-sm font-medium text-foreground">

@@ -13,7 +13,8 @@ import {
 } from '@/api/adminApi';
 import { useAppSelector } from '@/store/hooks';
 import { io } from 'socket.io-client';
-import { WEBSOCKET_EVENTS } from '@menufacil/shared';
+
+const WHATSAPP_MESSAGE_NEW = 'whatsapp:message-new';
 
 export default function ConversationsTab() {
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
@@ -89,7 +90,7 @@ function ChatArea({ phone, onBack }: { phone: string; onBack: () => void }) {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const socket = io(apiUrl, { transports: ['websocket'] });
     socket.emit('join:tenant-whatsapp', { tenantId });
-    socket.on(WEBSOCKET_EVENTS.WHATSAPP_MESSAGE_NEW, (msg: any) => {
+    socket.on(WHATSAPP_MESSAGE_NEW, (msg: any) => {
       if (msg.customer_phone === phone) refetch();
     });
     return () => { socket.disconnect(); };

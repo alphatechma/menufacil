@@ -61,7 +61,7 @@ export class WhatsappMessageService {
     try {
       await this.evolutionApi.sendTextMessage(instance.instance_name, customerPhone, text);
       await this.saveMessage(order.tenant_id, customerPhone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.SENT, template.id, order.id);
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`Failed to send WhatsApp notification: ${err.message}`);
       await this.saveMessage(order.tenant_id, customerPhone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.FAILED, template.id, order.id);
     }
@@ -111,7 +111,7 @@ export class WhatsappMessageService {
           await this.evolutionApi.sendTextMessage(instance.instance_name, phone, text);
           const autoReply = await this.saveMessage(tenantId, phone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.SENT, welcomeTemplate.id);
           this.emitNewMessage(tenantId, autoReply);
-        } catch (err) {
+        } catch (err: any) {
           this.logger.error(`Failed to send welcome message: ${err.message}`);
         }
       }

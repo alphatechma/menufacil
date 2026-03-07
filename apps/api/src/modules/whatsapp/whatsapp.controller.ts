@@ -170,7 +170,7 @@ export class WhatsappController {
           );
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`Webhook processing error: ${err.message}`);
     }
 

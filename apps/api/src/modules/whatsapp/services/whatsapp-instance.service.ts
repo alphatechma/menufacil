@@ -48,12 +48,12 @@ export class WhatsappInstanceService {
     try {
       await this.evolutionApi.logoutInstance(instance.instance_name);
       await this.evolutionApi.deleteInstance(instance.instance_name);
-    } catch (err) {
+    } catch (err: any) {
       this.logger.warn(`Error disconnecting Evolution API instance: ${err.message}`);
     }
 
     instance.status = WhatsappInstanceStatus.DISCONNECTED;
-    instance.phone_number = null;
+    (instance as any).phone_number = null;
     await this.instanceRepo.save(instance);
     this.emitStatusUpdate(tenantId, instance);
   }
