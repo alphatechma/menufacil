@@ -15,7 +15,8 @@ const UNIT_SCOPED_TAGS = [
 
 export function UnitSelector() {
   const { hasModule } = usePermission();
-  const { data: units } = useGetUnitsQuery(undefined, { skip: !hasModule('multi_unit') });
+  // Always fetch units to auto-select headquarters, regardless of multi_unit module
+  const { data: units } = useGetUnitsQuery();
   const dispatch = useAppDispatch();
   const selectedUnitId = useAppSelector(selectSelectedUnitId);
   const [open, setOpen] = useState(false);
@@ -29,6 +30,15 @@ export function UnitSelector() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Auto-select headquarters unit when no unit is selected
+  useEffect(() => {
+    if (units && units.length > 0 && !selectedUnitId) {
+      const hq = units.find((u: any) => u.is_headquarters);
+      const defaultUnit = hq || units[0];
+      dispatch(setSelectedUnit(defaultUnit.id));
+    }
+  }, [units, selectedUnitId, dispatch]);
+
   const handleSelectUnit = (unitId: string | null) => {
     dispatch(setSelectedUnit(unitId));
     dispatch(baseApi.util.invalidateTags([...UNIT_SCOPED_TAGS]));
@@ -36,6 +46,9 @@ export function UnitSelector() {
   };
 
   if (!units || units.length === 0) return null;
+
+  // Hide selector when there's only one unit or multi_unit module is not enabled
+  if (units.length <= 1 || !hasModule('multi_unit')) return null;
 
   const selected = units.find((u: any) => u.id === selectedUnitId);
 
