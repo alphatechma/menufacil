@@ -39,6 +39,11 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
     if (selectedUnitId) {
       headers['X-Unit-Id'] = selectedUnitId;
     }
+    // Use Bearer token when impersonating (no cookies available)
+    const impersonateToken = localStorage.getItem('menufacil-impersonate-token');
+    if (impersonateToken) {
+      headers['Authorization'] = `Bearer ${impersonateToken}`;
+    }
   } else if (authContext === 'customer') {
     const slug = meta?.tenantSlug;
     if (slug) {

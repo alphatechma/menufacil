@@ -273,4 +273,5 @@ export interface IJwtPayload {
   tenant_id: string;
   role: UserRole;
   type: 'user' | 'customer';
+  impersonated_by?: string;
 }

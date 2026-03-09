@@ -45,6 +45,9 @@ export class User {
   @Column({ default: true })
   is_active: boolean;
 
+  @Column({ type: 'timestamp', nullable: true })
+  token_revoked_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

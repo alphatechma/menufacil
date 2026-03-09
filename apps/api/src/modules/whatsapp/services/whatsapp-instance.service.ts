@@ -32,6 +32,12 @@ export class WhatsappInstanceService {
     } else if (instance.status === WhatsappInstanceStatus.CONNECTED) {
       throw new BadRequestException('WhatsApp already connected');
     } else {
+      // Re-set webhook on reconnection to ensure it points to our endpoint
+      try {
+        await this.evolutionApi.setWebhook(instanceName);
+      } catch (err: any) {
+        this.logger.warn(`Failed to re-set webhook on reconnect: ${err.message}`);
+      }
       instance.status = WhatsappInstanceStatus.CONNECTING;
       await this.instanceRepo.save(instance);
     }
@@ -99,6 +105,10 @@ export class WhatsappInstanceService {
 
   async getInstanceByName(instanceName: string): Promise<WhatsappInstance | null> {
     return this.instanceRepo.findOne({ where: { instance_name: instanceName } });
+  }
+
+  async getStatusByTenantId(tenantId: string): Promise<{ status: WhatsappInstanceStatus; phone_number: string | null }> {
+    return this.getStatus(tenantId);
   }
 
   private emitStatusUpdate(tenantId: string, instance: WhatsappInstance) {

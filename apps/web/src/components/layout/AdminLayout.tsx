@@ -518,6 +518,12 @@ export default function AdminLayout() {
           </div>
         </header>
 
+        {localStorage.getItem('menufacil-impersonating') === 'true' && (
+          <div className="bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium flex items-center justify-center gap-2">
+            <Crown className="w-4 h-4" />
+            Voce esta impersonando este tenant (acesso temporario do super-admin)
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </main>

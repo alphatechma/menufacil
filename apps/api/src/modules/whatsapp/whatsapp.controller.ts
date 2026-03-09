@@ -132,18 +132,22 @@ export class WhatsappController {
 
   @Post('webhook')
   async handleWebhook(@Body() body: any) {
-    this.logger.debug(
-      `Webhook received: ${JSON.stringify(body).substring(0, 500)}`,
+    this.logger.log(
+      `Webhook received: event=${body.event} instance=${body.instance} data=${JSON.stringify(body.data).substring(0, 500)}`,
     );
 
     const event = body.event;
     const instanceName = body.instance;
-    if (!instanceName) return { received: true };
+    if (!instanceName) {
+      this.logger.warn('Webhook received without instance name');
+      return { received: true };
+    }
 
     try {
       if (event === 'connection.update') {
         const state = body.data?.state;
         const phoneNumber = body.data?.wid;
+        this.logger.log(`Connection update: instance=${instanceName} state=${state} phone=${phoneNumber}`);
         await this.instanceService.handleConnectionUpdate(
           instanceName,
           state,
@@ -153,25 +157,40 @@ export class WhatsappController {
 
       if (event === 'messages.upsert') {
         const message = body.data;
-        if (message?.key?.fromMe) return { received: true };
-        const phone = message?.key?.remoteJid?.replace(
-          '@s.whatsapp.net',
-          '',
-        );
+        if (message?.key?.fromMe) {
+          this.logger.debug('Ignoring own message');
+          return { received: true };
+        }
+
+        const remoteJid = message?.key?.remoteJid || '';
+        const phone = remoteJid
+          .replace('@s.whatsapp.net', '')
+          .replace('@lid', '');
         const content =
           message?.message?.conversation ||
           message?.message?.extendedTextMessage?.text ||
+          message?.message?.buttonsResponseMessage?.selectedDisplayText ||
+          message?.message?.listResponseMessage?.title ||
           '';
+
+        this.logger.log(
+          `Incoming message: phone=${phone} content="${content.substring(0, 100)}" remoteJid=${remoteJid} messageType=${message?.messageType}`,
+        );
+
         if (phone && content) {
           await this.messageService.handleIncomingMessage(
             instanceName,
             phone,
             content,
           );
+        } else {
+          this.logger.warn(
+            `Message skipped: phone=${phone} contentEmpty=${!content} messageType=${message?.messageType}`,
+          );
         }
       }
     } catch (err: any) {
-      this.logger.error(`Webhook processing error: ${err.message}`);
+      this.logger.error(`Webhook processing error: ${err.message}`, err.stack);
     }
 
     return { received: true };

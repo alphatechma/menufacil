@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Building2, Phone, MapPin } from 'lucide-react';
-import { useGetTenantsQuery } from '@/api/superAdminApi';
+import { Plus, Search, Eye, Building2, Phone, MapPin, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
+import { useGetTenantsQuery, useRestoreTenantMutation } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -27,12 +28,26 @@ export default function TenantList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const isDeleted = statusFilter === 'deleted';
+
   const { data, isLoading } = useGetTenantsQuery({
     search: search || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
+    is_active: !isDeleted && statusFilter !== 'all' ? statusFilter : undefined,
+    deleted: isDeleted ? 'true' : undefined,
   });
 
+  const [restoreTenant] = useRestoreTenantMutation();
+
   const tenants = Array.isArray(data) ? data : (data as any)?.data ?? [];
+
+  const handleRestore = async (id: string, name: string) => {
+    try {
+      await restoreTenant(id).unwrap();
+      toast.success(`"${name}" restaurado com sucesso!`);
+    } catch {
+      toast.error('Erro ao restaurar tenant.');
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -71,6 +86,7 @@ export default function TenantList() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="true">Ativos</SelectItem>
             <SelectItem value="false">Inativos</SelectItem>
+            <SelectItem value="deleted">Excluidos</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -150,22 +166,37 @@ export default function TenantList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={tenant.is_active ? 'default' : 'destructive'}
-                        className={tenant.is_active
-                          ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-500/15'
-                          : ''}
-                      >
-                        {tenant.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      {isDeleted ? (
+                        <Badge variant="destructive">Excluido</Badge>
+                      ) : (
+                        <Badge
+                          variant={tenant.is_active ? 'default' : 'destructive'}
+                          className={tenant.is_active
+                            ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-500/15'
+                            : ''}
+                        >
+                          {tenant.is_active ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/tenants/${tenant.id}`}>
-                          <Eye className="h-4 w-4" />
-                          Ver
-                        </Link>
-                      </Button>
+                      {isDeleted ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRestore(tenant.id, tenant.name)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Restaurar
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/tenants/${tenant.id}`}>
+                            <Eye className="h-4 w-4" />
+                            Ver
+                          </Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

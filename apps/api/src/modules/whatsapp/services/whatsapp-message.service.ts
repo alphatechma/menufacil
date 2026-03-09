@@ -80,8 +80,13 @@ export class WhatsappMessageService {
   }
 
   async handleIncomingMessage(instanceName: string, phone: string, content: string): Promise<void> {
+    this.logger.log(`handleIncomingMessage: instance=${instanceName} phone=${phone} content="${content.substring(0, 50)}"`);
+
     const instance = await this.instanceService.getInstanceByName(instanceName);
-    if (!instance) return;
+    if (!instance) {
+      this.logger.warn(`Instance not found: ${instanceName}`);
+      return;
+    }
 
     const tenantId = instance.tenant_id;
     const saved = await this.saveMessage(tenantId, phone, WhatsappMessageDirection.INBOUND, content, WhatsappMessageStatus.DELIVERED);
@@ -97,24 +102,36 @@ export class WhatsappMessageService {
       .andWhere('m.created_at > :since', { since: oneDayAgo })
       .getCount();
 
-    if (recentOutbound === 0) {
-      const welcomeTemplate = await this.templateService.findByType(tenantId, WhatsappTemplateType.WELCOME);
-      if (welcomeTemplate) {
-        const tenantSlug = instance.instance_name.replace('menufacil-', '');
-        const variables: Record<string, string> = {
-          customer_name: 'Cliente',
-          storefront_url: `https://menufacil.maistechtecnologia.com.br/${tenantSlug}`,
-        };
-        const text = this.templateService.renderTemplate(welcomeTemplate.content, variables);
+    this.logger.log(`Recent outbound messages for ${phone}: ${recentOutbound}`);
 
-        try {
-          await this.evolutionApi.sendTextMessage(instance.instance_name, phone, text);
-          const autoReply = await this.saveMessage(tenantId, phone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.SENT, welcomeTemplate.id);
-          this.emitNewMessage(tenantId, autoReply);
-        } catch (err: any) {
-          this.logger.error(`Failed to send welcome message: ${err.message}`);
-        }
+    if (recentOutbound === 0) {
+      // Ensure default templates exist before looking up welcome template
+      await this.templateService.seedDefaults(tenantId);
+      const welcomeTemplate = await this.templateService.findByType(tenantId, WhatsappTemplateType.WELCOME);
+
+      if (!welcomeTemplate) {
+        this.logger.warn(`Welcome template not found or inactive for tenant ${tenantId}`);
+        return;
       }
+
+      const tenantSlug = instance.instance_name.replace('menufacil-', '');
+      const variables: Record<string, string> = {
+        customer_name: 'Cliente',
+        storefront_url: `https://menufacil.maistechtecnologia.com.br/${tenantSlug}`,
+      };
+      const text = this.templateService.renderTemplate(welcomeTemplate.content, variables);
+      this.logger.log(`Sending welcome message to ${phone}: "${text.substring(0, 80)}"`);
+
+      try {
+        await this.evolutionApi.sendTextMessage(instance.instance_name, phone, text);
+        const autoReply = await this.saveMessage(tenantId, phone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.SENT, welcomeTemplate.id);
+        this.emitNewMessage(tenantId, autoReply);
+        this.logger.log(`Welcome message sent successfully to ${phone}`);
+      } catch (err: any) {
+        this.logger.error(`Failed to send welcome message to ${phone}: ${err.message}`, err.stack);
+      }
+    } else {
+      this.logger.debug(`Skipping welcome for ${phone}: ${recentOutbound} recent outbound messages`);
     }
   }
 

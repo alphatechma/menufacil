@@ -17,7 +17,7 @@ export const superAdminApi = baseApi.injectEndpoints({
     }),
 
     // Tenants
-    getTenants: builder.query<any[], { search?: string; status?: string } | void>({
+    getTenants: builder.query<any, { search?: string; is_active?: string; deleted?: string } | void>({
       query: (params) => ({ url: '/super-admin/tenants', params: params || undefined }),
       providesTags: ['Tenants'],
     }),
@@ -44,6 +44,52 @@ export const superAdminApi = baseApi.injectEndpoints({
         data: { plan_id },
       }),
       invalidatesTags: ['Tenants'],
+    }),
+    resetTenantPassword: builder.mutation<any, { id: string; new_password: string }>({
+      query: ({ id, new_password }) => ({
+        url: `/super-admin/tenants/${id}/reset-password`,
+        method: 'PATCH',
+        data: { new_password },
+      }),
+    }),
+    revokeAllSessions: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/revoke-all-sessions`, method: 'POST' }),
+      invalidatesTags: ['Tenants'],
+    }),
+    revokeUserSession: builder.mutation<any, { tenantId: string; userId: string }>({
+      query: ({ tenantId, userId }) => ({
+        url: `/super-admin/tenants/${tenantId}/users/${userId}/revoke-session`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Tenants'],
+    }),
+    getTenantUsers: builder.query<any[], string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/users` }),
+      providesTags: (_r, _e, id) => [{ type: 'Tenants', id: `${id}-users` }],
+    }),
+    impersonateTenant: builder.mutation<{ access_token: string; tenant_slug: string; user: any; modules: string[]; permissions: string[]; plan: any }, { id: string; super_admin_id: string }>({
+      query: ({ id, super_admin_id }) => ({
+        url: `/super-admin/tenants/${id}/impersonate`,
+        method: 'POST',
+        data: { super_admin_id },
+      }),
+    }),
+    deleteTenant: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Tenants'],
+    }),
+    restoreTenant: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/restore`, method: 'PATCH' }),
+      invalidatesTags: ['Tenants'],
+    }),
+    getTenantWhatsappStatus: builder.query<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/whatsapp/status` }),
+    }),
+    reconnectTenantWhatsapp: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/whatsapp/reconnect`, method: 'POST' }),
+    }),
+    disconnectTenantWhatsapp: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/whatsapp/disconnect`, method: 'POST' }),
     }),
 
     // Plans
@@ -135,6 +181,16 @@ export const {
   useUpdateTenantMutation,
   useToggleTenantActiveMutation,
   useChangeTenantPlanMutation,
+  useResetTenantPasswordMutation,
+  useRevokeAllSessionsMutation,
+  useRevokeUserSessionMutation,
+  useGetTenantUsersQuery,
+  useImpersonateTenantMutation,
+  useDeleteTenantMutation,
+  useRestoreTenantMutation,
+  useGetTenantWhatsappStatusQuery,
+  useReconnectTenantWhatsappMutation,
+  useDisconnectTenantWhatsappMutation,
   useGetPlansQuery,
   useGetPlanQuery,
   useCreatePlanMutation,

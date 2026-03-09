@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, AlertCircle, User, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useGetTenantQuery,
@@ -32,8 +32,12 @@ export default function TenantForm() {
     phone: '',
     address: '',
     plan_id: '',
+    admin_name: '',
+    admin_email: '',
+    admin_password: '',
   });
   const [error, setError] = useState('');
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const { data: tenant } = useGetTenantQuery(id!, { skip: !isEditing });
   const { data: plans } = useGetPlansQuery();
@@ -50,13 +54,17 @@ export default function TenantForm() {
         phone: tenant.phone || '',
         address: tenant.address || '',
         plan_id: tenant.plan_id || '',
+        admin_name: '',
+        admin_email: '',
+        admin_password: '',
       });
+      setSlugManuallyEdited(true);
     }
   }, [tenant]);
 
   const handleNameChange = (name: string) => {
-    const updates: any = { name };
-    if (!isEditing && !form.slug) {
+    const updates: Record<string, string> = { name };
+    if (!isEditing && !slugManuallyEdited) {
       updates.slug = name
         .toLowerCase()
         .normalize('NFD')
@@ -71,9 +79,25 @@ export default function TenantForm() {
     e.preventDefault();
     setError('');
 
+    if (!isEditing) {
+      if (!form.admin_name || !form.admin_email || !form.admin_password) {
+        setError('Preencha todos os dados do administrador.');
+        return;
+      }
+      if (form.admin_password.length < 6) {
+        setError('A senha deve ter no minimo 6 caracteres.');
+        return;
+      }
+      if (!form.plan_id) {
+        setError('Selecione um plano.');
+        return;
+      }
+    }
+
     try {
       if (isEditing) {
-        await updateTenant({ id: id!, data: form }).unwrap();
+        const { admin_name, admin_email, admin_password, ...tenantData } = form;
+        await updateTenant({ id: id!, data: tenantData }).unwrap();
         toast.success('Tenant atualizado com sucesso!');
       } else {
         await createTenant(form).unwrap();
@@ -101,7 +125,7 @@ export default function TenantForm() {
             {isEditing ? 'Editar Tenant' : 'Novo Tenant'}
           </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {isEditing ? 'Atualize as informacoes do tenant.' : 'Preencha os dados para criar um novo tenant.'}
+            {isEditing ? 'Atualize as informacoes do tenant.' : 'Configure o tenant e o administrador.'}
           </p>
         </div>
       </div>
@@ -114,15 +138,18 @@ export default function TenantForm() {
         </div>
       )}
 
-      {/* Form */}
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Informacoes do Tenant</CardTitle>
-          <CardDescription>Dados basicos do estabelecimento.</CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+        {/* Tenant Data */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <CardTitle>Dados do Tenant</CardTitle>
+            </div>
+            <CardDescription>Informacoes basicas do estabelecimento.</CardDescription>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome *</Label>
@@ -141,7 +168,10 @@ export default function TenantForm() {
                   id="slug"
                   required
                   value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  onChange={(e) => {
+                    setSlugManuallyEdited(true);
+                    setForm({ ...form, slug: e.target.value });
+                  }}
                   placeholder="meu-restaurante"
                   className="font-mono text-sm"
                 />
@@ -160,7 +190,7 @@ export default function TenantForm() {
               </div>
 
               <div className="space-y-2">
-                <Label>Plano</Label>
+                <Label>Plano {!isEditing && '*'}</Label>
                 <Select
                   value={form.plan_id || 'none'}
                   onValueChange={(value) =>
@@ -191,25 +221,77 @@ export default function TenantForm() {
                 placeholder="Rua Exemplo, 123 - Cidade/UF"
               />
             </div>
+          </CardContent>
+        </Card>
 
+        {/* Admin User (only for creation) */}
+        {!isEditing && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                <CardTitle>Administrador</CardTitle>
+              </div>
+              <CardDescription>Dados do usuario administrador do tenant.</CardDescription>
+            </CardHeader>
             <Separator />
+            <CardContent className="pt-6 space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="admin_name">Nome do Admin *</Label>
+                <Input
+                  id="admin_name"
+                  required
+                  value={form.admin_name}
+                  onChange={(e) => setForm({ ...form, admin_name: e.target.value })}
+                  placeholder="Nome completo"
+                />
+              </div>
 
-            <div className="flex items-center gap-3">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {isSaving ? 'Salvando...' : 'Salvar'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/tenants')}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin_email">Email *</Label>
+                  <Input
+                    id="admin_email"
+                    type="email"
+                    required
+                    value={form.admin_email}
+                    onChange={(e) => setForm({ ...form, admin_email: e.target.value })}
+                    placeholder="admin@restaurante.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin_password">Senha *</Label>
+                  <Input
+                    id="admin_password"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={form.admin_password}
+                    onChange={(e) => setForm({ ...form, admin_password: e.target.value })}
+                    placeholder="Minimo 6 caracteres"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {isSaving ? 'Salvando...' : isEditing ? 'Salvar' : 'Criar Tenant'}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate('/tenants')}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

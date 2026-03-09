@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsObject, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsObject, IsEmail, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTenantDto {
@@ -71,4 +71,22 @@ export class CreateTenantDto {
     pickup?: boolean;
     dine_in?: boolean;
   };
+
+  // Admin user fields (for super-admin tenant creation)
+  @ApiPropertyOptional({ example: 'João Silva' })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  admin_name?: string;
+
+  @ApiPropertyOptional({ example: 'joao@pizzaexpress.com' })
+  @IsOptional()
+  @IsEmail()
+  admin_email?: string;
+
+  @ApiPropertyOptional({ example: '123456' })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  admin_password?: string;
 }
