@@ -3,6 +3,7 @@ import { z } from 'zod';
 const variationSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Nome obrigatorio'),
+  description: z.string().optional().default(''),
   price: z.coerce.number().min(0, 'Preco invalido'),
 });
 

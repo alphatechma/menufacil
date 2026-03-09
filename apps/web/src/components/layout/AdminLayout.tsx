@@ -79,6 +79,7 @@ const sidebarGroups: SidebarGroup[] = [
     items: [
       { to: '/admin/categories', icon: FolderTree, label: 'Categorias', module: 'categories', permission: 'category:read' },
       { to: '/admin/products', icon: Package, label: 'Produtos', module: 'products', permission: 'product:read' },
+      { to: '/admin/extras', icon: LayoutGrid, label: 'Extras', module: 'products', permission: 'product:read' },
     ],
   },
   {

@@ -218,9 +218,9 @@ export default function StoreFront() {
                     </div>
                   )}
                   <div className={`aspect-square bg-gray-100 overflow-hidden relative ${isClosed ? 'grayscale opacity-60' : ''}`}>
-                    {product.image_url ? (
+                    {(product.image_url || product.category?.image_url) ? (
                       <img
-                        src={product.image_url}
+                        src={product.image_url || product.category?.image_url}
                         alt={product.name}
                         className={`w-full h-full object-cover ${isClosed ? '' : 'group-hover:scale-105'} transition-transform duration-300`}
                       />

@@ -117,6 +117,17 @@ export class ExtraGroupController {
     return this.productService.createExtraGroup(dto, tenantId);
   }
 
+  @Put(':id')
+  @RequirePermissions('product:update')
+  @ApiOperation({ summary: 'Update an extra group' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateExtraGroupDto,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.productService.updateExtraGroup(id, dto, tenantId);
+  }
+
   @Delete(':id')
   @RequirePermissions('product:delete')
   @ApiOperation({ summary: 'Delete an extra group' })

@@ -36,6 +36,7 @@ export const baseApi = createApi({
     'WhatsappConversations',
     'WhatsappMessages',
     'Units',
+    'ExtraGroups',
   ],
   endpoints: () => ({}),
 });

@@ -77,7 +77,7 @@ export default function ProductForm() {
         sort_order: product.sort_order ?? 0,
         min_variations: product.min_variations ?? 0,
         max_variations: product.max_variations ?? 0,
-        variations: product.variations?.map((v: any) => ({ name: v.name, price: Number(v.price) })) ?? [],
+        variations: product.variations?.map((v: any) => ({ name: v.name, description: v.description ?? '', price: Number(v.price) })) ?? [],
         extra_group_ids: product.extra_groups?.map((g: any) => g.id) ?? [],
       });
     }
@@ -227,7 +227,7 @@ export default function ProductForm() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ name: '', price: 0 })}
+              onClick={() => append({ name: '', description: '', price: 0 })}
             >
               <Plus className="w-4 h-4" />
               Adicionar Variacao
@@ -270,32 +270,43 @@ export default function ProductForm() {
           ) : (
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-start gap-4 p-4 bg-muted/50 rounded-xl">
-                  <div className="flex-1">
+                <div key={field.id} className="p-4 bg-muted/50 rounded-xl space-y-3">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-foreground mb-1.5">
+                        Nome
+                      </label>
+                      <Input
+                        {...register(`variations.${index}.name`)}
+                        placeholder="Ex: Pequena, Media, Grande..."
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-foreground mb-1.5">
+                        Preco
+                      </label>
+                      <PriceInput
+                        {...register(`variations.${index}.price`, { valueAsNumber: true })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="mt-7 p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">
-                      Nome
+                      Descricao <span className="text-muted-foreground font-normal">(opcional)</span>
                     </label>
                     <Input
-                      {...register(`variations.${index}.name`)}
-                      placeholder="Ex: Pequena, Media, Grande..."
+                      {...register(`variations.${index}.description`)}
+                      placeholder="Ex: 500ml, serve 2 pessoas..."
                     />
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
-                      Preco
-                    </label>
-                    <PriceInput
-                      {...register(`variations.${index}.price`, { valueAsNumber: true })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => remove(index)}
-                    className="mt-7 p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
             </div>

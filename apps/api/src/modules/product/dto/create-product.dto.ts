@@ -22,6 +22,11 @@ export class CreateVariationDto {
   @IsString()
   name: string;
 
+  @ApiPropertyOptional({ example: '500ml' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiProperty({ example: 49.9 })
   @IsNumber()
   @Min(0)

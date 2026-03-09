@@ -14,6 +14,7 @@ const CategoryList = lazy(() => import('@/pages/admin/categories/CategoryList'))
 const CategoryForm = lazy(() => import('@/pages/admin/categories/CategoryForm'));
 const ProductList = lazy(() => import('@/pages/admin/products/ProductList'));
 const ProductForm = lazy(() => import('@/pages/admin/products/ProductForm'));
+const ExtraGroupList = lazy(() => import('@/pages/admin/products/ExtraGroupList'));
 const OrderList = lazy(() => import('@/pages/admin/orders/OrderList'));
 const OrderDetail = lazy(() => import('@/pages/admin/orders/OrderDetail'));
 const KDS = lazy(() => import('@/pages/admin/KDS'));
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="products" element={<ProductList />} />
           <Route path="products/new" element={<ProductForm />} />
           <Route path="products/:id/edit" element={<ProductForm />} />
+          <Route path="extras" element={<ExtraGroupList />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="kds" element={<KDS />} />

@@ -94,7 +94,16 @@ export class ProductRepository {
   }
 
   async removeExtraGroup(id: string, tenantId: string): Promise<void> {
+    await this.extraRepo.delete({ group_id: id });
     await this.extraGroupRepo.delete({ id, tenant_id: tenantId });
+  }
+
+  createExtra(data: Partial<Extra>): Extra {
+    return this.extraRepo.create(data);
+  }
+
+  async removeExtrasByGroupId(groupId: string): Promise<void> {
+    await this.extraRepo.delete({ group_id: groupId });
   }
 
   // Variation methods

@@ -80,6 +80,19 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     getExtraGroups: builder.query<any[], void>({
       query: () => ({ url: '/extra-groups', meta: { authContext: 'admin' as const } }),
+      providesTags: ['ExtraGroups'],
+    }),
+    createExtraGroup: builder.mutation<any, any>({
+      query: (body) => ({ url: '/extra-groups', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['ExtraGroups'],
+    }),
+    updateExtraGroup: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/extra-groups/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['ExtraGroups'],
+    }),
+    deleteExtraGroup: builder.mutation<void, string>({
+      query: (id) => ({ url: `/extra-groups/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['ExtraGroups'],
     }),
 
     // Orders
@@ -459,6 +472,9 @@ export const {
   useDeleteProductMutation,
   useReorderProductsMutation,
   useGetExtraGroupsQuery,
+  useCreateExtraGroupMutation,
+  useUpdateExtraGroupMutation,
+  useDeleteExtraGroupMutation,
   useGetOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,

@@ -18,6 +18,9 @@ export class ProductVariation {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  description: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 

@@ -169,7 +169,7 @@ export default function ProductDetail() {
       addItem({
         product_id: product.id,
         product_name: product.name,
-        product_image: product.image_url,
+        product_image: product.image_url || product.category?.image_url,
         variation_id: variationId,
         variation_ids: variationIds,
         variation_name: variationName,
@@ -221,9 +221,9 @@ export default function ProductDetail() {
 
       {/* Product image */}
       <div className={`w-full aspect-[4/3] bg-gray-100 overflow-hidden relative ${isClosed ? 'grayscale' : ''}`}>
-        {product.image_url ? (
+        {(product.image_url || product.category?.image_url) ? (
           <img
-            src={product.image_url}
+            src={product.image_url || product.category?.image_url}
             alt={product.name}
             className="w-full h-full object-cover"
           />

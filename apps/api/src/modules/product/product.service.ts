@@ -20,7 +20,7 @@ export class ProductService {
 
     if (variations?.length) {
       product.variations = variations.map((v) =>
-        this.productRepository.createVariation({ name: v.name, price: v.price }),
+        this.productRepository.createVariation({ name: v.name, description: v.description, price: v.price }),
       );
     }
 
@@ -65,7 +65,7 @@ export class ProductService {
       if (variations.length > 0) {
         const product = await this.findById(id, tenantId);
         product.variations = variations.map((v) =>
-          this.productRepository.createVariation({ name: v.name, price: v.price, product_id: id }),
+          this.productRepository.createVariation({ name: v.name, description: v.description, price: v.price, product_id: id }),
         );
         await this.productRepository.save(product);
       }
@@ -101,6 +101,27 @@ export class ProductService {
     });
 
     return this.productRepository.saveExtraGroup(group);
+  }
+
+  async updateExtraGroup(id: string, dto: CreateExtraGroupDto, tenantId: string): Promise<ExtraGroup> {
+    const existing = await this.productRepository.findExtraGroupById(id, tenantId);
+    if (!existing) {
+      throw new NotFoundException('Extra group not found');
+    }
+
+    // Update group fields
+    existing.name = dto.name;
+    existing.min_select = dto.min_select ?? 0;
+    existing.max_select = dto.max_select ?? 1;
+    existing.is_required = dto.is_required ?? false;
+
+    // Replace extras: remove old ones and set new ones
+    await this.productRepository.removeExtrasByGroupId(id);
+    existing.extras = dto.extras.map((e) =>
+      this.productRepository.createExtra({ name: e.name, price: e.price, group_id: id }),
+    );
+
+    return this.productRepository.saveExtraGroup(existing);
   }
 
   async findExtraGroups(tenantId: string): Promise<ExtraGroup[]> {
