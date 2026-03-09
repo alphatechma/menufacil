@@ -94,7 +94,7 @@ export default function StaffForm() {
           email: data.email,
           password: data.password!,
           role_id: selectedRoleId,
-          unit_id: selectedUnitId,
+          unit_id: selectedUnitId || undefined,
         }).unwrap();
         toast.success('Membro criado com sucesso');
       }

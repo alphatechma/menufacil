@@ -262,7 +262,7 @@ export const adminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/users/${id}`, meta: { authContext: 'admin' as const } }),
       providesTags: (_result, _err, id) => [{ type: 'Staff', id }],
     }),
-    createStaff: builder.mutation<void, { name: string; email: string; password: string; role_id: string }>({
+    createStaff: builder.mutation<void, { name: string; email: string; password: string; role_id: string; unit_id?: string }>({
       query: (body) => ({ url: '/users', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Staff'],
     }),

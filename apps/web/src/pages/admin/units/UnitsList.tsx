@@ -101,7 +101,7 @@ export default function UnitsList() {
           setDeleteId(null);
         }}
         title="Desativar unidade"
-        description="Tem certeza que deseja desativar esta unidade? Ela podera ser reativada depois."
+        message="Tem certeza que deseja desativar esta unidade? Ela podera ser reativada depois."
       />
     </>
   );
