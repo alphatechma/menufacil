@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   ShoppingBag,
@@ -26,11 +26,15 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery } from '@/api/adminApi';
+import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery, useGetUnitsQuery } from '@/api/adminApi';
 import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setSelectedUnit, selectSelectedUnitId } from '@/store/slices/uiSlice';
+import { baseApi } from '@/api/baseApi';
+import { usePermission } from '@/hooks/usePermission';
 
 const COLORS = ['#FF6B35', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 
@@ -118,6 +122,36 @@ export default function Reports() {
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [deliveryPersonFilter, setDeliveryPersonFilter] = useState('');
+  const [unitFilter, setUnitFilter] = useState('');
+
+  const dispatch = useAppDispatch();
+  const selectedUnitId = useAppSelector(selectSelectedUnitId);
+  const { hasModule } = usePermission();
+  const showUnitFilter = hasModule('multi_unit');
+  const { data: units } = useGetUnitsQuery(undefined, { skip: !showUnitFilter });
+  const originalUnitRef = useRef(selectedUnitId);
+
+  const handleUnitFilterChange = (value: string) => {
+    setUnitFilter(value);
+    if (value === 'all') {
+      dispatch(setSelectedUnit(null));
+    } else if (value) {
+      dispatch(setSelectedUnit(value));
+    } else {
+      dispatch(setSelectedUnit(originalUnitRef.current));
+    }
+    dispatch(baseApi.util.invalidateTags(['Dashboard']));
+  };
+
+  // Restore original unit when leaving page
+  useEffect(() => {
+    const original = originalUnitRef.current;
+    return () => {
+      if (original) {
+        dispatch(setSelectedUnit(original));
+      }
+    };
+  }, [dispatch]);
 
   const range = useMemo(() => getDateRange(preset, customStart, customEnd), [preset, customStart, customEnd]);
 
@@ -131,12 +165,13 @@ export default function Reports() {
   const { data: dashboard, isLoading, isFetching } = useGetDashboardDataQuery(queryParams, { refetchOnMountOrArgChange: true });
   const { data: allDeliveryPersons = [] } = useGetDeliveryPersonsQuery();
 
-  const activeFiltersCount = [statusFilter, paymentFilter, deliveryPersonFilter].filter(Boolean).length;
+  const activeFiltersCount = [statusFilter, paymentFilter, deliveryPersonFilter, unitFilter].filter(Boolean).length;
 
   const clearFilters = () => {
     setStatusFilter('');
     setPaymentFilter('');
     setDeliveryPersonFilter('');
+    setUnitFilter('');
   };
 
   if (isLoading) return <SettingsPageSkeleton />;
@@ -278,6 +313,16 @@ export default function Reports() {
               ))}
             </select>
 
+            {showUnitFilter && units && units.length > 1 && (
+              <select value={unitFilter} onChange={(e) => handleUnitFilterChange(e.target.value)} className={selectClass}>
+                <option value="">Unidade atual</option>
+                <option value="all">Todas as unidades</option>
+                {units.map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            )}
+
             {activeFiltersCount > 0 && (
               <button
                 onClick={clearFilters}
@@ -309,6 +354,12 @@ export default function Reports() {
               <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                 Entregador: {allDeliveryPersons.find((dp: any) => dp.id === deliveryPersonFilter)?.name || '...'}
                 <button onClick={() => setDeliveryPersonFilter('')} className="ml-1.5 hover:text-green-900 dark:hover:text-green-300"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {unitFilter && (
+              <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                Unidade: {unitFilter === 'all' ? 'Todas' : units?.find((u: any) => u.id === unitFilter)?.name || '...'}
+                <button onClick={() => handleUnitFilterChange('')} className="ml-1.5 hover:text-orange-900 dark:hover:text-orange-300"><X className="w-3 h-3" /></button>
               </Badge>
             )}
           </div>
