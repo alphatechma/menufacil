@@ -13,20 +13,18 @@ import { extname } from 'path';
 export class UploadService implements OnModuleInit {
   private s3: S3Client;
   private bucket: string;
-  private endpoint: string;
-  private port: number;
-  private useSSL: boolean;
+  private publicUrl: string;
 
   constructor(private readonly config: ConfigService) {
     this.bucket = this.config.get('MINIO_BUCKET', 'menufacil');
-    this.endpoint = this.config.get('MINIO_ENDPOINT', 'localhost');
-    this.port = parseInt(this.config.get('MINIO_PORT', '9000'), 10);
-    this.useSSL = this.config.get('MINIO_USE_SSL', 'false') === 'true';
+    const endpoint = this.config.get('MINIO_ENDPOINT', 'localhost');
+    const port = parseInt(this.config.get('MINIO_PORT', '9000'), 10);
+    const useSSL = this.config.get('MINIO_USE_SSL', 'false') === 'true';
+    const protocol = useSSL ? 'https' : 'http';
 
-    const protocol = this.useSSL ? 'https' : 'http';
-
+    // Internal endpoint for S3 client (container-to-container)
     this.s3 = new S3Client({
-      endpoint: `${protocol}://${this.endpoint}:${this.port}`,
+      endpoint: `${protocol}://${endpoint}:${port}`,
       region: 'us-east-1',
       credentials: {
         accessKeyId: this.config.get('MINIO_ACCESS_KEY', 'menufacil'),
@@ -34,6 +32,12 @@ export class UploadService implements OnModuleInit {
       },
       forcePathStyle: true,
     });
+
+    // Public URL for browser-accessible file URLs
+    this.publicUrl = this.config.get(
+      'MINIO_PUBLIC_URL',
+      `${protocol}://${endpoint}:${port}`,
+    );
   }
 
   async onModuleInit() {
@@ -65,8 +69,7 @@ export class UploadService implements OnModuleInit {
       }),
     );
 
-    const protocol = this.useSSL ? 'https' : 'http';
-    const url = `${protocol}://${this.endpoint}:${this.port}/${this.bucket}/${key}`;
+    const url = `${this.publicUrl}/${this.bucket}/${key}`;
 
     return { url, filename, size: file.size };
   }
