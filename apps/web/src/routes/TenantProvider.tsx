@@ -174,12 +174,15 @@ export function TenantProvider() {
     );
   }
 
-  // Show unit selector if tenant has units and none is selected
+  // Show unit selector if tenant has multiple units and none is selected
   if (units && units.length > 0 && !selectedUnitId) {
     const storedUnit = slug ? localStorage.getItem(`menufacil-unit-${slug}`) : null;
     const validStored = storedUnit && units.find((u: any) => u.id === storedUnit);
     if (validStored) {
       handleSelectUnit(storedUnit!);
+    } else if (units.length === 1) {
+      // Auto-select when there's only one unit
+      handleSelectUnit(units[0].id);
     } else {
       return <UnitSelectorModal units={units} onSelect={handleSelectUnit} />;
     }

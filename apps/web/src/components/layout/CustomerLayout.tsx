@@ -62,7 +62,7 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
             </div>
           </Link>
 
-          {selectedUnit && (
+          {selectedUnit && units && units.length > 1 && (
             <button
               onClick={handleChangeUnit}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
