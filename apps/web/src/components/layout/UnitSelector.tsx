@@ -67,15 +67,6 @@ export function UnitSelector() {
 
       {open && (
         <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-lg py-1 z-50">
-          <button
-            onClick={() => handleSelectUnit(null)}
-            className={cn(
-              'w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors',
-              !selectedUnitId && 'bg-primary/5 text-primary font-medium',
-            )}
-          >
-            Todas as unidades
-          </button>
           {units.map((unit: any) => (
             <button
               key={unit.id}
