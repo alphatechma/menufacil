@@ -52,6 +52,14 @@ export const superAdminApi = baseApi.injectEndpoints({
         data: { new_password },
       }),
     }),
+    updateTenantEmail: builder.mutation<any, { id: string; new_email: string }>({
+      query: ({ id, new_email }) => ({
+        url: `/super-admin/tenants/${id}/update-email`,
+        method: 'PATCH',
+        data: { new_email },
+      }),
+      invalidatesTags: ['Tenants'],
+    }),
     revokeAllSessions: builder.mutation<any, string>({
       query: (id) => ({ url: `/super-admin/tenants/${id}/revoke-all-sessions`, method: 'POST' }),
       invalidatesTags: ['Tenants'],
@@ -182,6 +190,7 @@ export const {
   useToggleTenantActiveMutation,
   useChangeTenantPlanMutation,
   useResetTenantPasswordMutation,
+  useUpdateTenantEmailMutation,
   useRevokeAllSessionsMutation,
   useRevokeUserSessionMutation,
   useGetTenantUsersQuery,

@@ -179,7 +179,7 @@ export class TenantService {
     return { data, total, page, limit };
   }
 
-  async findByIdWithRelations(id: string): Promise<Tenant> {
+  async findByIdWithRelations(id: string): Promise<Tenant & { admin_email?: string }> {
     const tenant = await this.repo.findOne({
       where: { id },
       relations: ['plan', 'plan.modules'],
@@ -187,7 +187,12 @@ export class TenantService {
     if (!tenant) {
       throw new NotFoundException('Tenant not found');
     }
-    return tenant;
+    // Attach admin email for super-admin detail view
+    const admin = await this.userRepo.findOne({
+      where: { tenant_id: id, system_role: UserRole.ADMIN },
+      select: ['email'],
+    });
+    return { ...tenant, admin_email: admin?.email || undefined };
   }
 
   async toggleActive(id: string): Promise<Tenant> {
@@ -214,6 +219,25 @@ export class TenantService {
     admin.password_hash = await bcrypt.hash(newPassword, 10);
     await this.userRepo.save(admin);
     this.logger.log(`Password reset for admin of tenant ${tenantId}`);
+  }
+
+  // --- Super-admin: Update Admin Email ---
+
+  async updateAdminEmail(tenantId: string, newEmail: string): Promise<void> {
+    const admin = await this.userRepo.findOne({
+      where: { tenant_id: tenantId, system_role: UserRole.ADMIN },
+    });
+    if (!admin) {
+      throw new NotFoundException('Admin user not found for this tenant');
+    }
+    // Check email uniqueness
+    const existing = await this.userRepo.findOne({ where: { email: newEmail } });
+    if (existing && existing.id !== admin.id) {
+      throw new ConflictException(`Email "${newEmail}" already in use`);
+    }
+    admin.email = newEmail;
+    await this.userRepo.save(admin);
+    this.logger.log(`Email updated for admin of tenant ${tenantId} to ${newEmail}`);
   }
 
   // --- Super-admin: Session Management ---

@@ -90,6 +90,18 @@ export class SuperAdminTenantController {
     return { success: true };
   }
 
+  // --- Update Admin Email ---
+
+  @Patch(':id/update-email')
+  @ApiOperation({ summary: 'Update tenant admin email' })
+  async updateEmail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { new_email: string },
+  ) {
+    await this.tenantService.updateAdminEmail(id, body.new_email);
+    return { success: true };
+  }
+
   // --- Session Management ---
 
   @Post(':id/revoke-all-sessions')

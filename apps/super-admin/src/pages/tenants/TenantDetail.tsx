@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, Power, Building2, Phone, MapPin, Calendar, CreditCard,
-  KeyRound, Trash2, LogIn, Users, Wifi, WifiOff, Ban, Loader2, RotateCcw,
+  KeyRound, Trash2, LogIn, Users, Wifi, WifiOff, Ban, Loader2, RotateCcw, Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -16,6 +16,7 @@ import {
   useGetTenantUsersQuery,
   useImpersonateTenantMutation,
   useDeleteTenantMutation,
+  useUpdateTenantEmailMutation,
   useGetTenantWhatsappStatusQuery,
   useReconnectTenantWhatsappMutation,
   useDisconnectTenantWhatsappMutation,
@@ -55,7 +56,9 @@ export default function TenantDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showRevokeAllDialog, setShowRevokeAllDialog] = useState(false);
+  const [showUpdateEmailDialog, setShowUpdateEmailDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [deleteConfirmSlug, setDeleteConfirmSlug] = useState('');
 
   const { data: tenant, isLoading } = useGetTenantQuery(id!);
@@ -70,6 +73,7 @@ export default function TenantDetail() {
   const [revokeUserSession] = useRevokeUserSessionMutation();
   const [impersonateTenant, { isLoading: isImpersonating }] = useImpersonateTenantMutation();
   const [deleteTenant, { isLoading: isDeleting }] = useDeleteTenantMutation();
+  const [updateTenantEmail, { isLoading: isUpdatingEmail }] = useUpdateTenantEmailMutation();
   const [reconnectWhatsapp, { isLoading: isReconnecting }] = useReconnectTenantWhatsappMutation();
   const [disconnectWhatsapp, { isLoading: isDisconnecting }] = useDisconnectTenantWhatsappMutation();
 
@@ -107,6 +111,21 @@ export default function TenantDetail() {
       setNewPassword('');
     } catch {
       toast.error('Erro ao resetar senha.');
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      toast.error('Informe um email valido.');
+      return;
+    }
+    try {
+      await updateTenantEmail({ id: id!, new_email: newEmail }).unwrap();
+      toast.success('Email do admin atualizado!');
+      setShowUpdateEmailDialog(false);
+      setNewEmail('');
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Erro ao atualizar email.');
     }
   };
 
@@ -277,6 +296,7 @@ export default function TenantDetail() {
               <Separator />
               <CardContent className="pt-6 space-y-4">
                 <InfoRow icon={Building2} label="Nome" value={tenant.name} />
+                <InfoRow icon={Mail} label="Email do Admin" value={tenant.admin_email || 'Nao informado'} />
                 <InfoRow icon={Phone} label="Telefone" value={tenant.phone || 'Nao informado'} />
                 <InfoRow icon={MapPin} label="Endereco" value={tenant.address || 'Nao informado'} />
                 <InfoRow
@@ -359,6 +379,10 @@ export default function TenantDetail() {
             <Separator />
             <CardContent className="pt-6">
               <div className="flex flex-wrap gap-3">
+                <Button variant="outline" onClick={() => { setNewEmail(tenant.admin_email || ''); setShowUpdateEmailDialog(true); }}>
+                  <Mail className="h-4 w-4" />
+                  Alterar Email do Admin
+                </Button>
                 <Button variant="outline" onClick={() => setShowResetPasswordDialog(true)}>
                   <KeyRound className="h-4 w-4" />
                   Resetar Senha do Admin
@@ -573,6 +597,36 @@ export default function TenantDetail() {
             </DialogClose>
             <Button variant="destructive" onClick={handleRevokeAll} disabled={isRevokingAll}>
               {isRevokingAll ? 'Revogando...' : 'Derrubar Sessoes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Email */}
+      <Dialog open={showUpdateEmailDialog} onOpenChange={setShowUpdateEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Email do Admin</DialogTitle>
+            <DialogDescription>
+              Defina um novo email para o administrador de "{tenant.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="newEmail">Novo Email</Label>
+            <Input
+              id="newEmail"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="admin@restaurante.com"
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail.includes('@')}>
+              {isUpdatingEmail ? 'Salvando...' : 'Salvar Email'}
             </Button>
           </DialogFooter>
         </DialogContent>
