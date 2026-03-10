@@ -195,4 +195,9 @@ export class WhatsappController {
 
     return { received: true };
   }
+
+  @Post('webhook/:event')
+  async handleWebhookByEvent(@Body() body: any) {
+    return this.handleWebhook(body);
+  }
 }
