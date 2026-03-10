@@ -2,7 +2,6 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import type { RootState } from '../store/index';
 import { adminLogout } from '../store/slices/adminAuthSlice';
-import { baseApi } from './baseApi';
 
 export type AuthContext = 'admin' | 'customer' | 'public';
 
@@ -85,7 +84,6 @@ export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> =
         refreshPromise = null;
         localStorage.removeItem('menufacil-impersonate-token');
         api.dispatch(adminLogout());
-        api.dispatch(baseApi.util.resetApiState());
         window.location.href = '/login';
         return { error: { status: 401, data: 'Session expired' } };
       }
