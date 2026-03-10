@@ -36,6 +36,51 @@ function getNextNodeId() {
   return `node-${Date.now()}-${nodeIdCounter}`;
 }
 
+/** Strip React Flow internal properties — only keep what we need to persist */
+function serializeNodes(nodes: Node[]) {
+  return nodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    position: { x: n.position.x, y: n.position.y },
+    data: n.data,
+  }));
+}
+
+function serializeEdges(edges: Edge[]) {
+  return edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle ?? undefined,
+    targetHandle: e.targetHandle ?? undefined,
+    animated: e.animated,
+  }));
+}
+
+/** Ensure every node loaded from API has a valid position */
+function sanitizeNodes(raw: any[]): Node[] {
+  return (raw || []).map((n: any, i: number) => ({
+    id: n.id,
+    type: n.type || 'default',
+    position:
+      n.position && typeof n.position.x === 'number' && typeof n.position.y === 'number'
+        ? { x: n.position.x, y: n.position.y }
+        : { x: 250, y: i * 120 },
+    data: n.data || {},
+  }));
+}
+
+function sanitizeEdges(raw: any[]): Edge[] {
+  return (raw || []).map((e: any) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle,
+    targetHandle: e.targetHandle,
+    animated: e.animated ?? true,
+  }));
+}
+
 export default function FlowEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,29 +91,24 @@ export default function FlowEditor() {
   const [updateFlow, { isLoading: isSaving }] = useUpdateWhatsappFlowMutation();
   const [validateFlow, { isLoading: isValidating }] = useValidateWhatsappFlowMutation();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([] as Node[]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([] as Edge[]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
   const [flowName, setFlowName] = useState('');
   const [isActive, setIsActive] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(true);
+  const [ready, setReady] = useState(false);
 
-  // Memoize nodeTypes so ReactFlow doesn't re-render on every state change
   const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
-  // Load flow data — ensure every node has a valid position
+  // Load flow data
   useEffect(() => {
     if (flow) {
-      const safeNodes = (flow.nodes || []).map((n: any, i: number) => ({
-        ...n,
-        position: n.position && typeof n.position.x === 'number'
-          ? n.position
-          : { x: 250, y: i * 120 },
-      }));
-      setNodes(safeNodes);
-      setEdges(flow.edges || []);
+      setNodes(sanitizeNodes(flow.nodes));
+      setEdges(sanitizeEdges(flow.edges));
       setFlowName(flow.name || '');
       setIsActive(flow.is_active || false);
+      setReady(true);
     }
   }, [flow, setNodes, setEdges]);
 
@@ -79,16 +119,21 @@ export default function FlowEditor() {
         e.preventDefault();
         handleSave();
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+      if (
+        (e.key === 'Delete' || e.key === 'Backspace') &&
+        selectedNode &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
         e.preventDefault();
         setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
-        setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
+        setEdges((eds) => eds.filter((ed) => ed.source !== selectedNode.id && ed.target !== selectedNode.id));
         setSelectedNode(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNode]);
 
   const onConnect = useCallback(
@@ -137,9 +182,7 @@ export default function FlowEditor() {
 
   const handleUpdateNode = useCallback(
     (nodeId: string, data: Record<string, unknown>) => {
-      setNodes((nds) =>
-        nds.map((n) => (n.id === nodeId ? { ...n, data } : n)),
-      );
+      setNodes((nds) => nds.map((n) => (n.id === nodeId ? { ...n, data } : n)));
       setSelectedNode((prev) => (prev && prev.id === nodeId ? { ...prev, data } : prev));
     },
     [setNodes],
@@ -148,7 +191,6 @@ export default function FlowEditor() {
   const handleSave = async () => {
     if (!id) return;
 
-    // Derive trigger_type and trigger_config from trigger node
     const triggerNode = nodes.find((n) => n.type === 'trigger');
     const triggerType = (triggerNode?.data?.trigger_type as string) || 'message_received';
     const triggerConfig = (triggerNode?.data?.trigger_config as Record<string, unknown>) || {};
@@ -161,8 +203,8 @@ export default function FlowEditor() {
           is_active: isActive,
           trigger_type: triggerType,
           trigger_config: triggerConfig,
-          nodes,
-          edges,
+          nodes: serializeNodes(nodes),
+          edges: serializeEdges(edges),
         },
       }).unwrap();
       toast.success('Fluxo salvo com sucesso');
@@ -185,7 +227,7 @@ export default function FlowEditor() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !ready) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner size="lg" />
@@ -194,26 +236,26 @@ export default function FlowEditor() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Toolbar */}
-      <div className="h-14 border-b border-border bg-white flex items-center justify-between px-4 shrink-0 z-10">
+      <div className="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/admin/whatsapp')}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted"
+            className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded-lg hover:bg-gray-100"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <Input
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
-            className="w-64 h-8 text-sm font-medium border-transparent bg-transparent hover:border-input focus-visible:border-input"
+            className="w-64 h-8 text-sm font-medium"
             placeholder="Nome do fluxo"
           />
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Ativo</span>
+            <span className="text-xs text-gray-500">Ativo</span>
             <Toggle checked={isActive} onChange={setIsActive} />
           </div>
           <Button variant="outline" size="sm" onClick={handleValidate} loading={isValidating}>
@@ -234,7 +276,7 @@ export default function FlowEditor() {
           {paletteOpen && <NodePalette />}
           <button
             onClick={() => setPaletteOpen((v) => !v)}
-            className="absolute top-2 -right-6 z-10 bg-white border border-border rounded-r-lg p-1 text-muted-foreground hover:text-foreground transition-colors shadow-sm"
+            className="absolute top-2 -right-6 z-10 bg-white border border-gray-200 rounded-r-lg p-1 text-gray-400 hover:text-gray-700 transition-colors shadow-sm"
           >
             {paletteOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -261,7 +303,7 @@ export default function FlowEditor() {
             <Controls />
             <MiniMap
               nodeStrokeWidth={3}
-              className="!bg-white !border !border-border !rounded-xl !shadow-sm"
+              className="!bg-white !border !border-gray-200 !rounded-xl !shadow-sm"
             />
           </ReactFlow>
         </div>
