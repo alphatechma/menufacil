@@ -9,6 +9,7 @@ import {
   Query,
   ParseUUIDPipe,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
@@ -21,6 +22,8 @@ import { PermissionsGuard } from '../../common/guards';
 @ApiSecurity('tenant-slug')
 @Controller('loyalty')
 export class LoyaltyController {
+  private readonly logger = new Logger(LoyaltyController.name);
+
   constructor(private readonly service: LoyaltyService) {}
 
   @Get('rewards/all')
@@ -28,14 +31,20 @@ export class LoyaltyController {
   @ApiBearerAuth()
   @RequirePermissions('loyalty:read')
   @ApiOperation({ summary: 'List all rewards including inactive (admin)' })
-  findAllRewards(@CurrentTenant('id') tenantId: string) {
-    return this.service.findRewards(tenantId);
+  async findAllRewards(@CurrentTenant('id') tenantId: string) {
+    this.logger.log(`[GET rewards/all] tenantId=${tenantId}`);
+    const rewards = await this.service.findRewards(tenantId);
+    this.logger.log(`[GET rewards/all] found ${rewards.length} rewards`);
+    return rewards;
   }
 
   @Get('rewards')
   @ApiOperation({ summary: 'List available rewards (public)' })
-  findRewards(@CurrentTenant('id') tenantId: string) {
-    return this.service.findActiveRewards(tenantId);
+  async findRewards(@CurrentTenant('id') tenantId: string) {
+    this.logger.log(`[GET rewards] (public) tenantId=${tenantId}`);
+    const rewards = await this.service.findActiveRewards(tenantId);
+    this.logger.log(`[GET rewards] (public) found ${rewards.length} active rewards`);
+    return rewards;
   }
 
   @Post('rewards')
@@ -43,7 +52,8 @@ export class LoyaltyController {
   @ApiBearerAuth()
   @RequirePermissions('loyalty:create')
   @ApiOperation({ summary: 'Create a reward' })
-  createReward(@Body() dto: CreateRewardDto, @CurrentTenant('id') tenantId: string) {
+  async createReward(@Body() dto: CreateRewardDto, @CurrentTenant('id') tenantId: string) {
+    this.logger.log(`[POST rewards] tenantId=${tenantId} data=${JSON.stringify(dto)}`);
     return this.service.createReward(dto, tenantId);
   }
 
