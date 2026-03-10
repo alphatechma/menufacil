@@ -2,7 +2,23 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   useGetProductQuery,
   useGetCategoriesQuery,
@@ -47,7 +63,6 @@ export default function ProductForm() {
       base_price: 0,
       category_id: '',
       image_url: null,
-      is_pizza: false,
       is_active: true,
       sort_order: 0,
       min_variations: 0,
@@ -57,10 +72,24 @@ export default function ProductForm() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'variations',
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleVariationDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((f) => f.id === active.id);
+      const newIndex = fields.findIndex((f) => f.id === over.id);
+      move(oldIndex, newIndex);
+    }
+  };
 
   const watchedExtraGroupIds = watch('extra_group_ids');
 
@@ -72,7 +101,6 @@ export default function ProductForm() {
         base_price: product.base_price ?? 0,
         category_id: product.category_id ?? '',
         image_url: product.image_url ?? null,
-        is_pizza: product.is_pizza ?? false,
         is_active: product.is_active ?? true,
         sort_order: product.sort_order ?? 0,
         min_variations: product.min_variations ?? 0,
@@ -173,25 +201,14 @@ export default function ProductForm() {
             )}
           </FormField>
 
-          <div className="flex items-center gap-8">
-            <FormField control={control} name="is_pizza" label="E pizza?">
-              {(field) => (
-                <Toggle
-                  checked={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            </FormField>
-
-            <FormField control={control} name="is_active" label="Produto ativo">
-              {(field) => (
-                <Toggle
-                  checked={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            </FormField>
-          </div>
+          <FormField control={control} name="is_active" label="Produto ativo">
+            {(field) => (
+              <Toggle
+                checked={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          </FormField>
 
           <FormField control={control} name="sort_order" label="Ordem de exibicao">
             {(field) => (
@@ -268,48 +285,15 @@ export default function ProductForm() {
               Nenhuma variacao cadastrada. Adicione variacoes como tamanhos ou sabores.
             </p>
           ) : (
-            <div className="space-y-4">
-              {fields.map((field, index) => (
-                <div key={field.id} className="p-4 bg-muted/50 rounded-xl space-y-3">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-foreground mb-1.5">
-                        Nome
-                      </label>
-                      <Input
-                        {...register(`variations.${index}.name`)}
-                        placeholder="Ex: Pequena, Media, Grande..."
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-foreground mb-1.5">
-                        Preco
-                      </label>
-                      <PriceInput
-                        {...register(`variations.${index}.price`, { valueAsNumber: true })}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="mt-7 p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
-                      Descricao <span className="text-muted-foreground font-normal">(opcional)</span>
-                    </label>
-                    <Input
-                      {...register(`variations.${index}.description`)}
-                      placeholder="Ex: 500ml, serve 2 pessoas..."
-                    />
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleVariationDragEnd}>
+              <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {fields.map((field, index) => (
+                    <SortableVariation key={field.id} id={field.id} index={index} register={register} onRemove={() => remove(index)} />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </FormCard>
 
@@ -360,6 +344,51 @@ export default function ProductForm() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function SortableVariation({ id, index, register, onRemove }: { id: string; index: number; register: any; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="p-4 bg-muted/50 rounded-xl space-y-3">
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
+          className="mt-7 cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground transition-colors"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">Nome</label>
+          <Input {...register(`variations.${index}.name`)} placeholder="Ex: Pequena, Media, Grande..." />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">Preco</label>
+          <PriceInput {...register(`variations.${index}.price`, { valueAsNumber: true })} placeholder="0.00" />
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="mt-7 p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="pl-8">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Descricao <span className="text-muted-foreground font-normal">(opcional)</span>
+        </label>
+        <Input {...register(`variations.${index}.description`)} placeholder="Ex: 500ml, serve 2 pessoas..." />
+      </div>
     </div>
   );
 }

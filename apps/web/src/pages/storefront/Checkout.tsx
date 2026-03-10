@@ -485,7 +485,7 @@ export default function Checkout() {
           <button
             onClick={() => navigate(`/${slug}`)}
             className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            style={{ background: 'var(--tenant-gradient)' }}
           >
             Voltar ao inicio
           </button>
@@ -501,7 +501,7 @@ export default function Checkout() {
         <button
           onClick={() => navigate(`/${slug}/menu`)}
           className="px-6 py-3 rounded-xl text-white font-semibold transition-colors"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ background: 'var(--tenant-gradient)' }}
         >
           Ver cardapio
         </button>
@@ -663,7 +663,7 @@ export default function Checkout() {
                 type="submit"
                 disabled={isLoginDisabled}
                 className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 {authLoading ? (
                   <>
@@ -1217,7 +1217,7 @@ export default function Checkout() {
                   onClick={handleApplyCoupon}
                   disabled={couponLoading || !couponCode.trim()}
                   className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-colors"
-                  style={{ backgroundColor: 'var(--tenant-primary)' }}
+                  style={{ background: 'var(--tenant-gradient)' }}
                 >
                   {couponLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1343,7 +1343,7 @@ export default function Checkout() {
           type="submit"
           disabled={isSubmitting}
           className="w-full py-3.5 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ background: 'var(--tenant-gradient)' }}
         >
           {isSubmitting ? (
             <>

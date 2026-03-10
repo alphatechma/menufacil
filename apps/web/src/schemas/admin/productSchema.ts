@@ -13,7 +13,6 @@ export const productSchema = z.object({
   base_price: z.coerce.number().min(0, 'Preco invalido'),
   category_id: z.string().min(1, 'Categoria obrigatoria'),
   image_url: z.string().nullable().optional().default(null),
-  is_pizza: z.boolean().default(false),
   is_active: z.boolean().default(true),
   sort_order: z.coerce.number().int().min(0).default(0),
   min_variations: z.coerce.number().int().min(0).default(0),

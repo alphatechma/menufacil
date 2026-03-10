@@ -1,5 +1,22 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'sonner';
 import {
   useGetExtraGroupsQuery,
@@ -40,6 +57,11 @@ export default function ExtraGroupList() {
   const [createGroup, { isLoading: isCreating }] = useCreateExtraGroupMutation();
   const [updateGroup, { isLoading: isUpdating }] = useUpdateExtraGroupMutation();
   const [deleteGroup] = useDeleteExtraGroupMutation();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -91,6 +113,15 @@ export default function ExtraGroupList() {
       setShowModal(false);
     } catch {
       toast.error('Erro ao salvar grupo.');
+    }
+  };
+
+  const handleExtraDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = Number(active.id);
+      const newIndex = Number(over.id);
+      setForm({ ...form, extras: arrayMove(form.extras, oldIndex, newIndex) });
     }
   };
 
@@ -219,35 +250,23 @@ export default function ExtraGroupList() {
                 Adicionar
               </Button>
             </div>
-            <div className="space-y-3">
-              {form.extras.map((extra, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      value={extra.name}
-                      onChange={(e) => updateExtra(index, 'name', e.target.value)}
-                      placeholder="Nome do extra"
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExtraDragEnd}>
+              <SortableContext items={form.extras.map((_, i) => i)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {form.extras.map((extra, index) => (
+                    <SortableExtraItem
+                      key={index}
+                      id={index}
+                      extra={extra}
+                      index={index}
+                      canRemove={form.extras.length > 1}
+                      onUpdate={updateExtra}
+                      onRemove={removeExtra}
                     />
-                  </div>
-                  <div className="w-28">
-                    <PriceInput
-                      value={extra.price}
-                      onChange={(e) => updateExtra(index, 'price', Number(e.target.value))}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  {form.extras.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeExtra(index)}
-                      className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -279,5 +298,57 @@ export default function ExtraGroupList() {
         message="Tem certeza? Os extras deste grupo serao removidos dos produtos associados."
       />
     </>
+  );
+}
+
+function SortableExtraItem({ id, extra, index, canRemove, onUpdate, onRemove }: {
+  id: number;
+  extra: { name: string; price: number };
+  index: number;
+  canRemove: boolean;
+  onUpdate: (index: number, field: 'name' | 'price', value: string | number) => void;
+  onRemove: (index: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3">
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground transition-colors"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1">
+        <Input
+          value={extra.name}
+          onChange={(e) => onUpdate(index, 'name', e.target.value)}
+          placeholder="Nome do extra"
+        />
+      </div>
+      <div className="w-28">
+        <PriceInput
+          value={extra.price}
+          onChange={(e) => onUpdate(index, 'price', Number(e.target.value))}
+          placeholder="0.00"
+        />
+      </div>
+      {canRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   );
 }

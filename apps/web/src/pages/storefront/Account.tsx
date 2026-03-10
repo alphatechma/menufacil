@@ -399,7 +399,7 @@ export default function Account() {
           <div className="text-center mb-6">
             <div
               className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
+              style={{ background: 'var(--tenant-gradient)' }}
             >
               <User className="w-8 h-8 text-white" />
             </div>
@@ -606,7 +606,7 @@ export default function Account() {
                  (!loginName.trim() || !loginPhone.trim() || !loginPassword.trim() || !registerConfirmPassword.trim()))
               }
               className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
+              style={{ background: 'var(--tenant-gradient)' }}
             >
               {(authLoading || registerLoading) ? (
                 <>
@@ -658,7 +658,7 @@ export default function Account() {
         <div className="flex items-center gap-4">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            style={{ background: 'var(--tenant-gradient)' }}
           >
             {customer?.name?.charAt(0)?.toUpperCase() || 'C'}
           </div>
@@ -875,7 +875,7 @@ export default function Account() {
                     onClick={handleSaveProfile}
                     disabled={profileSaving}
                     className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    style={{ backgroundColor: 'var(--tenant-primary)' }}
+                    style={{ background: 'var(--tenant-gradient)' }}
                   >
                     {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
                   </button>
@@ -895,7 +895,7 @@ export default function Account() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'var(--tenant-primary)' }}
+                  style={{ background: 'var(--tenant-gradient)' }}
                 >
                   <Star className="w-6 h-6 text-white fill-white" />
                 </div>
@@ -1024,7 +1024,7 @@ export default function Account() {
                                   className="h-full rounded-full transition-all"
                                   style={{
                                     width: `${progressPercent}%`,
-                                    backgroundColor: 'var(--tenant-primary)',
+                                    background: 'var(--tenant-gradient)',
                                     opacity: 0.7,
                                   }}
                                 />
@@ -1052,7 +1052,7 @@ export default function Account() {
                               ? 'text-white active:scale-95'
                               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
-                          style={canRedeem ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
+                          style={canRedeem ? { background: 'var(--tenant-gradient)' } : undefined}
                         >
                           {canRedeem ? 'Resgatar' : `${pointsNeeded} pts`}
                         </button>
@@ -1227,7 +1227,7 @@ export default function Account() {
                 type="submit"
                 disabled={addressLoading}
                 className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar Endereco'}
               </button>
@@ -1302,7 +1302,7 @@ export default function Account() {
               <button
                 onClick={() => navigate(`/${slug}/menu`)}
                 className="mt-4 px-6 py-2 rounded-xl text-white text-sm font-semibold transition-colors"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 Ver cardapio
               </button>
@@ -1362,7 +1362,7 @@ export default function Account() {
             <div className="p-6 text-center">
               <div
                 className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--tenant-primary)', opacity: 0.1 }}
+                style={{ background: 'var(--tenant-gradient)', opacity: 0.1 }}
               >
                 <Gift className="w-8 h-8" style={{ color: 'var(--tenant-primary)' }} />
               </div>
@@ -1410,7 +1410,7 @@ export default function Account() {
                 onClick={handleConfirmRedeem}
                 disabled={isRedeeming}
                 className="flex-1 py-3.5 text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 {isRedeeming ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

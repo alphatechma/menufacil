@@ -8,6 +8,8 @@ export interface Tenant {
   logo_url: string | null;
   banner_url: string | null;
   primary_color: string;
+  secondary_color: string | null;
+  accent_color: string | null;
   description: string | null;
   address: string | null;
   phone: string | null;

@@ -102,6 +102,7 @@
   --tenant-primary: #FF6B35;
   --tenant-primary-dark: #E55A2B;
   --tenant-primary-light: #FF8F66;
+  --tenant-gradient: #FF6B35;
 }
 
 .dark {
@@ -184,7 +185,11 @@ body {
 /* Storefront component classes (tenant-themed) */
 @layer components {
   .btn-primary {
-    @apply bg-[var(--tenant-primary)] hover:bg-[var(--tenant-primary-dark)] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--tenant-gradient);
+    @apply text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary:hover {
+    filter: brightness(0.9);
   }
 
   .btn-outline {

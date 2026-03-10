@@ -43,6 +43,12 @@ export class Tenant {
   primary_color: string;
 
   @Column({ nullable: true })
+  secondary_color: string;
+
+  @Column({ nullable: true })
+  accent_color: string;
+
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ nullable: true })

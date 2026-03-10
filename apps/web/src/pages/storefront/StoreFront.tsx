@@ -42,7 +42,7 @@ export default function StoreFront() {
           <div
             className="w-full h-48 sm:h-56 flex items-center justify-center"
             style={{
-              background: `linear-gradient(135deg, var(--tenant-primary), var(--tenant-primary-dark))`,
+              background: `var(--tenant-gradient)`,
             }}
           >
             <div className="text-center text-white">
@@ -161,7 +161,7 @@ export default function StoreFront() {
                         style={{
                           background: isClosed
                             ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
-                            : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                            : `var(--tenant-gradient)`,
                         }}
                       >
                         {category.name.charAt(0)}
@@ -230,7 +230,7 @@ export default function StoreFront() {
                         style={{
                           background: isClosed
                             ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
-                            : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                            : `var(--tenant-gradient)`,
                         }}
                       >
                         <span className="text-4xl">

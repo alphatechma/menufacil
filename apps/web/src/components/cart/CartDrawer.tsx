@@ -208,7 +208,7 @@ export function CartDrawer() {
               <button
                 onClick={handleCheckout}
                 className="w-full py-3 rounded-xl text-white font-semibold transition-colors text-center"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 Finalizar Pedido
               </button>

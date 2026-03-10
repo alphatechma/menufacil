@@ -35,7 +35,6 @@ interface Product {
   description: string | null;
   base_price: number;
   image_url: string | null;
-  is_pizza: boolean;
   is_active: boolean;
   sort_order: number;
   category?: {
@@ -104,9 +103,6 @@ function SortableRow({
           )}
           <div>
             <p className="font-medium text-gray-900">{product.name}</p>
-            {product.is_pizza && (
-              <span className="text-xs text-primary font-medium">Pizza</span>
-            )}
           </div>
         </div>
       </td>

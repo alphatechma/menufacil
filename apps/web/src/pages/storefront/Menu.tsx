@@ -106,7 +106,7 @@ export default function Menu() {
             }`}
             style={
               !activeCategory
-                ? { backgroundColor: 'var(--tenant-primary)' }
+                ? { background: 'var(--tenant-gradient)' }
                 : {}
             }
           >
@@ -123,7 +123,7 @@ export default function Menu() {
               }`}
               style={
                 activeCategory === cat.id
-                  ? { backgroundColor: 'var(--tenant-primary)' }
+                  ? { background: 'var(--tenant-gradient)' }
                   : {}
               }
             >
@@ -253,7 +253,7 @@ function ProductCard({
             style={{
               background: isClosed
                 ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
-                : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                : `var(--tenant-gradient)`,
             }}
           >
             {product.name.charAt(0)}

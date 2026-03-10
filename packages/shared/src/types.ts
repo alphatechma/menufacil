@@ -80,7 +80,6 @@ export interface IProduct {
   description?: string;
   base_price: number;
   image_url?: string;
-  is_pizza: boolean;
   is_active: boolean;
   sort_order: number;
 }

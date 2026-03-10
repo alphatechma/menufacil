@@ -65,7 +65,7 @@ export default function ReservationRequest() {
           <button
             onClick={() => navigate(`/${slug}`)}
             className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            style={{ background: 'var(--tenant-gradient)' }}
           >
             Voltar ao inicio
           </button>
@@ -202,7 +202,7 @@ export default function ReservationRequest() {
               type="submit"
               disabled={isLoading}
               className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
+              style={{ background: 'var(--tenant-gradient)' }}
             >
               {isLoading ? (
                 <>

@@ -113,7 +113,7 @@ export default function OrderTracking() {
         <button
           onClick={() => navigate(`/${slug}`)}
           className="px-6 py-3 rounded-xl text-white font-semibold transition-colors"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ background: 'var(--tenant-gradient)' }}
         >
           Voltar ao inicio
         </button>
@@ -166,7 +166,7 @@ export default function OrderTracking() {
         style={
           !isCancelled && !isDelivered
             ? {
-                background: `linear-gradient(135deg, var(--tenant-primary), var(--tenant-primary-dark))`,
+                background: `var(--tenant-gradient)`,
               }
             : {}
         }
@@ -224,7 +224,7 @@ export default function OrderTracking() {
                         } ${isCurrent ? 'ring-4 ring-[var(--tenant-primary)]/20' : ''}`}
                         style={
                           isCompleted
-                            ? { backgroundColor: 'var(--tenant-primary)' }
+                            ? { background: 'var(--tenant-gradient)' }
                             : {}
                         }
                       >

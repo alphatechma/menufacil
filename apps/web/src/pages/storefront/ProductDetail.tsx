@@ -201,7 +201,7 @@ export default function ProductDetail() {
         <button
           onClick={() => navigate(`/${slug}/menu`)}
           className="mt-4 px-6 py-3 rounded-xl text-white font-semibold transition-colors"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ background: 'var(--tenant-gradient)' }}
         >
           Voltar ao cardapio
         </button>
@@ -233,7 +233,7 @@ export default function ProductDetail() {
             style={{
               background: isClosed
                 ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
-                : `linear-gradient(135deg, var(--tenant-primary-light), var(--tenant-primary))`,
+                : `var(--tenant-gradient)`,
             }}
           >
             {product.name.charAt(0)}
@@ -453,7 +453,7 @@ export default function ProductDetail() {
                 className={`w-full flex items-center justify-between px-6 py-3.5 rounded-xl text-white font-semibold transition-all ${
                   addedToCart ? 'bg-green-500 hover:bg-green-500' : ''
                 } disabled:opacity-50`}
-                style={!addedToCart ? { backgroundColor: 'var(--tenant-primary)' } : {}}
+                style={!addedToCart ? { background: 'var(--tenant-gradient)' } : {}}
               >
                 {addedToCart ? (
                   <span className="flex items-center gap-2 mx-auto">

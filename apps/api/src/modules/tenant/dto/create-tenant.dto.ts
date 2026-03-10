@@ -27,6 +27,16 @@ export class CreateTenantDto {
   @IsString()
   primary_color?: string;
 
+  @ApiPropertyOptional({ example: '#006600' })
+  @IsOptional()
+  @IsString()
+  secondary_color?: string;
+
+  @ApiPropertyOptional({ example: '#FF0000' })
+  @IsOptional()
+  @IsString()
+  accent_color?: string;
+
   @ApiPropertyOptional({ example: '(11) 99999-0000' })
   @IsOptional()
   @IsString()

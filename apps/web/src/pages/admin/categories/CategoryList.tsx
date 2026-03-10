@@ -1,7 +1,24 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, FolderTree, Eye, EyeOff } from 'lucide-react';
-import { useGetCategoriesQuery, useDeleteCategoryMutation } from '@/api/adminApi';
+import { Plus, Pencil, Trash2, FolderTree, Eye, EyeOff, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useGetCategoriesQuery, useDeleteCategoryMutation, useUpdateCategoryMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +33,12 @@ export default function CategoryList() {
 
   const { data: categories = [], isLoading } = useGetCategoriesQuery();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const filtered = useMemo(() => {
     if (!search.trim()) return categories;
@@ -26,6 +49,28 @@ export default function CategoryList() {
         cat.description?.toLowerCase().includes(term),
     );
   }, [categories, search]);
+
+  const isSearching = search.trim().length > 0;
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filtered.findIndex((c: any) => c.id === active.id);
+    const newIndex = filtered.findIndex((c: any) => c.id === over.id);
+    const reordered = arrayMove([...filtered], oldIndex, newIndex);
+
+    try {
+      await Promise.all(
+        reordered.map((cat: any, index: number) =>
+          updateCategory({ id: cat.id, data: { sort_order: index } }).unwrap(),
+        ),
+      );
+      toast.success('Ordem atualizada!');
+    } catch {
+      toast.error('Erro ao atualizar ordem.');
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -83,83 +128,20 @@ export default function CategoryList() {
         />
       ) : (
         <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Categoria
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Descricao
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Ordem
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Acoes
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={filtered.map((c: any) => c.id)} strategy={verticalListSortingStrategy}>
+              <div className="divide-y divide-border">
                 {filtered.map((cat: any) => (
-                  <tr key={cat.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {cat.image_url ? (
-                          <img
-                            src={cat.image_url}
-                            alt={cat.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                            <FolderTree className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        )}
-                        <span className="font-medium text-foreground">{cat.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground max-w-xs truncate">
-                      {cat.description || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{cat.sort_order}</td>
-                    <td className="px-6 py-4">
-                      {cat.is_active ? (
-                        <Badge variant="success">
-                          <Eye className="w-3 h-3 mr-1" />
-                          Ativa
-                        </Badge>
-                      ) : (
-                        <Badge variant="default">
-                          <EyeOff className="w-3 h-3 mr-1" />
-                          Inativa
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link to={`/admin/categories/${cat.id}/edit`}>
-                          <button className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-primary transition-colors">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => setDeleteTarget({ id: cat.id, name: cat.name })}
-                          className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <SortableCategoryRow
+                    key={cat.id}
+                    category={cat}
+                    disableDrag={isSearching}
+                    onDelete={() => setDeleteTarget({ id: cat.id, name: cat.name })}
+                  />
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -172,6 +154,79 @@ export default function CategoryList() {
         confirmLabel="Excluir"
         loading={isDeleting}
       />
+    </div>
+  );
+}
+
+function SortableCategoryRow({ category, disableDrag, onDelete }: {
+  category: any;
+  disableDrag: boolean;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id, disabled: disableDrag });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors">
+      {!disableDrag && (
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground transition-colors"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      )}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {category.image_url ? (
+          <img
+            src={category.image_url}
+            alt={category.name}
+            className="w-10 h-10 rounded-lg object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <FolderTree className="w-5 h-5 text-muted-foreground" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">{category.name}</span>
+            {category.is_active ? (
+              <Badge variant="success">
+                <Eye className="w-3 h-3 mr-1" />
+                Ativa
+              </Badge>
+            ) : (
+              <Badge variant="default">
+                <EyeOff className="w-3 h-3 mr-1" />
+                Inativa
+              </Badge>
+            )}
+          </div>
+          {category.description && (
+            <p className="text-xs text-muted-foreground truncate">{category.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <Link to={`/admin/categories/${category.id}/edit`}>
+          <button className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-primary transition-colors">
+            <Pencil className="w-4 h-4" />
+          </button>
+        </Link>
+        <button
+          onClick={onDelete}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

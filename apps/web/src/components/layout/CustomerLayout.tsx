@@ -45,7 +45,7 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
             ) : (
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 {tenant?.name?.charAt(0) || 'M'}
               </div>
@@ -82,7 +82,7 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
             {totalItems > 0 && (
               <span
                 className="badge absolute -top-0.5 -right-0.5 text-white"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                style={{ background: 'var(--tenant-gradient)' }}
               >
                 {totalItems}
               </span>
@@ -107,7 +107,7 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
                 {totalItems > 0 && (
                   <span
                     className="badge absolute -top-2 -right-2.5 text-white text-[10px]"
-                    style={{ backgroundColor: 'var(--tenant-primary)' }}
+                    style={{ background: 'var(--tenant-gradient)' }}
                   >
                     {totalItems}
                   </span>

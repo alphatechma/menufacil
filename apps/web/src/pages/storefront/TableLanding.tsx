@@ -52,7 +52,7 @@ export default function TableLanding() {
           <button
             onClick={() => navigate(`/${slug}`)}
             className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            style={{ background: 'var(--tenant-gradient)' }}
           >
             Ir para o inicio
           </button>
@@ -96,7 +96,7 @@ export default function TableLanding() {
           onClick={handleViewMenu}
           disabled={joining}
           className="w-full py-3.5 rounded-xl text-white font-semibold text-base transition-colors flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ background: 'var(--tenant-gradient)' }}
         >
           {joining ? (
             <>

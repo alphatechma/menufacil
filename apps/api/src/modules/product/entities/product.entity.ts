@@ -36,9 +36,6 @@ export class Product {
   @Column({ nullable: true })
   image_url: string;
 
-  @Column({ default: false })
-  is_pizza: boolean;
-
   @Column({ default: true })
   is_active: boolean;
 

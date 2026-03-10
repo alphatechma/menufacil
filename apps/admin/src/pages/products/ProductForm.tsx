@@ -25,7 +25,6 @@ interface ProductFormData {
   base_price: number;
   category_id: string;
   image_url: string;
-  is_pizza: boolean;
   is_active: boolean;
   sort_order: number;
   variations: Variation[];
@@ -38,7 +37,6 @@ const emptyForm: ProductFormData = {
   base_price: 0,
   category_id: '',
   image_url: '',
-  is_pizza: false,
   is_active: true,
   sort_order: 0,
   variations: [],
@@ -98,7 +96,6 @@ export default function ProductForm() {
         base_price: Number(product.base_price) || 0,
         category_id: product.category_id || '',
         image_url: product.image_url || '',
-        is_pizza: product.is_pizza || false,
         is_active: product.is_active ?? true,
         sort_order: product.sort_order || 0,
         variations: product.variations?.map((v: Variation) => ({
@@ -431,29 +428,6 @@ export default function ProductForm() {
                     onChange={(e) => handleChange('sort_order', parseInt(e.target.value) || 0)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Tipo Pizza
-                  </label>
-                  <div className="flex items-center gap-3 h-[50px]">
-                    <button
-                      type="button"
-                      onClick={() => handleChange('is_pizza', !form.is_pizza)}
-                      className={`relative w-12 h-7 rounded-full transition-colors ${
-                        form.is_pizza ? 'bg-primary' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                          form.is_pizza ? 'left-6' : 'left-1'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      {form.is_pizza ? 'Sim' : 'Nao'}
-                    </span>
-                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">

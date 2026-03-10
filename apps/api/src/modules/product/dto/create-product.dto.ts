@@ -96,11 +96,6 @@ export class CreateProductDto {
   @IsString()
   image_url?: string;
 
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @IsBoolean()
-  is_pizza?: boolean;
-
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
