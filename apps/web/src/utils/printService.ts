@@ -1,5 +1,6 @@
 import qz from 'qz-tray';
 import { formatPrice } from './formatPrice';
+import { formatPhone } from './formatPhone';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -331,7 +332,7 @@ function buildReceipt(order: PrintableOrder, tenantName?: string): string {
     lines.push(`Cliente: ${order.customer.name}`);
   }
   if (order.customer?.phone) {
-    lines.push(`Tel: ${order.customer.phone}`);
+    lines.push(`Tel: ${formatPhone(order.customer.phone)}`);
   }
 
   lines.push(CMD.LINE);
@@ -570,7 +571,7 @@ export function printOrderBrowser(order: PrintableOrder, tenantName?: string) {
   <div class="center bold" style="font-size:14px;margin-bottom:2px;">${orderType}</div>
   ${tableHtml}
   ${order.customer?.name ? `<div style="margin:4px 0;"><strong>Cliente:</strong> ${order.customer.name}</div>` : ''}
-  ${order.customer?.phone ? `<div style="margin-bottom:4px;"><strong>Tel:</strong> ${order.customer.phone}</div>` : ''}
+  ${order.customer?.phone ? `<div style="margin-bottom:4px;"><strong>Tel:</strong> ${formatPhone(order.customer.phone)}</div>` : ''}
   <div class="divider"></div>
   <table>${itemsHtml}</table>
   <div class="divider"></div>

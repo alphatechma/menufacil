@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
+import { formatPhone } from '@/utils/formatPhone';
 
 export default function DeliveryPersonList() {
   const [search, setSearch] = useState('');
@@ -115,7 +116,7 @@ export default function DeliveryPersonList() {
                         <span className="font-medium text-foreground">{person.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{person.phone}</td>
+                    <td className="px-6 py-4 text-sm text-foreground">{formatPhone(person.phone)}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{person.vehicle || '-'}</td>
                     <td className="px-6 py-4">
                       <Badge

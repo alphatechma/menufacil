@@ -31,6 +31,7 @@ import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
+import { formatPhone } from '@/utils/formatPhone';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedUnit, selectSelectedUnitId } from '@/store/slices/uiSlice';
 import { baseApi } from '@/api/baseApi';
@@ -557,7 +558,7 @@ export default function Reports() {
                     <tr key={dp.id} className="hover:bg-accent transition-colors">
                       <td className="px-5 py-3">
                         <p className="text-sm font-medium text-foreground">{dp.name}</p>
-                        <p className="text-xs text-muted-foreground">{dp.phone}</p>
+                        <p className="text-xs text-muted-foreground">{formatPhone(dp.phone)}</p>
                       </td>
                       <td className="px-5 py-3 text-sm text-muted-foreground">{dp.vehicle || '-'}</td>
                       <td className="px-5 py-3 text-center">

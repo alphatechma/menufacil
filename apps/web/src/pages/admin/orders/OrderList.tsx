@@ -25,6 +25,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPrice } from '@/utils/formatPrice';
+import { formatPhone } from '@/utils/formatPhone';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<
@@ -448,7 +449,7 @@ export default function OrderList() {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">{person.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {person.phone}
+                          {formatPhone(person.phone)}
                           {person.vehicle && ` · ${person.vehicle}`}
                         </p>
                       </div>

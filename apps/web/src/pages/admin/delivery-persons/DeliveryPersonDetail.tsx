@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/Badge';
 import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPrice } from '@/utils/formatPrice';
+import { formatPhone } from '@/utils/formatPhone';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700', icon: <Clock className="w-3 h-3" /> },
@@ -66,7 +67,7 @@ export default function DeliveryPersonDetail() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="w-4 h-4 text-muted-foreground" />
-                {person.phone}
+                {formatPhone(person.phone)}
               </div>
               {person.vehicle && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

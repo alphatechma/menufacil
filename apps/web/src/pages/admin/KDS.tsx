@@ -28,6 +28,7 @@ import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 
 // ─── Types & Constants ──────────────────────────────────────────────────────
 
@@ -748,7 +749,7 @@ export default function KDS() {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">{person.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {person.phone}
+                          {formatPhone(person.phone)}
                           {person.vehicle && ` · ${person.vehicle}`}
                         </p>
                       </div>

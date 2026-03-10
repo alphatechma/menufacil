@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/Button';
 import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
+import { formatPhone } from '@/utils/formatPhone';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<
@@ -346,7 +347,7 @@ export default function OrderDetail() {
                     className="text-sm text-primary font-medium flex items-center gap-1.5 hover:underline"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    {order.customer.phone}
+                    {formatPhone(order.customer.phone)}
                   </a>
                 </div>
               )}
@@ -513,7 +514,7 @@ export default function OrderDetail() {
                         href={`tel:${order.delivery_person.phone}`}
                         className="text-primary hover:underline"
                       >
-                        {order.delivery_person.phone}
+                        {formatPhone(order.delivery_person.phone)}
                       </a>
                       {order.delivery_person.vehicle && (
                         <span className="text-muted-foreground">
@@ -642,7 +643,7 @@ export default function OrderDetail() {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">{person.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {person.phone}
+                          {formatPhone(person.phone)}
                           {person.vehicle && ` · ${person.vehicle}`}
                         </p>
                       </div>

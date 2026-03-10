@@ -36,7 +36,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { customerLoginSuccess, customerLogout } from '@/store/slices/customerAuthSlice';
 import { formatPrice } from '@/utils/formatPrice';
-import { formatPhone } from '@/utils/formatPhone';
+import { formatPhone, formatCpf } from '@/utils/formatPhone';
 import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
@@ -746,7 +746,7 @@ export default function Account() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">CPF</label>
-                  <p className="text-sm text-gray-900 font-medium">{customer?.cpf || <span className="text-gray-400 italic">-</span>}</p>
+                  <p className="text-sm text-gray-900 font-medium">{customer?.cpf ? formatCpf(customer.cpf) : <span className="text-gray-400 italic">-</span>}</p>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Senha</label>

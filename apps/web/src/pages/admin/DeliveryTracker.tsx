@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
+import { formatPhone } from '@/utils/formatPhone';
 
 function getElapsedMinutes(dateStr: string): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -196,7 +197,7 @@ export default function DeliveryTracker() {
                     {order.customer?.phone && (
                       <a href={`tel:${order.customer.phone}`} className="text-primary hover:underline flex items-center gap-1 ml-auto">
                         <Phone className="w-3.5 h-3.5" />
-                        {order.customer.phone}
+                        {formatPhone(order.customer.phone)}
                       </a>
                     )}
                   </div>
@@ -245,7 +246,7 @@ export default function DeliveryTracker() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground text-sm">{order.delivery_person.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {order.delivery_person.phone}
+                          {formatPhone(order.delivery_person.phone)}
                           {order.delivery_person.vehicle && ` · ${order.delivery_person.vehicle}`}
                         </p>
                       </div>

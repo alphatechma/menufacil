@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 import {
   useGetWhatsappConversationsQuery,
   useGetWhatsappMessagesQuery,
@@ -59,7 +60,7 @@ function ConversationList({ selectedPhone, onSelect }: { selectedPhone: string |
           )}
         >
           <div className="flex items-center justify-between mb-1">
-            <span className="font-medium text-sm text-foreground">{conv.phone}</span>
+            <span className="font-medium text-sm text-foreground">{formatPhone(conv.phone)}</span>
             <span className="text-xs text-muted-foreground">
               {new Date(conv.last_message_at).toLocaleDateString('pt-BR')}
             </span>
