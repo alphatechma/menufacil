@@ -18,7 +18,11 @@ export class FlowSchedulerService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.syncScheduledFlows();
+    try {
+      await this.syncScheduledFlows();
+    } catch (err) {
+      this.logger.warn(`Could not sync scheduled flows on startup: ${err.message}`);
+    }
   }
 
   async syncScheduledFlows(): Promise<void> {
