@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { cn } from '@/utils/cn';
+import { useGetWhatsappTemplatesQuery } from '@/api/adminApi';
 
 interface NodeConfigPanelProps {
   selectedNode: Node | null;
@@ -51,6 +52,46 @@ const NODE_TITLES: Record<string, string> = {
   lookup_order: 'Consultar Pedido',
   transfer_human: 'Transferir p/ Atendente',
 };
+
+function SendMessageConfig({ data, updateData }: { data: Record<string, any>; updateData: (key: string, value: unknown) => void }) {
+  const { data: templates } = useGetWhatsappTemplatesQuery();
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Usar template salvo</label>
+        <Select
+          value=""
+          onChange={(e) => {
+            const tpl = templates?.find((t: any) => t.id === e.target.value);
+            if (tpl) {
+              updateData('content', tpl.content);
+            }
+          }}
+        >
+          <option value="">Selecionar template...</option>
+          {templates?.map((t: any) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Conteudo da mensagem</label>
+        <Textarea
+          rows={6}
+          value={(data.content as string) || ''}
+          onChange={(e) => updateData('content', e.target.value)}
+          placeholder="Digite a mensagem ou selecione um template..."
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          Variaveis: {'{{customer_name}}'}, {'{{order_number}}'}, {'{{total}}'}, {'{{store_name}}'}, {'{{store_hours_today}}'}, {'{{items_list}}'}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className }: NodeConfigPanelProps) {
   if (!selectedNode) return null;
@@ -134,22 +175,7 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
       }
 
       case 'send_message':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Conteudo da mensagem</label>
-              <Textarea
-                rows={6}
-                value={(data.content as string) || ''}
-                onChange={(e) => updateData('content', e.target.value)}
-                placeholder="Digite a mensagem..."
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Variaveis: {'{{customer_name}}'}, {'{{order_id}}'}, {'{{order_total}}'}, {'{{store_name}}'}
-              </p>
-            </div>
-          </div>
-        );
+        return <SendMessageConfig data={data} updateData={updateData} />;
 
       case 'send_media':
         return (
