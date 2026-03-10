@@ -61,7 +61,7 @@ function serializeEdges(edges: Edge[]) {
 
 const VALID_NODE_TYPES = new Set([
   'trigger', 'send_message', 'send_media', 'send_menu_link',
-  'delay', 'wait_input', 'condition', 'check_hours',
+  'send_menu', 'delay', 'wait_input', 'condition', 'check_hours',
   'check_customer', 'lookup_order', 'transfer_human',
 ]);
 
