@@ -40,6 +40,11 @@ export class OrderItemDto {
   @IsUUID('4', { each: true })
   variation_ids?: string[];
 
+  @ApiPropertyOptional({ description: 'Quantity per variation ID (e.g. {"uuid1": 2, "uuid2": 1})' })
+  @IsOptional()
+  @IsObject()
+  variation_quantities?: Record<string, number>;
+
   @ApiProperty({ example: 1 })
   @IsNumber()
   @Min(1)

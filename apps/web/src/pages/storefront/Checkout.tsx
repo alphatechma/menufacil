@@ -442,6 +442,7 @@ export default function Checkout() {
           product_id: item.product_id,
           variation_id: item.variation_id,
           variation_ids: item.variation_ids,
+          variation_quantities: item.variation_quantities,
           quantity: item.quantity,
           extras: item.extras,
         })),

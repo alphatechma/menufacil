@@ -19,7 +19,7 @@ export default function ProductDetail() {
     { skip: !slug || !productId },
   );
 
-  const [selectedVariations, setSelectedVariations] = useState<Set<string>>(new Set());
+  const [selectedVariations, setSelectedVariations] = useState<Map<string, number>>(new Map());
   const [selectedExtras, setSelectedExtras] = useState<
     Map<string, { name: string; price: number }>
   >(new Map());
@@ -35,10 +35,12 @@ export default function ProductDetail() {
   const hasVariations = product?.variations && product.variations.length > 0;
   const isRequired = minVariations > 0;
 
+  const totalSelectedParts = Array.from(selectedVariations.values()).reduce((a, b) => a + b, 0);
+
   // Auto-select first variation for single-select required
   useEffect(() => {
     if (product?.variations && product.variations.length > 0 && isSingleSelect && isRequired) {
-      setSelectedVariations(new Set([product.variations[0].id]));
+      setSelectedVariations(new Map([[product.variations[0].id, 1]]));
     }
   }, [product, isSingleSelect, isRequired]);
 
@@ -54,11 +56,11 @@ export default function ProductDetail() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVariations.size, selectedExtras.size]);
+  }, [selectedVariations.size, totalSelectedParts, selectedExtras.size]);
 
   const toggleVariation = (variationId: string) => {
     setSelectedVariations((prev) => {
-      const next = new Set(prev);
+      const next = new Map(prev);
 
       if (isSingleSelect) {
         // Radio behavior: select one, deselect others
@@ -66,17 +68,41 @@ export default function ProductDetail() {
           next.clear();
         } else {
           next.clear();
-          next.add(variationId);
+          next.set(variationId, 1);
         }
       } else {
-        // Checkbox behavior with max limit
+        // Toggle: add with qty 1 or remove
         if (next.has(variationId)) {
           next.delete(variationId);
-        } else if (maxVariations === 0 || next.size < maxVariations) {
-          next.add(variationId);
+        } else if (maxVariations === 0 || totalSelectedParts < maxVariations) {
+          next.set(variationId, 1);
         }
       }
 
+      return next;
+    });
+  };
+
+  const incrementVariation = (variationId: string) => {
+    setSelectedVariations((prev) => {
+      const next = new Map(prev);
+      const current = next.get(variationId) || 0;
+      const total = Array.from(next.values()).reduce((a, b) => a + b, 0);
+      if (maxVariations > 0 && total >= maxVariations) return prev;
+      next.set(variationId, current + 1);
+      return next;
+    });
+  };
+
+  const decrementVariation = (variationId: string) => {
+    setSelectedVariations((prev) => {
+      const next = new Map(prev);
+      const current = next.get(variationId) || 0;
+      if (current <= 1) {
+        next.delete(variationId);
+      } else {
+        next.set(variationId, current - 1);
+      }
       return next;
     });
   };
@@ -85,13 +111,26 @@ export default function ProductDetail() {
     if (!product) return 0;
     if (selectedVariations.size === 0) return Number(product.base_price);
 
+    if (isMultiSelect && totalSelectedParts > 0) {
+      // Proportional pricing: each part contributes its fraction of the price
+      let weightedSum = 0;
+      for (const [varId, qty] of selectedVariations) {
+        const variation = product.variations?.find((v: any) => v.id === varId);
+        if (variation) {
+          weightedSum += Number(variation.price) * qty;
+        }
+      }
+      return weightedSum / totalSelectedParts;
+    }
+
+    // Single-select: use the selected variation's price
     const selectedPrices = product.variations
       ?.filter((v: any) => selectedVariations.has(v.id))
       .map((v: any) => Number(v.price)) || [];
 
     if (selectedPrices.length === 0) return Number(product.base_price);
 
-    return selectedPrices.reduce((a: number, b: number) => a + b, 0);
+    return selectedPrices[0];
   };
 
   const getExtrasTotal = () => {
@@ -120,14 +159,16 @@ export default function ProductDetail() {
   const validate = (): string[] => {
     const errs: string[] = [];
 
-    if (hasVariations && isRequired && selectedVariations.size < minVariations) {
-      if (isSingleSelect) {
+    if (hasVariations && isRequired) {
+      if (isSingleSelect && selectedVariations.size === 0) {
         errs.push('Selecione uma opcao');
-      } else {
-        const falta = minVariations - selectedVariations.size;
-        errs.push(
-          `Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'opcao' : 'opcoes'} (falta${falta === 1 ? '' : 'm'} ${falta})`,
-        );
+      } else if (isMultiSelect) {
+        if (totalSelectedParts < minVariations) {
+          const falta = minVariations - totalSelectedParts;
+          errs.push(
+            `Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'} (falta${falta === 1 ? '' : 'm'} ${falta})`,
+          );
+        }
       }
     }
 
@@ -159,9 +200,23 @@ export default function ProductDetail() {
     setShowErrors(false);
 
     const selected = product.variations?.filter((v: any) => selectedVariations.has(v.id)) || [];
-    const variationName = selected.map((v: any) => v.name).join(' / ') || null;
     const variationId = selected[0]?.id || null;
     const variationIds = selected.length > 0 ? selected.map((v: any) => v.id) : undefined;
+
+    // Build variation name with quantities for multi-select
+    let variationName: string | null = null;
+    let variationQuantities: Record<string, number> | undefined;
+    if (isMultiSelect && totalSelectedParts > 0) {
+      variationName = selected
+        .map((v: any) => {
+          const qty = selectedVariations.get(v.id) || 1;
+          return `${qty}/${totalSelectedParts} ${v.name}`;
+        })
+        .join(' / ');
+      variationQuantities = Object.fromEntries(selectedVariations);
+    } else {
+      variationName = selected.map((v: any) => v.name).join(' / ') || null;
+    }
 
     const extras: CartItemExtra[] = Array.from(selectedExtras.values());
 
@@ -173,6 +228,7 @@ export default function ProductDetail() {
         variation_id: variationId,
         variation_ids: variationIds,
         variation_name: variationName,
+        variation_quantities: variationQuantities,
         unit_price: getBasePrice(),
         quantity,
         extras,
@@ -280,11 +336,11 @@ export default function ProductDetail() {
           {isMultiSelect && (
             <p className="text-sm text-gray-400 mb-3">
               {minVariations > 0
-                ? `Selecione de ${minVariations} a ${maxVariations}`
-                : `Selecione ate ${maxVariations}`}
-              {selectedVariations.size > 0 && (
+                ? `Selecione de ${minVariations} a ${maxVariations} partes`
+                : `Selecione ate ${maxVariations} partes`}
+              {totalSelectedParts > 0 && (
                 <span className="ml-1 font-medium text-gray-600">
-                  ({selectedVariations.size}/{maxVariations})
+                  ({totalSelectedParts}/{maxVariations})
                 </span>
               )}
             </p>
@@ -292,7 +348,56 @@ export default function ProductDetail() {
           <div className="space-y-2">
             {product.variations.map((variation: any) => {
               const isSelected = selectedVariations.has(variation.id);
-              const isDisabled = !isSelected && isMultiSelect && maxVariations > 0 && selectedVariations.size >= maxVariations;
+              const varQty = selectedVariations.get(variation.id) || 0;
+              const canAdd = maxVariations === 0 || totalSelectedParts < maxVariations;
+
+              if (isMultiSelect) {
+                // Multi-select: quantity controls
+                return (
+                  <div
+                    key={variation.id}
+                    className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
+                        : 'border-gray-100'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-gray-800">{variation.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">{formatPrice(variation.price)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isSelected && (
+                        <button
+                          type="button"
+                          onClick={() => decrementVariation(variation.id)}
+                          className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center justify-center hover:border-gray-300 transition-colors"
+                        >
+                          <Minus className="w-3 h-3 text-gray-600" />
+                        </button>
+                      )}
+                      <span className={`w-6 text-center font-bold text-sm ${isSelected ? 'text-gray-900' : 'text-gray-300'}`}>
+                        {varQty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => incrementVariation(variation.id)}
+                        disabled={!canAdd}
+                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          canAdd
+                            ? 'border-[var(--tenant-primary)] text-[var(--tenant-primary)] hover:bg-[var(--tenant-primary)]/10'
+                            : 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        }`}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Single-select: radio behavior
+              const isDisabled = !isSelected && maxVariations > 0 && selectedVariations.size >= maxVariations;
               return (
                 <label
                   key={variation.id}
@@ -306,7 +411,7 @@ export default function ProductDetail() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-5 h-5 ${isSingleSelect ? 'rounded-full' : 'rounded-md'} border-2 flex items-center justify-center transition-colors ${
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                         isSelected
                           ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]'
                           : 'border-gray-300'
@@ -324,7 +429,7 @@ export default function ProductDetail() {
                     {formatPrice(variation.price)}
                   </span>
                   <input
-                    type={isSingleSelect ? 'radio' : 'checkbox'}
+                    type="radio"
                     name="variation"
                     value={variation.id}
                     checked={isSelected}

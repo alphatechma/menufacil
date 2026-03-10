@@ -13,6 +13,7 @@ export interface CartItem {
   variation_id: string | null;
   variation_ids?: string[];
   variation_name: string | null;
+  variation_quantities?: Record<string, number>;
   unit_price: number;
   quantity: number;
   extras: CartItemExtra[];
