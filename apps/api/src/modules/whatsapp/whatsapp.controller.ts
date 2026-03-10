@@ -7,6 +7,8 @@ import {
   Body,
   Param,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -151,8 +153,8 @@ export class WhatsappController {
   @Post('flows')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions('whatsapp:manage')
-  createFlow(@CurrentTenant('id') tenantId: string, @Body() dto: CreateFlowDto) {
-    return this.flowService.create(tenantId, dto);
+  createFlow(@CurrentTenant('id') tenantId: string, @Body() body: Record<string, any>) {
+    return this.flowService.create(tenantId, body as any);
   }
 
   @Put('flows/:id')
@@ -161,9 +163,9 @@ export class WhatsappController {
   updateFlow(
     @CurrentTenant('id') tenantId: string,
     @Param('id') id: string,
-    @Body() dto: UpdateFlowDto,
+    @Body() body: Record<string, any>,
   ) {
-    return this.flowService.update(tenantId, id, dto);
+    return this.flowService.update(tenantId, id, body as any);
   }
 
   @Delete('flows/:id')

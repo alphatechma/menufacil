@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, IsInt, IsArray } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsInt } from 'class-validator';
 import { FlowTriggerType } from '@menufacil/shared';
 
 export class CreateFlowDto {
@@ -12,11 +12,9 @@ export class CreateFlowDto {
   trigger_config?: Record<string, any>;
 
   @IsOptional()
-  @IsArray()
   nodes?: any[];
 
   @IsOptional()
-  @IsArray()
   edges?: any[];
 
   @IsOptional()

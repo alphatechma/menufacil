@@ -221,8 +221,13 @@ export default function FlowEditor() {
         },
       }).unwrap();
       toast.success('Fluxo salvo com sucesso');
-    } catch {
-      toast.error('Erro ao salvar fluxo');
+    } catch (err: any) {
+      const message = err?.data?.message;
+      if (Array.isArray(message)) {
+        message.forEach((m: string) => toast.error(m));
+      } else {
+        toast.error(message || 'Erro ao salvar fluxo');
+      }
     }
   };
 
