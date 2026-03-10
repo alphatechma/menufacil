@@ -17,11 +17,15 @@ export class WhatsappInstanceService {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
+  private generateSuffix(): string {
+    return Math.random().toString(36).substring(2, 6);
+  }
+
   async connect(tenantId: string, tenantSlug: string): Promise<{ qrcode?: string; pairingCode?: string; instance: WhatsappInstance }> {
     let instance = await this.instanceRepo.findOne({ where: { tenant_id: tenantId } });
-    const instanceName = `menufacil-${tenantSlug}`;
 
     if (!instance) {
+      const instanceName = `menufacil-${tenantSlug}-${this.generateSuffix()}`;
       await this.evolutionApi.createInstance(instanceName);
       instance = this.instanceRepo.create({
         tenant_id: tenantId,
@@ -32,17 +36,19 @@ export class WhatsappInstanceService {
     } else if (instance.status === WhatsappInstanceStatus.CONNECTED) {
       throw new BadRequestException('WhatsApp already connected');
     } else {
-      // Re-set webhook on reconnection to ensure it points to our endpoint
+      // Try to delete old instance from Evolution and create fresh one
       try {
-        await this.evolutionApi.setWebhook(instanceName);
-      } catch (err: any) {
-        this.logger.warn(`Failed to re-set webhook on reconnect: ${err.message}`);
-      }
+        await this.evolutionApi.deleteInstance(instance.instance_name);
+      } catch { /* may not exist */ }
+
+      const instanceName = `menufacil-${tenantSlug}-${this.generateSuffix()}`;
+      await this.evolutionApi.createInstance(instanceName);
+      instance.instance_name = instanceName;
       instance.status = WhatsappInstanceStatus.CONNECTING;
       await this.instanceRepo.save(instance);
     }
 
-    const connectResult = await this.evolutionApi.connectInstance(instanceName);
+    const connectResult = await this.evolutionApi.connectInstance(instance.instance_name);
     return { qrcode: connectResult.base64 || connectResult.code, pairingCode: connectResult.pairingCode, instance };
   }
 
