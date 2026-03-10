@@ -57,28 +57,41 @@ function serializeEdges(edges: Edge[]) {
   }));
 }
 
-/** Ensure every node loaded from API has a valid position */
+const VALID_NODE_TYPES = new Set([
+  'trigger', 'send_message', 'send_media', 'send_menu_link',
+  'delay', 'wait_input', 'condition', 'check_hours',
+  'check_customer', 'lookup_order', 'transfer_human',
+]);
+
+/** Ensure every node loaded from API has a valid position and type */
 function sanitizeNodes(raw: any[]): Node[] {
-  return (raw || []).map((n: any, i: number) => ({
-    id: n.id,
-    type: n.type || 'default',
-    position:
-      n.position && typeof n.position.x === 'number' && typeof n.position.y === 'number'
-        ? { x: n.position.x, y: n.position.y }
-        : { x: 250, y: i * 120 },
-    data: n.data || {},
-  }));
+  if (!raw?.length) return [];
+  return raw
+    .filter((n: any) => n && n.id)
+    .map((n: any, i: number) => ({
+      id: String(n.id),
+      type: VALID_NODE_TYPES.has(n.type) ? n.type : 'trigger',
+      position:
+        n.position && typeof n.position.x === 'number' && typeof n.position.y === 'number'
+          ? { x: n.position.x, y: n.position.y }
+          : { x: 250, y: i * 120 },
+      data: n.data || {},
+    }));
 }
 
+let edgeIdCounter = 0;
 function sanitizeEdges(raw: any[]): Edge[] {
-  return (raw || []).map((e: any) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    sourceHandle: e.sourceHandle,
-    targetHandle: e.targetHandle,
-    animated: e.animated ?? true,
-  }));
+  if (!raw?.length) return [];
+  return raw
+    .filter((e: any) => e && e.source && e.target)
+    .map((e: any) => ({
+      id: e.id ? String(e.id) : `edge-${Date.now()}-${++edgeIdCounter}`,
+      source: String(e.source),
+      target: String(e.target),
+      sourceHandle: e.sourceHandle || undefined,
+      targetHandle: e.targetHandle || undefined,
+      animated: e.animated ?? true,
+    }));
 }
 
 export default function FlowEditor() {

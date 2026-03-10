@@ -1,4 +1,3 @@
-import type { NodeTypes } from '@xyflow/react';
 import { TriggerNode } from './TriggerNode';
 import { SendMessageNode } from './SendMessageNode';
 import { SendMediaNode } from './SendMediaNode';
@@ -25,7 +24,8 @@ export {
   TransferHumanNode,
 };
 
-export const nodeTypes: NodeTypes = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const nodeTypes: Record<string, any> = {
   trigger: TriggerNode,
   send_message: SendMessageNode,
   send_media: SendMediaNode,
