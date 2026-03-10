@@ -15,7 +15,7 @@ import {
   type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowLeft, Save, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -24,10 +24,12 @@ import { Spinner } from '@/components/ui/Spinner';
 import { nodeTypes } from '@/pages/admin/whatsapp/flow-nodes';
 import { NodePalette } from '@/pages/admin/whatsapp/flow-editor/NodePalette';
 import { NodeConfigPanel } from '@/pages/admin/whatsapp/flow-editor/NodeConfigPanel';
+import { Modal } from '@/components/ui/Modal';
 import {
   useGetWhatsappFlowQuery,
   useUpdateWhatsappFlowMutation,
   useValidateWhatsappFlowMutation,
+  useTestWhatsappFlowMutation,
 } from '@/api/adminApi';
 
 let nodeIdCounter = 0;
@@ -103,6 +105,7 @@ export default function FlowEditor() {
   const { data: flow, isLoading } = useGetWhatsappFlowQuery(id!, { skip: !id });
   const [updateFlow, { isLoading: isSaving }] = useUpdateWhatsappFlowMutation();
   const [validateFlow, { isLoading: isValidating }] = useValidateWhatsappFlowMutation();
+  const [testFlow, { isLoading: isTesting }] = useTestWhatsappFlowMutation();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
@@ -111,6 +114,8 @@ export default function FlowEditor() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [ready, setReady] = useState(false);
+  const [testModalOpen, setTestModalOpen] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
@@ -245,6 +250,24 @@ export default function FlowEditor() {
     }
   };
 
+  const handleTest = async () => {
+    if (!id || !testPhone.trim()) return;
+    try {
+      await handleSave();
+      const result = await testFlow({ id, phone: testPhone }).unwrap();
+      if (result.success) {
+        toast.success('Fluxo enviado para teste!');
+        setTestModalOpen(false);
+        setTestPhone('');
+      } else {
+        const msgs = result.errors || [result.error || 'Erro ao testar'];
+        msgs.forEach((m) => toast.error(m));
+      }
+    } catch {
+      toast.error('Erro ao testar fluxo');
+    }
+  };
+
   if (isLoading || !ready) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -280,12 +303,43 @@ export default function FlowEditor() {
             <CheckCircle className="w-4 h-4" />
             Validar
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTestModalOpen(true)}>
+            <Play className="w-4 h-4" />
+            Testar
+          </Button>
           <Button size="sm" onClick={handleSave} loading={isSaving}>
             <Save className="w-4 h-4" />
             Salvar
           </Button>
         </div>
       </div>
+
+      {/* Test Modal */}
+      <Modal open={testModalOpen} onClose={() => setTestModalOpen(false)} title="Testar Fluxo">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            O fluxo sera salvo e executado enviando as mensagens para o numero informado.
+          </p>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">Numero do WhatsApp</label>
+            <Input
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="5511999999999"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Com codigo do pais (ex: 5511999999999)</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setTestModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleTest} loading={isTesting} disabled={!testPhone.trim()}>
+              <Play className="w-4 h-4" />
+              Enviar Teste
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Editor area */}
       <div className="flex-1 flex overflow-hidden">

@@ -447,6 +447,9 @@ export const adminApi = baseApi.injectEndpoints({
     validateWhatsappFlow: builder.mutation<{ valid: boolean; errors: string[] }, string>({
       query: (id) => ({ url: `/whatsapp/flows/${id}/validate`, method: 'POST', meta: { authContext: 'admin' as const } }),
     }),
+    testWhatsappFlow: builder.mutation<{ success: boolean; execution_id?: string; error?: string; errors?: string[] }, { id: string; phone: string }>({
+      query: ({ id, phone }) => ({ url: `/whatsapp/flows/${id}/test`, method: 'POST', data: { phone }, meta: { authContext: 'admin' as const } }),
+    }),
 
     // Units
     getUnits: builder.query<any[], void>({
@@ -585,6 +588,7 @@ export const {
   useDeleteWhatsappFlowMutation,
   useDuplicateWhatsappFlowMutation,
   useValidateWhatsappFlowMutation,
+  useTestWhatsappFlowMutation,
   useGetUnitsQuery,
   useGetUnitQuery,
   useCreateUnitMutation,

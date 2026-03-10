@@ -19,6 +19,7 @@ import { WhatsappInstanceService } from './services/whatsapp-instance.service';
 import { WhatsappTemplateService } from './services/whatsapp-template.service';
 import { WhatsappMessageService } from './services/whatsapp-message.service';
 import { WhatsappFlowService } from './services/whatsapp-flow.service';
+import { FlowEngineService } from './services/flow-engine.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -34,6 +35,7 @@ export class WhatsappController {
     private readonly templateService: WhatsappTemplateService,
     private readonly messageService: WhatsappMessageService,
     private readonly flowService: WhatsappFlowService,
+    private readonly flowEngine: FlowEngineService,
   ) {}
 
   // --- Instance (protected) ---
@@ -190,6 +192,27 @@ export class WhatsappController {
     const flow = await this.flowService.findOne(tenantId, id);
     const errors = await this.flowService.validate(flow);
     return { valid: errors.length === 0, errors };
+  }
+
+  @Post('flows/:id/test')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  async testFlow(
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: Record<string, any>,
+  ) {
+    const phone = body.phone?.replace(/\D/g, '');
+    if (!phone) {
+      return { success: false, error: 'Numero de telefone obrigatorio' };
+    }
+    const flow = await this.flowService.findOne(tenantId, id);
+    const errors = await this.flowService.validate(flow);
+    if (errors.length > 0) {
+      return { success: false, errors };
+    }
+    const execution = await this.flowEngine.startExecution(flow, phone);
+    return { success: true, execution_id: execution.id };
   }
 
   // --- Webhook (PUBLIC, no auth) ---
