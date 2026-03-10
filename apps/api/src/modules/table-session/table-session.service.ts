@@ -189,7 +189,7 @@ export class TableSessionService {
       orders: orders.map((o) => ({
         id: o.id,
         order_number: o.order_number,
-        customer_name: o.customer?.name || 'Anonimo',
+        customer_name: o.customer_name || o.customer?.name || 'Anonimo',
         customer_id: o.customer_id,
         subtotal: Number(o.subtotal),
         total: Number(o.total),

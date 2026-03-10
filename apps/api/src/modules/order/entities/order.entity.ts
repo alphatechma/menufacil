@@ -13,6 +13,7 @@ import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Customer } from '../../customer/entities/customer.entity';
 import { DeliveryPerson } from '../../delivery-person/entities/delivery-person.entity';
 import { TenantUnit } from '../../unit/entities/tenant-unit.entity';
+import { RestaurantTable } from '../../table/entities/table.entity';
 import { OrderItem } from './order-item.entity';
 
 @Entity('orders')
@@ -43,6 +44,9 @@ export class Order {
 
   @Column({ nullable: true })
   table_session_id: string;
+
+  @Column({ nullable: true })
+  customer_name: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   subtotal: number;
@@ -115,6 +119,10 @@ export class Order {
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
+
+  @ManyToOne(() => RestaurantTable, { nullable: true })
+  @JoinColumn({ name: 'table_id' })
+  table: RestaurantTable;
 
   @ManyToOne(() => DeliveryPerson, (dp) => dp.orders)
   @JoinColumn({ name: 'delivery_person_id' })

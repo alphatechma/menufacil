@@ -28,6 +28,7 @@ interface CartState {
   orderType: OrderMode;
   tableId: string | null;
   tableSessionId: string | null;
+  tableNumber: number | null;
 }
 
 const STORAGE_KEY = 'menufacil-cart';
@@ -48,6 +49,7 @@ const initialState: CartState = {
   orderType: 'delivery',
   tableId: null,
   tableSessionId: null,
+  tableNumber: null,
 };
 
 const cartSlice = createSlice({
@@ -84,14 +86,16 @@ const cartSlice = createSlice({
     setOrderType(state, action: PayloadAction<OrderMode>) {
       state.orderType = action.payload;
     },
-    setTableContext(state, action: PayloadAction<{ tableId: string; tableSessionId?: string }>) {
+    setTableContext(state, action: PayloadAction<{ tableId: string; tableSessionId?: string; tableNumber?: number }>) {
       state.tableId = action.payload.tableId;
       state.tableSessionId = action.payload.tableSessionId || null;
+      state.tableNumber = action.payload.tableNumber || null;
       state.orderType = 'dine_in';
     },
     clearTableContext(state) {
       state.tableId = null;
       state.tableSessionId = null;
+      state.tableNumber = null;
       if (state.orderType === 'dine_in') {
         state.orderType = 'delivery';
       }
@@ -122,6 +126,7 @@ export const selectTotalItems = (state: RootState) => {
 export const selectOrderType = (state: RootState) => state.cart.orderType;
 export const selectTableId = (state: RootState) => state.cart.tableId;
 export const selectTableSessionId = (state: RootState) => state.cart.tableSessionId;
+export const selectTableNumber = (state: RootState) => state.cart.tableNumber;
 
 export const { addItem, removeItem, updateQuantity, clearCart, openDrawer, closeDrawer, toggleDrawer, setOrderType, setTableContext, clearTableContext } =
   cartSlice.actions;

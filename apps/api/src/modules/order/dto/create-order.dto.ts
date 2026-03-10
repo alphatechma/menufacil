@@ -146,4 +146,9 @@ export class CreateOrderDto {
   @IsOptional()
   @IsUUID()
   table_session_id?: string;
+
+  @ApiPropertyOptional({ description: 'Person name for dine-in orders (used in split bill)' })
+  @IsOptional()
+  @IsString()
+  customer_name?: string;
 }

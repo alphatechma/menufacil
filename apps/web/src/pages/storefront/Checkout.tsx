@@ -36,7 +36,7 @@ import {
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customerLoginSuccess } from '@/store/slices/customerAuthSlice';
-import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId } from '@/store/slices/cartSlice';
+import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
 import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
 import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
@@ -97,6 +97,7 @@ export default function Checkout() {
   const orderType = useAppSelector(selectOrderType);
   const tableId = useAppSelector(selectTableId);
   const tableSessionId = useAppSelector(selectTableSessionId);
+  const tableNumber = useAppSelector(selectTableNumber);
 
   // Determine available order modes from tenant
   const orderModes = tenant?.order_modes || { delivery: true, pickup: false, dine_in: false };
@@ -169,6 +170,7 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [customerName, setCustomerName] = useState('');
 
   const neighborhoodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -455,6 +457,7 @@ export default function Checkout() {
         change_for: changeFor,
         table_id: tableId || undefined,
         table_session_id: tableSessionId || undefined,
+        customer_name: effectiveOrderType === 'dine_in' && customerName.trim() ? customerName.trim() : undefined,
       };
 
       const result = await createOrder({ slug: slug!, data: orderData }).unwrap();
@@ -778,13 +781,29 @@ export default function Checkout() {
         {/* Dine-in info */}
         {effectiveOrderType === 'dine_in' && (
           <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <UtensilsCrossed className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
               <h3 className="font-bold text-gray-900">Consumo no local</h3>
             </div>
-            <p className="text-sm text-gray-600">
-              Seu pedido sera servido na mesa
-            </p>
+            {tableNumber && (
+              <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-gray-50 rounded-xl">
+                <span className="text-sm text-gray-500">Mesa</span>
+                <span className="text-lg font-bold text-gray-900">{tableNumber}</span>
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Seu nome <span className="text-gray-400 font-normal">(para a comanda)</span>
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Ex: Joao"
+                maxLength={50}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
+              />
+            </div>
           </section>
         )}
 

@@ -15,6 +15,7 @@ import {
   User,
   X,
   Printer,
+  UtensilsCrossed,
 } from 'lucide-react';
 import {
   useGetOrderQuery,
@@ -361,6 +362,37 @@ export default function OrderDetail() {
               )}
             </div>
           </Card>
+
+          {/* Table Info (dine-in) */}
+          {order.order_type === 'dine_in' && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <UtensilsCrossed className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Mesa</h2>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Numero da Mesa
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    Mesa {order.table?.number || '-'}
+                    {order.table?.label && ` (${order.table.label})`}
+                  </p>
+                </div>
+                {order.customer_name && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Nome na Comanda
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {order.customer_name}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Payment */}
           <Card className="p-6">

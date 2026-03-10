@@ -31,7 +31,7 @@ export class OrderRepository {
     }
     return this.repo.find({
       where,
-      relations: ['items', 'items.extras', 'customer', 'delivery_person'],
+      relations: ['items', 'items.extras', 'customer', 'delivery_person', 'table'],
       order: { created_at: 'DESC' },
     });
   }
@@ -39,7 +39,7 @@ export class OrderRepository {
   async findByCustomer(customerId: string, tenantId: string): Promise<Order[]> {
     return this.repo.find({
       where: { customer_id: customerId, tenant_id: tenantId },
-      relations: ['items', 'items.extras'],
+      relations: ['items', 'items.extras', 'table'],
       order: { created_at: 'DESC' },
     });
   }
@@ -47,7 +47,7 @@ export class OrderRepository {
   async findById(id: string, tenantId: string): Promise<Order | null> {
     return this.repo.findOne({
       where: { id, tenant_id: tenantId },
-      relations: ['items', 'items.extras', 'customer', 'delivery_person'],
+      relations: ['items', 'items.extras', 'customer', 'delivery_person', 'table'],
     });
   }
 

@@ -25,6 +25,7 @@ export default function TableLanding() {
       dispatch(setTableContext({
         tableId: result.table.id,
         tableSessionId: result.session.id,
+        tableNumber: result.table.number,
       }));
       navigate(`/${slug}/menu`);
     } catch (err: any) {

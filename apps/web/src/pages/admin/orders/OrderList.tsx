@@ -307,7 +307,7 @@ export default function OrderList() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-sm text-foreground">
-                        {order.customer?.name || 'Cliente nao informado'}
+                        {order.customer?.name || order.customer_name || (order.order_type === 'dine_in' && order.table ? `Mesa ${order.table.number}` : 'Cliente nao informado')}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {order.items?.length || 0} item(s)

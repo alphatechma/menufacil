@@ -216,6 +216,7 @@ export class OrderService {
       order_type: orderType,
       table_id: dto.table_id || undefined,
       table_session_id: dto.table_session_id || undefined,
+      customer_name: dto.customer_name || undefined,
       address_snapshot: resolvedAddress as any,
       change_for: dto.change_for || undefined,
       notes: dto.notes,
