@@ -23,12 +23,6 @@ import { PermissionsGuard } from '../../common/guards';
 export class LoyaltyController {
   constructor(private readonly service: LoyaltyService) {}
 
-  @Get('rewards')
-  @ApiOperation({ summary: 'List available rewards (public)' })
-  findRewards(@CurrentTenant('id') tenantId: string) {
-    return this.service.findActiveRewards(tenantId);
-  }
-
   @Get('rewards/all')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @ApiBearerAuth()
@@ -36,6 +30,12 @@ export class LoyaltyController {
   @ApiOperation({ summary: 'List all rewards including inactive (admin)' })
   findAllRewards(@CurrentTenant('id') tenantId: string) {
     return this.service.findRewards(tenantId);
+  }
+
+  @Get('rewards')
+  @ApiOperation({ summary: 'List available rewards (public)' })
+  findRewards(@CurrentTenant('id') tenantId: string) {
+    return this.service.findActiveRewards(tenantId);
   }
 
   @Post('rewards')
