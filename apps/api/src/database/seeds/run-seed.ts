@@ -73,6 +73,7 @@ async function seed() {
     { key: 'dine_in', name: 'Atendimento Presencial', description: 'Mesas, comandas, reservas e mapa do salao' },
     { key: 'waiter', name: 'Garcom', description: 'App do garcom para pedidos presenciais' },
     { key: 'multi_unit', name: 'Multi-Unidade', description: 'Suporte a multiplas unidades/filiais' },
+    { key: 'whatsapp_flows', name: 'Fluxos WhatsApp', description: 'Automacao de conversas WhatsApp com fluxos condicionais' },
   ];
 
   const savedModules: Record<string, any> = {};
