@@ -4,13 +4,21 @@ import { Repository } from 'typeorm';
 import { WhatsappMessage } from '../entities/whatsapp-message.entity';
 import {
   WhatsappMessageDirection, WhatsappMessageStatus, WhatsappTemplateType,
-  WhatsappInstanceStatus, OrderStatus, WEBSOCKET_EVENTS, WEBSOCKET_ROOMS,
+  WhatsappInstanceStatus, OrderStatus, PaymentMethod, WEBSOCKET_EVENTS, WEBSOCKET_ROOMS,
 } from '@menufacil/shared';
 import { EvolutionApiService } from './evolution-api.service';
 import { WhatsappInstanceService } from './whatsapp-instance.service';
 import { WhatsappTemplateService } from './whatsapp-template.service';
 import { EventsGateway } from '../../../websocket/events.gateway';
 import { Order } from '../../order/entities/order.entity';
+import { Tenant } from '../../tenant/entities/tenant.entity';
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  [PaymentMethod.CASH]: 'Dinheiro',
+  [PaymentMethod.CREDIT_CARD]: 'Cartao de Credito',
+  [PaymentMethod.DEBIT_CARD]: 'Cartao de Debito',
+  [PaymentMethod.PIX]: 'PIX',
+};
 
 const ORDER_STATUS_TO_TEMPLATE: Partial<Record<OrderStatus, WhatsappTemplateType>> = {
   [OrderStatus.CONFIRMED]: WhatsappTemplateType.ORDER_CONFIRMED,
@@ -28,6 +36,8 @@ export class WhatsappMessageService {
   constructor(
     @InjectRepository(WhatsappMessage)
     private readonly messageRepo: Repository<WhatsappMessage>,
+    @InjectRepository(Tenant)
+    private readonly tenantRepo: Repository<Tenant>,
     private readonly evolutionApi: EvolutionApiService,
     private readonly instanceService: WhatsappInstanceService,
     private readonly templateService: WhatsappTemplateService,
@@ -47,13 +57,30 @@ export class WhatsappMessageService {
     const template = await this.templateService.findByType(order.tenant_id, templateType);
     if (!template) return;
 
-    const tenantSlug = instance.instance_name.replace('menufacil-', '');
+    const tenant = await this.tenantRepo.findOne({ where: { id: order.tenant_id } });
+    const storefrontUrl = `https://menufacil.maistechtecnologia.com.br/${tenant?.slug || ''}`;
+
+    const tenantVars = tenant
+      ? this.templateService.buildTenantVariables(tenant, storefrontUrl)
+      : { storefront_url: storefrontUrl };
+
+    const itemsList = order.items?.length
+      ? order.items.map((i) => `• ${i.quantity}x ${i.product_name}${i.variation_name ? ` (${i.variation_name})` : ''}`).join('\n')
+      : '';
+
     const variables: Record<string, string> = {
+      ...tenantVars,
       customer_name: order.customer?.name || 'Cliente',
       order_number: String(order.order_number),
       total: Number(order.total).toFixed(2),
+      subtotal: Number(order.subtotal).toFixed(2),
+      delivery_fee: Number(order.delivery_fee).toFixed(2),
+      discount: Number(order.discount).toFixed(2),
       order_type: order.order_type,
-      storefront_url: `https://menufacil.maistechtecnologia.com.br/${tenantSlug}`,
+      payment_method: PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method || '',
+      items_list: itemsList,
+      items_count: String(order.items?.length || 0),
+      notes: order.notes || '',
     };
 
     const text = this.templateService.renderTemplate(template.content, variables);
@@ -114,10 +141,15 @@ export class WhatsappMessageService {
         return;
       }
 
-      const tenantSlug = instance.instance_name.replace('menufacil-', '');
+      const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+      const storefrontUrl = `https://menufacil.maistechtecnologia.com.br/${tenant?.slug || ''}`;
+      const tenantVars = tenant
+        ? this.templateService.buildTenantVariables(tenant, storefrontUrl)
+        : { storefront_url: storefrontUrl };
+
       const variables: Record<string, string> = {
+        ...tenantVars,
         customer_name: 'Cliente',
-        storefront_url: `https://menufacil.maistechtecnologia.com.br/${tenantSlug}`,
       };
       const text = this.templateService.renderTemplate(welcomeTemplate.content, variables);
       this.logger.log(`Sending welcome message to ${phone}: "${text.substring(0, 80)}"`);

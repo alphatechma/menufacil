@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WhatsappInstance } from './entities/whatsapp-instance.entity';
 import { WhatsappMessageTemplate } from './entities/whatsapp-message-template.entity';
 import { WhatsappMessage } from './entities/whatsapp-message.entity';
+import { Tenant } from '../tenant/entities/tenant.entity';
 import { EvolutionApiService } from './services/evolution-api.service';
 import { WhatsappInstanceService } from './services/whatsapp-instance.service';
 import { WhatsappTemplateService } from './services/whatsapp-template.service';
@@ -15,6 +16,7 @@ import { WhatsappController } from './whatsapp.controller';
       WhatsappInstance,
       WhatsappMessageTemplate,
       WhatsappMessage,
+      Tenant,
     ]),
   ],
   controllers: [WhatsappController],
