@@ -52,9 +52,14 @@ export class WhatsappInstanceService {
 
     try {
       await this.evolutionApi.logoutInstance(instance.instance_name);
+    } catch (err: any) {
+      this.logger.warn(`Error during logout (continuing with delete): ${err.message}`);
+    }
+
+    try {
       await this.evolutionApi.deleteInstance(instance.instance_name);
     } catch (err: any) {
-      this.logger.warn(`Error disconnecting Evolution API instance: ${err.message}`);
+      this.logger.warn(`Error deleting Evolution API instance: ${err.message}`);
     }
 
     instance.status = WhatsappInstanceStatus.DISCONNECTED;
