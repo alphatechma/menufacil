@@ -158,6 +158,7 @@ export class OrderService {
         variation_name: variationName,
         unit_price: unitPrice,
         quantity: item.quantity,
+        notes: item.notes || null,
         extras: item.extras?.map((e) => ({
           extra_name: e.name,
           extra_price: e.price,

@@ -17,6 +17,7 @@ export interface CartItem {
   unit_price: number;
   quantity: number;
   extras: CartItemExtra[];
+  notes?: string;
 }
 
 export type OrderMode = 'delivery' | 'pickup' | 'dine_in';

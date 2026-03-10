@@ -129,6 +129,11 @@ export function CartDrawer() {
                         + {item.extras.map((e) => e.name).join(', ')}
                       </p>
                     )}
+                    {item.notes && (
+                      <p className="text-xs text-gray-400 mt-0.5 italic">
+                        Obs: {item.notes}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-2">
                         <button

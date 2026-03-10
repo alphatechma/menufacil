@@ -24,6 +24,7 @@ export default function ProductDetail() {
     Map<string, { name: string; price: number }>
   >(new Map());
   const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState('');
   const [addedToCart, setAddedToCart] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrors, setShowErrors] = useState(false);
@@ -232,6 +233,7 @@ export default function ProductDetail() {
         unit_price: getBasePrice(),
         quantity,
         extras,
+        notes: notes.trim() || undefined,
       }),
     );
 
@@ -503,6 +505,20 @@ export default function ProductDetail() {
             </div>
           </section>
         ))}
+
+      {/* Observation / Notes */}
+      <section className="px-4 pt-6">
+        <h3 className="text-base font-bold text-gray-900 mb-1">Observacao</h3>
+        <p className="text-sm text-gray-400 mb-3">Alguma preferencia ou restricao?</p>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Ex: sem cebola, bem passado..."
+          maxLength={200}
+          rows={2}
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[var(--tenant-primary)] focus:outline-none text-sm text-gray-700 resize-none transition-colors"
+        />
+      </section>
 
       {/* Quantity selector */}
       <section className="px-4 pt-6">

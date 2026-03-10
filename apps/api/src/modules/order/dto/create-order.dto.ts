@@ -50,6 +50,11 @@ export class OrderItemDto {
   @Min(1)
   quantity: number;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
   @ApiPropertyOptional({ type: [OrderItemExtraDto] })
   @IsOptional()
   @IsArray()

@@ -35,6 +35,9 @@ export class OrderItem {
   @Column()
   quantity: number;
 
+  @Column({ nullable: true })
+  notes: string;
+
   @ManyToOne(() => Order, (order) => order.items)
   @JoinColumn({ name: 'order_id' })
   order: Order;
