@@ -45,6 +45,7 @@ const TableForm = lazy(() => import('@/pages/admin/tables/TableForm'));
 const FloorPlanEditor = lazy(() => import('@/pages/admin/tables/FloorPlanEditor'));
 const ReservationList = lazy(() => import('@/pages/admin/reservations/ReservationList'));
 const WhatsappPage = lazy(() => import('@/pages/admin/whatsapp/WhatsappPage'));
+const FlowEditor = lazy(() => import('@/pages/admin/whatsapp/FlowEditor'));
 const UnitsList = lazy(() => import('@/pages/admin/units/UnitsList'));
 const UnitForm = lazy(() => import('@/pages/admin/units/UnitForm'));
 
@@ -75,6 +76,16 @@ export default function App() {
             <AdminGuestRoute>
               <AdminLogin />
             </AdminGuestRoute>
+          }
+        />
+
+        {/* Admin full-screen routes (no sidebar) */}
+        <Route
+          path="/admin/whatsapp/flows/:id"
+          element={
+            <AdminProtectedRoute>
+              <FlowEditor />
+            </AdminProtectedRoute>
           }
         />
 

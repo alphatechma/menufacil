@@ -35,6 +35,7 @@ export const baseApi = createApi({
     'WhatsappTemplates',
     'WhatsappConversations',
     'WhatsappMessages',
+    'WhatsappFlows',
     'Units',
     'ExtraGroups',
   ],

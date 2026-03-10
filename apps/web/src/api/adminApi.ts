@@ -419,6 +419,35 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['WhatsappConversations'],
     }),
 
+    // WhatsApp Flows
+    getWhatsappFlows: builder.query<any[], void>({
+      query: () => ({ url: '/whatsapp/flows', method: 'GET', meta: { authContext: 'admin' as const } }),
+      providesTags: ['WhatsappFlows'],
+    }),
+    getWhatsappFlow: builder.query<any, string>({
+      query: (id) => ({ url: `/whatsapp/flows/${id}`, method: 'GET', meta: { authContext: 'admin' as const } }),
+      providesTags: (_r: any, _e: any, id: string) => [{ type: 'WhatsappFlows' as const, id }],
+    }),
+    createWhatsappFlow: builder.mutation<any, any>({
+      query: (data) => ({ url: '/whatsapp/flows', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappFlows'],
+    }),
+    updateWhatsappFlow: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/whatsapp/flows/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: (_r: any, _e: any, { id }: { id: string }) => ['WhatsappFlows', { type: 'WhatsappFlows' as const, id }],
+    }),
+    deleteWhatsappFlow: builder.mutation<any, string>({
+      query: (id) => ({ url: `/whatsapp/flows/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappFlows'],
+    }),
+    duplicateWhatsappFlow: builder.mutation<any, string>({
+      query: (id) => ({ url: `/whatsapp/flows/${id}/duplicate`, method: 'POST', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['WhatsappFlows'],
+    }),
+    validateWhatsappFlow: builder.mutation<{ valid: boolean; errors: string[] }, string>({
+      query: (id) => ({ url: `/whatsapp/flows/${id}/validate`, method: 'POST', meta: { authContext: 'admin' as const } }),
+    }),
+
     // Units
     getUnits: builder.query<any[], void>({
       query: () => ({ url: '/units', method: 'GET', meta: { authContext: 'admin' as const } }),
@@ -549,6 +578,13 @@ export const {
   useGetWhatsappConversationsQuery,
   useGetWhatsappMessagesQuery,
   useSendWhatsappMessageMutation,
+  useGetWhatsappFlowsQuery,
+  useGetWhatsappFlowQuery,
+  useCreateWhatsappFlowMutation,
+  useUpdateWhatsappFlowMutation,
+  useDeleteWhatsappFlowMutation,
+  useDuplicateWhatsappFlowMutation,
+  useValidateWhatsappFlowMutation,
   useGetUnitsQuery,
   useGetUnitQuery,
   useCreateUnitMutation,
