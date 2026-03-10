@@ -56,10 +56,16 @@ export default function FlowEditor() {
   // Memoize nodeTypes so ReactFlow doesn't re-render on every state change
   const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
-  // Load flow data
+  // Load flow data — ensure every node has a valid position
   useEffect(() => {
     if (flow) {
-      setNodes(flow.nodes || []);
+      const safeNodes = (flow.nodes || []).map((n: any, i: number) => ({
+        ...n,
+        position: n.position && typeof n.position.x === 'number'
+          ? n.position
+          : { x: 250, y: i * 120 },
+      }));
+      setNodes(safeNodes);
       setEdges(flow.edges || []);
       setFlowName(flow.name || '');
       setIsActive(flow.is_active || false);
