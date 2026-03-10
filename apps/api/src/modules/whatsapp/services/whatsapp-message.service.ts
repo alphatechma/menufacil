@@ -1,14 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WhatsappMessage } from '../entities/whatsapp-message.entity';
 import {
   WhatsappMessageDirection, WhatsappMessageStatus, WhatsappTemplateType,
   WhatsappInstanceStatus, OrderStatus, PaymentMethod, WEBSOCKET_EVENTS, WEBSOCKET_ROOMS,
+  FlowTriggerType, FlowExecutionStatus,
 } from '@menufacil/shared';
 import { EvolutionApiService } from './evolution-api.service';
 import { WhatsappInstanceService } from './whatsapp-instance.service';
 import { WhatsappTemplateService } from './whatsapp-template.service';
+import { FlowEngineService } from './flow-engine.service';
+import { WhatsappFlowService } from './whatsapp-flow.service';
 import { EventsGateway } from '../../../websocket/events.gateway';
 import { Order } from '../../order/entities/order.entity';
 import { Tenant } from '../../tenant/entities/tenant.entity';
@@ -41,6 +44,9 @@ export class WhatsappMessageService {
     private readonly evolutionApi: EvolutionApiService,
     private readonly instanceService: WhatsappInstanceService,
     private readonly templateService: WhatsappTemplateService,
+    @Inject(forwardRef(() => FlowEngineService))
+    private readonly flowEngine: FlowEngineService,
+    private readonly flowService: WhatsappFlowService,
     private readonly eventsGateway: EventsGateway,
   ) {}
 
@@ -119,6 +125,37 @@ export class WhatsappMessageService {
     const saved = await this.saveMessage(tenantId, phone, WhatsappMessageDirection.INBOUND, content, WhatsappMessageStatus.DELIVERED);
     this.emitNewMessage(tenantId, saved);
 
+    // Check if there's an active flow execution waiting for input
+    const activeExecution = await this.flowEngine.getActiveExecution(tenantId, phone);
+    if (activeExecution && activeExecution.status === FlowExecutionStatus.WAITING_INPUT) {
+      this.logger.log(`Resuming flow execution ${activeExecution.id} with input from ${phone}`);
+      await this.flowEngine.handleWaitInputResponse(activeExecution.id, content);
+      return;
+    }
+
+    if (activeExecution) {
+      this.logger.debug(`Active flow execution exists for ${phone}, skipping trigger check`);
+      return;
+    }
+
+    // Check for matching flows
+    const flows = await this.flowService.findActiveByTrigger(tenantId, FlowTriggerType.MESSAGE_RECEIVED);
+    for (const flow of flows) {
+      const config = flow.trigger_config || {};
+      const keywords = config.keywords as string[] | undefined;
+      if (keywords?.length) {
+        const matches = keywords.some((kw: string) =>
+          content.toLowerCase().includes(kw.toLowerCase()),
+        );
+        if (!matches) continue;
+      }
+      // Found a matching flow, start execution
+      this.logger.log(`Starting flow "${flow.name}" for ${phone}`);
+      await this.flowEngine.startExecution(flow, phone, { last_input: content });
+      return;
+    }
+
+    // No flow matched — fall back to existing welcome template logic
     // Auto-reply with welcome template if no recent outbound message (last 24h)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const recentOutbound = await this.messageRepo

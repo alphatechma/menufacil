@@ -16,9 +16,12 @@ import { PermissionsGuard } from '../../common/guards';
 import { WhatsappInstanceService } from './services/whatsapp-instance.service';
 import { WhatsappTemplateService } from './services/whatsapp-template.service';
 import { WhatsappMessageService } from './services/whatsapp-message.service';
+import { WhatsappFlowService } from './services/whatsapp-flow.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { SendMessageDto } from './dto/send-message.dto';
+import { CreateFlowDto } from './dto/create-flow.dto';
+import { UpdateFlowDto } from './dto/update-flow.dto';
 
 @Controller('whatsapp')
 export class WhatsappController {
@@ -28,6 +31,7 @@ export class WhatsappController {
     private readonly instanceService: WhatsappInstanceService,
     private readonly templateService: WhatsappTemplateService,
     private readonly messageService: WhatsappMessageService,
+    private readonly flowService: WhatsappFlowService,
   ) {}
 
   // --- Instance (protected) ---
@@ -126,6 +130,64 @@ export class WhatsappController {
     @Body() dto: SendMessageDto,
   ) {
     return this.messageService.sendFreeMessage(tenantId, dto.phone, dto.content);
+  }
+
+  // --- Flows (protected) ---
+
+  @Get('flows')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  getFlows(@CurrentTenant('id') tenantId: string) {
+    return this.flowService.findAll(tenantId);
+  }
+
+  @Get('flows/:id')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  getFlow(@CurrentTenant('id') tenantId: string, @Param('id') id: string) {
+    return this.flowService.findOne(tenantId, id);
+  }
+
+  @Post('flows')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  createFlow(@CurrentTenant('id') tenantId: string, @Body() dto: CreateFlowDto) {
+    return this.flowService.create(tenantId, dto);
+  }
+
+  @Put('flows/:id')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  updateFlow(
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateFlowDto,
+  ) {
+    return this.flowService.update(tenantId, id, dto);
+  }
+
+  @Delete('flows/:id')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  async deleteFlow(@CurrentTenant('id') tenantId: string, @Param('id') id: string) {
+    await this.flowService.delete(tenantId, id);
+    return { success: true };
+  }
+
+  @Post('flows/:id/duplicate')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  duplicateFlow(@CurrentTenant('id') tenantId: string, @Param('id') id: string) {
+    return this.flowService.duplicate(tenantId, id);
+  }
+
+  @Post('flows/:id/validate')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('whatsapp:manage')
+  async validateFlow(@CurrentTenant('id') tenantId: string, @Param('id') id: string) {
+    const flow = await this.flowService.findOne(tenantId, id);
+    const errors = await this.flowService.validate(flow);
+    return { valid: errors.length === 0, errors };
   }
 
   // --- Webhook (PUBLIC, no auth) ---

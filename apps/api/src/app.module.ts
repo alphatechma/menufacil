@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bull';
 import { join } from 'path';
 import { getDatabaseConfig } from './config/database.config';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
@@ -41,6 +42,12 @@ import { UnitModule } from './modules/unit/unit.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
+    }),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: Number(process.env.REDIS_PORT) || 6379,
+      },
     }),
     TenantModule,
     AuthModule,

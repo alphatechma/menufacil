@@ -1,9 +1,10 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WhatsappInstance } from '../entities/whatsapp-instance.entity';
 import { WhatsappInstanceStatus, WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from '@menufacil/shared';
 import { EvolutionApiService } from './evolution-api.service';
+import { FlowEngineService } from './flow-engine.service';
 import { EventsGateway } from '../../../websocket/events.gateway';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class WhatsappInstanceService {
     @InjectRepository(WhatsappInstance)
     private readonly instanceRepo: Repository<WhatsappInstance>,
     private readonly evolutionApi: EvolutionApiService,
+    @Inject(forwardRef(() => FlowEngineService))
+    private readonly flowEngine: FlowEngineService,
     private readonly eventsGateway: EventsGateway,
   ) {}
 
@@ -72,6 +75,9 @@ export class WhatsappInstanceService {
     (instance as any).phone_number = null;
     await this.instanceRepo.save(instance);
     this.emitStatusUpdate(tenantId, instance);
+
+    // Cancel any running flow executions for this tenant
+    await this.flowEngine.cancelExecutionsByTenant(tenantId);
   }
 
   async getStatus(tenantId: string): Promise<{ status: WhatsappInstanceStatus; phone_number: string | null }> {
