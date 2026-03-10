@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { adminLogout } from '@/store/slices/adminAuthSlice';
+import { baseApi } from '@/api/baseApi';
 import { toggleSidebar, toggleMobileMenu, closeMobileMenu, selectSidebarCollapsed, selectMobileMenuOpen, selectIsDark, toggleDarkMode } from '@/store/slices/uiSlice';
 import { usePermission } from '@/hooks/usePermission';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -228,7 +229,9 @@ export default function AdminLayout() {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch { /* ignore */ }
+    localStorage.removeItem('menufacil-impersonate-token');
     dispatch(adminLogout());
+    dispatch(baseApi.util.resetApiState());
     navigate('/login');
   };
 

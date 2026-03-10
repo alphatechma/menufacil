@@ -77,6 +77,7 @@ const adminAuthSlice = createSlice({
     },
     adminLogout(state) {
       state.user = null;
+      state.tenantSlug = null;
       state.modules = [];
       state.permissions = [];
       state.plan = null;
