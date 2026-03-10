@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { normalizePhone } from '../../../common/utils/normalize-phone';
 
 @Injectable()
 export class EvolutionApiService {
@@ -82,25 +83,10 @@ export class EvolutionApiService {
 
   async sendTextMessage(instanceName: string, phone: string, text: string): Promise<any> {
     return this.request('POST', `/message/sendText/${instanceName}`, {
-      number: this.normalizePhone(phone),
+      number: normalizePhone(phone),
       text,
       delay: 1000,
       linkPreview: true,
     });
-  }
-
-  /**
-   * Garante formato internacional: 55XXXXXXXXXXX
-   * Remove caracteres não numéricos, adiciona 55 se necessário.
-   */
-  private normalizePhone(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('55') && digits.length >= 12) {
-      return digits;
-    }
-    if (digits.length === 10 || digits.length === 11) {
-      return `55${digits}`;
-    }
-    return digits;
   }
 }

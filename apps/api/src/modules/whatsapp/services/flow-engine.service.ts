@@ -12,6 +12,7 @@ import { FlowExecutionStatus, WhatsappInstanceStatus } from '@menufacil/shared';
 import { Tenant } from '../../tenant/entities/tenant.entity';
 import { Customer } from '../../customer/entities/customer.entity';
 import { Order } from '../../order/entities/order.entity';
+import { normalizePhone } from '../../../common/utils/normalize-phone';
 
 const MAX_NODES_PER_EXECUTION = 50;
 
@@ -44,7 +45,7 @@ export class FlowEngineService {
     const execution = this.executionRepo.create({
       flow_id: flow.id,
       tenant_id: flow.tenant_id,
-      customer_phone: phone,
+      customer_phone: normalizePhone(phone),
       status: FlowExecutionStatus.RUNNING,
       context: initialContext,
       started_at: new Date(),
@@ -293,10 +294,11 @@ export class FlowEngineService {
   }
 
   async getActiveExecution(tenantId: string, phone: string): Promise<WhatsappFlowExecution | null> {
+    const normalized = normalizePhone(phone);
     return this.executionRepo.findOne({
       where: [
-        { tenant_id: tenantId, customer_phone: phone, status: FlowExecutionStatus.RUNNING },
-        { tenant_id: tenantId, customer_phone: phone, status: FlowExecutionStatus.WAITING_INPUT },
+        { tenant_id: tenantId, customer_phone: normalized, status: FlowExecutionStatus.RUNNING },
+        { tenant_id: tenantId, customer_phone: normalized, status: FlowExecutionStatus.WAITING_INPUT },
       ],
       order: { created_at: 'DESC' },
     });

@@ -15,6 +15,7 @@ import { WhatsappFlowService } from './whatsapp-flow.service';
 import { EventsGateway } from '../../../websocket/events.gateway';
 import { Order } from '../../order/entities/order.entity';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { normalizePhone } from '../../../common/utils/normalize-phone';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   [PaymentMethod.CASH]: 'Dinheiro',
@@ -57,8 +58,9 @@ export class WhatsappMessageService {
     const instance = await this.instanceService.getInstanceByTenantId(order.tenant_id);
     if (!instance || instance.status !== WhatsappInstanceStatus.CONNECTED) return;
 
-    const customerPhone = order.customer?.phone;
-    if (!customerPhone) return;
+    const rawPhone = order.customer?.phone;
+    if (!rawPhone) return;
+    const customerPhone = normalizePhone(rawPhone);
 
     const template = await this.templateService.findByType(order.tenant_id, templateType);
     if (!template) return;
@@ -234,8 +236,9 @@ export class WhatsappMessageService {
   }
 
   async getMessages(tenantId: string, phone: string): Promise<WhatsappMessage[]> {
+    const normalized = normalizePhone(phone);
     return this.messageRepo.find({
-      where: { tenant_id: tenantId, customer_phone: phone },
+      where: { tenant_id: tenantId, customer_phone: normalized },
       order: { created_at: 'ASC' },
       take: 100,
     });
@@ -247,7 +250,7 @@ export class WhatsappMessageService {
     templateId?: string, orderId?: string,
   ): Promise<WhatsappMessage> {
     const message = this.messageRepo.create({
-      tenant_id: tenantId, customer_phone: phone, direction, content, status,
+      tenant_id: tenantId, customer_phone: normalizePhone(phone), direction, content, status,
       template_id: templateId, order_id: orderId,
     });
     return this.messageRepo.save(message);

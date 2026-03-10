@@ -20,6 +20,7 @@ import { WhatsappTemplateService } from './services/whatsapp-template.service';
 import { WhatsappMessageService } from './services/whatsapp-message.service';
 import { WhatsappFlowService } from './services/whatsapp-flow.service';
 import { FlowEngineService } from './services/flow-engine.service';
+import { normalizePhone } from '../../common/utils/normalize-phone';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -202,7 +203,7 @@ export class WhatsappController {
     @Param('id') id: string,
     @Body() body: Record<string, any>,
   ) {
-    const phone = body.phone?.replace(/\D/g, '');
+    const phone = normalizePhone(body.phone || '');
     if (!phone) {
       return { success: false, error: 'Numero de telefone obrigatorio' };
     }
@@ -250,9 +251,9 @@ export class WhatsappController {
         }
 
         const remoteJid = message?.key?.remoteJid || '';
-        const phone = remoteJid
-          .replace('@s.whatsapp.net', '')
-          .replace('@lid', '');
+        const phone = normalizePhone(
+          remoteJid.replace('@s.whatsapp.net', '').replace('@lid', ''),
+        );
         const content =
           message?.message?.conversation ||
           message?.message?.extendedTextMessage?.text ||
