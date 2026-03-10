@@ -140,6 +140,50 @@ export class FlowEngineService {
           break;
         }
 
+        case 'send_menu': {
+          const menuTitle = node.data.title || 'Menu';
+          const menuDescription = node.data.description || 'Selecione uma opcao:';
+          const menuButtonText = node.data.button_text || 'Ver opcoes';
+          const menuOptions = (node.data.options || []) as Array<{ title: string; description?: string; id: string }>;
+
+          if (menuOptions.length > 0) {
+            const sections = [{
+              title: menuTitle,
+              rows: menuOptions.map((opt) => ({
+                title: opt.title,
+                description: opt.description || '',
+                rowId: opt.id,
+              })),
+            }];
+            await this.evolutionApi.sendListMessage(
+              instance.instance_name,
+              execution.customer_phone,
+              menuTitle,
+              menuDescription,
+              menuButtonText,
+              sections,
+            );
+          } else {
+            // Fallback: send as text if no options configured
+            await this.evolutionApi.sendTextMessage(
+              instance.instance_name,
+              execution.customer_phone,
+              `${menuTitle}\n${menuDescription}`,
+            );
+          }
+
+          // After sending menu, wait for input to route based on selection
+          execution.status = FlowExecutionStatus.WAITING_INPUT;
+          execution.current_node_id = nodeId;
+          await this.executionRepo.save(execution);
+
+          const menuTimeout = node.data.timeout_minutes || 5;
+          await this.flowQueue.add('wait-timeout', {
+            executionId, flowId, nodeId, nodesProcessed: nodesProcessed + 1,
+          }, { delay: menuTimeout * 60 * 1000, jobId: `wait-timeout-${executionId}` });
+          return;
+        }
+
         case 'delay': {
           const delayMinutes = node.data.minutes || 1;
           execution.current_node_id = nodeId;

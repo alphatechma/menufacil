@@ -1,5 +1,5 @@
 import type { Node } from '@xyflow/react';
-import { X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
@@ -51,6 +51,7 @@ const NODE_TITLES: Record<string, string> = {
   check_customer: 'Verificar Cliente',
   lookup_order: 'Consultar Pedido',
   transfer_human: 'Transferir p/ Atendente',
+  send_menu: 'Menu Interativo',
 };
 
 function SendMessageConfig({ data, updateData }: { data: Record<string, any>; updateData: (key: string, value: unknown) => void }) {
@@ -87,6 +88,119 @@ function SendMessageConfig({ data, updateData }: { data: Record<string, any>; up
         />
         <p className="text-xs text-muted-foreground mt-1">
           Variaveis: {'{{customer_name}}'}, {'{{order_number}}'}, {'{{total}}'}, {'{{store_name}}'}, {'{{store_hours_today}}'}, {'{{items_list}}'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+interface MenuOption {
+  id: string;
+  title: string;
+  description: string;
+}
+
+function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updateData: (key: string, value: unknown) => void }) {
+  const options = (data.options as MenuOption[]) || [];
+
+  const addOption = () => {
+    const newOption: MenuOption = {
+      id: `opt_${Date.now()}`,
+      title: '',
+      description: '',
+    };
+    updateData('options', [...options, newOption]);
+  };
+
+  const updateOption = (index: number, field: keyof MenuOption, value: string) => {
+    const updated = options.map((opt, i) =>
+      i === index ? { ...opt, [field]: value } : opt,
+    );
+    updateData('options', updated);
+  };
+
+  const removeOption = (index: number) => {
+    updateData('options', options.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Titulo do menu</label>
+        <Input
+          value={(data.title as string) || ''}
+          onChange={(e) => updateData('title', e.target.value)}
+          placeholder="Ex: Menu de opcoes"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Descricao</label>
+        <Textarea
+          rows={2}
+          value={(data.description as string) || ''}
+          onChange={(e) => updateData('description', e.target.value)}
+          placeholder="Selecione uma das opcoes abaixo:"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Texto do botao</label>
+        <Input
+          value={(data.button_text as string) || 'Ver opcoes'}
+          onChange={(e) => updateData('button_text', e.target.value)}
+          placeholder="Ver opcoes"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 block">Timeout (minutos)</label>
+        <Input
+          type="number"
+          min={1}
+          value={(data.timeout_minutes as number) || 5}
+          onChange={(e) => updateData('timeout_minutes', parseInt(e.target.value) || 5)}
+        />
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-foreground">Opcoes do menu</label>
+          <button
+            onClick={addOption}
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark transition-colors"
+          >
+            <Plus className="w-3 h-3" /> Adicionar
+          </button>
+        </div>
+        {options.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhuma opcao adicionada.</p>
+        )}
+        <div className="space-y-3">
+          {options.map((opt, index) => (
+            <div key={opt.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Opcao {index + 1}</span>
+                <button
+                  onClick={() => removeOption(index)}
+                  className="text-red-400 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+              <Input
+                value={opt.title}
+                onChange={(e) => updateOption(index, 'title', e.target.value)}
+                placeholder="Titulo da opcao"
+                className="text-xs"
+              />
+              <Input
+                value={opt.description}
+                onChange={(e) => updateOption(index, 'description', e.target.value)}
+                placeholder="Descricao (opcional)"
+                className="text-xs"
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Apos o cliente selecionar, a resposta ficara disponivel em {'{{last_input}}'}.
         </p>
       </div>
     </div>
@@ -302,6 +416,9 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
           </div>
         );
       }
+
+      case 'send_menu':
+        return <SendMenuConfig data={data} updateData={updateData} />;
 
       case 'check_hours':
       case 'lookup_order':

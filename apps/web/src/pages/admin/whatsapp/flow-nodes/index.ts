@@ -9,12 +9,14 @@ import { CheckHoursNode } from './CheckHoursNode';
 import { CheckCustomerNode } from './CheckCustomerNode';
 import { LookupOrderNode } from './LookupOrderNode';
 import { TransferHumanNode } from './TransferHumanNode';
+import { SendMenuNode } from './SendMenuNode';
 
 export {
   TriggerNode,
   SendMessageNode,
   SendMediaNode,
   SendMenuLinkNode,
+  SendMenuNode,
   DelayNode,
   WaitInputNode,
   ConditionNode,
@@ -30,6 +32,7 @@ export const nodeTypes: Record<string, any> = {
   send_message: SendMessageNode,
   send_media: SendMediaNode,
   send_menu_link: SendMenuLinkNode,
+  send_menu: SendMenuNode,
   delay: DelayNode,
   wait_input: WaitInputNode,
   condition: ConditionNode,

@@ -89,4 +89,26 @@ export class EvolutionApiService {
       linkPreview: true,
     });
   }
+
+  async sendListMessage(
+    instanceName: string,
+    phone: string,
+    title: string,
+    description: string,
+    buttonText: string,
+    sections: Array<{
+      title: string;
+      rows: Array<{ title: string; description?: string; rowId: string }>;
+    }>,
+  ): Promise<any> {
+    return this.request('POST', `/message/sendList/${instanceName}`, {
+      number: normalizePhone(phone),
+      title,
+      description,
+      buttonText,
+      footerText: '',
+      sections,
+      delay: 1000,
+    });
+  }
 }
