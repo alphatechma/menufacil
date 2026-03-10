@@ -91,3 +91,32 @@ export enum WhatsappMessageStatus {
   READ = 'read',
   FAILED = 'failed',
 }
+
+export enum FlowTriggerType {
+  MESSAGE_RECEIVED = 'message_received',
+  ORDER_STATUS_CHANGED = 'order_status_changed',
+  SCHEDULED = 'scheduled',
+  NEW_CUSTOMER = 'new_customer',
+}
+
+export enum FlowNodeType {
+  TRIGGER = 'trigger',
+  SEND_MESSAGE = 'send_message',
+  SEND_MEDIA = 'send_media',
+  SEND_MENU_LINK = 'send_menu_link',
+  WAIT_INPUT = 'wait_input',
+  DELAY = 'delay',
+  CONDITION = 'condition',
+  CHECK_HOURS = 'check_hours',
+  CHECK_CUSTOMER = 'check_customer',
+  LOOKUP_ORDER = 'lookup_order',
+  TRANSFER_HUMAN = 'transfer_human',
+}
+
+export enum FlowExecutionStatus {
+  RUNNING = 'running',
+  WAITING_INPUT = 'waiting_input',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+}
