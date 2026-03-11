@@ -396,7 +396,7 @@ export class FlowEngineService {
     const now = new Date();
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayKey = dayKeys[now.getDay()];
-    const hours = tenant.business_hours[dayKey];
+    const hours = tenant.business_hours[dayKey] as any;
     if (!hours) return false;
     // Support both formats: { open: boolean, openTime, closeTime } and { open: "11:00", close: "23:00" }
     const isOpen = typeof hours.open === 'boolean' ? hours.open : (typeof hours.open === 'string' && hours.open.includes(':'));
