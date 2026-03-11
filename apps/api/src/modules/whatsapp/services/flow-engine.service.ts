@@ -392,16 +392,27 @@ export class FlowEngineService {
   }
 
   private checkStoreOpen(tenant: Tenant | null): boolean {
-    if (!tenant?.business_hours) return false;
+    if (!tenant?.business_hours || Object.keys(tenant.business_hours).length === 0) return true;
     const now = new Date();
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayKey = dayKeys[now.getDay()];
     const hours = tenant.business_hours[dayKey];
-    if (!hours?.open || !hours.openTime || !hours.closeTime) return false;
+    if (!hours) return false;
+    // Support both formats: { open: boolean, openTime, closeTime } and { open: "11:00", close: "23:00" }
+    const isOpen = typeof hours.open === 'boolean' ? hours.open : (typeof hours.open === 'string' && hours.open.includes(':'));
+    if (!isOpen) return false;
+    const openTime = hours.openTime || hours.open_time || (typeof hours.open === 'string' && hours.open.includes(':') ? hours.open : null);
+    const closeTime = hours.closeTime || hours.close_time || (typeof hours.close === 'string' ? hours.close : null);
+    // No time constraints = open all day
+    if (!openTime || !closeTime) return true;
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [oh, om] = hours.openTime.split(':').map(Number);
-    const [ch, cm] = hours.closeTime.split(':').map(Number);
-    return currentMinutes >= oh * 60 + om && currentMinutes < ch * 60 + cm;
+    const [oh, om] = openTime.split(':').map(Number);
+    const [ch, cm] = closeTime.split(':').map(Number);
+    const openMin = oh * 60 + om;
+    let closeMin = ch * 60 + cm;
+    if (closeMin <= openMin) closeMin += 24 * 60;
+    const adjusted = currentMinutes < openMin ? currentMinutes + 24 * 60 : currentMinutes;
+    return adjusted >= openMin && adjusted < closeMin;
   }
 
   private async evaluateCustomerCheck(data: any, execution: WhatsappFlowExecution): Promise<boolean> {
