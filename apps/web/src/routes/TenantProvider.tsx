@@ -44,7 +44,7 @@ function isDayOpen(cfg: any): boolean {
 }
 
 function computeStoreStatus(businessHours: Record<string, any> | null): { is_open: boolean; next_open_label: string | null; hours_label: string | null } {
-  if (!businessHours) return { is_open: true, next_open_label: null, hours_label: null };
+  if (!businessHours || Object.keys(businessHours).length === 0) return { is_open: true, next_open_label: null, hours_label: null };
   const now = new Date();
   const dayKey = DAY_MAP[now.getDay()];
   const dayConfig = businessHours[dayKey];
@@ -135,7 +135,7 @@ export function TenantProvider() {
   useEffect(() => {
     if (data && units && selectedUnitId) {
       const selectedUnit = units.find((u: any) => u.id === selectedUnitId);
-      if (selectedUnit?.business_hours) {
+      if (selectedUnit?.business_hours && Object.keys(selectedUnit.business_hours).length > 0) {
         const { is_open, next_open_label, hours_label } = computeStoreStatus(selectedUnit.business_hours);
         dispatch(setTenant({ ...data, is_open, next_open_label, hours_label }));
       }
