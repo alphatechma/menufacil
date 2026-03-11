@@ -189,14 +189,7 @@ export class WhatsappMessageService {
         ? this.templateService.buildTenantVariables(tenant, storefrontUrl)
         : { storefront_url: storefrontUrl };
 
-      // Try to find registered customer by phone
-      const local = phone.startsWith('55') ? phone.slice(2) : phone;
-      const knownCustomer = await this.customerRepo.findOne({
-        where: [
-          { tenant_id: tenantId, phone },
-          { tenant_id: tenantId, phone: local },
-        ],
-      });
+      const knownCustomer = await this.findCustomerByPhone(tenantId, phone);
 
       const variables: Record<string, string> = {
         ...tenantVars,
@@ -262,15 +255,7 @@ export class WhatsappMessageService {
           .orderBy('m.created_at', 'DESC')
           .getOne();
 
-        // Lookup customer by normalized phone (try with and without country code)
-        const local = normalized.startsWith('55') ? normalized.slice(2) : normalized;
-        const customer = await this.customerRepo.findOne({
-          where: [
-            { tenant_id: tenantId, phone: normalized },
-            { tenant_id: tenantId, phone: local },
-          ],
-          select: ['id', 'name', 'phone', 'email', 'loyalty_points'],
-        });
+        const customer = await this.findCustomerByPhone(tenantId, normalized);
 
         return {
           phone: normalized,
@@ -316,6 +301,24 @@ export class WhatsappMessageService {
       .orderBy('m.created_at', 'ASC')
       .take(100)
       .getMany();
+  }
+
+  /**
+   * Find a customer by phone, comparing only digits to handle any stored format.
+   */
+  private async findCustomerByPhone(tenantId: string, phone: string): Promise<Customer | null> {
+    const normalized = normalizePhone(phone);
+    const digitsOnly = normalized.replace(/\D/g, '');
+    const local = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly;
+
+    return this.customerRepo
+      .createQueryBuilder('c')
+      .where('c.tenant_id = :tenantId', { tenantId })
+      .andWhere(
+        "REGEXP_REPLACE(c.phone, '[^0-9]', '', 'g') IN (:...phones)",
+        { phones: [digitsOnly, local] },
+      )
+      .getOne();
   }
 
   private async saveMessage(
