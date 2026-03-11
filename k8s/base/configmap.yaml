@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: menufacil-config
+  namespace: menufacil
+data:
+  # Database
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_USERNAME: "menufacil"
+  DB_DATABASE: "menufacil"
+  # Redis
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  # App
+  API_PORT: "3000"
+  API_PREFIX: "api"
+  NODE_ENV: "production"
+  TZ: "America/Sao_Paulo"
+  # MinIO
+  MINIO_ENDPOINT: "minio"
+  MINIO_PORT: "9000"
+  MINIO_BUCKET: "menufacil"
+  MINIO_USE_SSL: "false"
+  MAX_FILE_SIZE: "5242880"
+  # JWT
+  JWT_EXPIRES_IN: "15m"
+  JWT_REFRESH_EXPIRES_IN: "7d"

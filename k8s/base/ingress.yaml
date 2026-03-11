@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: menufacil-ingress
+  namespace: menufacil
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    # WebSocket support for Socket.io
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - menufacil.maistechtecnologia.com.br
+        - api.menufacil.maistechtecnologia.com.br
+        - admin.menufacil.maistechtecnologia.com.br
+        - garcom.menufacil.maistechtecnologia.com.br
+      secretName: menufacil-tls
+  rules:
+    # API (includes WebSocket /socket.io/)
+    - host: api.menufacil.maistechtecnologia.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
+    # Web (main app - admin + storefront)
+    - host: menufacil.maistechtecnologia.com.br
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+    # Super Admin
+    - host: admin.menufacil.maistechtecnologia.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: super-admin
+                port:
+                  number: 80
+    # Waiter (Garcom)
+    - host: garcom.menufacil.maistechtecnologia.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: waiter
+                port:
+                  number: 80
