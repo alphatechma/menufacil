@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, Raw } from 'typeorm';
 import { WhatsappMessage } from '../entities/whatsapp-message.entity';
 import {
   WhatsappMessageDirection, WhatsappMessageStatus, WhatsappTemplateType,
@@ -294,31 +294,27 @@ export class WhatsappMessageService {
       matchingPhones.push(normalized);
     }
 
-    return this.messageRepo
-      .createQueryBuilder('m')
-      .where('m.tenant_id = :tenantId', { tenantId })
-      .andWhere('m.customer_phone IN (:...phones)', { phones: matchingPhones })
-      .orderBy('m.created_at', 'ASC')
-      .take(100)
-      .getMany();
+    return this.messageRepo.find({
+      where: { tenant_id: tenantId, customer_phone: In(matchingPhones) },
+      order: { created_at: 'ASC' },
+      take: 100,
+    });
   }
 
-  /**
-   * Find a customer by phone, comparing only digits to handle any stored format.
-   */
   private async findCustomerByPhone(tenantId: string, phone: string): Promise<Customer | null> {
     const normalized = normalizePhone(phone);
     const digitsOnly = normalized.replace(/\D/g, '');
     const local = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly;
 
-    return this.customerRepo
-      .createQueryBuilder('c')
-      .where('c.tenant_id = :tenantId', { tenantId })
-      .andWhere(
-        "REGEXP_REPLACE(c.phone, '[^0-9]', '', 'g') IN (:...phones)",
-        { phones: [digitsOnly, local] },
-      )
-      .getOne();
+    return this.customerRepo.findOne({
+      where: {
+        tenant_id: tenantId,
+        phone: Raw(
+          (alias) => `REGEXP_REPLACE(${alias}, '[^0-9]', '', 'g') IN (:...phones)`,
+          { phones: [digitsOnly, local] },
+        ),
+      },
+    });
   }
 
   private async saveMessage(

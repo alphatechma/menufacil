@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { WhatsappFlow } from '../entities/whatsapp-flow.entity';
@@ -462,13 +462,14 @@ export class FlowEngineService {
     const digitsOnly = normalized.replace(/\D/g, '');
     const local = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly;
 
-    return this.customerRepo
-      .createQueryBuilder('c')
-      .where('c.tenant_id = :tenantId', { tenantId })
-      .andWhere(
-        "REGEXP_REPLACE(c.phone, '[^0-9]', '', 'g') IN (:...phones)",
-        { phones: [digitsOnly, local] },
-      )
-      .getOne();
+    return this.customerRepo.findOne({
+      where: {
+        tenant_id: tenantId,
+        phone: Raw(
+          (alias) => `REGEXP_REPLACE(${alias}, '[^0-9]', '', 'g') IN (:...phones)`,
+          { phones: [digitsOnly, local] },
+        ),
+      },
+    });
   }
 }
