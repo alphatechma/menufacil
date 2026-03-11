@@ -1,6 +1,17 @@
 import { AlertTriangle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './Modal';
-import { Button } from './Button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from './AlertDialog';
+import { cn } from '@/utils/cn';
+import { buttonVariants } from './Button';
+import { Spinner } from './Spinner';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -14,24 +25,32 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({ open, onClose, onConfirm, title = 'Confirmar', message, confirmLabel = 'Confirmar', loading }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader className="items-center text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 mb-2">
+    <AlertDialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader className="items-center text-center sm:text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-2">
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{message}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex-row justify-center gap-3 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row justify-center gap-3 sm:justify-center">
+          <AlertDialogCancel disabled={loading} onClick={onClose}>
             Cancelar
-          </Button>
-          <Button variant="danger" onClick={onConfirm} loading={loading}>
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className={cn(buttonVariants({ variant: 'danger' }))}
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
+            disabled={loading}
+          >
+            {loading && <Spinner className="h-4 w-4" />}
             {confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
