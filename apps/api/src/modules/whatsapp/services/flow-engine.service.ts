@@ -42,10 +42,21 @@ export class FlowEngineService {
     phone: string,
     initialContext: Record<string, any> = {},
   ): Promise<WhatsappFlowExecution> {
+    const normalized = normalizePhone(phone);
+
+    // Look up registered customer to enrich context
+    const customer = await this.findCustomerByPhone(flow.tenant_id, normalized);
+    if (customer) {
+      initialContext.customer_name = customer.name;
+      initialContext.customer_email = customer.email || '';
+      initialContext.customer_id = customer.id;
+      initialContext.loyalty_points = String(customer.loyalty_points || 0);
+    }
+
     const execution = this.executionRepo.create({
       flow_id: flow.id,
       tenant_id: flow.tenant_id,
-      customer_phone: normalizePhone(phone),
+      customer_phone: normalized,
       status: FlowExecutionStatus.RUNNING,
       context: initialContext,
       started_at: new Date(),
@@ -422,26 +433,42 @@ export class FlowEngineService {
 
     switch (data.check_type) {
       case 'is_registered': {
-        const customer = await this.customerRepo.findOne({ where: { tenant_id: tenantId, phone } });
+        const customer = await this.findCustomerByPhone(tenantId, phone);
         return !!customer;
       }
       case 'has_recent_order': {
+        const customer = await this.findCustomerByPhone(tenantId, phone);
+        if (!customer) return false;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         const count = await this.orderRepo
           .createQueryBuilder('o')
-          .innerJoin('o.customer', 'c')
           .where('o.tenant_id = :tenantId', { tenantId })
-          .andWhere('c.phone = :phone', { phone })
+          .andWhere('o.customer_id = :customerId', { customerId: customer.id })
           .andWhere('o.created_at > :since', { since: sevenDaysAgo })
           .getCount();
         return count > 0;
       }
       case 'loyalty_points_gt': {
-        const customer = await this.customerRepo.findOne({ where: { tenant_id: tenantId, phone } });
+        const customer = await this.findCustomerByPhone(tenantId, phone);
         return (customer?.loyalty_points || 0) > Number(data.value || 0);
       }
       default:
         return false;
     }
+  }
+
+  private async findCustomerByPhone(tenantId: string, phone: string): Promise<Customer | null> {
+    const normalized = normalizePhone(phone);
+    const digitsOnly = normalized.replace(/\D/g, '');
+    const local = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly;
+
+    return this.customerRepo
+      .createQueryBuilder('c')
+      .where('c.tenant_id = :tenantId', { tenantId })
+      .andWhere(
+        "REGEXP_REPLACE(c.phone, '[^0-9]', '', 'g') IN (:...phones)",
+        { phones: [digitsOnly, local] },
+      )
+      .getOne();
   }
 }
