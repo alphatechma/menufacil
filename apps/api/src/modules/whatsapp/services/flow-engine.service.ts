@@ -393,7 +393,8 @@ export class FlowEngineService {
 
   private checkStoreOpen(tenant: Tenant | null): boolean {
     if (!tenant?.business_hours || Object.keys(tenant.business_hours).length === 0) return true;
-    const now = new Date();
+    // Use Brazil timezone since server runs in UTC
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayKey = dayKeys[now.getDay()];
     const hours = tenant.business_hours[dayKey] as any;
