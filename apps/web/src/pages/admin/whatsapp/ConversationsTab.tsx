@@ -18,17 +18,23 @@ import { io } from 'socket.io-client';
 const WHATSAPP_MESSAGE_NEW = 'whatsapp:message-new';
 
 export default function ConversationsTab() {
-  const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const [selectedConv, setSelectedConv] = useState<{ phone: string; customerName?: string } | null>(null);
+  const { data: conversations } = useGetWhatsappConversationsQuery();
+
+  const handleSelect = (phone: string) => {
+    const conv = conversations?.find((c: any) => c.phone === phone);
+    setSelectedConv({ phone, customerName: conv?.customer?.name });
+  };
 
   return (
     <div className="flex gap-4 h-[calc(100vh-280px)] min-h-[400px]">
-      <Card className={cn('w-80 shrink-0 overflow-y-auto', selectedPhone && 'hidden lg:block')}>
-        <ConversationList selectedPhone={selectedPhone} onSelect={setSelectedPhone} />
+      <Card className={cn('w-80 shrink-0 overflow-y-auto', selectedConv && 'hidden lg:block')}>
+        <ConversationList selectedPhone={selectedConv?.phone ?? null} onSelect={handleSelect} />
       </Card>
 
-      <Card className={cn('flex-1 flex flex-col', !selectedPhone && 'hidden lg:flex')}>
-        {selectedPhone ? (
-          <ChatArea phone={selectedPhone} onBack={() => setSelectedPhone(null)} />
+      <Card className={cn('flex-1 flex flex-col', !selectedConv && 'hidden lg:flex')}>
+        {selectedConv ? (
+          <ChatArea phone={selectedConv.phone} customerName={selectedConv.customerName} onBack={() => setSelectedConv(null)} />
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <EmptyState title="Selecione uma conversa" description="Escolha uma conversa na lista ao lado." />
@@ -60,8 +66,18 @@ function ConversationList({ selectedPhone, onSelect }: { selectedPhone: string |
           )}
         >
           <div className="flex items-center justify-between mb-1">
-            <span className="font-medium text-sm text-foreground">{formatPhone(conv.phone)}</span>
-            <span className="text-xs text-muted-foreground">
+            <div className="flex flex-col min-w-0">
+              {conv.customer?.name && (
+                <span className="font-medium text-sm text-foreground truncate">{conv.customer.name}</span>
+              )}
+              <span className={cn(
+                'text-sm truncate',
+                conv.customer?.name ? 'text-xs text-muted-foreground' : 'font-medium text-foreground'
+              )}>
+                {formatPhone(conv.phone)}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0 ml-2">
               {new Date(conv.last_message_at).toLocaleDateString('pt-BR')}
             </span>
           </div>
@@ -75,7 +91,7 @@ function ConversationList({ selectedPhone, onSelect }: { selectedPhone: string |
   );
 }
 
-function ChatArea({ phone, onBack }: { phone: string; onBack: () => void }) {
+function ChatArea({ phone, customerName, onBack }: { phone: string; customerName?: string; onBack: () => void }) {
   const { data: messages, isLoading, refetch } = useGetWhatsappMessagesQuery(phone);
   const [sendMessage, { isLoading: sending }] = useSendWhatsappMessageMutation();
   const [inputValue, setInputValue] = useState('');
@@ -118,7 +134,12 @@ function ChatArea({ phone, onBack }: { phone: string; onBack: () => void }) {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <MessageCircle className="w-5 h-5 text-primary" />
-        <span className="font-medium text-foreground">{phone}</span>
+        <div className="flex flex-col min-w-0">
+          <span className="font-medium text-foreground">{customerName || formatPhone(phone)}</span>
+          {customerName && (
+            <span className="text-xs text-muted-foreground">{formatPhone(phone)}</span>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">

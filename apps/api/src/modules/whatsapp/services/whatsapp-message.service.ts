@@ -15,6 +15,7 @@ import { WhatsappFlowService } from './whatsapp-flow.service';
 import { EventsGateway } from '../../../websocket/events.gateway';
 import { Order } from '../../order/entities/order.entity';
 import { Tenant } from '../../tenant/entities/tenant.entity';
+import { Customer } from '../../customer/entities/customer.entity';
 import { normalizePhone } from '../../../common/utils/normalize-phone';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -42,6 +43,8 @@ export class WhatsappMessageService {
     private readonly messageRepo: Repository<WhatsappMessage>,
     @InjectRepository(Tenant)
     private readonly tenantRepo: Repository<Tenant>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
     private readonly evolutionApi: EvolutionApiService,
     private readonly instanceService: WhatsappInstanceService,
     private readonly templateService: WhatsappTemplateService,
@@ -186,9 +189,18 @@ export class WhatsappMessageService {
         ? this.templateService.buildTenantVariables(tenant, storefrontUrl)
         : { storefront_url: storefrontUrl };
 
+      // Try to find registered customer by phone
+      const local = phone.startsWith('55') ? phone.slice(2) : phone;
+      const knownCustomer = await this.customerRepo.findOne({
+        where: [
+          { tenant_id: tenantId, phone },
+          { tenant_id: tenantId, phone: local },
+        ],
+      });
+
       const variables: Record<string, string> = {
         ...tenantVars,
-        customer_name: 'Cliente',
+        customer_name: knownCustomer?.name || 'Cliente',
       };
       const text = this.templateService.renderTemplate(welcomeTemplate.content, variables);
       this.logger.log(`Sending welcome message to ${phone}: "${text.substring(0, 80)}"`);
@@ -207,7 +219,7 @@ export class WhatsappMessageService {
   }
 
   async getConversations(tenantId: string): Promise<any[]> {
-    const conversations = await this.messageRepo
+    const rawConversations = await this.messageRepo
       .createQueryBuilder('m')
       .select('m.customer_phone', 'phone')
       .addSelect('MAX(m.created_at)', 'last_message_at')
@@ -217,18 +229,62 @@ export class WhatsappMessageService {
       .orderBy('MAX(m.created_at)', 'DESC')
       .getRawMany();
 
-    const result = await Promise.all(
-      conversations.map(async (conv) => {
-        const lastMessage = await this.messageRepo.findOne({
-          where: { tenant_id: tenantId, customer_phone: conv.phone },
-          order: { created_at: 'DESC' },
-        });
-        return {
-          phone: conv.phone,
+    // Deduplicate conversations by normalized phone
+    const normalizedMap = new Map<string, { phones: string[]; last_message_at: Date; message_count: number }>();
+    for (const conv of rawConversations) {
+      const normalized = normalizePhone(conv.phone);
+      const existing = normalizedMap.get(normalized);
+      if (existing) {
+        existing.phones.push(conv.phone);
+        existing.message_count += Number(conv.message_count);
+        if (new Date(conv.last_message_at) > new Date(existing.last_message_at)) {
+          existing.last_message_at = conv.last_message_at;
+        }
+      } else {
+        normalizedMap.set(normalized, {
+          phones: [conv.phone],
           last_message_at: conv.last_message_at,
           message_count: Number(conv.message_count),
+        });
+      }
+    }
+
+    const deduped = Array.from(normalizedMap.entries())
+      .sort(([, a], [, b]) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+
+    const result = await Promise.all(
+      deduped.map(async ([normalized, conv]) => {
+        // Get last message across all phone variants
+        const lastMessage = await this.messageRepo
+          .createQueryBuilder('m')
+          .where('m.tenant_id = :tenantId', { tenantId })
+          .andWhere('m.customer_phone IN (:...phones)', { phones: conv.phones })
+          .orderBy('m.created_at', 'DESC')
+          .getOne();
+
+        // Lookup customer by normalized phone (try with and without country code)
+        const local = normalized.startsWith('55') ? normalized.slice(2) : normalized;
+        const customer = await this.customerRepo.findOne({
+          where: [
+            { tenant_id: tenantId, phone: normalized },
+            { tenant_id: tenantId, phone: local },
+          ],
+          select: ['id', 'name', 'phone', 'email', 'loyalty_points'],
+        });
+
+        return {
+          phone: normalized,
+          last_message_at: conv.last_message_at,
+          message_count: conv.message_count,
           last_message: lastMessage?.content || '',
           last_direction: lastMessage?.direction,
+          customer: customer ? {
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+            loyalty_points: customer.loyalty_points,
+          } : null,
         };
       }),
     );
@@ -237,11 +293,29 @@ export class WhatsappMessageService {
 
   async getMessages(tenantId: string, phone: string): Promise<WhatsappMessage[]> {
     const normalized = normalizePhone(phone);
-    return this.messageRepo.find({
-      where: { tenant_id: tenantId, customer_phone: normalized },
-      order: { created_at: 'ASC' },
-      take: 100,
-    });
+
+    // Find all phone variants stored in DB that normalize to the same number
+    const variants = await this.messageRepo
+      .createQueryBuilder('m')
+      .select('DISTINCT m.customer_phone', 'phone')
+      .where('m.tenant_id = :tenantId', { tenantId })
+      .getRawMany();
+
+    const matchingPhones = variants
+      .map((v) => v.phone)
+      .filter((p) => normalizePhone(p) === normalized);
+
+    if (matchingPhones.length === 0) {
+      matchingPhones.push(normalized);
+    }
+
+    return this.messageRepo
+      .createQueryBuilder('m')
+      .where('m.tenant_id = :tenantId', { tenantId })
+      .andWhere('m.customer_phone IN (:...phones)', { phones: matchingPhones })
+      .orderBy('m.created_at', 'ASC')
+      .take(100)
+      .getMany();
   }
 
   private async saveMessage(
