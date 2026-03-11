@@ -248,12 +248,10 @@ export class WhatsappMessageService {
     const result = await Promise.all(
       deduped.map(async ([normalized, conv]) => {
         // Get last message across all phone variants
-        const lastMessage = await this.messageRepo
-          .createQueryBuilder('m')
-          .where('m.tenant_id = :tenantId', { tenantId })
-          .andWhere('m.customer_phone IN (:...phones)', { phones: conv.phones })
-          .orderBy('m.created_at', 'DESC')
-          .getOne();
+        const lastMessage = await this.messageRepo.findOne({
+          where: { tenant_id: tenantId, customer_phone: In(conv.phones) },
+          order: { created_at: 'DESC' },
+        });
 
         const customer = await this.findCustomerByPhone(tenantId, normalized);
 
