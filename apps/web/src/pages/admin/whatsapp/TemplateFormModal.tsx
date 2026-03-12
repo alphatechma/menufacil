@@ -130,77 +130,84 @@ export default function TemplateFormModal({ open, onClose, template }: Props) {
     (_, key: string) => previewValues[key] || `{{${key}}}`,
   );
 
+  const insertPlaceholder = (key: string) => {
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const val = textarea.value;
+      const newVal = val.substring(0, start) + key + val.substring(end);
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+      nativeInputValueSetter?.call(textarea, newVal);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.focus();
+      textarea.setSelectionRange(start + key.length, start + key.length);
+    }
+  };
+
   return (
-    <Modal open={open} onClose={onClose} title={isEditing ? 'Editar Template' : 'Novo Template'}>
+    <Modal open={open} onClose={onClose} title={isEditing ? 'Editar Template' : 'Novo Template'} className="md:max-w-2xl">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField control={control} name="name" label="Nome">
-          {(field) => <Input {...field} placeholder="Nome do template" />}
-        </FormField>
-
-        <FormField control={control} name="type" label="Tipo">
-          {(field) => (
-            <Select {...field}>
-              {TEMPLATE_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </Select>
-          )}
-        </FormField>
-
-        <FormField control={control} name="content" label="Conteudo">
-          {(field) => <Textarea {...field} rows={4} placeholder="Digite a mensagem..." />}
-        </FormField>
-
-        <div className="space-y-2">
-          {PLACEHOLDER_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className="text-xs font-medium text-gray-500 mb-1">{group.label}:</p>
-              <div className="flex flex-wrap gap-1">
-                {group.items.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    title={p.desc}
-                    className="bg-gray-100 hover:bg-gray-200 text-xs px-1.5 py-0.5 rounded transition-colors cursor-pointer"
-                    onClick={() => {
-                      const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-                      if (textarea) {
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        const val = textarea.value;
-                        const newVal = val.substring(0, start) + p.key + val.substring(end);
-                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-                        nativeInputValueSetter?.call(textarea, newVal);
-                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                        textarea.focus();
-                        textarea.setSelectionRange(start + p.key.length, start + p.key.length);
-                      }
-                    }}
-                  >
-                    <code>{p.key}</code>
-                  </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="name" label="Nome">
+            {(field) => <Input {...field} placeholder="Nome do template" />}
+          </FormField>
+          <FormField control={control} name="type" label="Tipo">
+            {(field) => (
+              <Select {...field}>
+                {TEMPLATE_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
-              </div>
-            </div>
-          ))}
+              </Select>
+            )}
+          </FormField>
         </div>
 
-        {contentValue && (
-          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3">
-            <p className="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Preview:</p>
-            <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-line">{previewText}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <FormField control={control} name="content" label="Conteudo">
+              {(field) => <Textarea {...field} rows={6} placeholder="Digite a mensagem..." />}
+            </FormField>
+            <div className="space-y-1.5">
+              {PLACEHOLDER_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="text-xs font-medium text-gray-500 mb-0.5">{group.label}:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {group.items.map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        title={p.desc}
+                        className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        onClick={() => insertPlaceholder(p.key)}
+                      >
+                        <code>{p.key}</code>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
 
-        <FormField control={control} name="is_active" label="Ativo">
-          {(field) => <Toggle checked={field.value} onChange={field.onChange} />}
-        </FormField>
+          {contentValue && (
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 h-fit">
+              <p className="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Preview:</p>
+              <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-line">{previewText}</p>
+            </div>
+          )}
+        </div>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" loading={creating || updating}>
-            {isEditing ? 'Salvar' : 'Criar'}
-          </Button>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+          <FormField control={control} name="is_active" label="Ativo">
+            {(field) => <Toggle checked={field.value} onChange={field.onChange} />}
+          </FormField>
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" loading={creating || updating}>
+              {isEditing ? 'Salvar' : 'Criar'}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>
