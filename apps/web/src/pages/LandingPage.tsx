@@ -143,10 +143,80 @@ const MODULE_LABELS: Record<string, string> = {
   multi_user: 'Multi-usuario',
 };
 
+const STATIC_PLANS = [
+  {
+    id: 'basico',
+    name: 'Basico',
+    badge: null,
+    description: 'Feito para voce que so trabalha com delivery e nao quer depender somente de marketplaces.',
+    price: 249,
+    cta: 'Quero assinar',
+    inheritsFrom: null,
+    features: [
+      'Suporte 24h',
+      'Gestor de pedidos',
+      'Programa de Fidelidade',
+      'Cardapio Digital',
+      'Integracao com iFood',
+      'Pagamento online',
+    ],
+  },
+  {
+    id: 'essencial',
+    name: 'Essencial',
+    badge: 'Popular',
+    description: 'Feito para voce que atende pelo presencial: seja em mesas, no balcao ou com delivery, e deseja mais gestao para o seu negocio.',
+    price: 269,
+    cta: 'Quero assinar',
+    inheritsFrom: 'Basico',
+    features: [
+      'PDV + Balcao e Mesas',
+      'Controle de Estoque',
+      'Ficha tecnica',
+      'Controle financeiro',
+      'App para garcom',
+      'QR Code na mesa',
+      'Dashboard com relatorios',
+    ],
+  },
+  {
+    id: 'completo',
+    name: 'Completo',
+    badge: 'Recomendado',
+    description: 'Feito para atender a operacao do seu restaurante de ponta a ponta.',
+    price: 349,
+    cta: 'Quero assinar',
+    inheritsFrom: 'Essencial',
+    features: [
+      'Fiscal',
+      'Integracao com contabilidade',
+      'NFC-e/CF-e ilimitada',
+      'Conciliacao de pagamentos',
+      'Nota de devolucao',
+      'Inventario',
+    ],
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    badge: null,
+    description: 'Feito para voce que busca um plano sob medida para a sua empresa e com a nossa recomendacao de automacoes e plugins.',
+    price: null,
+    cta: 'Falar com especialista',
+    inheritsFrom: null,
+    features: [
+      'Sistema KDS',
+      'Garcom digital',
+      'Gerente de sucesso dedicado',
+    ],
+    subtitle: 'Sob medida para voce',
+  },
+];
+
 const FALLBACK_PLANS: Plan[] = [
-  { id: 'basic', name: 'Basico', slug: 'basic', price: 99, max_users: 2, modules: ['menu', 'orders', 'customers'] },
-  { id: 'pro', name: 'Pro', slug: 'pro', price: 199, max_users: 5, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'reports'] },
-  { id: 'enterprise', name: 'Enterprise', slug: 'enterprise', price: 399, max_users: 999, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'loyalty', 'reports', 'multi_user'] },
+  { id: 'basico', name: 'Basico', slug: 'basico', price: 249, max_users: 3, modules: ['menu', 'orders', 'customers', 'loyalty'] },
+  { id: 'essencial', name: 'Essencial', slug: 'essencial', price: 269, max_users: 10, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'loyalty', 'reports'] },
+  { id: 'completo', name: 'Completo', slug: 'completo', price: 349, max_users: 999, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'loyalty', 'reports', 'multi_user'] },
 ];
 
 export default function LandingPage() {
@@ -197,13 +267,12 @@ export default function LandingPage() {
     ? []
     : FALLBACK_PLANS;
 
-  // Set default selected plan
+  // Set default selected plan (Essencial)
   useEffect(() => {
-    if (plans.length > 0 && !selectedPlanId) {
-      const midIdx = Math.min(1, plans.length - 1);
-      setSelectedPlanId(plans[midIdx].id);
+    if (!selectedPlanId) {
+      setSelectedPlanId('essencial');
     }
-  }, [plans, selectedPlanId]);
+  }, [selectedPlanId]);
 
   // Scroll to top button
   useEffect(() => {
@@ -476,88 +545,100 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {loadingPlans ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35]" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {plans.map((plan, idx) => {
-                const isPopular = idx === 1;
-                return (
-                  <div
-                    key={plan.id}
-                    className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 ${
-                      isPopular
-                        ? 'bg-gradient-to-br from-[#FF6B35] to-[#E55A2B] text-white shadow-2xl shadow-orange-200 ring-4 ring-orange-100 md:scale-105'
-                        : 'bg-white border-2 border-gray-100 shadow-sm hover:border-orange-200 hover:shadow-lg'
-                    }`}
-                  >
-                    {isPopular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-4 py-1.5 rounded-full shadow-md flex items-center gap-1">
-                        <Star className="w-3 h-3" /> MAIS POPULAR
-                      </div>
-                    )}
-
-                    <div className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full mb-6 ${
-                      isPopular ? 'bg-white/20 text-white' : 'bg-orange-50 text-[#FF6B35]'
-                    }`}>
-                      <Sparkles className="w-3 h-3" />
-                      7 dias gratis
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {STATIC_PLANS.map((plan) => {
+              const isHighlighted = plan.badge === 'Popular' || plan.badge === 'Recomendado';
+              const isPremium = plan.price === null;
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative rounded-3xl p-6 flex flex-col transition-all duration-300 hover:-translate-y-1 ${
+                    isHighlighted
+                      ? 'bg-gradient-to-br from-[#FF6B35] to-[#E55A2B] text-white shadow-2xl shadow-orange-200 ring-4 ring-orange-100'
+                      : 'bg-white border-2 border-gray-100 shadow-sm hover:border-orange-200 hover:shadow-lg'
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-4 py-1 rounded-full shadow-md flex items-center gap-1 whitespace-nowrap">
+                      <Star className="w-3 h-3" /> {plan.badge.toUpperCase()}
                     </div>
+                  )}
 
-                    <h3 className={`text-2xl font-bold mb-2 ${isPopular ? 'text-white' : 'text-gray-900'}`}>
-                      {plan.name}
-                    </h3>
+                  <h3 className={`text-xl font-bold mb-2 ${isHighlighted ? 'text-white' : 'text-gray-900'}`}>
+                    {plan.name}
+                  </h3>
 
-                    <div className="flex items-baseline gap-1 mb-8">
-                      <span className={`text-sm ${isPopular ? 'text-white/70' : 'text-gray-400'}`}>R$</span>
-                      <span className={`text-5xl font-extrabold ${isPopular ? 'text-white' : 'text-gray-900'}`}>
+                  <p className={`text-xs leading-relaxed mb-5 ${isHighlighted ? 'text-white/80' : 'text-gray-500'}`}>
+                    {plan.description}
+                  </p>
+
+                  {plan.price !== null ? (
+                    <div className="flex items-baseline gap-1 mb-6">
+                      <span className={`text-sm ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>R$</span>
+                      <span className={`text-4xl font-extrabold ${isHighlighted ? 'text-white' : 'text-gray-900'}`}>
                         {plan.price}
                       </span>
-                      <span className={`text-sm ${isPopular ? 'text-white/70' : 'text-gray-400'}`}>/mes</span>
+                      <span className={`text-sm ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>/mes</span>
                     </div>
+                  ) : (
+                    <div className="mb-6">
+                      <span className={`text-sm font-medium ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>
+                        Valor sob consulta
+                      </span>
+                    </div>
+                  )}
 
-                    <ul className="space-y-3 mb-8">
-                      {plan.modules.map((mod) => (
-                        <li key={mod} className="flex items-center gap-2.5 text-sm">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            isPopular ? 'bg-white/20' : 'bg-green-50'
-                          }`}>
-                            <Check className={`w-3 h-3 ${isPopular ? 'text-white' : 'text-green-600'}`} />
-                          </div>
-                          <span className={isPopular ? 'text-white/90' : 'text-gray-600'}>
-                            {MODULE_LABELS[mod] || mod}
-                          </span>
-                        </li>
-                      ))}
-                      <li className="flex items-center gap-2.5 text-sm">
+                  <button
+                    onClick={() => {
+                      if (isPremium) {
+                        window.open('https://wa.me/5500000000000?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20plano%20Premium!', '_blank');
+                      } else {
+                        scrollToSignup(plan.id);
+                      }
+                    }}
+                    className={`w-full py-3 rounded-xl font-bold transition-all text-sm mb-6 ${
+                      isHighlighted
+                        ? 'bg-white text-[#FF6B35] hover:bg-gray-50 shadow-lg'
+                        : 'bg-[#FF6B35] text-white hover:bg-[#E55A2B] hover:shadow-lg hover:shadow-orange-200'
+                    }`}
+                  >
+                    {plan.cta}
+                  </button>
+
+                  {plan.inheritsFrom && (
+                    <p className={`text-xs font-semibold mb-3 ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>
+                      Tem tudo do {plan.inheritsFrom} e mais:
+                    </p>
+                  )}
+                  {isPremium && (
+                    <p className={`text-xs font-semibold mb-3 ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>
+                      {'subtitle' in plan ? (plan as any).subtitle : 'Sob medida para voce'}
+                    </p>
+                  )}
+                  {!plan.inheritsFrom && !isPremium && (
+                    <p className={`text-xs font-semibold mb-3 ${isHighlighted ? 'text-white/70' : 'text-gray-400'}`}>
+                      Este plano inclui:
+                    </p>
+                  )}
+
+                  <ul className="space-y-2.5 flex-1">
+                    {plan.features.map((feat) => (
+                      <li key={feat} className="flex items-center gap-2 text-sm">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isPopular ? 'bg-white/20' : 'bg-green-50'
+                          isHighlighted ? 'bg-white/20' : 'bg-green-50'
                         }`}>
-                          <Users className={`w-3 h-3 ${isPopular ? 'text-white' : 'text-green-600'}`} />
+                          <Check className={`w-3 h-3 ${isHighlighted ? 'text-white' : 'text-green-600'}`} />
                         </div>
-                        <span className={isPopular ? 'text-white/90' : 'text-gray-600'}>
-                          {plan.max_users >= 999 ? 'Usuarios ilimitados' : `Ate ${plan.max_users} usuarios`}
+                        <span className={isHighlighted ? 'text-white/90' : 'text-gray-600'}>
+                          {feat}
                         </span>
                       </li>
-                    </ul>
-
-                    <button
-                      onClick={() => scrollToSignup(plan.id)}
-                      className={`w-full py-3.5 rounded-xl font-bold transition-all text-sm ${
-                        isPopular
-                          ? 'bg-white text-[#FF6B35] hover:bg-gray-50 shadow-lg'
-                          : 'bg-[#FF6B35] text-white hover:bg-[#E55A2B] hover:shadow-lg hover:shadow-orange-200'
-                      }`}
-                    >
-                      Comecar agora
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -716,7 +797,7 @@ export default function LandingPage() {
                     Escolha seu plano
                   </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {plans.map((plan) => (
+                    {STATIC_PLANS.filter((p) => p.price !== null).map((plan) => (
                       <label
                         key={plan.id}
                         className={`relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all ${
