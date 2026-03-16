@@ -21,6 +21,7 @@ import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCr
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -55,6 +56,173 @@ const ORDER_TYPES = [
   { value: 'dine_in', label: 'Mesa', icon: UtensilsCrossed },
 ];
 
+// Product detail modal for selecting variation, extras, qty
+function ProductModal({
+  product,
+  onClose,
+  onAdd,
+}: {
+  product: any;
+  onClose: () => void;
+  onAdd: (item: CartItem) => void;
+}) {
+  const hasVariations = product.variations && product.variations.length > 0;
+  const hasExtras = product.extra_groups && product.extra_groups.length > 0;
+
+  const [selectedVariation, setSelectedVariation] = useState<any>(
+    hasVariations ? product.variations[0] : null,
+  );
+  const [selectedExtras, setSelectedExtras] = useState<Map<string, { name: string; price: number }>>(new Map());
+  const [qty, setQty] = useState(1);
+  const [itemNotes, setItemNotes] = useState('');
+
+  const unitPrice = selectedVariation ? Number(selectedVariation.price) : Number(product.base_price);
+  const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
+  const totalPrice = (unitPrice + extrasTotal) * qty;
+
+  const toggleExtra = (extra: any) => {
+    setSelectedExtras((prev) => {
+      const next = new Map(prev);
+      if (next.has(extra.id)) {
+        next.delete(extra.id);
+      } else {
+        next.set(extra.id, { name: extra.name, price: Number(extra.price) });
+      }
+      return next;
+    });
+  };
+
+  const handleAdd = () => {
+    onAdd({
+      product_id: product.id,
+      product_name: product.name,
+      product_image: product.image_url,
+      variation_id: selectedVariation?.id,
+      variation_name: selectedVariation?.name,
+      unit_price: unitPrice,
+      quantity: qty,
+      extras: Array.from(selectedExtras.values()),
+      notes: itemNotes.trim() || undefined,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal open onClose={onClose} title={product.name} className="md:max-w-md">
+      <div className="space-y-4">
+        {/* Variations */}
+        {hasVariations && (
+          <div>
+            <p className="text-sm font-semibold text-foreground mb-2">Opcao</p>
+            <div className="space-y-1.5">
+              {product.variations.map((v: any) => (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVariation(v)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
+                    selectedVariation?.id === v.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/30',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                      selectedVariation?.id === v.id ? 'border-primary bg-primary' : 'border-gray-300',
+                    )}>
+                      {selectedVariation?.id === v.id && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <span className="font-medium text-foreground">{v.name}</span>
+                  </div>
+                  <span className="font-semibold text-muted-foreground">{formatPrice(v.price)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Extras */}
+        {hasExtras && product.extra_groups.map((group: any) => (
+          <div key={group.id}>
+            <p className="text-sm font-semibold text-foreground mb-1">{group.name}</p>
+            {group.max_select && (
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecione ate {group.max_select}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              {group.extras.map((extra: any) => {
+                const isSelected = selectedExtras.has(extra.id);
+                return (
+                  <button
+                    key={extra.id}
+                    onClick={() => toggleExtra(extra)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/30',
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        'w-4 h-4 rounded-md border-2 flex items-center justify-center',
+                        isSelected ? 'border-primary bg-primary' : 'border-gray-300',
+                      )}>
+                        {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                      </div>
+                      <span className="font-medium text-foreground">{extra.name}</span>
+                    </div>
+                    <span className="font-semibold text-muted-foreground">+ {formatPrice(extra.price)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Quantity */}
+        <div>
+          <p className="text-sm font-semibold text-foreground mb-2">Quantidade</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setQty(Math.max(1, qty - 1))}
+              className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="text-lg font-bold w-8 text-center">{qty}</span>
+            <button
+              onClick={() => setQty(qty + 1)}
+              className="w-9 h-9 rounded-xl border border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <p className="text-sm font-semibold text-foreground mb-2">Observacao</p>
+          <textarea
+            value={itemNotes}
+            onChange={(e) => setItemNotes(e.target.value)}
+            placeholder="Ex: sem cebola, bem passado..."
+            rows={2}
+            className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
+          />
+        </div>
+
+        {/* Add button */}
+        <Button onClick={handleAdd} className="w-full" size="lg">
+          Adicionar {formatPrice(totalPrice)}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function POS() {
   const navigate = useNavigate();
   const { data: products = [] } = useGetProductsQuery();
@@ -65,6 +233,7 @@ export default function POS() {
   // Catalog state
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -103,28 +272,36 @@ export default function POS() {
   }, 0);
   const total = subtotal;
 
-  const addToCart = (product: any) => {
-    setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.product_id === product.id && !item.variation_id,
-      );
-      if (existing) {
-        return prev.map((item) =>
-          item === existing ? { ...item, quantity: item.quantity + 1 } : item,
-        );
-      }
-      return [
-        ...prev,
-        {
+  const handleProductClick = (product: any) => {
+    const hasVariations = product.variations && product.variations.length > 0;
+    const hasExtras = product.extra_groups && product.extra_groups.some((g: any) => g.extras?.length > 0);
+
+    if (!hasVariations && !hasExtras) {
+      // Simple product — add directly
+      setCart((prev) => {
+        const existing = prev.find((item) => item.product_id === product.id && !item.variation_id);
+        if (existing) {
+          return prev.map((item) =>
+            item === existing ? { ...item, quantity: item.quantity + 1 } : item,
+          );
+        }
+        return [...prev, {
           product_id: product.id,
           product_name: product.name,
           product_image: product.image_url,
           unit_price: Number(product.base_price),
           quantity: 1,
           extras: [],
-        },
-      ];
-    });
+        }];
+      });
+    } else {
+      // Has options — open modal
+      setSelectedProduct(product);
+    }
+  };
+
+  const addToCart = (item: CartItem) => {
+    setCart((prev) => [...prev, item]);
   };
 
   const updateQuantity = (index: number, delta: number) => {
@@ -194,7 +371,6 @@ export default function POS() {
     try {
       const order = await createOrder(data).unwrap();
       setOrderSuccess(order.order_number);
-      // Reset
       setCart([]);
       setSelectedCustomer(null);
       setNotes('');
@@ -209,6 +385,15 @@ export default function POS() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <PageHeader title="PDV" description="Ponto de Venda" />
+
+      {/* Product detail modal */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAdd={addToCart}
+        />
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT: Product Catalog */}
@@ -252,27 +437,35 @@ export default function POS() {
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredProducts.map((product: any) => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="bg-card border border-border rounded-xl p-3 text-left hover:border-primary hover:shadow-md transition-all active:scale-95"
-                >
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full aspect-square object-cover rounded-lg mb-2"
-                    />
-                  ) : (
-                    <div className="w-full aspect-square bg-muted rounded-lg mb-2 flex items-center justify-center">
-                      <ShoppingBag className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                  <p className="text-sm font-bold text-primary">{formatPrice(product.base_price)}</p>
-                </button>
-              ))}
+              {filteredProducts.map((product: any) => {
+                const hasOptions = (product.variations?.length > 0) || product.extra_groups?.some((g: any) => g.extras?.length > 0);
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => handleProductClick(product)}
+                    className="bg-card border border-border rounded-xl p-3 text-left hover:border-primary hover:shadow-md transition-all active:scale-95 relative"
+                  >
+                    {hasOptions && (
+                      <span className="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                        +
+                      </span>
+                    )}
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full aspect-square object-cover rounded-lg mb-2"
+                      />
+                    ) : (
+                      <div className="w-full aspect-square bg-muted rounded-lg mb-2 flex items-center justify-center">
+                        <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                    <p className="text-sm font-bold text-primary">{formatPrice(product.base_price)}</p>
+                  </button>
+                );
+              })}
             </div>
             {filteredProducts.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
@@ -416,8 +609,16 @@ export default function POS() {
                         {item.variation_name && (
                           <p className="text-xs text-muted-foreground">{item.variation_name}</p>
                         )}
+                        {item.extras.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            + {item.extras.map((e) => e.name).join(', ')}
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-muted-foreground italic truncate">{item.notes}</p>
+                        )}
                         <p className="text-sm font-bold text-primary">
-                          {formatPrice(item.unit_price * item.quantity)}
+                          {formatPrice((item.unit_price + item.extras.reduce((s, e) => s + e.price, 0)) * item.quantity)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">
