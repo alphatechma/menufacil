@@ -23,6 +23,7 @@ interface NotificationSettings {
 interface NotificationState {
   settings: NotificationSettings;
   toasts: OrderNotification[];
+  pendingOrderIds: string[]; // orders awaiting confirmation — sound loops until confirmed
 }
 
 const STORAGE_KEY = 'menufacil-notification-settings';
@@ -44,6 +45,7 @@ function loadSettings(): NotificationSettings {
 const initialState: NotificationState = {
   settings: loadSettings(),
   toasts: [],
+  pendingOrderIds: [],
 };
 
 const notificationSlice = createSlice({
@@ -66,11 +68,20 @@ const notificationSlice = createSlice({
     clearToasts(state) {
       state.toasts = [];
     },
+    addPendingOrder(state, action: PayloadAction<string>) {
+      if (!state.pendingOrderIds.includes(action.payload)) {
+        state.pendingOrderIds.push(action.payload);
+      }
+    },
+    removePendingOrder(state, action: PayloadAction<string>) {
+      state.pendingOrderIds = state.pendingOrderIds.filter((id) => id !== action.payload);
+    },
   },
 });
 
 export const selectNotificationSettings = (state: RootState) => state.notification.settings;
 export const selectToasts = (state: RootState) => state.notification.toasts;
+export const selectPendingOrderIds = (state: RootState) => state.notification.pendingOrderIds;
 
-export const { updateSettings, addToast, removeToast, clearToasts } = notificationSlice.actions;
+export const { updateSettings, addToast, removeToast, clearToasts, addPendingOrder, removePendingOrder } = notificationSlice.actions;
 export default notificationSlice.reducer;

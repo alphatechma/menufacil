@@ -6,7 +6,7 @@ const WEBSOCKET_EVENTS = {
   ORDER_TRACKING_UPDATE: 'order:tracking-update',
 } as const;
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { addToast, selectNotificationSettings } from '@/store/slices/notificationSlice';
+import { addToast, selectNotificationSettings, addPendingOrder, removePendingOrder, selectPendingOrderIds } from '@/store/slices/notificationSlice';
 import {
   playNewOrderSound,
   playOutForDeliverySound,
@@ -43,9 +43,13 @@ export function useOrderNotifications() {
         }),
       );
 
-      // Sound
+      // Sound + add to pending loop
       if (s.soundEnabled && s.soundNewOrder) {
         playNewOrderSound();
+      }
+      // Add to pending list — sound will loop until confirmed
+      if (order.status === 'pending') {
+        dispatch(addPendingOrder(order.id));
       }
 
       // Push notification
@@ -67,6 +71,11 @@ export function useOrderNotifications() {
     (order: any) => {
       const s = settingsRef.current;
       const statusLabel = STATUS_LABELS[order.status] || order.status;
+
+      // Remove from pending sound loop when no longer pending
+      if (order.status !== 'pending') {
+        dispatch(removePendingOrder(order.id));
+      }
 
       // Toast
       dispatch(
@@ -132,6 +141,24 @@ export function useOrderNotifications() {
       socketRef.current = null;
     };
   }, [user, tenantSlug, handleNewOrder, handleStatusUpdate]);
+
+  // Intermittent sound loop for pending orders
+  const pendingOrderIds = useAppSelector(selectPendingOrderIds);
+  const pendingRef = useRef(pendingOrderIds);
+  pendingRef.current = pendingOrderIds;
+
+  useEffect(() => {
+    if (pendingOrderIds.length === 0) return;
+
+    const interval = setInterval(() => {
+      const s = settingsRef.current;
+      if (s.soundEnabled && s.soundNewOrder && pendingRef.current.length > 0) {
+        playNewOrderSound();
+      }
+    }, 5000); // repeat every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [pendingOrderIds.length]);
 
   // Request push permission
   const requestPushPermission = useCallback(async () => {
