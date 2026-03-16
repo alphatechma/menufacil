@@ -56,7 +56,7 @@ const ORDER_TYPES = [
   { value: 'dine_in', label: 'Mesa', icon: UtensilsCrossed },
 ];
 
-// Product detail modal for selecting variation, extras, qty
+// Product detail modal — mirrors storefront ProductDetail logic
 function ProductModal({
   product,
   onClose,
@@ -67,38 +67,155 @@ function ProductModal({
   onAdd: (item: CartItem) => void;
 }) {
   const hasVariations = product.variations && product.variations.length > 0;
-  const hasExtras = product.extra_groups && product.extra_groups.length > 0;
+  const minVariations = product.min_variations ?? 0;
+  const maxVariations = product.max_variations ?? 0;
+  const isMultiSelect = maxVariations > 1;
+  const isRequired = minVariations > 0;
 
-  const [selectedVariation, setSelectedVariation] = useState<any>(
-    hasVariations ? product.variations[0] : null,
-  );
+  const [selectedVariations, setSelectedVariations] = useState<Map<string, number>>(() => {
+    if (hasVariations && !isMultiSelect && isRequired) {
+      return new Map([[product.variations[0].id, 1]]);
+    }
+    return new Map();
+  });
   const [selectedExtras, setSelectedExtras] = useState<Map<string, { name: string; price: number }>>(new Map());
   const [qty, setQty] = useState(1);
   const [itemNotes, setItemNotes] = useState('');
+  const [errors, setErrors] = useState<string[]>([]);
 
-  const unitPrice = selectedVariation ? Number(selectedVariation.price) : Number(product.base_price);
-  const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
-  const totalPrice = (unitPrice + extrasTotal) * qty;
+  const totalSelectedParts = Array.from(selectedVariations.values()).reduce((a, b) => a + b, 0);
 
-  const toggleExtra = (extra: any) => {
+  // Toggle variation — same logic as storefront
+  const toggleVariation = (variationId: string) => {
+    setSelectedVariations((prev) => {
+      const next = new Map(prev);
+      if (!isMultiSelect) {
+        if (next.has(variationId) && !isRequired) {
+          next.clear();
+        } else {
+          next.clear();
+          next.set(variationId, 1);
+        }
+      } else {
+        if (next.has(variationId)) {
+          next.delete(variationId);
+        } else if (maxVariations === 0 || totalSelectedParts < maxVariations) {
+          next.set(variationId, 1);
+        }
+      }
+      return next;
+    });
+  };
+
+  const incrementVariation = (variationId: string) => {
+    setSelectedVariations((prev) => {
+      const next = new Map(prev);
+      const current = next.get(variationId) || 0;
+      const total = Array.from(next.values()).reduce((a, b) => a + b, 0);
+      if (maxVariations > 0 && total >= maxVariations) return prev;
+      next.set(variationId, current + 1);
+      return next;
+    });
+  };
+
+  const decrementVariation = (variationId: string) => {
+    setSelectedVariations((prev) => {
+      const next = new Map(prev);
+      const current = next.get(variationId) || 0;
+      if (current <= 1) {
+        next.delete(variationId);
+      } else {
+        next.set(variationId, current - 1);
+      }
+      return next;
+    });
+  };
+
+  const toggleExtra = (extra: any, group: any) => {
     setSelectedExtras((prev) => {
       const next = new Map(prev);
       if (next.has(extra.id)) {
         next.delete(extra.id);
       } else {
+        // Check max_select for this group
+        const selectedInGroup = group.extras.filter((e: any) => next.has(e.id)).length;
+        if (group.max_select && selectedInGroup >= group.max_select) return prev;
         next.set(extra.id, { name: extra.name, price: Number(extra.price) });
       }
       return next;
     });
   };
 
+  // Calculate price — same as storefront
+  const getBasePrice = () => {
+    if (selectedVariations.size === 0) return Number(product.base_price);
+    if (isMultiSelect && totalSelectedParts > 0) {
+      let weightedSum = 0;
+      for (const [varId, varQty] of selectedVariations) {
+        const variation = product.variations?.find((v: any) => v.id === varId);
+        if (variation) weightedSum += Number(variation.price) * varQty;
+      }
+      return weightedSum / totalSelectedParts;
+    }
+    const selected = product.variations?.find((v: any) => selectedVariations.has(v.id));
+    return selected ? Number(selected.price) : Number(product.base_price);
+  };
+
+  const unitPrice = getBasePrice();
+  const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
+  const totalPrice = (unitPrice + extrasTotal) * qty;
+
+  // Validation — same as storefront
+  const validate = (): string[] => {
+    const errs: string[] = [];
+    if (hasVariations && isRequired) {
+      if (!isMultiSelect && selectedVariations.size === 0) {
+        errs.push('Selecione uma opcao');
+      } else if (isMultiSelect && totalSelectedParts < minVariations) {
+        errs.push(`Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'}`);
+      }
+    }
+    if (product.extra_groups) {
+      for (const group of product.extra_groups) {
+        if (group.is_required) {
+          const selectedInGroup = group.extras.filter((e: any) => selectedExtras.has(e.id)).length;
+          if (selectedInGroup < (group.min_select || 1)) {
+            errs.push(`Selecione pelo menos ${group.min_select || 1} item em "${group.name}"`);
+          }
+        }
+      }
+    }
+    return errs;
+  };
+
   const handleAdd = () => {
+    const validationErrors = validate();
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors([]);
+
+    const selected = product.variations?.filter((v: any) => selectedVariations.has(v.id)) || [];
+    const variationId = selected[0]?.id || undefined;
+    let variationName: string | undefined;
+    if (isMultiSelect && totalSelectedParts > 0) {
+      variationName = selected
+        .map((v: any) => {
+          const vQty = selectedVariations.get(v.id) || 1;
+          return `${vQty}/${totalSelectedParts} ${v.name}`;
+        })
+        .join(' / ');
+    } else {
+      variationName = selected.map((v: any) => v.name).join(' / ') || undefined;
+    }
+
     onAdd({
       product_id: product.id,
       product_name: product.name,
       product_image: product.image_url,
-      variation_id: selectedVariation?.id,
-      variation_name: selectedVariation?.name,
+      variation_id: variationId,
+      variation_name: variationName,
       unit_price: unitPrice,
       quantity: qty,
       extras: Array.from(selectedExtras.values()),
@@ -113,74 +230,132 @@ function ProductModal({
         {/* Variations */}
         {hasVariations && (
           <div>
-            <p className="text-sm font-semibold text-foreground mb-2">Opcao</p>
-            <div className="space-y-1.5">
-              {product.variations.map((v: any) => (
-                <button
-                  key={v.id}
-                  onClick={() => setSelectedVariation(v)}
-                  className={cn(
-                    'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
-                    selectedVariation?.id === v.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/30',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      'w-4 h-4 rounded-full border-2 flex items-center justify-center',
-                      selectedVariation?.id === v.id ? 'border-primary bg-primary' : 'border-gray-300',
-                    )}>
-                      {selectedVariation?.id === v.id && <Check className="w-2.5 h-2.5 text-white" />}
-                    </div>
-                    <span className="font-medium text-foreground">{v.name}</span>
-                  </div>
-                  <span className="font-semibold text-muted-foreground">{formatPrice(v.price)}</span>
-                </button>
-              ))}
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-sm font-semibold text-foreground">
+                {isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}
+              </p>
+              {isRequired && <span className="text-red-500 text-xs">*</span>}
             </div>
-          </div>
-        )}
-
-        {/* Extras */}
-        {hasExtras && product.extra_groups.map((group: any) => (
-          <div key={group.id}>
-            <p className="text-sm font-semibold text-foreground mb-1">{group.name}</p>
-            {group.max_select && (
+            {isMultiSelect && (
               <p className="text-xs text-muted-foreground mb-2">
-                Selecione ate {group.max_select}
+                {minVariations > 0
+                  ? `Selecione de ${minVariations} a ${maxVariations} partes`
+                  : `Selecione ate ${maxVariations} partes`}
+                {totalSelectedParts > 0 && (
+                  <span className="ml-1 font-medium text-foreground">
+                    ({totalSelectedParts}/{maxVariations})
+                  </span>
+                )}
               </p>
             )}
             <div className="space-y-1.5">
-              {group.extras.map((extra: any) => {
-                const isSelected = selectedExtras.has(extra.id);
+              {product.variations.map((v: any) => {
+                const isSelected = selectedVariations.has(v.id);
+                const varQty = selectedVariations.get(v.id) || 0;
+                const canAdd = maxVariations === 0 || totalSelectedParts < maxVariations;
+
+                if (isMultiSelect) {
+                  return (
+                    <div
+                      key={v.id}
+                      className={cn(
+                        'flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border',
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-foreground">{v.name}</span>
+                        <span className="text-muted-foreground ml-2">{formatPrice(v.price)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {isSelected && (
+                          <button onClick={() => decrementVariation(v.id)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                        )}
+                        <span className={cn('w-5 text-center text-sm font-bold', isSelected ? 'text-foreground' : 'text-muted-foreground')}>{varQty}</span>
+                        <button
+                          onClick={() => incrementVariation(v.id)}
+                          disabled={!canAdd}
+                          className={cn('w-7 h-7 rounded-lg border flex items-center justify-center', canAdd ? 'border-primary text-primary hover:bg-primary/5' : 'border-border text-muted-foreground cursor-not-allowed')}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <button
-                    key={extra.id}
-                    onClick={() => toggleExtra(extra)}
+                    key={v.id}
+                    onClick={() => toggleVariation(v.id)}
                     className={cn(
                       'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/30',
+                      isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={cn(
-                        'w-4 h-4 rounded-md border-2 flex items-center justify-center',
-                        isSelected ? 'border-primary bg-primary' : 'border-gray-300',
-                      )}>
+                      <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>
                         {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                       </div>
-                      <span className="font-medium text-foreground">{extra.name}</span>
+                      <span className="font-medium text-foreground">{v.name}</span>
                     </div>
-                    <span className="font-semibold text-muted-foreground">+ {formatPrice(extra.price)}</span>
+                    <span className="font-semibold text-muted-foreground">{formatPrice(v.price)}</span>
                   </button>
                 );
               })}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Extras */}
+        {product.extra_groups?.map((group: any) => {
+          if (!group.extras?.length) return null;
+          const selectedInGroup = group.extras.filter((e: any) => selectedExtras.has(e.id)).length;
+          return (
+            <div key={group.id}>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm font-semibold text-foreground">{group.name}</p>
+                {group.is_required && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                {group.is_required
+                  ? `Selecione de ${group.min_select || 1} a ${group.max_select}`
+                  : `Selecione ate ${group.max_select}`}
+                {selectedInGroup > 0 && (
+                  <span className="ml-1 font-medium text-foreground">({selectedInGroup}/{group.max_select})</span>
+                )}
+              </p>
+              <div className="space-y-1.5">
+                {group.extras.map((extra: any) => {
+                  const isSelected = selectedExtras.has(extra.id);
+                  const atMax = !isSelected && group.max_select && selectedInGroup >= group.max_select;
+                  return (
+                    <button
+                      key={extra.id}
+                      onClick={() => !atMax && toggleExtra(extra, group)}
+                      disabled={!!atMax}
+                      className={cn(
+                        'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
+                        atMax ? 'border-border opacity-50 cursor-not-allowed' :
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={cn('w-4 h-4 rounded-md border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>
+                          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        <span className="font-medium text-foreground">{extra.name}</span>
+                      </div>
+                      <span className="font-semibold text-muted-foreground">+ {formatPrice(extra.price)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
 
         {/* Quantity */}
         <div>
@@ -213,6 +388,15 @@ function ProductModal({
             className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
           />
         </div>
+
+        {/* Errors */}
+        {errors.length > 0 && (
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3">
+            {errors.map((err, i) => (
+              <p key={i} className="text-sm text-red-600 dark:text-red-400">{err}</p>
+            ))}
+          </div>
+        )}
 
         {/* Add button */}
         <Button onClick={handleAdd} className="w-full" size="lg">
