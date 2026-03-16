@@ -154,12 +154,12 @@ function ProductModal({
   const getBasePrice = () => {
     if (selectedVariations.size === 0) return Number(product.base_price);
     if (isMultiSelect && totalSelectedParts > 0) {
-      let weightedSum = 0;
+      let total = 0;
       for (const [varId, varQty] of selectedVariations) {
         const variation = product.variations?.find((v: any) => v.id === varId);
-        if (variation) weightedSum += Number(variation.price) * varQty;
+        if (variation) total += Number(variation.price) * varQty;
       }
-      return weightedSum / totalSelectedParts;
+      return total;
     }
     const selected = product.variations?.find((v: any) => selectedVariations.has(v.id));
     return selected ? Number(selected.price) : Number(product.base_price);

@@ -113,15 +113,15 @@ export default function ProductDetail() {
     if (selectedVariations.size === 0) return Number(product.base_price);
 
     if (isMultiSelect && totalSelectedParts > 0) {
-      // Proportional pricing: each part contributes its fraction of the price
-      let weightedSum = 0;
+      // Sum pricing: total is the sum of each variation * qty
+      let total = 0;
       for (const [varId, qty] of selectedVariations) {
         const variation = product.variations?.find((v: any) => v.id === varId);
         if (variation) {
-          weightedSum += Number(variation.price) * qty;
+          total += Number(variation.price) * qty;
         }
       }
-      return weightedSum / totalSelectedParts;
+      return total;
     }
 
     // Single-select: use the selected variation's price

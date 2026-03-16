@@ -132,16 +132,16 @@ export class OrderService {
         if (resolvedVariations.length > 0) {
           const hasQuantities = item.variation_quantities && Object.keys(item.variation_quantities).length > 0;
           if (hasQuantities) {
-            // Proportional pricing: weighted average based on quantities
+            // Sum pricing: total is the sum of each variation * qty
             const totalParts = Object.values(item.variation_quantities!).reduce((a, b) => a + b, 0);
-            let weightedSum = 0;
+            let sum = 0;
             const nameParts: string[] = [];
             for (const v of resolvedVariations) {
               const qty = item.variation_quantities![v.id] || 1;
-              weightedSum += Number(v.price) * qty;
+              sum += Number(v.price) * qty;
               nameParts.push(`${qty}/${totalParts} ${v.name}`);
             }
-            unitPrice = weightedSum / totalParts;
+            unitPrice = sum;
             variationName = nameParts.join(' / ');
           } else {
             unitPrice = resolvedVariations.reduce((sum, v) => sum + Number(v.price), 0);
