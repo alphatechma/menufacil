@@ -236,17 +236,19 @@ export class OrderService {
     const customerId = dto.customer_id || null;
     const order = await this.create(dto, customerId as any, tenantId, unitId);
 
-    // If marked as paid or has payment splits, update payment status
+    // POS orders start as confirmed and paid
+    order.status = OrderStatus.CONFIRMED;
+    order.confirmed_at = new Date();
+
     if (dto.is_paid || (dto.payment_splits && dto.payment_splits.length > 0)) {
       order.payment_status = PaymentStatus.PAID;
-      // Use first payment method from splits, or the single payment_method
       if (dto.payment_splits && dto.payment_splits.length > 0) {
         order.payment_method = dto.payment_splits[0].method;
         (order as any).payment_splits = dto.payment_splits;
       }
-      await this.orderRepository.save(order);
     }
 
+    await this.orderRepository.save(order);
     return order;
   }
 
