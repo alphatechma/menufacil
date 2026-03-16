@@ -399,7 +399,7 @@ export default function ProductDetail() {
               }
 
               // Single-select: radio behavior
-              const isDisabled = !isSelected && maxVariations > 0 && selectedVariations.size >= maxVariations;
+              const isDisabled = false; // single-select always allows changing
               return (
                 <label
                   key={variation.id}
