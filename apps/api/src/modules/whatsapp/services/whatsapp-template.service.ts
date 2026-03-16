@@ -69,18 +69,24 @@ export class WhatsappTemplateService {
   }
 
   buildTenantVariables(tenant: Tenant, storefrontUrl: string): Record<string, string> {
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
     const dayKey = DAY_KEYS[now.getDay()];
     const hours = tenant.business_hours;
+    const noHoursConfigured = !hours || Object.keys(hours).length === 0;
     const todayHours = hours?.[dayKey];
 
-    const isOpen = this.checkIsOpen(todayHours, now);
-    const todaySchedule = todayHours?.open
-      ? `${todayHours.openTime} - ${todayHours.closeTime}`
-      : 'Fechado';
+    const isOpen = noHoursConfigured ? true : this.checkIsOpen(todayHours, now);
+    const todaySchedule = noHoursConfigured
+      ? 'Horario livre'
+      : todayHours?.open
+        ? `${todayHours.openTime || todayHours.open} - ${todayHours.closeTime || todayHours.close}`
+        : 'Fechado';
 
+    const closeTime = todayHours?.closeTime || todayHours?.close || '--:--';
     const storeStatusMessage = isOpen
-      ? `🟢 Estamos *abertos* hoje ate as ${todayHours?.closeTime || '--:--'}!`
+      ? noHoursConfigured
+        ? '🟢 Estamos *abertos*!'
+        : `🟢 Estamos *abertos* hoje ate as ${closeTime}!`
       : `🔴 Estamos *fechados* no momento.${this.getNextOpenLabel(hours)}`;
 
     return {
@@ -96,40 +102,54 @@ export class WhatsappTemplateService {
     };
   }
 
-  private checkIsOpen(
-    dayHours: { open: boolean; openTime: string; closeTime: string } | undefined,
-    now: Date,
-  ): boolean {
-    if (!dayHours?.open || !dayHours.openTime || !dayHours.closeTime) return false;
+  private checkIsOpen(dayHours: any, now: Date): boolean {
+    if (!dayHours) return false;
+    // Support both formats: { open: boolean, openTime, closeTime } and { open: "11:00", close: "23:00" }
+    const isEnabled = typeof dayHours.open === 'boolean'
+      ? dayHours.open
+      : typeof dayHours.open === 'string' && dayHours.open.includes(':');
+    if (!isEnabled) return false;
+    const openTime = dayHours.openTime || (typeof dayHours.open === 'string' ? dayHours.open : null);
+    const closeTime = dayHours.closeTime || dayHours.close || null;
+    if (!openTime || !closeTime) return true;
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [oh, om] = dayHours.openTime.split(':').map(Number);
-    const [ch, cm] = dayHours.closeTime.split(':').map(Number);
-    return currentMinutes >= oh * 60 + om && currentMinutes < ch * 60 + cm;
+    const [oh, om] = openTime.split(':').map(Number);
+    const [ch, cm] = closeTime.split(':').map(Number);
+    const openMin = oh * 60 + om;
+    let closeMin = ch * 60 + cm;
+    if (closeMin <= openMin) closeMin += 24 * 60;
+    const adjusted = currentMinutes < openMin ? currentMinutes + 24 * 60 : currentMinutes;
+    return adjusted >= openMin && adjusted < closeMin;
   }
 
-  private getNextOpenLabel(hours: Record<string, { open: boolean; openTime: string; closeTime: string }> | null): string {
+  private getNextOpenLabel(hours: Record<string, any> | null): string {
     if (!hours) return '';
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
     const todayIdx = now.getDay();
     for (let i = 1; i <= 7; i++) {
       const idx = (todayIdx + i) % 7;
       const day = DAY_KEYS[idx];
       const h = hours[day];
-      if (h?.open && h.openTime) {
+      const isEnabled = typeof h?.open === 'boolean' ? h.open : typeof h?.open === 'string' && h.open.includes(':');
+      const openTime = h?.openTime || (typeof h?.open === 'string' ? h.open : null);
+      if (isEnabled && openTime) {
         const dayName = DAY_NAMES_PT[day];
-        return ` Abrimos ${i === 1 ? 'amanha' : dayName} as ${h.openTime}.`;
+        return ` Abrimos ${i === 1 ? 'amanha' : dayName} as ${openTime}.`;
       }
     }
     return '';
   }
 
-  private formatAllHours(hours: Record<string, { open: boolean; openTime: string; closeTime: string }> | null): string {
+  private formatAllHours(hours: Record<string, any> | null): string {
     if (!hours) return 'Horario nao definido';
     return DAY_KEYS
       .map((day) => {
         const h = hours[day];
         const label = DAY_NAMES_PT[day];
-        return h?.open ? `${label}: ${h.openTime}-${h.closeTime}` : `${label}: Fechado`;
+        const isEnabled = typeof h?.open === 'boolean' ? h.open : typeof h?.open === 'string' && h.open.includes(':');
+        const openTime = h?.openTime || (typeof h?.open === 'string' ? h.open : null);
+        const closeTime = h?.closeTime || h?.close || null;
+        return isEnabled && openTime && closeTime ? `${label}: ${openTime}-${closeTime}` : `${label}: Fechado`;
       })
       .join('\n');
   }
