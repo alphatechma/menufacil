@@ -232,6 +232,24 @@ export class OrderService {
     return fullOrder;
   }
 
+  async createFromAdmin(dto: CreateOrderDto, tenantId: string, unitId?: string | null): Promise<Order> {
+    const customerId = dto.customer_id || null;
+    const order = await this.create(dto, customerId as any, tenantId, unitId);
+
+    // If marked as paid or has payment splits, update payment status
+    if (dto.is_paid || (dto.payment_splits && dto.payment_splits.length > 0)) {
+      order.payment_status = PaymentStatus.PAID;
+      // Use first payment method from splits, or the single payment_method
+      if (dto.payment_splits && dto.payment_splits.length > 0) {
+        order.payment_method = dto.payment_splits[0].method;
+        (order as any).payment_splits = dto.payment_splits;
+      }
+      await this.orderRepository.save(order);
+    }
+
+    return order;
+  }
+
   async findByTenant(tenantId: string, unitId?: string | null): Promise<Order[]> {
     return this.orderRepository.findByTenant(tenantId, unitId);
   }

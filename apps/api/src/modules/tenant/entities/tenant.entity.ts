@@ -76,6 +76,14 @@ export class Tenant {
     dine_in: boolean;
   };
 
+  @Column({ type: 'jsonb', nullable: true })
+  payment_config: {
+    pix_key?: string;
+    pix_key_type?: string;
+    payment_link_url?: string;
+    accepts_boleto?: boolean;
+  };
+
   @Column({ default: true })
   is_active: boolean;
 

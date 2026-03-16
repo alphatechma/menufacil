@@ -39,6 +39,18 @@ export class OrderController {
     return this.orderService.create(dto, userId, tenantId, unitId);
   }
 
+  @Post('admin')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:create')
+  @ApiOperation({ summary: 'Create order from admin POS (customer optional)' })
+  createFromAdmin(
+    @Body() dto: CreateOrderDto,
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUnit() unitId: string | null,
+  ) {
+    return this.orderService.createFromAdmin(dto, tenantId, unitId);
+  }
+
   @Get()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('order:read')

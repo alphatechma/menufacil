@@ -17,6 +17,7 @@ const ProductForm = lazy(() => import('@/pages/admin/products/ProductForm'));
 const ExtraGroupList = lazy(() => import('@/pages/admin/products/ExtraGroupList'));
 const OrderList = lazy(() => import('@/pages/admin/orders/OrderList'));
 const OrderDetail = lazy(() => import('@/pages/admin/orders/OrderDetail'));
+const POS = lazy(() => import('@/pages/admin/POS'));
 const KDS = lazy(() => import('@/pages/admin/KDS'));
 const DeliveryTracker = lazy(() => import('@/pages/admin/DeliveryTracker'));
 const MyDeliveries = lazy(() => import('@/pages/admin/MyDeliveries'));
@@ -106,6 +107,7 @@ export default function App() {
           <Route path="products/new" element={<ProductForm />} />
           <Route path="products/:id/edit" element={<ProductForm />} />
           <Route path="extras" element={<ExtraGroupList />} />
+          <Route path="pos" element={<POS />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="kds" element={<KDS />} />

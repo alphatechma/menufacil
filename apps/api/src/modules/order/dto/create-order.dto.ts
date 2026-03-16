@@ -151,4 +151,31 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   customer_name?: string;
+
+  @ApiPropertyOptional({ description: 'Customer ID for admin/POS orders (optional for unidentified customers)' })
+  @IsOptional()
+  @IsUUID()
+  customer_id?: string;
+
+  @ApiPropertyOptional({ description: 'Mark order as already paid (for POS/counter orders)' })
+  @IsOptional()
+  is_paid?: boolean;
+
+  @ApiPropertyOptional({ description: 'Payment splits for split payment (POS)' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentSplitDto)
+  payment_splits?: PaymentSplitDto[];
+}
+
+export class PaymentSplitDto {
+  @ApiProperty({ enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  amount: number;
 }

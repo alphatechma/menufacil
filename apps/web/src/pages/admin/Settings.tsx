@@ -52,6 +52,7 @@ const SETTINGS_TABS = [
   { key: 'geral', label: 'Dados Gerais' },
   { key: 'horarios', label: 'Horario de Funcionamento' },
   { key: 'modos', label: 'Modos de Pedido' },
+  { key: 'pagamento', label: 'Pagamento' },
   { key: 'notificacoes', label: 'Notificacoes' },
   { key: 'plano', label: 'Plano' },
   { key: 'impressora', label: 'Impressora' },
@@ -169,6 +170,8 @@ export default function Settings() {
     dine_in: false,
   });
   const [savingModes, setSavingModes] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<Record<string, any>>({});
+  const [savingPayment, setSavingPayment] = useState(false);
 
   // Printer state
   const [printerAvailable, setPrinterAvailable] = useState<boolean | null>(null);
@@ -219,6 +222,9 @@ export default function Settings() {
           pickup: !!tenant.order_modes.pickup,
           dine_in: !!tenant.order_modes.dine_in,
         });
+      }
+      if (tenant.payment_config) {
+        setPaymentConfig(tenant.payment_config);
       }
       if (tenant.business_hours && Object.keys(tenant.business_hours).length > 0) {
         // Normalize legacy format: { open: "11:00", close: "23:00" } → { open: true, openTime: "11:00", closeTime: "23:00" }
@@ -334,6 +340,22 @@ export default function Settings() {
       setOrderModes((prev) => ({ ...prev, [mode]: !checked }));
     } finally {
       setSavingModes(false);
+    }
+  };
+
+  const handleSavePaymentConfig = async () => {
+    if (!tenant) return;
+    try {
+      setSavingPayment(true);
+      await updateTenant({
+        id: tenant.id,
+        data: { payment_config: paymentConfig },
+      }).unwrap();
+      showSuccess('Configuracoes de pagamento salvas com sucesso!');
+    } catch {
+      // ignore
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -630,6 +652,70 @@ export default function Settings() {
                   </div>
                 </div>
               </FormCard>
+            </div>
+          )}
+
+          {activeTab === 'pagamento' && (
+            <div className="space-y-6 max-w-2xl">
+              <p className="text-sm text-muted-foreground">
+                Configure as informacoes de pagamento usadas no PDV e nas mensagens do WhatsApp.
+              </p>
+
+              <FormCard>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Tipo da chave PIX</label>
+                    <select
+                      value={paymentConfig.pix_key_type || ''}
+                      onChange={(e) => setPaymentConfig((prev: Record<string, any>) => ({ ...prev, pix_key_type: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    >
+                      <option value="">Selecionar...</option>
+                      <option value="cpf">CPF</option>
+                      <option value="cnpj">CNPJ</option>
+                      <option value="email">Email</option>
+                      <option value="phone">Telefone</option>
+                      <option value="random">Chave Aleatoria</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Chave PIX</label>
+                    <Input
+                      value={paymentConfig.pix_key || ''}
+                      onChange={(e) => setPaymentConfig((prev: Record<string, any>) => ({ ...prev, pix_key: e.target.value }))}
+                      placeholder="CPF, CNPJ, email ou chave aleatoria"
+                    />
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Link de pagamento (gateway)</label>
+                    <Input
+                      value={paymentConfig.payment_link_url || ''}
+                      onChange={(e) => setPaymentConfig((prev: Record<string, any>) => ({ ...prev, payment_link_url: e.target.value }))}
+                      placeholder="https://..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">URL do gateway de pagamento, se houver.</p>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Aceita boleto</p>
+                      <p className="text-xs text-muted-foreground">Habilitar pagamento via boleto</p>
+                    </div>
+                    <Toggle
+                      checked={!!paymentConfig.accepts_boleto}
+                      onChange={(checked) => setPaymentConfig((prev: Record<string, any>) => ({ ...prev, accepts_boleto: checked }))}
+                    />
+                  </div>
+                </div>
+              </FormCard>
+
+              <div className="flex justify-end">
+                <Button onClick={handleSavePaymentConfig} loading={savingPayment}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Pagamento
+                </Button>
+              </div>
             </div>
           )}
 

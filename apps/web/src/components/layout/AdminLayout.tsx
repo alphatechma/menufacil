@@ -34,6 +34,7 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  Calculator,
   type LucideIcon,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -88,6 +89,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: 'Operacao',
     icon: ShoppingCart,
     items: [
+      { to: '/admin/pos', icon: Calculator, label: 'PDV', module: 'orders', permission: 'order:create' },
       { to: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', module: 'orders', permission: 'order:read' },
       { to: '/admin/kds', icon: Monitor, label: 'KDS', module: 'kds', permission: 'kds:read' },
       { to: '/admin/deliveries', icon: Navigation, label: 'Entregas', module: 'delivery', permission: 'delivery:read' },

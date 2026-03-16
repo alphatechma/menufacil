@@ -240,6 +240,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ orderId, ...body }) => ({ url: `/orders/${orderId}/delivery-person`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'DeliveryPersons', 'Dashboard'],
     }),
+    createAdminOrder: builder.mutation<any, any>({
+      query: (data) => ({ url: '/orders/admin', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
 
     // Roles & Permissions
     getRoles: builder.query<any[], void>({
@@ -539,6 +543,7 @@ export const {
   useUpdateDeliveryPersonMutation,
   useDeleteDeliveryPersonMutation,
   useAssignDeliveryPersonMutation,
+  useCreateAdminOrderMutation,
   useGetStaffQuery,
   useGetStaffMemberQuery,
   useCreateStaffMutation,
