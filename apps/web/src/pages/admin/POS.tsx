@@ -208,7 +208,7 @@ export default function POS() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
-      <PageHeader title="PDV" subtitle="Ponto de Venda" />
+      <PageHeader title="PDV" description="Ponto de Venda" />
 
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT: Product Catalog */}
@@ -217,7 +217,7 @@ export default function POS() {
           <div className="p-4 space-y-3 border-b border-border">
             <SearchInput
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(val) => setSearch(val)}
               placeholder="Buscar produto..."
             />
             <div className="flex gap-2 overflow-x-auto pb-1">
