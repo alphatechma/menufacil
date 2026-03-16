@@ -81,7 +81,6 @@ export default function POS() {
   // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
-      if (!p.is_available) return false;
       if (selectedCategory && p.category_id !== selectedCategory) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
