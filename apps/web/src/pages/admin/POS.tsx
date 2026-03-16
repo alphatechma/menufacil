@@ -7,6 +7,7 @@ import {
   Trash2,
   ShoppingBag,
   User,
+  UserPlus,
   UserX,
   Truck,
   Store,
@@ -16,8 +17,11 @@ import {
   QrCode,
   Check,
   X,
+  DollarSign,
+  Lock,
+  Unlock,
 } from 'lucide-react';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation } from '@/api/adminApi';
+import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation } from '@/api/adminApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -413,6 +417,19 @@ export default function POS() {
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: customers = [] } = useGetCustomersQuery();
   const [createOrder, { isLoading: creating }] = useCreateAdminOrderMutation();
+  const [createCustomer, { isLoading: creatingCustomer }] = useCreateCustomerMutation();
+  const { data: cashRegister } = useGetCashRegisterQuery();
+  const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
+  const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
+
+  // Cash register state
+  const [showOpenRegister, setShowOpenRegister] = useState(false);
+  const [showCloseRegister, setShowCloseRegister] = useState(false);
+  const [openingBalance, setOpeningBalance] = useState('');
+  const [closingBalance, setClosingBalance] = useState('');
+  const [closingNotes, setClosingNotes] = useState('');
+
+  const isCashRegisterOpen = !!cashRegister;
 
   // Catalog state
   const [search, setSearch] = useState('');
@@ -425,6 +442,9 @@ export default function POS() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [isPaid, setIsPaid] = useState(true);
   const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>([{ method: 'cash', amount: 0 }]);
   const [changeFor, setChangeFor] = useState('');
@@ -519,6 +539,10 @@ export default function POS() {
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
+    if (!isCashRegisterOpen) {
+      setShowOpenRegister(true);
+      return;
+    }
 
     const data: any = {
       items: cart.map((item) => ({
@@ -569,6 +593,111 @@ export default function POS() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <PageHeader title="PDV" description="Ponto de Venda" />
+
+      {/* Cash Register Bar */}
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-card">
+        {isCashRegisterOpen ? (
+          <>
+            <div className="flex items-center gap-2 text-sm">
+              <Unlock className="w-4 h-4 text-green-500" />
+              <span className="text-green-600 font-medium">Caixa aberto</span>
+              <span className="text-muted-foreground">
+                — Abertura: {formatPrice(cashRegister.opening_balance)}
+              </span>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setShowCloseRegister(true)}>
+              <Lock className="w-4 h-4 mr-1" /> Fechar Caixa
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 text-sm">
+              <Lock className="w-4 h-4 text-red-400" />
+              <span className="text-red-500 font-medium">Caixa fechado</span>
+            </div>
+            <Button size="sm" onClick={() => setShowOpenRegister(true)}>
+              <Unlock className="w-4 h-4 mr-1" /> Abrir Caixa
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* Open Cash Register Modal */}
+      {showOpenRegister && (
+        <Modal open onClose={() => setShowOpenRegister(false)} title="Abrir Caixa" className="md:max-w-sm">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Valor de abertura (R$)</label>
+              <Input
+                type="number"
+                value={openingBalance}
+                onChange={(e) => setOpeningBalance(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+              />
+            </div>
+            <Button
+              className="w-full"
+              loading={openingRegister}
+              onClick={async () => {
+                await openRegister({ opening_balance: parseFloat(openingBalance) || 0 }).unwrap();
+                setShowOpenRegister(false);
+                setOpeningBalance('');
+              }}
+            >
+              Abrir Caixa
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Close Cash Register Modal */}
+      {showCloseRegister && (
+        <Modal open onClose={() => setShowCloseRegister(false)} title="Fechar Caixa" className="md:max-w-sm">
+          <div className="space-y-4">
+            {cashRegister && (
+              <div className="bg-muted/50 rounded-xl p-3 space-y-1 text-sm">
+                <p className="text-muted-foreground">Abertura: <span className="font-medium text-foreground">{formatPrice(cashRegister.opening_balance)}</span></p>
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Valor em caixa (R$)</label>
+              <Input
+                type="number"
+                value={closingBalance}
+                onChange={(e) => setClosingBalance(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Observacoes</label>
+              <textarea
+                value={closingNotes}
+                onChange={(e) => setClosingNotes(e.target.value)}
+                placeholder="Observacoes do fechamento..."
+                rows={2}
+                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none"
+              />
+            </div>
+            <Button
+              className="w-full"
+              variant="danger"
+              loading={closingRegister}
+              onClick={async () => {
+                const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
+                setShowCloseRegister(false);
+                setClosingBalance('');
+                setClosingNotes('');
+                // Show summary alert
+                alert(`Caixa fechado!\n\nPedidos: ${result.orders_count}\nDinheiro: R$ ${Number(result.total_cash).toFixed(2)}\nCredito: R$ ${Number(result.total_credit).toFixed(2)}\nDebito: R$ ${Number(result.total_debit).toFixed(2)}\nPIX: R$ ${Number(result.total_pix).toFixed(2)}`);
+              }}
+            >
+              Fechar Caixa
+            </Button>
+          </div>
+        </Modal>
+      )}
 
       {/* Product detail modal */}
       {selectedProduct && (
@@ -754,13 +883,60 @@ export default function POS() {
                     )}
                   </div>
                 </div>
+              ) : showNewCustomer ? (
+                <div className="space-y-2">
+                  <Input
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                    placeholder="Nome do cliente"
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <Input
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    placeholder="Telefone (ex: 98991741075)"
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      loading={creatingCustomer}
+                      disabled={!newCustomerName.trim() || !newCustomerPhone.trim()}
+                      onClick={async () => {
+                        try {
+                          const customer = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap();
+                          setSelectedCustomer(customer);
+                          setShowNewCustomer(false);
+                          setNewCustomerName('');
+                          setNewCustomerPhone('');
+                        } catch { /* ignore */ }
+                      }}
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowCustomerSearch(true)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                   >
-                    <Search className="w-4 h-4" /> Buscar cliente
+                    <Search className="w-4 h-4" /> Buscar
+                  </button>
+                  <button
+                    onClick={() => setShowNewCustomer(true)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" /> Novo
                   </button>
                   <button
                     onClick={() => setSelectedCustomer(null)}

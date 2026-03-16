@@ -97,6 +97,14 @@ export class OrderController {
     return this.orderService.getPerformanceStats(tenantId, days ? parseInt(days, 10) : 7);
   }
 
+  @Get('cash-register/current')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
+  @ApiOperation({ summary: 'Get current open cash register' })
+  getCashRegister(@CurrentTenant('id') tenantId: string) {
+    return this.orderService.getOpenCashRegister(tenantId);
+  }
+
   @Get('my')
   @ApiOperation({ summary: 'List my orders (customer)' })
   findMyOrders(@CurrentUser('id') userId: string, @CurrentTenant('id') tenantId: string) {
@@ -133,5 +141,31 @@ export class OrderController {
     @CurrentTenant('id') tenantId: string,
   ) {
     return this.orderService.assignDeliveryPerson(id, dto.delivery_person_id, tenantId);
+  }
+
+  // ── Cash Register ──
+
+  @Post('cash-register/open')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:create')
+  @ApiOperation({ summary: 'Open cash register' })
+  openCashRegister(
+    @Body() body: { opening_balance: number },
+    @CurrentUser('id') userId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.orderService.openCashRegister(tenantId, userId, body.opening_balance || 0);
+  }
+
+  @Post('cash-register/close')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:create')
+  @ApiOperation({ summary: 'Close cash register' })
+  closeCashRegister(
+    @Body() body: { closing_balance: number; notes?: string },
+    @CurrentUser('id') userId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.orderService.closeCashRegister(tenantId, userId, body.closing_balance || 0, body.notes);
   }
 }

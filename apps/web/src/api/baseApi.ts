@@ -38,6 +38,7 @@ export const baseApi = createApi({
     'WhatsappFlows',
     'Units',
     'ExtraGroups',
+    'CashRegister',
   ],
   endpoints: () => ({}),
 });

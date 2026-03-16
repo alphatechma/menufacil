@@ -242,7 +242,19 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     createAdminOrder: builder.mutation<any, any>({
       query: (data) => ({ url: '/orders/admin', method: 'POST', data, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Orders', 'Dashboard'],
+      invalidatesTags: ['Orders', 'Dashboard', 'CashRegister'],
+    }),
+    getCashRegister: builder.query<any, void>({
+      query: () => ({ url: '/orders/cash-register/current', meta: { authContext: 'admin' as const } }),
+      providesTags: ['CashRegister'],
+    }),
+    openCashRegister: builder.mutation<any, { opening_balance: number }>({
+      query: (data) => ({ url: '/orders/cash-register/open', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['CashRegister'],
+    }),
+    closeCashRegister: builder.mutation<any, { closing_balance: number; notes?: string }>({
+      query: (data) => ({ url: '/orders/cash-register/close', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['CashRegister'],
     }),
 
     // Roles & Permissions
@@ -544,6 +556,9 @@ export const {
   useDeleteDeliveryPersonMutation,
   useAssignDeliveryPersonMutation,
   useCreateAdminOrderMutation,
+  useGetCashRegisterQuery,
+  useOpenCashRegisterMutation,
+  useCloseCashRegisterMutation,
   useGetStaffQuery,
   useGetStaffMemberQuery,
   useCreateStaffMutation,

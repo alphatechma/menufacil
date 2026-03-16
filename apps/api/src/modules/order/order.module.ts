@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderItemExtra } from './entities/order-item-extra.entity';
+import { CashRegister } from './entities/cash-register.entity';
 import { Product } from '../product/entities/product.entity';
 import { ProductVariation } from '../product/entities/product-variation.entity';
 import { CustomerAddress } from '../customer/entities/customer-address.entity';
@@ -17,7 +18,7 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, OrderItemExtra, Product, ProductVariation, CustomerAddress, RestaurantTable]),
+    TypeOrmModule.forFeature([Order, OrderItem, OrderItemExtra, Product, ProductVariation, CustomerAddress, RestaurantTable, CashRegister]),
     DeliveryZoneModule,
     CouponModule,
     LoyaltyModule,

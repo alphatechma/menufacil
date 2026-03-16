@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { OrderStatus, OrderType, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
 import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
+import { CashRegister } from './entities/cash-register.entity';
 import { Product } from '../product/entities/product.entity';
 import { ProductVariation } from '../product/entities/product-variation.entity';
 import { CustomerAddress } from '../customer/entities/customer-address.entity';
@@ -20,12 +21,16 @@ export class OrderService {
 
   constructor(
     private readonly orderRepository: OrderRepository,
+    @InjectRepository(Order)
+    private readonly orderRepo: Repository<Order>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(ProductVariation)
     private readonly variationRepo: Repository<ProductVariation>,
     @InjectRepository(CustomerAddress)
     private readonly customerAddressRepo: Repository<CustomerAddress>,
+    @InjectRepository(CashRegister)
+    private readonly cashRegisterRepo: Repository<CashRegister>,
     private readonly deliveryZoneService: DeliveryZoneService,
     private readonly couponService: CouponService,
     private readonly loyaltyService: LoyaltyService,
@@ -395,5 +400,69 @@ export class OrderService {
     const sinceDate = new Date(`${since}T00:00:00`);
     const untilDate = new Date(`${until}T23:59:59.999`);
     return this.orderRepository.getDashboardData(tenantId, sinceDate, untilDate, filters);
+  }
+
+  // ── Cash Register ──
+
+  async getOpenCashRegister(tenantId: string): Promise<CashRegister | null> {
+    return this.cashRegisterRepo.findOne({
+      where: { tenant_id: tenantId, is_open: true },
+      relations: ['opened_by_user'],
+    });
+  }
+
+  async openCashRegister(tenantId: string, userId: string, openingBalance: number): Promise<CashRegister> {
+    const existing = await this.cashRegisterRepo.findOne({ where: { tenant_id: tenantId, is_open: true } });
+    if (existing) {
+      throw new BadRequestException('Ja existe um caixa aberto. Feche-o antes de abrir outro.');
+    }
+
+    const register = this.cashRegisterRepo.create({
+      tenant_id: tenantId,
+      opened_by: userId,
+      opening_balance: openingBalance,
+      is_open: true,
+    });
+    return this.cashRegisterRepo.save(register);
+  }
+
+  async closeCashRegister(tenantId: string, userId: string, closingBalance: number, notes?: string): Promise<CashRegister> {
+    const register = await this.cashRegisterRepo.findOne({ where: { tenant_id: tenantId, is_open: true } });
+    if (!register) {
+      throw new BadRequestException('Nenhum caixa aberto para fechar.');
+    }
+
+    // Sum totals from paid orders created during this register session
+    const sessionOrders = await this.orderRepo.find({
+      where: {
+        tenant_id: tenantId,
+        payment_status: PaymentStatus.PAID,
+        created_at: MoreThanOrEqual(register.opened_at),
+      },
+    });
+
+    let totalCash = 0, totalCredit = 0, totalDebit = 0, totalPix = 0;
+    for (const o of sessionOrders) {
+      const amount = Number(o.total);
+      switch (o.payment_method) {
+        case 'cash': totalCash += amount; break;
+        case 'credit_card': totalCredit += amount; break;
+        case 'debit_card': totalDebit += amount; break;
+        case 'pix': totalPix += amount; break;
+      }
+    }
+
+    register.closed_by = userId;
+    register.closing_balance = closingBalance;
+    register.closing_notes = notes || null;
+    register.total_cash = totalCash;
+    register.total_credit = totalCredit;
+    register.total_debit = totalDebit;
+    register.total_pix = totalPix;
+    register.orders_count = sessionOrders.length;
+    register.closed_at = new Date();
+    register.is_open = false;
+
+    return this.cashRegisterRepo.save(register);
   }
 }
