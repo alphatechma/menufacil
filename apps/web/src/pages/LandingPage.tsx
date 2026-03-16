@@ -42,7 +42,6 @@ import {
   Map,
 } from 'lucide-react';
 import {
-  useGetPlansPublicQuery,
   useCheckSlugAvailabilityQuery,
   useRegisterTenantMutation,
 } from '@/api/customerApi';
@@ -63,16 +62,6 @@ function formatPhoneInput(value: string): string {
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
-
-interface Plan {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  modules: string[];
-  max_users: number;
-  description?: string;
 }
 
 const BUSINESS_TYPES = [
@@ -130,18 +119,6 @@ const ALL_FEATURES = [
   { icon: CalendarCheck, title: 'Reserva de Mesa', desc: 'Clientes solicitam reserva online, restaurante aprova.' },
   { icon: Map, title: 'Mapa do Salao', desc: 'Visualize suas mesas em tempo real com layout interativo.' },
 ];
-
-const MODULE_LABELS: Record<string, string> = {
-  menu: 'Cardapio Digital',
-  orders: 'Gestao de Pedidos',
-  customers: 'Clientes',
-  kds: 'KDS - Cozinha',
-  delivery: 'Delivery',
-  coupons: 'Cupons',
-  loyalty: 'Fidelidade',
-  reports: 'Relatorios',
-  multi_user: 'Multi-usuario',
-};
 
 const STATIC_PLANS = [
   {
@@ -213,11 +190,6 @@ const STATIC_PLANS = [
   },
 ];
 
-const FALLBACK_PLANS: Plan[] = [
-  { id: 'basico', name: 'Basico', slug: 'basico', price: 249, max_users: 3, modules: ['menu', 'orders', 'customers', 'loyalty'] },
-  { id: 'essencial', name: 'Essencial', slug: 'essencial', price: 269, max_users: 10, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'loyalty', 'reports'] },
-  { id: 'completo', name: 'Completo', slug: 'completo', price: 349, max_users: 999, modules: ['menu', 'orders', 'customers', 'kds', 'delivery', 'coupons', 'loyalty', 'reports', 'multi_user'] },
-];
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -243,8 +215,6 @@ export default function LandingPage() {
 
   const signupRef = useRef<HTMLDivElement>(null);
 
-  // RTK Query hooks
-  const { data: plansRaw, isLoading: loadingPlans } = useGetPlansPublicQuery();
   const [registerTenant, { isLoading: submitting }] = useRegisterTenantMutation();
 
   // Only query slug availability if we have a valid debounced slug
@@ -256,16 +226,6 @@ export default function LandingPage() {
   const slugAvailable = debouncedSlug && debouncedSlug.length >= 3
     ? slugCheckData?.available ?? null
     : null;
-
-  // Normalize plans
-  const plans: Plan[] = plansRaw
-    ? plansRaw.map((p: any) => ({
-        ...p,
-        modules: (p.modules || []).map((m: any) => (typeof m === 'string' ? m : m.key)),
-      }))
-    : loadingPlans
-    ? []
-    : FALLBACK_PLANS;
 
   // Set default selected plan (Essencial)
   useEffect(() => {
