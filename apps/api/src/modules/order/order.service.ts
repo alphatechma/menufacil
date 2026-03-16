@@ -454,7 +454,7 @@ export class OrderService {
 
     register.closed_by = userId;
     register.closing_balance = closingBalance;
-    register.closing_notes = notes || null;
+    register.closing_notes = notes || '';
     register.total_cash = totalCash;
     register.total_credit = totalCredit;
     register.total_debit = totalDebit;
