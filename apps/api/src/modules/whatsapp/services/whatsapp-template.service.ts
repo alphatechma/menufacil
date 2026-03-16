@@ -73,7 +73,7 @@ export class WhatsappTemplateService {
     const dayKey = DAY_KEYS[now.getDay()];
     const hours = tenant.business_hours;
     const noHoursConfigured = !hours || Object.keys(hours).length === 0;
-    const todayHours = hours?.[dayKey];
+    const todayHours = hours?.[dayKey] as any;
 
     const isOpen = noHoursConfigured ? true : this.checkIsOpen(todayHours, now);
     const todaySchedule = noHoursConfigured
