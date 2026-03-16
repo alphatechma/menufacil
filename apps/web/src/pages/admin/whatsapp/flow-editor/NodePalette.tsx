@@ -32,6 +32,7 @@ const CATEGORIES: PaletteCategory[] = [
       { type: 'send_media', label: 'Enviar Midia', defaultData: { media_url: '', caption: '' } },
       { type: 'send_menu_link', label: 'Enviar Cardapio', defaultData: { label: 'Link do cardapio' } },
       { type: 'send_menu', label: 'Enviar Menu Interativo', defaultData: { title: 'Menu', description: 'Selecione uma opcao:', button_text: 'Ver opcoes', options: [], timeout_minutes: 5 } },
+      { type: 'send_payment', label: 'Enviar Pagamento', defaultData: { payment_type: 'pix_qrcode', content: '', pix_key: '', payment_url: '' } },
       { type: 'delay', label: 'Delay', defaultData: { minutes: 1 } },
       { type: 'transfer_human', label: 'Transferir p/ Atendente', defaultData: {} },
     ],

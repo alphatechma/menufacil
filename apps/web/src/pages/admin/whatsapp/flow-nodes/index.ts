@@ -10,6 +10,7 @@ import { CheckCustomerNode } from './CheckCustomerNode';
 import { LookupOrderNode } from './LookupOrderNode';
 import { TransferHumanNode } from './TransferHumanNode';
 import { SendMenuNode } from './SendMenuNode';
+import { SendPaymentNode } from './SendPaymentNode';
 
 export {
   TriggerNode,
@@ -17,6 +18,7 @@ export {
   SendMediaNode,
   SendMenuLinkNode,
   SendMenuNode,
+  SendPaymentNode,
   DelayNode,
   WaitInputNode,
   ConditionNode,
@@ -33,6 +35,7 @@ export const nodeTypes: Record<string, any> = {
   send_media: SendMediaNode,
   send_menu_link: SendMenuLinkNode,
   send_menu: SendMenuNode,
+  send_payment: SendPaymentNode,
   delay: DelayNode,
   wait_input: WaitInputNode,
   condition: ConditionNode,

@@ -52,6 +52,7 @@ const NODE_TITLES: Record<string, string> = {
   lookup_order: 'Consultar Pedido',
   transfer_human: 'Transferir p/ Atendente',
   send_menu: 'Menu Interativo',
+  send_payment: 'Enviar Pagamento',
 };
 
 function SendMessageConfig({ data, updateData }: { data: Record<string, any>; updateData: (key: string, value: unknown) => void }) {
@@ -419,6 +420,71 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
 
       case 'send_menu':
         return <SendMenuConfig data={data} updateData={updateData} />;
+
+      case 'send_payment': {
+        const paymentType = (data.payment_type as string) || 'pix_qrcode';
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Tipo de pagamento</label>
+              <Select
+                value={paymentType}
+                onChange={(e) => updateData('payment_type', e.target.value)}
+              >
+                <option value="pix_qrcode">PIX QR Code</option>
+                <option value="pix_copy_paste">PIX Copia e Cola</option>
+                <option value="payment_link">Link de Pagamento</option>
+                <option value="boleto">Boleto</option>
+              </Select>
+            </div>
+            {(paymentType === 'pix_qrcode' || paymentType === 'pix_copy_paste') && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Chave PIX</label>
+                <Input
+                  value={(data.pix_key as string) || ''}
+                  onChange={(e) => updateData('pix_key', e.target.value)}
+                  placeholder="CPF, CNPJ, email ou chave aleatoria"
+                />
+              </div>
+            )}
+            {paymentType === 'payment_link' && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">URL do pagamento</label>
+                <Input
+                  value={(data.payment_url as string) || ''}
+                  onChange={(e) => updateData('payment_url', e.target.value)}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use {'{{order_number}}'} e {'{{total}}'} na URL se suportado pelo gateway.
+                </p>
+              </div>
+            )}
+            {paymentType === 'boleto' && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">URL do boleto</label>
+                <Input
+                  value={(data.payment_url as string) || ''}
+                  onChange={(e) => updateData('payment_url', e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Mensagem personalizada</label>
+              <Textarea
+                rows={4}
+                value={(data.content as string) || ''}
+                onChange={(e) => updateData('content', e.target.value)}
+                placeholder="Mensagem enviada junto com os dados de pagamento..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Variaveis: {'{{customer_name}}'}, {'{{order_number}}'}, {'{{total}}'}, {'{{pix_key}}'}, {'{{payment_url}}'}
+              </p>
+            </div>
+          </div>
+        );
+      }
 
       case 'check_hours':
       case 'lookup_order':

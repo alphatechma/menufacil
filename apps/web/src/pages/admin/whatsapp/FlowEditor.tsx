@@ -61,8 +61,8 @@ function serializeEdges(edges: Edge[]) {
 
 const VALID_NODE_TYPES = new Set([
   'trigger', 'send_message', 'send_media', 'send_menu_link',
-  'send_menu', 'delay', 'wait_input', 'condition', 'check_hours',
-  'check_customer', 'lookup_order', 'transfer_human',
+  'send_menu', 'send_payment', 'delay', 'wait_input', 'condition',
+  'check_hours', 'check_customer', 'lookup_order', 'transfer_human',
 ]);
 
 /** Ensure every node loaded from API has a valid position and type */

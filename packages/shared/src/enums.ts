@@ -112,6 +112,7 @@ export enum FlowNodeType {
   LOOKUP_ORDER = 'lookup_order',
   TRANSFER_HUMAN = 'transfer_human',
   SEND_MENU = 'send_menu',
+  SEND_PAYMENT = 'send_payment',
 }
 
 export enum FlowExecutionStatus {

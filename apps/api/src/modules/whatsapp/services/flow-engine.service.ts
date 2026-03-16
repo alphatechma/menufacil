@@ -144,6 +144,38 @@ export class FlowEngineService {
           break;
         }
 
+        case 'send_payment': {
+          const tenant = await this.tenantRepo.findOne({ where: { id: execution.tenant_id } });
+          const storefrontUrl = `https://menufacil.maistechtecnologia.com.br/${tenant?.slug || ''}`;
+          const tenantVars = tenant ? this.templateService.buildTenantVariables(tenant, storefrontUrl) : {};
+          const paymentType = node.data.payment_type || 'pix_qrcode';
+          const pixKey = node.data.pix_key || '';
+          const paymentUrl = node.data.payment_url || '';
+          const paymentVars = { ...tenantVars, ...execution.context, customer_name: execution.context.customer_name || 'Cliente', pix_key: pixKey, payment_url: paymentUrl };
+          const customContent = node.data.content
+            ? this.templateService.renderTemplate(node.data.content, paymentVars)
+            : '';
+
+          let message = '';
+          switch (paymentType) {
+            case 'pix_qrcode':
+            case 'pix_copy_paste':
+              message = customContent || `💳 *Pagamento via PIX*\n\nChave PIX: \`${pixKey}\`\n\nCopie a chave acima e realize o pagamento pelo app do seu banco.`;
+              break;
+            case 'payment_link':
+              message = customContent || `💳 *Link de Pagamento*\n\nAcesse o link abaixo para realizar o pagamento:\n👉 ${paymentUrl}`;
+              break;
+            case 'boleto':
+              message = customContent || `💳 *Boleto*\n\nAcesse o link abaixo para visualizar o boleto:\n👉 ${paymentUrl}`;
+              break;
+            default:
+              message = customContent || '💳 Informacoes de pagamento enviadas.';
+          }
+
+          await this.evolutionApi.sendTextMessage(instance.instance_name, execution.customer_phone, message);
+          break;
+        }
+
         case 'send_menu_link': {
           const tenant = await this.tenantRepo.findOne({ where: { id: execution.tenant_id } });
           const url = `https://menufacil.maistechtecnologia.com.br/${tenant?.slug || ''}`;
