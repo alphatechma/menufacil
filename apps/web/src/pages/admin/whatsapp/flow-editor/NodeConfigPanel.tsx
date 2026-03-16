@@ -53,6 +53,7 @@ const NODE_TITLES: Record<string, string> = {
   transfer_human: 'Transferir p/ Atendente',
   send_menu: 'Menu Interativo',
   send_payment: 'Enviar Pagamento',
+  check_payment_method: 'Verificar Pagamento',
 };
 
 function SendMessageConfig({ data, updateData }: { data: Record<string, any>; updateData: (key: string, value: unknown) => void }) {
@@ -485,6 +486,28 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
           </div>
         );
       }
+
+      case 'check_payment_method':
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Metodo de pagamento</label>
+              <Select
+                value={(data.payment_method as string) || 'pix'}
+                onChange={(e) => updateData('payment_method', e.target.value)}
+              >
+                <option value="pix">PIX</option>
+                <option value="credit_card">Cartao de Credito</option>
+                <option value="debit_card">Cartao de Debito</option>
+                <option value="cash">Dinheiro</option>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Se o pagamento for o metodo selecionado, segue pela saida &quot;Sim&quot;. Caso contrario, pela saida &quot;Nao&quot;.
+              {'\n'}Para PIX, a chave configurada nas configuracoes do tenant sera injetada em {'{{pix_key}}'}.
+            </p>
+          </div>
+        );
 
       case 'check_hours':
       case 'lookup_order':

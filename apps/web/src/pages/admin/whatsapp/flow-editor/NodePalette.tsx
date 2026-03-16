@@ -44,6 +44,7 @@ const CATEGORIES: PaletteCategory[] = [
       { type: 'condition', label: 'Condicao', defaultData: { field: '', operator: 'eq', value: '' } },
       { type: 'check_hours', label: 'Verificar Horario', defaultData: {} },
       { type: 'check_customer', label: 'Verificar Cliente', defaultData: { check_type: 'is_registered' } },
+      { type: 'check_payment_method', label: 'Verificar Pagamento', defaultData: { payment_method: 'pix' } },
       { type: 'lookup_order', label: 'Consultar Pedido', defaultData: { label: 'Consultar pedido' } },
     ],
   },

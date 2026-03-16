@@ -113,6 +113,7 @@ export enum FlowNodeType {
   TRANSFER_HUMAN = 'transfer_human',
   SEND_MENU = 'send_menu',
   SEND_PAYMENT = 'send_payment',
+  CHECK_PAYMENT_METHOD = 'check_payment_method',
 }
 
 export enum FlowExecutionStatus {

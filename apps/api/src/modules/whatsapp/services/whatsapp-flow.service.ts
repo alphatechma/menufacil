@@ -86,7 +86,7 @@ export class WhatsappFlowService {
     }
 
     const conditionNodes = nodes.filter((n: any) =>
-      ['condition', 'check_hours', 'check_customer'].includes(n.type),
+      ['condition', 'check_hours', 'check_customer', 'check_payment_method'].includes(n.type),
     );
     for (const cNode of conditionNodes) {
       const outEdges = edges.filter((e: any) => e.source === cNode.id);

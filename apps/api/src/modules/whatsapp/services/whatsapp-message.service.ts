@@ -103,6 +103,26 @@ export class WhatsappMessageService {
       this.logger.error(`Failed to send WhatsApp notification: ${err.message}`);
       await this.saveMessage(order.tenant_id, customerPhone, WhatsappMessageDirection.OUTBOUND, text, WhatsappMessageStatus.FAILED, template.id, order.id);
     }
+
+    // Trigger order_status_changed flows with order context
+    try {
+      const flows = await this.flowEngine.findActiveFlows(order.tenant_id, 'order_status_changed');
+      for (const flow of flows) {
+        const triggerConfig = flow.trigger_config || {};
+        const statuses = triggerConfig.statuses || [];
+        if (statuses.length > 0 && !statuses.includes(order.status)) continue;
+
+        await this.flowEngine.startExecution(flow, customerPhone, {
+          payment_method: order.payment_method || '',
+          order_number: String(order.order_number),
+          total: Number(order.total).toFixed(2),
+          order_type: order.order_type || '',
+          order_status: order.status,
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to trigger order flow: ${err.message}`);
+    }
   }
 
   async sendFreeMessage(tenantId: string, phone: string, content: string): Promise<WhatsappMessage> {

@@ -21,6 +21,8 @@ export class FlowEngineService {
   private readonly logger = new Logger(FlowEngineService.name);
 
   constructor(
+    @InjectRepository(WhatsappFlow)
+    private readonly flowRepo: Repository<WhatsappFlow>,
     @InjectRepository(WhatsappFlowExecution)
     private readonly executionRepo: Repository<WhatsappFlowExecution>,
     @InjectRepository(Tenant)
@@ -266,6 +268,22 @@ export class FlowEngineService {
           break;
         }
 
+        case 'check_payment_method': {
+          const paymentMethod = execution.context.payment_method || '';
+          const targetMethod = node.data.payment_method || 'pix';
+          const matches = paymentMethod === targetMethod;
+          // Inject pix_key from tenant config if checking for PIX
+          if (matches && targetMethod === 'pix') {
+            const tenant = await this.tenantRepo.findOne({ where: { id: execution.tenant_id } });
+            if (tenant?.payment_config?.pix_key) {
+              execution.context.pix_key = tenant.payment_config.pix_key;
+              await this.executionRepo.save(execution);
+            }
+          }
+          nextHandle = matches ? 'true' : 'false';
+          break;
+        }
+
         case 'check_customer': {
           const result = await this.evaluateCustomerCheck(node.data, execution);
           nextHandle = result ? 'true' : 'false';
@@ -502,6 +520,13 @@ export class FlowEngineService {
           { phones: [digitsOnly, local] },
         ),
       },
+    });
+  }
+
+  async findActiveFlows(tenantId: string, triggerType: string): Promise<WhatsappFlow[]> {
+    return this.flowRepo.find({
+      where: { tenant_id: tenantId, trigger_type: triggerType as any, is_active: true },
+      order: { priority: 'DESC' },
     });
   }
 }

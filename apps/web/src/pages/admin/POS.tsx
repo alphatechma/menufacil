@@ -449,6 +449,7 @@ export default function POS() {
   const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>([{ method: 'cash', amount: 0 }]);
   const [changeFor, setChangeFor] = useState('');
   const [notes, setNotes] = useState('');
+  const [deliveryNotes, setDeliveryNotes] = useState('');
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
   // Filter products
@@ -554,7 +555,7 @@ export default function POS() {
       })),
       order_type: orderType,
       is_paid: isPaid,
-      notes: notes || undefined,
+      notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
     };
 
     if (selectedCustomer) {
@@ -582,6 +583,7 @@ export default function POS() {
       setCart([]);
       setSelectedCustomer(null);
       setNotes('');
+      setDeliveryNotes('');
       setChangeFor('');
       setPaymentSplits([{ method: 'cash', amount: 0 }]);
       setTimeout(() => setOrderSuccess(null), 3000);
@@ -829,6 +831,20 @@ export default function POS() {
                 ))}
               </div>
             </div>
+
+            {/* Delivery notes */}
+            {orderType === 'delivery' && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Endereco / Obs. entrega</p>
+                <textarea
+                  value={deliveryNotes}
+                  onChange={(e) => setDeliveryNotes(e.target.value)}
+                  placeholder="Endereco de entrega, referencia, observacoes..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
+                />
+              </div>
+            )}
 
             {/* Customer */}
             <div>
