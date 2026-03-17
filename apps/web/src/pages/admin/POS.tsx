@@ -19,6 +19,7 @@ import {
   X,
   Lock,
   Unlock,
+  Receipt,
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation } from '@/api/adminApi';
 import { Button } from '@/components/ui/Button';
@@ -27,7 +28,6 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
-import { PageHeader } from '@/components/ui/PageHeader';
 
 interface CartItem {
   product_id: string;
@@ -47,10 +47,10 @@ interface PaymentSplit {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'pix' as const, label: 'PIX', icon: QrCode },
-  { value: 'credit_card' as const, label: 'Credito', icon: CreditCard },
-  { value: 'debit_card' as const, label: 'Debito', icon: CreditCard },
-  { value: 'cash' as const, label: 'Dinheiro', icon: Banknote },
+  { value: 'pix' as const, label: 'PIX', icon: QrCode, color: 'text-teal-600 bg-teal-50 border-teal-200 dark:text-teal-400 dark:bg-teal-950 dark:border-teal-800' },
+  { value: 'credit_card' as const, label: 'Credito', icon: CreditCard, color: 'text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950 dark:border-blue-800' },
+  { value: 'debit_card' as const, label: 'Debito', icon: CreditCard, color: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-950 dark:border-indigo-800' },
+  { value: 'cash' as const, label: 'Dinheiro', icon: Banknote, color: 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950 dark:border-green-800' },
 ];
 
 const ORDER_TYPES = [
@@ -59,7 +59,7 @@ const ORDER_TYPES = [
   { value: 'dine_in', label: 'Mesa', icon: UtensilsCrossed },
 ];
 
-// Product detail modal — mirrors storefront ProductDetail logic
+// ── Product Detail Modal ──
 function ProductModal({
   product,
   onClose,
@@ -88,23 +88,13 @@ function ProductModal({
 
   const totalSelectedParts = Array.from(selectedVariations.values()).reduce((a, b) => a + b, 0);
 
-  // Toggle variation — same logic as storefront
   const toggleVariation = (variationId: string) => {
     setSelectedVariations((prev) => {
       const next = new Map(prev);
       if (!isMultiSelect) {
-        if (next.has(variationId) && !isRequired) {
-          next.clear();
-        } else {
-          next.clear();
-          next.set(variationId, 1);
-        }
+        if (next.has(variationId) && !isRequired) { next.clear(); } else { next.clear(); next.set(variationId, 1); }
       } else {
-        if (next.has(variationId)) {
-          next.delete(variationId);
-        } else if (maxVariations === 0 || totalSelectedParts < maxVariations) {
-          next.set(variationId, 1);
-        }
+        if (next.has(variationId)) { next.delete(variationId); } else if (maxVariations === 0 || totalSelectedParts < maxVariations) { next.set(variationId, 1); }
       }
       return next;
     });
@@ -125,11 +115,7 @@ function ProductModal({
     setSelectedVariations((prev) => {
       const next = new Map(prev);
       const current = next.get(variationId) || 0;
-      if (current <= 1) {
-        next.delete(variationId);
-      } else {
-        next.set(variationId, current - 1);
-      }
+      if (current <= 1) { next.delete(variationId); } else { next.set(variationId, current - 1); }
       return next;
     });
   };
@@ -137,10 +123,8 @@ function ProductModal({
   const toggleExtra = (extra: any, group: any) => {
     setSelectedExtras((prev) => {
       const next = new Map(prev);
-      if (next.has(extra.id)) {
-        next.delete(extra.id);
-      } else {
-        // Check max_select for this group
+      if (next.has(extra.id)) { next.delete(extra.id); }
+      else {
         const selectedInGroup = group.extras.filter((e: any) => next.has(e.id)).length;
         if (group.max_select && selectedInGroup >= group.max_select) return prev;
         next.set(extra.id, { name: extra.name, price: Number(extra.price) });
@@ -149,7 +133,6 @@ function ProductModal({
     });
   };
 
-  // Calculate price — same as storefront
   const getBasePrice = () => {
     if (selectedVariations.size === 0) return Number(product.base_price);
     if (isMultiSelect && totalSelectedParts > 0) {
@@ -168,23 +151,17 @@ function ProductModal({
   const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
   const totalPrice = (unitPrice + extrasTotal) * qty;
 
-  // Validation — same as storefront
   const validate = (): string[] => {
     const errs: string[] = [];
     if (hasVariations && isRequired) {
-      if (!isMultiSelect && selectedVariations.size === 0) {
-        errs.push('Selecione uma opcao');
-      } else if (isMultiSelect && totalSelectedParts < minVariations) {
-        errs.push(`Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'}`);
-      }
+      if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opcao');
+      else if (isMultiSelect && totalSelectedParts < minVariations) errs.push(`Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'}`);
     }
     if (product.extra_groups) {
       for (const group of product.extra_groups) {
         if (group.is_required) {
           const selectedInGroup = group.extras.filter((e: any) => selectedExtras.has(e.id)).length;
-          if (selectedInGroup < (group.min_select || 1)) {
-            errs.push(`Selecione pelo menos ${group.min_select || 1} item em "${group.name}"`);
-          }
+          if (selectedInGroup < (group.min_select || 1)) errs.push(`Selecione pelo menos ${group.min_select || 1} item em "${group.name}"`);
         }
       }
     }
@@ -193,118 +170,65 @@ function ProductModal({
 
   const handleAdd = () => {
     const validationErrors = validate();
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    if (validationErrors.length > 0) { setErrors(validationErrors); return; }
     setErrors([]);
-
     const selected = product.variations?.filter((v: any) => selectedVariations.has(v.id)) || [];
-    const variationId = selected[0]?.id || undefined;
     let variationName: string | undefined;
     if (isMultiSelect && totalSelectedParts > 0) {
-      variationName = selected
-        .map((v: any) => {
-          const vQty = selectedVariations.get(v.id) || 1;
-          return `${vQty}/${totalSelectedParts} ${v.name}`;
-        })
-        .join(' / ');
+      variationName = selected.map((v: any) => { const vQty = selectedVariations.get(v.id) || 1; return `${vQty}/${totalSelectedParts} ${v.name}`; }).join(' / ');
     } else {
       variationName = selected.map((v: any) => v.name).join(' / ') || undefined;
     }
-
     onAdd({
-      product_id: product.id,
-      product_name: product.name,
-      product_image: product.image_url,
-      variation_id: variationId,
-      variation_name: variationName,
-      unit_price: unitPrice,
-      quantity: qty,
-      extras: Array.from(selectedExtras.values()),
-      notes: itemNotes.trim() || undefined,
+      product_id: product.id, product_name: product.name, product_image: product.image_url,
+      variation_id: selected[0]?.id, variation_name: variationName, unit_price: unitPrice,
+      quantity: qty, extras: Array.from(selectedExtras.values()), notes: itemNotes.trim() || undefined,
     });
     onClose();
   };
 
   return (
     <Modal open onClose={onClose} title={product.name} className="md:max-w-md">
-      <div className="space-y-4">
-        {/* Variations */}
+      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
         {hasVariations && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <p className="text-sm font-semibold text-foreground">
-                {isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}
-              </p>
-              {isRequired && <span className="text-red-500 text-xs">*</span>}
+              <p className="text-sm font-semibold text-foreground">{isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}</p>
+              {isRequired && <span className="text-red-500 text-xs font-bold">*</span>}
             </div>
             {isMultiSelect && (
               <p className="text-xs text-muted-foreground mb-2">
-                {minVariations > 0
-                  ? `Selecione de ${minVariations} a ${maxVariations} partes`
-                  : `Selecione ate ${maxVariations} partes`}
-                {totalSelectedParts > 0 && (
-                  <span className="ml-1 font-medium text-foreground">
-                    ({totalSelectedParts}/{maxVariations})
-                  </span>
-                )}
+                {minVariations > 0 ? `De ${minVariations} a ${maxVariations} partes` : `Ate ${maxVariations} partes`}
+                {totalSelectedParts > 0 && <span className="ml-1 font-semibold text-primary">({totalSelectedParts}/{maxVariations})</span>}
               </p>
             )}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {product.variations.map((v: any) => {
                 const isSelected = selectedVariations.has(v.id);
                 const varQty = selectedVariations.get(v.id) || 0;
                 const canAdd = maxVariations === 0 || totalSelectedParts < maxVariations;
-
                 if (isMultiSelect) {
                   return (
-                    <div
-                      key={v.id}
-                      className={cn(
-                        'flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
-                        isSelected ? 'border-primary bg-primary/5' : 'border-border',
-                      )}
-                    >
+                    <div key={v.id} className={cn('flex items-center justify-between px-3 py-2 rounded-lg border transition-all', isSelected ? 'border-primary bg-primary/5' : 'border-border')}>
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-foreground">{v.name}</span>
-                        <span className="text-muted-foreground ml-2">{formatPrice(v.price)}</span>
+                        <span className="text-sm font-medium text-foreground">{v.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{formatPrice(v.price)}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        {isSelected && (
-                          <button onClick={() => decrementVariation(v.id)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted">
-                            <Minus className="w-3 h-3" />
-                          </button>
-                        )}
-                        <span className={cn('w-5 text-center text-sm font-bold', isSelected ? 'text-foreground' : 'text-muted-foreground')}>{varQty}</span>
-                        <button
-                          onClick={() => incrementVariation(v.id)}
-                          disabled={!canAdd}
-                          className={cn('w-7 h-7 rounded-lg border flex items-center justify-center', canAdd ? 'border-primary text-primary hover:bg-primary/5' : 'border-border text-muted-foreground cursor-not-allowed')}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
+                      <div className="flex items-center gap-1">
+                        {isSelected && <button onClick={() => decrementVariation(v.id)} className="w-6 h-6 rounded-md border border-border flex items-center justify-center hover:bg-muted"><Minus className="w-3 h-3" /></button>}
+                        <span className={cn('w-5 text-center text-xs font-bold', isSelected ? 'text-foreground' : 'text-muted-foreground')}>{varQty}</span>
+                        <button onClick={() => incrementVariation(v.id)} disabled={!canAdd} className={cn('w-6 h-6 rounded-md border flex items-center justify-center', canAdd ? 'border-primary text-primary hover:bg-primary/5' : 'border-border text-muted-foreground cursor-not-allowed')}><Plus className="w-3 h-3" /></button>
                       </div>
                     </div>
                   );
                 }
-
                 return (
-                  <button
-                    key={v.id}
-                    onClick={() => toggleVariation(v.id)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
-                    )}
-                  >
+                  <button key={v.id} onClick={() => toggleVariation(v.id)} className={cn('w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all', isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30')}>
                     <div className="flex items-center gap-2">
-                      <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>
-                        {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                      </div>
-                      <span className="font-medium text-foreground">{v.name}</span>
+                      <div className={cn('w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>{isSelected && <Check className="w-2 h-2 text-white" />}</div>
+                      <span className="text-sm font-medium text-foreground">{v.name}</span>
                     </div>
-                    <span className="font-semibold text-muted-foreground">{formatPrice(v.price)}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">{formatPrice(v.price)}</span>
                   </button>
                 );
               })}
@@ -312,7 +236,6 @@ function ProductModal({
           </div>
         )}
 
-        {/* Extras */}
         {product.extra_groups?.map((group: any) => {
           if (!group.extras?.length) return null;
           const selectedInGroup = group.extras.filter((e: any) => selectedExtras.has(e.id)).length;
@@ -320,38 +243,23 @@ function ProductModal({
             <div key={group.id}>
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-sm font-semibold text-foreground">{group.name}</p>
-                {group.is_required && <span className="text-red-500 text-xs">*</span>}
+                {group.is_required && <span className="text-red-500 text-xs font-bold">*</span>}
               </div>
               <p className="text-xs text-muted-foreground mb-2">
-                {group.is_required
-                  ? `Selecione de ${group.min_select || 1} a ${group.max_select}`
-                  : `Selecione ate ${group.max_select}`}
-                {selectedInGroup > 0 && (
-                  <span className="ml-1 font-medium text-foreground">({selectedInGroup}/{group.max_select})</span>
-                )}
+                {group.is_required ? `De ${group.min_select || 1} a ${group.max_select}` : `Ate ${group.max_select}`}
+                {selectedInGroup > 0 && <span className="ml-1 font-semibold text-primary">({selectedInGroup}/{group.max_select})</span>}
               </p>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {group.extras.map((extra: any) => {
                   const isSelected = selectedExtras.has(extra.id);
                   const atMax = !isSelected && group.max_select && selectedInGroup >= group.max_select;
                   return (
-                    <button
-                      key={extra.id}
-                      onClick={() => !atMax && toggleExtra(extra, group)}
-                      disabled={!!atMax}
-                      className={cn(
-                        'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all',
-                        atMax ? 'border-border opacity-50 cursor-not-allowed' :
-                        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
-                      )}
-                    >
+                    <button key={extra.id} onClick={() => !atMax && toggleExtra(extra, group)} disabled={!!atMax} className={cn('w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all', atMax ? 'border-border opacity-50 cursor-not-allowed' : isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30')}>
                       <div className="flex items-center gap-2">
-                        <div className={cn('w-4 h-4 rounded-md border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>
-                          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                        </div>
-                        <span className="font-medium text-foreground">{extra.name}</span>
+                        <div className={cn('w-3.5 h-3.5 rounded border-2 flex items-center justify-center', isSelected ? 'border-primary bg-primary' : 'border-gray-300')}>{isSelected && <Check className="w-2 h-2 text-white" />}</div>
+                        <span className="text-sm font-medium text-foreground">{extra.name}</span>
                       </div>
-                      <span className="font-semibold text-muted-foreground">+ {formatPrice(extra.price)}</span>
+                      <span className="text-sm font-semibold text-muted-foreground">+ {formatPrice(extra.price)}</span>
                     </button>
                   );
                 })}
@@ -360,56 +268,31 @@ function ProductModal({
           );
         })}
 
-        {/* Quantity */}
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-2">Quantidade</p>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setQty(Math.max(1, qty - 1))}
-              className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="text-lg font-bold w-8 text-center">{qty}</span>
-            <button
-              onClick={() => setQty(qty + 1)}
-              className="w-9 h-9 rounded-xl border border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-foreground">Quantidade</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted"><Minus className="w-3.5 h-3.5" /></button>
+            <span className="text-base font-bold w-6 text-center">{qty}</span>
+            <button onClick={() => setQty(qty + 1)} className="w-8 h-8 rounded-lg border border-primary text-primary flex items-center justify-center hover:bg-primary/5"><Plus className="w-3.5 h-3.5" /></button>
           </div>
         </div>
 
-        {/* Notes */}
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-2">Observacao</p>
-          <textarea
-            value={itemNotes}
-            onChange={(e) => setItemNotes(e.target.value)}
-            placeholder="Ex: sem cebola, bem passado..."
-            rows={2}
-            className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
-          />
-        </div>
+        <textarea value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} placeholder="Observacao do item..." rows={2} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none" />
 
-        {/* Errors */}
         {errors.length > 0 && (
-          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3">
-            {errors.map((err, i) => (
-              <p key={i} className="text-sm text-red-600 dark:text-red-400">{err}</p>
-            ))}
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-2.5">
+            {errors.map((err, i) => <p key={i} className="text-xs text-red-600 dark:text-red-400">{err}</p>)}
           </div>
         )}
-
-        {/* Add button */}
-        <Button onClick={handleAdd} className="w-full" size="lg">
-          Adicionar {formatPrice(totalPrice)}
-        </Button>
+      </div>
+      <div className="pt-3 mt-3 border-t border-border">
+        <Button onClick={handleAdd} className="w-full" size="lg">Adicionar {formatPrice(totalPrice)}</Button>
       </div>
     </Modal>
   );
 }
 
+// ── Main POS Component ──
 export default function POS() {
   const navigate = useNavigate();
   const { data: products = [] } = useGetProductsQuery();
@@ -421,21 +304,17 @@ export default function POS() {
   const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
 
-  // Cash register state
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
   const [openingBalance, setOpeningBalance] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
   const [closingNotes, setClosingNotes] = useState('');
-
   const isCashRegisterOpen = !!cashRegister;
 
-  // Catalog state
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState('pickup');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -451,7 +330,6 @@ export default function POS() {
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
-  // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
       if (selectedCategory && p.category_id !== selectedCategory) return false;
@@ -460,691 +338,373 @@ export default function POS() {
     });
   }, [products, search, selectedCategory]);
 
-  // Filtered customers
   const filteredCustomers = useMemo(() => {
     if (!customerSearch) return customers.slice(0, 10);
     const q = customerSearch.toLowerCase();
-    return customers.filter((c: any) =>
-      c.name?.toLowerCase().includes(q) || c.phone?.includes(q),
-    ).slice(0, 10);
+    return customers.filter((c: any) => c.name?.toLowerCase().includes(q) || c.phone?.includes(q)).slice(0, 10);
   }, [customers, customerSearch]);
 
-  // Cart calculations
   const subtotal = cart.reduce((sum, item) => {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
     return sum + (item.unit_price + extrasTotal) * item.quantity;
   }, 0);
   const total = subtotal;
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleProductClick = (product: any) => {
-    const hasVariations = product.variations && product.variations.length > 0;
-    const hasExtras = product.extra_groups && product.extra_groups.some((g: any) => g.extras?.length > 0);
-
-    if (!hasVariations && !hasExtras) {
-      // Simple product — add directly
+    const hasOptions = (product.variations?.length > 0) || product.extra_groups?.some((g: any) => g.extras?.length > 0);
+    if (!hasOptions) {
       setCart((prev) => {
         const existing = prev.find((item) => item.product_id === product.id && !item.variation_id);
-        if (existing) {
-          return prev.map((item) =>
-            item === existing ? { ...item, quantity: item.quantity + 1 } : item,
-          );
-        }
-        return [...prev, {
-          product_id: product.id,
-          product_name: product.name,
-          product_image: product.image_url,
-          unit_price: Number(product.base_price),
-          quantity: 1,
-          extras: [],
-        }];
+        if (existing) return prev.map((item) => item === existing ? { ...item, quantity: item.quantity + 1 } : item);
+        return [...prev, { product_id: product.id, product_name: product.name, product_image: product.image_url, unit_price: Number(product.base_price), quantity: 1, extras: [] }];
       });
     } else {
-      // Has options — open modal
       setSelectedProduct(product);
     }
   };
 
-  const addToCart = (item: CartItem) => {
-    setCart((prev) => [...prev, item]);
-  };
-
-  const updateQuantity = (index: number, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item, i) =>
-          i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item,
-        )
-        .filter((item) => item.quantity > 0),
-    );
-  };
-
-  const removeFromCart = (index: number) => {
-    setCart((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updatePaymentSplit = (index: number, field: string, value: any) => {
-    setPaymentSplits((prev) =>
-      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
-    );
-  };
-
-  const addPaymentSplit = () => {
-    setPaymentSplits((prev) => [...prev, { method: 'cash', amount: 0 }]);
-  };
-
-  const removePaymentSplit = (index: number) => {
-    if (paymentSplits.length <= 1) return;
-    setPaymentSplits((prev) => prev.filter((_, i) => i !== index));
-  };
+  const addToCart = (item: CartItem) => setCart((prev) => [...prev, item]);
+  const updateQuantity = (index: number, delta: number) => setCart((prev) => prev.map((item, i) => i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item).filter((item) => item.quantity > 0));
+  const removeFromCart = (index: number) => setCart((prev) => prev.filter((_, i) => i !== index));
+  const updatePaymentSplit = (index: number, field: string, value: any) => setPaymentSplits((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  const addPaymentSplit = () => setPaymentSplits((prev) => [...prev, { method: 'pix', amount: 0 }]);
+  const removePaymentSplit = (index: number) => { if (paymentSplits.length > 1) setPaymentSplits((prev) => prev.filter((_, i) => i !== index)); };
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
-    if (!isCashRegisterOpen) {
-      setShowOpenRegister(true);
-      return;
-    }
+    if (!isCashRegisterOpen) { setShowOpenRegister(true); return; }
 
     const data: any = {
-      items: cart.map((item) => ({
-        product_id: item.product_id,
-        variation_id: item.variation_id || undefined,
-        quantity: item.quantity,
-        notes: item.notes || undefined,
-        extras: item.extras.length > 0 ? item.extras : undefined,
-      })),
-      order_type: orderType,
-      is_paid: isPaid,
-      notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
+      items: cart.map((item) => ({ product_id: item.product_id, variation_id: item.variation_id || undefined, quantity: item.quantity, notes: item.notes || undefined, extras: item.extras.length > 0 ? item.extras : undefined })),
+      order_type: orderType, is_paid: isPaid, notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
     };
-
-    if (selectedCustomer) {
-      data.customer_id = selectedCustomer.id;
-      data.customer_name = selectedCustomer.name;
-    }
-
-    // Payment
+    if (selectedCustomer) { data.customer_id = selectedCustomer.id; data.customer_name = selectedCustomer.name; }
     if (paymentSplits.length === 1) {
       data.payment_method = paymentSplits[0].method;
-      if (paymentSplits[0].method === 'cash' && changeFor) {
-        data.change_for = parseFloat(changeFor);
-      }
+      if (paymentSplits[0].method === 'cash' && changeFor) data.change_for = parseFloat(changeFor);
     } else {
-      data.payment_splits = paymentSplits.map((s) => ({
-        method: s.method,
-        amount: s.amount || total / paymentSplits.length,
-      }));
+      data.payment_splits = paymentSplits.map((s) => ({ method: s.method, amount: s.amount || total / paymentSplits.length }));
       data.payment_method = paymentSplits[0].method;
     }
 
     try {
       const order = await createOrder(data).unwrap();
       setOrderSuccess(order.order_number);
-      setCart([]);
-      setSelectedCustomer(null);
-      setNotes('');
-      setDeliveryNotes('');
-      setChangeFor('');
+      setCart([]); setSelectedCustomer(null); setNotes(''); setDeliveryNotes(''); setChangeFor('');
       setPaymentSplits([{ method: 'cash', amount: 0 }]);
-      setTimeout(() => setOrderSuccess(null), 3000);
-    } catch (err) {
-      console.error('Erro ao criar pedido:', err);
-    }
+      setTimeout(() => setOrderSuccess(null), 4000);
+    } catch (err) { console.error('Erro ao criar pedido:', err); }
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
-      <PageHeader title="PDV" description="Ponto de Venda" />
-
-      {/* Cash Register Bar */}
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-card">
-        {isCashRegisterOpen ? (
-          <>
-            <div className="flex items-center gap-2 text-sm">
-              <Unlock className="w-4 h-4 text-green-500" />
-              <span className="text-green-600 font-medium">Caixa aberto</span>
-              <span className="text-muted-foreground">
-                — Abertura: {formatPrice(cashRegister.opening_balance)}
-              </span>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => setShowCloseRegister(true)}>
-              <Lock className="w-4 h-4 mr-1" /> Fechar Caixa
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 text-sm">
-              <Lock className="w-4 h-4 text-red-400" />
-              <span className="text-red-500 font-medium">Caixa fechado</span>
-            </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col bg-muted/30">
+      {/* Cash Register + Header Bar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-card border-b border-border">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-bold text-foreground">PDV</h1>
+          </div>
+          <div className="h-5 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            {isCashRegisterOpen ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-medium text-green-600 dark:text-green-400">Caixa aberto</span>
+                <span className="text-xs text-muted-foreground">({formatPrice(cashRegister.opening_balance)})</span>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-xs font-medium text-red-500">Caixa fechado</span>
+              </>
+            )}
+          </div>
+        </div>
+        <div>
+          {isCashRegisterOpen ? (
+            <button onClick={() => setShowCloseRegister(true)} className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+              <Lock className="w-3.5 h-3.5" /> Fechar Caixa
+            </button>
+          ) : (
             <Button size="sm" onClick={() => setShowOpenRegister(true)}>
-              <Unlock className="w-4 h-4 mr-1" /> Abrir Caixa
+              <Unlock className="w-3.5 h-3.5 mr-1" /> Abrir Caixa
             </Button>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Open Cash Register Modal */}
+      {/* Modals */}
       {showOpenRegister && (
         <Modal open onClose={() => setShowOpenRegister(false)} title="Abrir Caixa" className="md:max-w-sm">
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Valor de abertura (R$)</label>
-              <Input
-                type="number"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-              />
+              <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} placeholder="0.00" autoFocus />
             </div>
-            <Button
-              className="w-full"
-              loading={openingRegister}
-              onClick={async () => {
-                await openRegister({ opening_balance: parseFloat(openingBalance) || 0 }).unwrap();
-                setShowOpenRegister(false);
-                setOpeningBalance('');
-              }}
-            >
+            <Button className="w-full" loading={openingRegister} onClick={async () => { await openRegister({ opening_balance: parseFloat(openingBalance) || 0 }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); }}>
               Abrir Caixa
             </Button>
           </div>
         </Modal>
       )}
-
-      {/* Close Cash Register Modal */}
       {showCloseRegister && (
         <Modal open onClose={() => setShowCloseRegister(false)} title="Fechar Caixa" className="md:max-w-sm">
           <div className="space-y-4">
             {cashRegister && (
-              <div className="bg-muted/50 rounded-xl p-3 space-y-1 text-sm">
+              <div className="bg-muted/50 rounded-xl p-3 text-sm">
                 <p className="text-muted-foreground">Abertura: <span className="font-medium text-foreground">{formatPrice(cashRegister.opening_balance)}</span></p>
               </div>
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Valor em caixa (R$)</label>
-              <Input
-                type="number"
-                value={closingBalance}
-                onChange={(e) => setClosingBalance(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-              />
+              <Input type="number" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} placeholder="0.00" autoFocus />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Observacoes</label>
-              <textarea
-                value={closingNotes}
-                onChange={(e) => setClosingNotes(e.target.value)}
-                placeholder="Observacoes do fechamento..."
-                rows={2}
-                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none"
-              />
+              <textarea value={closingNotes} onChange={(e) => setClosingNotes(e.target.value)} placeholder="Observacoes do fechamento..." rows={2} className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none" />
             </div>
-            <Button
-              className="w-full"
-              variant="danger"
-              loading={closingRegister}
-              onClick={async () => {
-                const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
-                setShowCloseRegister(false);
-                setClosingBalance('');
-                setClosingNotes('');
-                // Show summary alert
-                alert(`Caixa fechado!\n\nPedidos: ${result.orders_count}\nDinheiro: R$ ${Number(result.total_cash).toFixed(2)}\nCredito: R$ ${Number(result.total_credit).toFixed(2)}\nDebito: R$ ${Number(result.total_debit).toFixed(2)}\nPIX: R$ ${Number(result.total_pix).toFixed(2)}`);
-              }}
-            >
-              Fechar Caixa
-            </Button>
+            <Button className="w-full" variant="danger" loading={closingRegister} onClick={async () => {
+              const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
+              setShowCloseRegister(false); setClosingBalance(''); setClosingNotes('');
+              alert(`Caixa fechado!\n\nPedidos: ${result.orders_count}\nDinheiro: R$ ${Number(result.total_cash).toFixed(2)}\nCredito: R$ ${Number(result.total_credit).toFixed(2)}\nDebito: R$ ${Number(result.total_debit).toFixed(2)}\nPIX: R$ ${Number(result.total_pix).toFixed(2)}`);
+            }}>Fechar Caixa</Button>
           </div>
         </Modal>
       )}
+      {selectedProduct && <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onAdd={addToCart} />}
 
-      {/* Product detail modal */}
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAdd={addToCart}
-        />
+      {/* Success toast */}
+      {orderSuccess && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+          <Check className="w-5 h-5" />
+          <span className="font-semibold">Pedido #{orderSuccess} criado!</span>
+          <button onClick={() => navigate('/admin/orders')} className="text-white/80 hover:text-white underline text-sm ml-2">Ver</button>
+        </div>
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT: Product Catalog */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r border-border">
-          {/* Search + Category filter */}
-          <div className="p-4 space-y-3 border-b border-border">
-            <SearchInput
-              value={search}
-              onChange={(val) => setSearch(val)}
-              placeholder="Buscar produto..."
-            />
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                  !selectedCategory
-                    ? 'bg-primary text-white'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                )}
-              >
+        {/* ── LEFT: Catalog ── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="p-3 space-y-2 bg-card border-b border-border">
+            <SearchInput value={search} onChange={(val) => setSearch(val)} placeholder="Buscar produto..." />
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+              <button onClick={() => setSelectedCategory(null)} className={cn('px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors', !selectedCategory ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
                 Todos
               </button>
               {categories.map((cat: any) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                    selectedCategory === cat.id
-                      ? 'bg-primary text-white'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                  )}
-                >
+                <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={cn('px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors', selectedCategory === cat.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
                   {cat.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Product grid */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
               {filteredProducts.map((product: any) => {
                 const hasOptions = (product.variations?.length > 0) || product.extra_groups?.some((g: any) => g.extras?.length > 0);
+                const inCart = cart.filter((c) => c.product_id === product.id).reduce((sum, c) => sum + c.quantity, 0);
                 return (
                   <button
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className="bg-card border border-border rounded-xl p-3 text-left hover:border-primary hover:shadow-md transition-all active:scale-95 relative"
+                    className={cn(
+                      'relative flex flex-col bg-card border rounded-xl p-2.5 text-left hover:shadow-md transition-all active:scale-[0.97]',
+                      inCart > 0 ? 'border-primary shadow-sm' : 'border-border hover:border-primary/40',
+                    )}
                   >
-                    {hasOptions && (
-                      <span className="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                        +
+                    {inCart > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                        {inCart}
                       </span>
                     )}
+                    {hasOptions && !inCart && (
+                      <span className="absolute top-1.5 right-1.5 bg-primary/10 text-primary text-[10px] font-bold px-1 py-0.5 rounded">+</span>
+                    )}
                     {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-full aspect-square object-cover rounded-lg mb-2"
-                      />
+                      <img src={product.image_url} alt={product.name} className="w-full aspect-[4/3] object-cover rounded-lg mb-1.5" />
                     ) : (
-                      <div className="w-full aspect-square bg-muted rounded-lg mb-2 flex items-center justify-center">
-                        <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+                      <div className="w-full aspect-[4/3] bg-muted rounded-lg mb-1.5 flex items-center justify-center">
+                        <ShoppingBag className="w-6 h-6 text-muted-foreground/40" />
                       </div>
                     )}
-                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                    <p className="text-sm font-bold text-primary">{formatPrice(product.base_price)}</p>
+                    <p className="text-xs font-medium text-foreground leading-tight line-clamp-2">{product.name}</p>
+                    <p className="text-xs font-bold text-primary mt-0.5">{formatPrice(product.base_price)}</p>
                   </button>
                 );
               })}
             </div>
             {filteredProducts.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <div className="text-center py-16 text-muted-foreground">
+                <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Nenhum produto encontrado</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* RIGHT: Cart / Order Summary */}
-        <div className="w-96 flex flex-col bg-card overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Order Success */}
-            {orderSuccess && (
-              <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-bold text-green-800 dark:text-green-200">Pedido #{orderSuccess} criado!</p>
-                  <button
-                    onClick={() => navigate(`/admin/orders`)}
-                    className="text-xs text-green-600 underline"
-                  >
-                    Ver pedidos
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Order Type */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Tipo do pedido</p>
-              <div className="grid grid-cols-3 gap-2">
+        {/* ── RIGHT: Cart Panel ── */}
+        <div className="w-[380px] flex flex-col bg-card border-l border-border">
+          <div className="flex-1 overflow-y-auto">
+            {/* Order Type + Delivery */}
+            <div className="p-3 border-b border-border">
+              <div className="grid grid-cols-3 gap-1.5">
                 {ORDER_TYPES.map((type) => (
-                  <button
-                    key={type.value}
-                    onClick={() => setOrderType(type.value)}
-                    className={cn(
-                      'flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border-2 text-xs font-medium transition-all',
-                      orderType === type.value
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/30',
-                    )}
-                  >
-                    <type.icon className="w-4 h-4" />
+                  <button key={type.value} onClick={() => setOrderType(type.value)} className={cn('flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all', orderType === type.value ? 'bg-primary text-white shadow-sm' : 'bg-muted text-muted-foreground hover:text-foreground')}>
+                    <type.icon className="w-3.5 h-3.5" />
                     {type.label}
                   </button>
                 ))}
               </div>
+              {orderType === 'delivery' && (
+                <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereco / referencia..." rows={2} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground resize-none focus:border-primary focus:outline-none" />
+              )}
             </div>
 
-            {/* Delivery notes */}
-            {orderType === 'delivery' && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Endereco / Obs. entrega</p>
-                <textarea
-                  value={deliveryNotes}
-                  onChange={(e) => setDeliveryNotes(e.target.value)}
-                  placeholder="Endereco de entrega, referencia, observacoes..."
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
-                />
-              </div>
-            )}
-
             {/* Customer */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Cliente</p>
+            <div className="p-3 border-b border-border">
               {selectedCustomer ? (
-                <div className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
+                <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary" />
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center"><User className="w-3.5 h-3.5 text-primary" /></div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{selectedCustomer.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedCustomer.phone}</p>
+                      <p className="text-xs font-semibold text-foreground">{selectedCustomer.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{selectedCustomer.phone}</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedCustomer(null)} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-4 h-4" />
-                  </button>
+                  <button onClick={() => setSelectedCustomer(null)} className="text-muted-foreground hover:text-foreground p-1"><X className="w-3.5 h-3.5" /></button>
                 </div>
               ) : showCustomerSearch ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      placeholder="Buscar por nome ou telefone..."
-                      className="text-sm"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => { setShowCustomerSearch(false); setCustomerSearch(''); }}
-                      className="text-muted-foreground hover:text-foreground p-2"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                <div className="space-y-1.5">
+                  <div className="flex gap-1.5">
+                    <Input value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} placeholder="Nome ou telefone..." className="text-xs h-8" autoFocus />
+                    <button onClick={() => { setShowCustomerSearch(false); setCustomerSearch(''); }} className="text-muted-foreground hover:text-foreground p-1"><X className="w-3.5 h-3.5" /></button>
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-xl border border-border divide-y divide-border">
+                  <div className="max-h-32 overflow-y-auto rounded-lg border border-border divide-y divide-border">
                     {filteredCustomers.map((c: any) => (
-                      <button
-                        key={c.id}
-                        onClick={() => {
-                          setSelectedCustomer(c);
-                          setShowCustomerSearch(false);
-                          setCustomerSearch('');
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
-                      >
-                        <p className="text-sm font-medium text-foreground">{c.name}</p>
-                        <p className="text-xs text-muted-foreground">{c.phone}</p>
+                      <button key={c.id} onClick={() => { setSelectedCustomer(c); setShowCustomerSearch(false); setCustomerSearch(''); }} className="w-full px-2.5 py-1.5 text-left hover:bg-muted/50 transition-colors">
+                        <p className="text-xs font-medium text-foreground">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.phone}</p>
                       </button>
                     ))}
-                    {filteredCustomers.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-3">Nenhum cliente encontrado</p>
-                    )}
+                    {filteredCustomers.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum encontrado</p>}
                   </div>
                 </div>
               ) : showNewCustomer ? (
-                <div className="space-y-2">
-                  <Input
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    placeholder="Nome do cliente"
-                    className="text-sm"
-                    autoFocus
-                  />
-                  <Input
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
-                    placeholder="Telefone (ex: 98991741075)"
-                    className="text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => { setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      size="sm"
-                      loading={creatingCustomer}
-                      disabled={!newCustomerName.trim() || !newCustomerPhone.trim()}
-                      onClick={async () => {
-                        try {
-                          const customer = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap();
-                          setSelectedCustomer(customer);
-                          setShowNewCustomer(false);
-                          setNewCustomerName('');
-                          setNewCustomerPhone('');
-                        } catch { /* ignore */ }
-                      }}
-                    >
-                      Salvar
-                    </Button>
+                <div className="space-y-1.5">
+                  <Input value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} placeholder="Nome" className="text-xs h-8" autoFocus />
+                  <Input value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} placeholder="Telefone" className="text-xs h-8" />
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); }}>Cancelar</Button>
+                    <Button size="sm" className="h-7 text-xs" loading={creatingCustomer} disabled={!newCustomerName.trim() || !newCustomerPhone.trim()} onClick={async () => {
+                      try { const c = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap(); setSelectedCustomer(c); setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); } catch { /* */ }
+                    }}>Salvar</Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowCustomerSearch(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  >
-                    <Search className="w-4 h-4" /> Buscar
-                  </button>
-                  <button
-                    onClick={() => setShowNewCustomer(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  >
-                    <UserPlus className="w-4 h-4" /> Novo
-                  </button>
-                  <button
-                    onClick={() => setSelectedCustomer(null)}
-                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                    title="Cliente nao identificado"
-                  >
-                    <UserX className="w-4 h-4" />
-                  </button>
+                <div className="flex gap-1.5">
+                  <button onClick={() => setShowCustomerSearch(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"><Search className="w-3 h-3" /> Buscar</button>
+                  <button onClick={() => setShowNewCustomer(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"><UserPlus className="w-3 h-3" /> Novo</button>
+                  <button onClick={() => {}} className="flex items-center justify-center py-2 px-2.5 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors" title="Sem cliente"><UserX className="w-3 h-3" /></button>
                 </div>
               )}
             </div>
 
             {/* Cart Items */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                Itens ({cart.length})
-              </p>
+            <div className="p-3 flex-1">
               {cart.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Carrinho vazio</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-20" />
                   <p className="text-xs">Clique em um produto para adicionar</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {cart.map((item, index) => (
-                    <div key={`${item.product_id}-${index}`} className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
+                    <div key={`${item.product_id}-${index}`} className="flex items-start gap-2 rounded-lg bg-muted/40 p-2 group">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{item.product_name}</p>
-                        {item.variation_name && (
-                          <p className="text-xs text-muted-foreground">{item.variation_name}</p>
-                        )}
-                        {item.extras.length > 0 && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            + {item.extras.map((e) => e.name).join(', ')}
-                          </p>
-                        )}
-                        {item.notes && (
-                          <p className="text-xs text-muted-foreground italic truncate">{item.notes}</p>
-                        )}
-                        <p className="text-sm font-bold text-primary">
-                          {formatPrice((item.unit_price + item.extras.reduce((s, e) => s + e.price, 0)) * item.quantity)}
-                        </p>
+                        <p className="text-xs font-semibold text-foreground leading-tight">{item.product_name}</p>
+                        {item.variation_name && <p className="text-[10px] text-muted-foreground">{item.variation_name}</p>}
+                        {item.extras.length > 0 && <p className="text-[10px] text-muted-foreground">+ {item.extras.map((e) => e.name).join(', ')}</p>}
+                        {item.notes && <p className="text-[10px] text-muted-foreground italic">{item.notes}</p>}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => updateQuantity(index, -1)}
-                          className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(index, 1)}
-                          className="w-7 h-7 rounded-lg border border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => removeFromCart(index)}
-                          className="w-7 h-7 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center transition-colors ml-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <p className="text-xs font-bold text-primary">{formatPrice((item.unit_price + item.extras.reduce((s, e) => s + e.price, 0)) * item.quantity)}</p>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => updateQuantity(index, -1)} className="w-5 h-5 rounded border border-border flex items-center justify-center hover:bg-muted text-muted-foreground"><Minus className="w-2.5 h-2.5" /></button>
+                          <span className="text-[10px] font-bold w-4 text-center">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(index, 1)} className="w-5 h-5 rounded border border-primary/50 text-primary flex items-center justify-center hover:bg-primary/5"><Plus className="w-2.5 h-2.5" /></button>
+                          <button onClick={() => removeFromCart(index)} className="w-5 h-5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-2.5 h-2.5" /></button>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Notes */}
-            {cart.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Observacao</p>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Observacoes do pedido..."
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:border-primary focus:outline-none transition-colors"
-                />
-              </div>
-            )}
-
-            {/* Payment */}
-            {cart.length > 0 && (
-              <div>
+          {/* Payment + Totals Footer */}
+          {cart.length > 0 && (
+            <div className="border-t border-border bg-card">
+              {/* Payment method */}
+              <div className="p-3 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase">Pagamento</p>
-                  {paymentSplits.length < 4 && (
-                    <button
-                      onClick={addPaymentSplit}
-                      className="text-xs text-primary hover:text-primary-dark flex items-center gap-1 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" /> Dividir
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pagamento</p>
+                  <div className="flex items-center gap-2">
+                    {paymentSplits.length < 4 && (
+                      <button onClick={addPaymentSplit} className="text-[10px] text-primary hover:text-primary-dark flex items-center gap-0.5"><Plus className="w-2.5 h-2.5" /> Dividir</button>
+                    )}
+                    <button onClick={() => setIsPaid(!isPaid)} className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors', isPaid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400')}>
+                      {isPaid ? 'Pago' : 'Pendente'}
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {paymentSplits.map((split, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <select
-                        value={split.method}
-                        onChange={(e) => updatePaymentSplit(index, 'method', e.target.value)}
-                        className="flex-1 px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:border-primary focus:outline-none transition-colors"
-                      >
-                        {PAYMENT_METHODS.map((m) => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
+                {paymentSplits.map((split, index) => (
+                  <div key={index} className="mb-1.5">
+                    <div className="flex gap-1">
+                      {PAYMENT_METHODS.map((m) => (
+                        <button key={m.value} onClick={() => updatePaymentSplit(index, 'method', m.value)} className={cn('flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all', split.method === m.value ? m.color + ' border-current' : 'border-border text-muted-foreground hover:text-foreground')}>
+                          <m.icon className="w-3 h-3" />
+                          {m.label}
+                        </button>
+                      ))}
                       {paymentSplits.length > 1 && (
-                        <>
-                          <Input
-                            type="number"
-                            value={split.amount || ''}
-                            onChange={(e) => updatePaymentSplit(index, 'amount', parseFloat(e.target.value) || 0)}
-                            placeholder="Valor"
-                            className="w-24 text-sm"
-                          />
-                          <button
-                            onClick={() => removePaymentSplit(index)}
-                            className="text-red-400 hover:text-red-600 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
+                        <button onClick={() => removePaymentSplit(index)} className="text-red-400 hover:text-red-600 px-1"><X className="w-3 h-3" /></button>
                       )}
                     </div>
-                  ))}
-                </div>
-
-                {/* Change for cash */}
+                    {paymentSplits.length > 1 && (
+                      <Input type="number" value={split.amount || ''} onChange={(e) => updatePaymentSplit(index, 'amount', parseFloat(e.target.value) || 0)} placeholder="Valor" className="text-xs h-7 mt-1" />
+                    )}
+                  </div>
+                ))}
                 {paymentSplits.some((s) => s.method === 'cash') && (
-                  <div className="mt-2">
-                    <Input
-                      type="number"
-                      value={changeFor}
-                      onChange={(e) => setChangeFor(e.target.value)}
-                      placeholder="Troco para (R$)..."
-                      className="text-sm"
-                    />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input type="number" value={changeFor} onChange={(e) => setChangeFor(e.target.value)} placeholder="Troco para..." className="text-xs h-7 flex-1" />
                     {changeFor && parseFloat(changeFor) > total && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Troco: {formatPrice(parseFloat(changeFor) - total)}
-                      </p>
+                      <span className="text-[10px] font-medium text-green-600 whitespace-nowrap">Troco: {formatPrice(parseFloat(changeFor) - total)}</span>
                     )}
                   </div>
                 )}
+              </div>
 
-                {/* Already paid toggle */}
-                <div className="flex items-center justify-between mt-3 py-2">
-                  <p className="text-sm font-medium text-foreground">Ja pago</p>
-                  <button
-                    onClick={() => setIsPaid(!isPaid)}
-                    className={cn(
-                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                      isPaid ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-                        isPaid ? 'translate-x-6' : 'translate-x-1',
-                      )}
-                    />
-                  </button>
+              {/* Obs */}
+              <div className="px-3 py-2 border-b border-border">
+                <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observacao do pedido..." className="w-full text-xs text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground" />
+              </div>
+
+              {/* Totals + Submit */}
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold text-foreground">{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
+                  <span className="text-xl font-extrabold text-primary">{formatPrice(total)}</span>
                 </div>
+                <Button onClick={handleSubmit} loading={creating} disabled={cart.length === 0} className="w-full" size="lg">
+                  <Check className="w-5 h-5 mr-2" />
+                  Finalizar Pedido
+                </Button>
               </div>
-            )}
-          </div>
-
-          {/* Footer: Totals + Submit */}
-          {cart.length > 0 && (
-            <div className="border-t border-border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Subtotal</span>
-                <span className="text-sm font-medium text-foreground">{formatPrice(subtotal)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-foreground">Total</span>
-                <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
-              </div>
-              <Button
-                onClick={handleSubmit}
-                loading={creating}
-                disabled={cart.length === 0}
-                className="w-full"
-                size="lg"
-              >
-                <Check className="w-5 h-5 mr-2" />
-                Finalizar Pedido
-              </Button>
             </div>
           )}
         </div>
