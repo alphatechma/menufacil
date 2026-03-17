@@ -9,6 +9,7 @@ import { CashRegister } from './entities/cash-register.entity';
 import { Product } from '../product/entities/product.entity';
 import { ProductVariation } from '../product/entities/product-variation.entity';
 import { CustomerAddress } from '../customer/entities/customer-address.entity';
+import { Tenant } from '../tenant/entities/tenant.entity';
 import { DeliveryZoneService } from '../delivery-zone/delivery-zone.service';
 import { CouponService } from '../coupon/coupon.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
@@ -31,6 +32,8 @@ export class OrderService {
     private readonly customerAddressRepo: Repository<CustomerAddress>,
     @InjectRepository(CashRegister)
     private readonly cashRegisterRepo: Repository<CashRegister>,
+    @InjectRepository(Tenant)
+    private readonly tenantRepo: Repository<Tenant>,
     private readonly deliveryZoneService: DeliveryZoneService,
     private readonly couponService: CouponService,
     private readonly loyaltyService: LoyaltyService,
@@ -271,6 +274,32 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
     return order;
+  }
+
+  async cancelByCustomer(orderId: string, customerId: string, tenantId: string): Promise<Order> {
+    const order = await this.orderRepository.findById(orderId, tenantId);
+    if (!order) throw new NotFoundException('Pedido nao encontrado');
+
+    // Only the order's customer can cancel
+    if (order.customer_id !== customerId) {
+      throw new BadRequestException('Voce nao pode cancelar este pedido.');
+    }
+
+    // Only pending orders can be cancelled
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Este pedido ja foi confirmado e nao pode ser cancelado.');
+    }
+
+    // Check time limit from tenant settings
+    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+    const timeLimit = tenant?.cancel_time_limit ?? 5; // default 5 minutes
+    const minutesSinceCreated = (Date.now() - new Date(order.created_at).getTime()) / 60000;
+
+    if (minutesSinceCreated > timeLimit) {
+      throw new BadRequestException(`O prazo de ${timeLimit} minutos para cancelamento ja expirou.`);
+    }
+
+    return this.updateStatus(orderId, OrderStatus.CANCELLED, tenantId);
   }
 
   async updateStatus(id: string, status: OrderStatus, tenantId: string, deliveryPersonId?: string): Promise<Order> {

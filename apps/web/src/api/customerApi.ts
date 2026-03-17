@@ -115,6 +115,14 @@ export const customerApi = baseApi.injectEndpoints({
         meta: { authContext: 'customer' as const, tenantSlug: slug },
       }),
     }),
+    cancelOrder: builder.mutation<any, { slug: string; orderId: string }>({
+      query: ({ slug, orderId }) => ({
+        url: `/orders/${orderId}/cancel`,
+        method: 'POST',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      invalidatesTags: ['CustomerOrders'],
+    }),
 
     // Loyalty
     getLoyaltyRewards: builder.query<any[], { slug: string }>({
@@ -210,6 +218,7 @@ export const {
   useCreateOrderMutation,
   useGetCustomerOrdersQuery,
   useGetOrderTrackingQuery,
+  useCancelOrderMutation,
   useGetPublicDeliveryZonesQuery,
   useGetDeliveryZoneByNeighborhoodQuery,
   useLazyValidateCouponQuery,

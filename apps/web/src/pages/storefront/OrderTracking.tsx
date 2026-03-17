@@ -10,7 +10,8 @@ import {
   XCircle,
   RefreshCw,
 } from 'lucide-react';
-import { useGetOrderTrackingQuery } from '@/api/customerApi';
+import { useState } from 'react';
+import { useGetOrderTrackingQuery, useCancelOrderMutation } from '@/api/customerApi';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { formatPrice } from '@/utils/formatPrice';
 
@@ -70,6 +71,9 @@ function getStepIndex(status: OrderStatus): number {
 export default function OrderTracking() {
   const { slug, orderId } = useParams<{ slug: string; orderId: string }>();
   const navigate = useNavigate();
+
+  const [cancelOrder, { isLoading: cancelling }] = useCancelOrderMutation();
+  const [cancelError, setCancelError] = useState('');
 
   const { data: apiOrder, isLoading, error, refetch } = useGetOrderTrackingQuery(
     { slug: slug!, orderId: orderId! },
@@ -197,6 +201,32 @@ export default function OrderTracking() {
           </div>
         </div>
       </div>
+
+      {/* Cancel button - only for pending orders */}
+      {order.status === 'pending' && (
+        <div className="px-4 pt-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            {cancelError && (
+              <p className="text-sm text-red-500 mb-2">{cancelError}</p>
+            )}
+            <button
+              onClick={async () => {
+                setCancelError('');
+                try {
+                  await cancelOrder({ slug: slug!, orderId: orderId! }).unwrap();
+                  refetch();
+                } catch (err: any) {
+                  setCancelError(err?.data?.message || 'Nao foi possivel cancelar o pedido.');
+                }
+              }}
+              disabled={cancelling}
+              className="w-full py-3 rounded-xl border-2 border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              {cancelling ? 'Cancelando...' : 'Cancelar pedido'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Status Stepper */}
       {!isCancelled && (

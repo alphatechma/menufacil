@@ -52,6 +52,7 @@ const SETTINGS_TABS = [
   { key: 'geral', label: 'Dados Gerais' },
   { key: 'horarios', label: 'Horario de Funcionamento' },
   { key: 'modos', label: 'Modos de Pedido' },
+  { key: 'parametros', label: 'Parametros' },
   { key: 'pagamento', label: 'Pagamento' },
   { key: 'notificacoes', label: 'Notificacoes' },
   { key: 'plano', label: 'Plano' },
@@ -172,6 +173,8 @@ export default function Settings() {
   const [savingModes, setSavingModes] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<Record<string, any>>({});
   const [savingPayment, setSavingPayment] = useState(false);
+  const [cancelTimeLimit, setCancelTimeLimit] = useState(5);
+  const [savingParams, setSavingParams] = useState(false);
 
   // Printer state
   const [printerAvailable, setPrinterAvailable] = useState<boolean | null>(null);
@@ -226,6 +229,9 @@ export default function Settings() {
       }
       if (tenant.payment_config) {
         setPaymentConfig(tenant.payment_config);
+      }
+      if (tenant.cancel_time_limit !== undefined) {
+        setCancelTimeLimit(tenant.cancel_time_limit);
       }
       if (tenant.business_hours && Object.keys(tenant.business_hours).length > 0) {
         // Normalize legacy format: { open: "11:00", close: "23:00" } → { open: true, openTime: "11:00", closeTime: "23:00" }
@@ -358,6 +364,19 @@ export default function Settings() {
     } finally {
       setSavingPayment(false);
     }
+  };
+
+  const handleSaveParams = async () => {
+    if (!tenant) return;
+    try {
+      setSavingParams(true);
+      await updateTenant({
+        id: tenant.id,
+        data: { cancel_time_limit: cancelTimeLimit },
+      }).unwrap();
+      showSuccess('Parametros salvos com sucesso!');
+    } catch { /* ignore */ }
+    finally { setSavingParams(false); }
   };
 
   const hasDineInModule = Array.isArray(modules) && modules.includes('dine_in');
@@ -669,6 +688,42 @@ export default function Settings() {
                   </div>
                 </div>
               </FormCard>
+            </div>
+          )}
+
+          {activeTab === 'parametros' && (
+            <div className="space-y-6 max-w-2xl">
+              <p className="text-sm text-muted-foreground">
+                Configure parametros gerais do sistema.
+              </p>
+
+              <FormCard>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      Tempo limite para cancelamento pelo cliente (minutos)
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={cancelTimeLimit}
+                      onChange={(e) => setCancelTimeLimit(parseInt(e.target.value) || 0)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tempo maximo (em minutos) que o cliente pode cancelar o pedido apos a criacao.
+                      Apos esse tempo, apenas o restaurante pode cancelar. Defina 0 para desabilitar o cancelamento pelo cliente.
+                    </p>
+                  </div>
+                </div>
+              </FormCard>
+
+              <div className="flex justify-end">
+                <Button onClick={handleSaveParams} loading={savingParams}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Parametros
+                </Button>
+              </div>
             </div>
           )}
 

@@ -84,6 +84,9 @@ export class Tenant {
     accepts_boleto?: boolean;
   };
 
+  @Column({ type: 'int', default: 5 })
+  cancel_time_limit: number; // minutes allowed for customer to cancel
+
   @Column({ default: true })
   is_active: boolean;
 

@@ -111,6 +111,16 @@ export class OrderController {
     return this.orderService.findByCustomer(userId, tenantId);
   }
 
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancel order (customer, time-limited)' })
+  cancelOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.orderService.cancelByCustomer(id, userId, tenantId);
+  }
+
   @Get(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('order:read')
