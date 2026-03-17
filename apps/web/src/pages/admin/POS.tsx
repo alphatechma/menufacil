@@ -313,6 +313,23 @@ export default function POS() {
   const [closingNotes, setClosingNotes] = useState('');
   const isCashRegisterOpen = !!cashRegister;
 
+  const printCashReceipt = (title: string, data: Record<string, string>) => {
+    const win = window.open('', '_blank', 'width=400,height=500');
+    if (!win) return;
+    win.document.write('<html><head><title>' + title + '</title><style>body{font-family:monospace;font-size:12px;padding:10px;max-width:300px;margin:0 auto}table{width:100%;border-collapse:collapse}td{padding:3px 0}.right{text-align:right}.bold{font-weight:bold}.center{text-align:center}.line{border-top:1px dashed #000;margin:8px 0}</style></head><body>');
+    win.document.write('<div class="center"><strong>' + title.toUpperCase() + '</strong></div>');
+    win.document.write('<div class="center">' + new Date().toLocaleString('pt-BR') + '</div>');
+    win.document.write('<div class="line"></div>');
+    win.document.write('<table>');
+    for (const [k, v] of Object.entries(data)) {
+      win.document.write('<tr><td>' + k + '</td><td class="right">' + v + '</td></tr>');
+    }
+    win.document.write('</table>');
+    win.document.write('</body></html>');
+    win.document.close();
+    win.print();
+  };
+
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -446,7 +463,7 @@ export default function POS() {
               <label className="text-sm font-medium text-foreground mb-1 block">Valor de abertura (R$)</label>
               <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} placeholder="0.00" autoFocus />
             </div>
-            <Button className="w-full" loading={openingRegister} onClick={async () => { await openRegister({ opening_balance: parseFloat(openingBalance) || 0 }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); }}>
+            <Button className="w-full" loading={openingRegister} onClick={async () => { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); }}>
               Abrir Caixa
             </Button>
           </div>

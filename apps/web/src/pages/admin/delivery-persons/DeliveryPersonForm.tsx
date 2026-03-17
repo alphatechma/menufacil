@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
+import { Toggle } from '@/components/ui/Toggle';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 const COMMISSION_TYPES = [
@@ -41,6 +42,7 @@ export default function DeliveryPersonForm() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [commissionType, setCommissionType] = useState<string>('none');
   const [commissionValue, setCommissionValue] = useState<string>('0');
+  const [receivesDeliveryFee, setReceivesDeliveryFee] = useState(false);
 
   const { control, handleSubmit, reset } = useForm<DeliveryPersonFormData>({
     resolver: zodResolver(deliveryPersonSchema),
@@ -61,6 +63,7 @@ export default function DeliveryPersonForm() {
       setSelectedUserId(person.user_id ?? '');
       setCommissionType(person.commission_type ?? 'none');
       setCommissionValue(String(person.commission_value ?? 0));
+      setReceivesDeliveryFee(person.receives_delivery_fee ?? false);
     }
   }, [person, reset]);
 
@@ -71,6 +74,7 @@ export default function DeliveryPersonForm() {
         user_id: selectedUserId || undefined,
         commission_type: commissionType,
         commission_value: parseFloat(commissionValue) || 0,
+        receives_delivery_fee: receivesDeliveryFee,
       };
       if (isEditing) {
         await updatePerson({ id: id!, data: payload }).unwrap();
@@ -209,6 +213,16 @@ export default function DeliveryPersonForm() {
               )}
             </div>
           )}
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Recebe taxa de entrega</p>
+                <p className="text-xs text-muted-foreground">O entregador recebe o valor integral da taxa de entrega cobrada do cliente</p>
+              </div>
+              <Toggle checked={receivesDeliveryFee} onChange={setReceivesDeliveryFee} />
+            </div>
+          </div>
         </FormCard>
 
         {/* User link */}

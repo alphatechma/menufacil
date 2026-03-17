@@ -42,6 +42,9 @@ export class DeliveryPerson {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   commission_value: number;
 
+  @Column({ type: 'boolean', default: false })
+  receives_delivery_fee: boolean; // entregador recebe o valor da taxa de entrega
+
   @Column({ default: true })
   is_active: boolean;
 
