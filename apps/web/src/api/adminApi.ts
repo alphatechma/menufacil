@@ -212,7 +212,7 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     updateTenant: builder.mutation<void, { id: string; data: any }>({
       query: ({ id, data }) => ({ url: `/tenants/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Settings'],
+      invalidatesTags: ['Settings', 'Tenant'],
     }),
 
     // Delivery Persons

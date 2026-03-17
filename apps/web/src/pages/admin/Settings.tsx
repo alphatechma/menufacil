@@ -212,6 +212,7 @@ export default function Settings() {
     if (tenant) {
       reset({
         name: tenant.name ?? '',
+        slug: tenant.slug ?? '',
         phone: tenant.phone ?? '',
         address: tenant.address ?? '',
         min_order_value: tenant.min_order_value ?? null,
@@ -406,6 +407,22 @@ export default function Settings() {
                 <FormField control={control} name="name" label="Nome do restaurante" required>
                   {(field) => (
                     <Input {...field} placeholder="Nome do restaurante" />
+                  )}
+                </FormField>
+
+                <FormField control={control} name="slug" label="Endereco (slug)">
+                  {(field) => (
+                    <div className="flex items-stretch">
+                      <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-border bg-muted text-muted-foreground text-sm font-medium">
+                        menufacil.com/
+                      </span>
+                      <Input
+                        {...field}
+                        value={field.value ?? ''}
+                        placeholder="meu-restaurante"
+                        className="rounded-l-none font-mono text-sm"
+                      />
+                    </div>
                   )}
                 </FormField>
 
