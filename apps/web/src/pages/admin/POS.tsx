@@ -21,7 +21,7 @@ import {
   Unlock,
   Receipt,
 } from 'lucide-react';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation } from '@/api/adminApi';
+import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation, useGetTablesQuery } from '@/api/adminApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -303,6 +303,7 @@ export default function POS() {
   const { data: cashRegister } = useGetCashRegisterQuery();
   const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
+  const { data: tables = [] } = useGetTablesQuery();
 
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
@@ -318,6 +319,7 @@ export default function POS() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState('pickup');
+  const [selectedTableId, setSelectedTableId] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
@@ -378,7 +380,7 @@ export default function POS() {
 
     const data: any = {
       items: cart.map((item) => ({ product_id: item.product_id, variation_id: item.variation_id || undefined, quantity: item.quantity, notes: item.notes || undefined, extras: item.extras.length > 0 ? item.extras : undefined })),
-      order_type: orderType, is_paid: true, notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
+      order_type: orderType, is_paid: true, table_id: orderType === 'dine_in' && selectedTableId ? selectedTableId : undefined, notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
     };
     if (selectedCustomer) { data.customer_id = selectedCustomer.id; data.customer_name = selectedCustomer.name; }
     if (paymentSplits.length === 1) {
@@ -392,7 +394,7 @@ export default function POS() {
     try {
       const order = await createOrder(data).unwrap();
       setOrderSuccess(order.order_number);
-      setCart([]); setSelectedCustomer(null); setNotes(''); setDeliveryNotes(''); setChangeFor('');
+      setCart([]); setSelectedCustomer(null); setNotes(''); setDeliveryNotes(''); setChangeFor(''); setSelectedTableId('');
       setPaymentSplits([{ method: 'cash', amount: 0 }]);
       setTimeout(() => setOrderSuccess(null), 4000);
     } catch (err) { console.error('Erro ao criar pedido:', err); }
@@ -668,6 +670,14 @@ export default function POS() {
               </div>
               {orderType === 'delivery' && (
                 <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereco / referencia..." rows={2} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground resize-none focus:border-primary focus:outline-none" />
+              )}
+              {orderType === 'dine_in' && (
+                <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground focus:border-primary focus:outline-none">
+                  <option value="">Selecionar mesa...</option>
+                  {tables.filter((t: any) => t.is_active).map((t: any) => (
+                    <option key={t.id} value={t.id}>Mesa {t.number}{t.label ? ` - ${t.label}` : ''}</option>
+                  ))}
+                </select>
               )}
             </div>
 
