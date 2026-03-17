@@ -13,7 +13,7 @@ export class WhatsappFlowExecution {
   @Column()
   flow_id: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   tenant_id: string;
 
   @Column()

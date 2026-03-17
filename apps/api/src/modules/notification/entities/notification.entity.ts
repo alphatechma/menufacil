@@ -17,7 +17,7 @@ export class Notification {
   @Column()
   tenant_id: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   order_id: string;
 
   @Column({ type: 'enum', enum: NotificationChannel })

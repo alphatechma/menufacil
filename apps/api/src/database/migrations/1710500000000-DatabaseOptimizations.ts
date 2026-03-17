@@ -90,7 +90,42 @@ export class DatabaseOptimizations1710500000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_debit TYPE numeric(10,2)`);
     await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_pix TYPE numeric(10,2)`);
 
-    // ── 5. Missing columns ──
+    // ── 5. TIMESTAMPTZ conversion (all tables) ──
+    const timestampTables = [
+      { table: 'coupons', cols: ['created_at', 'valid_from', 'valid_until'] },
+      { table: 'delivery_persons', cols: ['created_at', 'updated_at'] },
+      { table: 'floor_plans', cols: ['created_at', 'updated_at'] },
+      { table: 'loyalty_redemptions', cols: ['created_at', 'expires_at', 'used_at'] },
+      { table: 'loyalty_rewards', cols: ['created_at', 'updated_at'] },
+      { table: 'notifications', cols: ['created_at', 'sent_at'] },
+      { table: 'permissions', cols: ['created_at', 'updated_at'] },
+      { table: 'plans', cols: ['created_at', 'updated_at'] },
+      { table: 'reservations', cols: ['created_at', 'updated_at'] },
+      { table: 'roles', cols: ['created_at', 'updated_at'] },
+      { table: 'system_modules', cols: ['created_at', 'updated_at'] },
+      { table: 'table_sessions', cols: ['created_at', 'updated_at', 'opened_at', 'closed_at'] },
+      { table: 'tables', cols: ['created_at', 'updated_at'] },
+      { table: 'tenant_units', cols: ['created_at', 'updated_at'] },
+      { table: 'tenants', cols: ['created_at', 'updated_at', 'deleted_at', 'trial_ends_at'] },
+      { table: 'users', cols: ['created_at', 'updated_at', 'token_revoked_at'] },
+      { table: 'whatsapp_flow_executions', cols: ['created_at', 'updated_at', 'started_at', 'completed_at'] },
+      { table: 'whatsapp_flows', cols: ['created_at', 'updated_at'] },
+      { table: 'whatsapp_instances', cols: ['created_at', 'updated_at'] },
+      { table: 'whatsapp_message_templates', cols: ['created_at', 'updated_at'] },
+    ];
+    for (const { table, cols } of timestampTables) {
+      for (const col of cols) {
+        await queryRunner.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE timestamptz USING ${col} AT TIME ZONE 'America/Sao_Paulo'`);
+      }
+    }
+
+    // ── 6. FIX more varchar → uuid columns ──
+    await queryRunner.query(`ALTER TABLE notifications ALTER COLUMN order_id TYPE uuid USING order_id::uuid`);
+    await queryRunner.query(`ALTER TABLE reservations ALTER COLUMN customer_id TYPE uuid USING customer_id::uuid`);
+    await queryRunner.query(`ALTER TABLE reservations ALTER COLUMN table_id TYPE uuid USING table_id::uuid`);
+    await queryRunner.query(`ALTER TABLE whatsapp_flow_executions ALTER COLUMN tenant_id TYPE uuid USING tenant_id::uuid`);
+
+    // ── 8. Missing columns ──
     await queryRunner.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS cancel_time_limit INTEGER DEFAULT 5`);
     await queryRunner.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS payment_config jsonb`);
     await queryRunner.query(`ALTER TABLE delivery_persons ADD COLUMN IF NOT EXISTS receives_delivery_fee BOOLEAN DEFAULT false`);
