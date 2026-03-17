@@ -27,6 +27,7 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=build /app/packages/shared/dist packages/shared/dist
 COPY --from=build /app/apps/api/dist apps/api/dist
+COPY apps/api/certs/digital-certificate.txt apps/api/certs/
 
 ENV NODE_ENV=production
 ENV API_PORT=3000

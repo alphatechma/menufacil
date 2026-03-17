@@ -99,7 +99,7 @@ function setupSecurity() {
       .catch(reject);
   });
 
-  qz.security.setSignatureAlgorithm('SHA512');
+  qz.security.setSignatureAlgorithm('SHA256');
 
   // Busca assinatura do backend (chave privada fica no servidor)
   qz.security.setSignaturePromise(function (toSign: string) {

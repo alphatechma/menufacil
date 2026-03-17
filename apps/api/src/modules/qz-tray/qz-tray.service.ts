@@ -10,11 +10,22 @@ export class QzTrayService {
   private readonly privateKey: string;
 
   constructor() {
+    // Try env var first, then file fallback
+    const envKey = process.env.QZ_PRIVATE_KEY;
     const certsDir = join(__dirname, '..', '..', '..', 'certs');
 
     try {
-      this.certificate = readFileSync(join(certsDir, 'qz-cert.pem'), 'utf-8');
-      this.privateKey = readFileSync(join(certsDir, 'qz-private.pem'), 'utf-8');
+      this.privateKey = envKey
+        ? envKey.replace(/\\n/g, '\n')
+        : readFileSync(join(certsDir, 'private.key'), 'utf-8');
+
+      try {
+        this.certificate = readFileSync(join(certsDir, 'digital-certificate.txt'), 'utf-8');
+      } catch {
+        // Fallback to old name
+        this.certificate = readFileSync(join(certsDir, 'qz-cert.pem'), 'utf-8');
+      }
+
       this.logger.log('QZ Tray certificates loaded successfully');
     } catch (error) {
       this.logger.warn(
@@ -34,7 +45,7 @@ export class QzTrayService {
       return '';
     }
 
-    const signer = createSign('SHA512');
+    const signer = createSign('SHA256');
     signer.update(message);
     return signer.sign(this.privateKey, 'base64');
   }
