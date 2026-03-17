@@ -306,6 +306,7 @@ export default function POS() {
 
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
+  const [closingSummary, setClosingSummary] = useState<any>(null);
   const [openingBalance, setOpeningBalance] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
   const [closingNotes, setClosingNotes] = useState('');
@@ -323,7 +324,7 @@ export default function POS() {
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [isPaid, setIsPaid] = useState(true);
+  // POS orders are always paid at counter
   const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>([{ method: 'cash', amount: 0 }]);
   const [changeFor, setChangeFor] = useState('');
   const [notes, setNotes] = useState('');
@@ -377,7 +378,7 @@ export default function POS() {
 
     const data: any = {
       items: cart.map((item) => ({ product_id: item.product_id, variation_id: item.variation_id || undefined, quantity: item.quantity, notes: item.notes || undefined, extras: item.extras.length > 0 ? item.extras : undefined })),
-      order_type: orderType, is_paid: isPaid, notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
+      order_type: orderType, is_paid: true, notes: [notes, deliveryNotes].filter(Boolean).join(' | ') || undefined,
     };
     if (selectedCustomer) { data.customer_id = selectedCustomer.id; data.customer_name = selectedCustomer.name; }
     if (paymentSplits.length === 1) {
@@ -468,11 +469,103 @@ export default function POS() {
             <Button className="w-full" variant="danger" loading={closingRegister} onClick={async () => {
               const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
               setShowCloseRegister(false); setClosingBalance(''); setClosingNotes('');
-              alert(`Caixa fechado!\n\nPedidos: ${result.orders_count}\nDinheiro: R$ ${Number(result.total_cash).toFixed(2)}\nCredito: R$ ${Number(result.total_credit).toFixed(2)}\nDebito: R$ ${Number(result.total_debit).toFixed(2)}\nPIX: R$ ${Number(result.total_pix).toFixed(2)}`);
+              setClosingSummary(result);
             }}>Fechar Caixa</Button>
           </div>
         </Modal>
       )}
+
+      {/* Closing Summary Modal (printable) */}
+      {closingSummary && (
+        <Modal open onClose={() => setClosingSummary(null)} title="Resumo do Caixa" className="md:max-w-md">
+          <div id="closing-summary-print">
+            <div className="text-center mb-4">
+              <p className="text-lg font-bold text-foreground">Fechamento de Caixa</p>
+              <p className="text-xs text-muted-foreground">{new Date(closingSummary.closed_at).toLocaleString('pt-BR')}</p>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm border-b border-border pb-2">
+                <span className="text-muted-foreground">Abertura</span>
+                <span className="font-medium">{formatPrice(closingSummary.opening_balance)}</span>
+              </div>
+              <div className="flex justify-between text-sm border-b border-border pb-2">
+                <span className="text-muted-foreground">Fechamento</span>
+                <span className="font-medium">{formatPrice(closingSummary.closing_balance)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total Pedidos</span>
+                <span className="font-bold">{closingSummary.orders_count}</span>
+              </div>
+              <div className="h-px bg-border" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Vendas por metodo</p>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2"><Banknote className="w-3.5 h-3.5 text-green-600" /> Dinheiro</span>
+                  <span className="font-medium">{formatPrice(closingSummary.total_cash)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-blue-600" /> Credito</span>
+                  <span className="font-medium">{formatPrice(closingSummary.total_credit)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Debito</span>
+                  <span className="font-medium">{formatPrice(closingSummary.total_debit)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2"><QrCode className="w-3.5 h-3.5 text-teal-600" /> PIX</span>
+                  <span className="font-medium">{formatPrice(closingSummary.total_pix)}</span>
+                </div>
+              </div>
+              <div className="h-px bg-border" />
+              <div className="flex justify-between text-base font-bold">
+                <span>Total Geral</span>
+                <span className="text-primary">{formatPrice(Number(closingSummary.total_cash) + Number(closingSummary.total_credit) + Number(closingSummary.total_debit) + Number(closingSummary.total_pix))}</span>
+              </div>
+              {closingSummary.closing_notes && (
+                <div className="bg-muted/50 rounded-lg p-2 mt-2">
+                  <p className="text-xs text-muted-foreground">{closingSummary.closing_notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+            <Button variant="outline" className="flex-1" onClick={() => {
+              const printContent = document.getElementById('closing-summary-print');
+              if (!printContent) return;
+              const win = window.open('', '_blank', 'width=400,height=600');
+              if (!win) return;
+              win.document.write(`<html><head><title>Fechamento de Caixa</title><style>body{font-family:monospace;font-size:12px;padding:10px;max-width:300px;margin:0 auto}table{width:100%;border-collapse:collapse}td{padding:3px 0}.right{text-align:right}.bold{font-weight:bold}.center{text-align:center}.line{border-top:1px dashed #000;margin:8px 0}</style></head><body>`);
+              win.document.write('<div class="center"><strong>FECHAMENTO DE CAIXA</strong></div>');
+              win.document.write('<div class="center">' + new Date(closingSummary.closed_at).toLocaleString('pt-BR') + '</div>');
+              win.document.write('<div class="line"></div>');
+              win.document.write('<table>');
+              win.document.write('<tr><td>Abertura</td><td class="right">R$ ' + Number(closingSummary.opening_balance).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Fechamento</td><td class="right">R$ ' + Number(closingSummary.closing_balance).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Pedidos</td><td class="right">' + closingSummary.orders_count + '</td></tr>');
+              win.document.write('</table>');
+              win.document.write('<div class="line"></div>');
+              win.document.write('<div class="bold">VENDAS POR METODO</div>');
+              win.document.write('<table>');
+              win.document.write('<tr><td>Dinheiro</td><td class="right">R$ ' + Number(closingSummary.total_cash).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Credito</td><td class="right">R$ ' + Number(closingSummary.total_credit).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Debito</td><td class="right">R$ ' + Number(closingSummary.total_debit).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>PIX</td><td class="right">R$ ' + Number(closingSummary.total_pix).toFixed(2) + '</td></tr>');
+              win.document.write('</table>');
+              win.document.write('<div class="line"></div>');
+              const grandTotal = Number(closingSummary.total_cash) + Number(closingSummary.total_credit) + Number(closingSummary.total_debit) + Number(closingSummary.total_pix);
+              win.document.write('<table><tr class="bold"><td>TOTAL GERAL</td><td class="right">R$ ' + grandTotal.toFixed(2) + '</td></tr></table>');
+              if (closingSummary.closing_notes) win.document.write('<div class="line"></div><div>Obs: ' + closingSummary.closing_notes + '</div>');
+              win.document.write('</body></html>');
+              win.document.close();
+              win.print();
+            }}>
+              Imprimir
+            </Button>
+            <Button className="flex-1" onClick={() => setClosingSummary(null)}>Fechar</Button>
+          </div>
+        </Modal>
+      )}
+
       {selectedProduct && <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onAdd={addToCart} />}
 
       {/* Success toast */}
@@ -484,6 +577,21 @@ export default function POS() {
         </div>
       )}
 
+      {/* Fullscreen "Abrir Caixa" when register is closed */}
+      {!isCashRegisterOpen ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4">
+          <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center">
+            <Receipt className="w-12 h-12 text-primary" />
+          </div>
+          <div className="text-center">
+            <p className="text-lg text-foreground">Para comecar a efetuar vendas e preciso</p>
+            <p className="text-lg font-bold text-foreground">abrir o caixa</p>
+          </div>
+          <Button size="lg" onClick={() => setShowOpenRegister(true)} className="px-8">
+            <Unlock className="w-5 h-5 mr-2" /> Abrir Caixa
+          </Button>
+        </div>
+      ) : (
       <div className="flex-1 flex overflow-hidden">
         {/* ── LEFT: Catalog ── */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -652,17 +760,12 @@ export default function POS() {
               <div className="p-3 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pagamento</p>
-                  <div className="flex items-center gap-2">
-                    {paymentSplits.length < 4 && (
-                      <button onClick={addPaymentSplit} className="text-[10px] text-primary hover:text-primary-dark flex items-center gap-0.5"><Plus className="w-2.5 h-2.5" /> Dividir</button>
-                    )}
-                    <button onClick={() => setIsPaid(!isPaid)} className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors', isPaid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400')}>
-                      {isPaid ? 'Pago' : 'Pendente'}
-                    </button>
-                  </div>
+                  {paymentSplits.length < 4 && (
+                    <button onClick={addPaymentSplit} className="text-[10px] text-primary hover:text-primary-dark flex items-center gap-0.5"><Plus className="w-2.5 h-2.5" /> Dividir</button>
+                  )}
                 </div>
                 {paymentSplits.map((split, index) => (
-                  <div key={index} className="mb-1.5">
+                  <div key={index} className="mb-2">
                     <div className="flex gap-1">
                       {PAYMENT_METHODS.map((m) => (
                         <button key={m.value} onClick={() => updatePaymentSplit(index, 'method', m.value)} className={cn('flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all', split.method === m.value ? m.color + ' border-current' : 'border-border text-muted-foreground hover:text-foreground')}>
@@ -679,12 +782,30 @@ export default function POS() {
                     )}
                   </div>
                 ))}
+
+                {/* Cash: valor recebido + troco */}
                 {paymentSplits.some((s) => s.method === 'cash') && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input type="number" value={changeFor} onChange={(e) => setChangeFor(e.target.value)} placeholder="Troco para..." className="text-xs h-7 flex-1" />
-                    {changeFor && parseFloat(changeFor) > total && (
-                      <span className="text-[10px] font-medium text-green-600 whitespace-nowrap">Troco: {formatPrice(parseFloat(changeFor) - total)}</span>
+                  <div className="mt-1 bg-green-50 dark:bg-green-950 rounded-lg p-2.5 space-y-1.5">
+                    <div>
+                      <label className="text-[10px] font-medium text-green-700 dark:text-green-300 mb-0.5 block">Valor recebido (R$)</label>
+                      <Input type="number" value={changeFor} onChange={(e) => setChangeFor(e.target.value)} placeholder={total.toFixed(2)} className="text-xs h-8 bg-white dark:bg-green-900 border-green-200 dark:border-green-800" />
+                    </div>
+                    {changeFor && parseFloat(changeFor) >= total && (
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-medium text-green-600 dark:text-green-400">Troco</span>
+                        <span className="text-sm font-bold text-green-700 dark:text-green-300">{formatPrice(parseFloat(changeFor) - total)}</span>
+                      </div>
                     )}
+                    {changeFor && parseFloat(changeFor) > 0 && parseFloat(changeFor) < total && (
+                      <p className="text-[10px] text-red-500 font-medium px-1">Valor insuficiente (faltam {formatPrice(total - parseFloat(changeFor))})</p>
+                    )}
+                  </div>
+                )}
+
+                {/* PIX info */}
+                {paymentSplits.some((s) => s.method === 'pix') && (
+                  <div className="mt-1 bg-teal-50 dark:bg-teal-950 rounded-lg p-2.5">
+                    <p className="text-[10px] text-teal-700 dark:text-teal-300 font-medium">PIX sera confirmado automaticamente ou pelo operador.</p>
                   </div>
                 )}
               </div>
@@ -709,6 +830,7 @@ export default function POS() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
