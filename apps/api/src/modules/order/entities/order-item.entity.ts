@@ -17,10 +17,10 @@ export class OrderItem {
   @Column()
   order_id: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   product_id: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   variation_id: string;
 
   @Column()

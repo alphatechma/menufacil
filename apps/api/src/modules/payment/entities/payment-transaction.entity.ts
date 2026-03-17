@@ -15,7 +15,7 @@ export class PaymentTransaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   order_id: string;
 
   @Column()
