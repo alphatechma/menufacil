@@ -82,6 +82,21 @@ export class CreateTenantDto {
     dine_in?: boolean;
   };
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  payment_config?: {
+    pix_key?: string;
+    pix_key_type?: string;
+    payment_link_url?: string;
+    accepts_boleto?: boolean;
+  };
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  cancel_time_limit?: number;
+
   // Admin user fields (for super-admin tenant creation)
   @ApiPropertyOptional({ example: 'João Silva' })
   @IsOptional()
