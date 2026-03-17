@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -21,13 +21,15 @@ import {
   Unlock,
   Receipt,
 } from 'lucide-react';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation, useGetTablesQuery } from '@/api/adminApi';
+import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation, useGetTablesQuery, useGetTenantBySlugQuery } from '@/api/adminApi';
+import { useAppSelector as useAppSelectorStore } from '@/store/hooks';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
+import { generatePixPayload, generatePixQrCodeDataUrl } from '@/utils/pixQrCode';
 
 interface CartItem {
   product_id: string;
@@ -304,6 +306,8 @@ export default function POS() {
   const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
   const { data: tables = [] } = useGetTablesQuery();
+  const tenantSlug = useAppSelectorStore((s) => s.adminAuth.tenantSlug);
+  const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
 
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
@@ -349,6 +353,8 @@ export default function POS() {
   const [notes, setNotes] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const [pixQrUrl, setPixQrUrl] = useState<string | null>(null);
+  const [pixPayloadStr, setPixPayloadStr] = useState('');
 
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
@@ -370,6 +376,31 @@ export default function POS() {
   }, 0);
   const total = subtotal;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Generate PIX QR code when payment is PIX and has amount
+  const isPix = paymentSplits.some((s) => s.method === 'pix');
+  const pixKey = tenant?.payment_config?.pix_key;
+  useEffect(() => {
+    if (!isPix || !pixKey || total <= 0) {
+      setPixQrUrl(null);
+      setPixPayloadStr('');
+      return;
+    }
+    const payload = generatePixPayload({
+      pixKey,
+      merchantName: tenant?.name || 'MenuFacil',
+      merchantCity: 'Brasil',
+      amount: total,
+      txId: '***',
+    });
+    setPixPayloadStr(payload);
+    generatePixQrCodeDataUrl({
+      pixKey,
+      merchantName: tenant?.name || 'MenuFacil',
+      merchantCity: 'Brasil',
+      amount: total,
+    }).then(setPixQrUrl).catch(() => setPixQrUrl(null));
+  }, [isPix, pixKey, total, tenant?.name]);
 
   const handleProductClick = (product: any) => {
     const hasOptions = (product.variations?.length > 0) || product.extra_groups?.some((g: any) => g.extras?.length > 0);
@@ -829,10 +860,25 @@ export default function POS() {
                   </div>
                 )}
 
-                {/* PIX info */}
-                {paymentSplits.some((s) => s.method === 'pix') && (
-                  <div className="mt-1 bg-teal-50 dark:bg-teal-950 rounded-lg p-2.5">
-                    <p className="text-[10px] text-teal-700 dark:text-teal-300 font-medium">PIX sera confirmado automaticamente ou pelo operador.</p>
+                {/* PIX QR Code */}
+                {isPix && (
+                  <div className="mt-2 bg-teal-50 dark:bg-teal-950 rounded-xl p-3 text-center">
+                    {pixQrUrl ? (
+                      <>
+                        <p className="text-xs font-semibold text-teal-700 dark:text-teal-300 mb-2">QR Code PIX — {formatPrice(total)}</p>
+                        <img src={pixQrUrl} alt="PIX QR Code" className="mx-auto w-40 h-40 rounded-lg" />
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(pixPayloadStr); }}
+                          className="mt-2 text-[10px] text-teal-600 hover:text-teal-800 font-medium underline"
+                        >
+                          Copiar codigo PIX
+                        </button>
+                      </>
+                    ) : pixKey ? (
+                      <p className="text-[10px] text-teal-700 dark:text-teal-300 font-medium">Gerando QR Code...</p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium">Configure a chave PIX em Configuracoes {'>'} Pagamento</p>
+                    )}
                   </div>
                 )}
               </div>
