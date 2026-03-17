@@ -660,7 +660,7 @@ export default function POS() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredProducts.map((product: any) => {
                 const hasOptions = (product.variations?.length > 0) || product.extra_groups?.some((g: any) => g.extras?.length > 0);
                 const inCart = cart.filter((c) => c.product_id === product.id).reduce((sum, c) => sum + c.quantity, 0);
@@ -669,27 +669,27 @@ export default function POS() {
                     key={product.id}
                     onClick={() => handleProductClick(product)}
                     className={cn(
-                      'relative flex flex-col bg-card border rounded-xl p-2.5 text-left hover:shadow-md transition-all active:scale-[0.97]',
-                      inCart > 0 ? 'border-primary shadow-sm' : 'border-border hover:border-primary/40',
+                      'relative flex flex-col bg-card border rounded-2xl p-3 text-left hover:shadow-lg transition-all active:scale-[0.97]',
+                      inCart > 0 ? 'border-primary shadow-md' : 'border-border hover:border-primary/40',
                     )}
                   >
                     {inCart > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                      <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
                         {inCart}
                       </span>
                     )}
                     {hasOptions && !inCart && (
-                      <span className="absolute top-1.5 right-1.5 bg-primary/10 text-primary text-[10px] font-bold px-1 py-0.5 rounded">+</span>
+                      <span className="absolute top-2 right-2 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md">+</span>
                     )}
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full aspect-[4/3] object-cover rounded-lg mb-1.5" />
+                      <img src={product.image_url} alt={product.name} className="w-full aspect-square object-cover rounded-xl mb-2" />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-muted rounded-lg mb-1.5 flex items-center justify-center">
-                        <ShoppingBag className="w-6 h-6 text-muted-foreground/40" />
+                      <div className="w-full aspect-square bg-muted rounded-xl mb-2 flex items-center justify-center">
+                        <ShoppingBag className="w-10 h-10 text-muted-foreground/30" />
                       </div>
                     )}
-                    <p className="text-xs font-medium text-foreground leading-tight line-clamp-2">{product.name}</p>
-                    <p className="text-xs font-bold text-primary mt-0.5">{formatPrice(product.base_price)}</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{product.name}</p>
+                    <p className="text-sm font-bold text-primary mt-1">{formatPrice(product.base_price)}</p>
                   </button>
                 );
               })}
