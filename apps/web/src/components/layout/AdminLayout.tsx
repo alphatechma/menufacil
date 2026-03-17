@@ -199,16 +199,6 @@ export default function AdminLayout() {
       : 'Painel de Gestao';
   }, [tenantSlug]);
 
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    sidebarGroups.forEach((g) => (initial[g.key] = true));
-    return initial;
-  });
-
-  const toggleGroup = (key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const isGroupActive = (group: SidebarGroup) => {
     return group.items.some((item) => {
       if (item.to === '/admin') return location.pathname === '/admin';
@@ -226,6 +216,29 @@ export default function AdminLayout() {
       }),
     }))
     .filter((group) => group.items.length > 0);
+
+  // Groups start collapsed; auto-open only the active group
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    sidebarGroups.forEach((g) => (initial[g.key] = false));
+    return initial;
+  });
+
+  // Auto-open the group containing the active route
+  useEffect(() => {
+    const activeGroup = filteredGroups.find((g) => isGroupActive(g));
+    if (activeGroup) {
+      setExpandedGroups((prev) => {
+        if (prev[activeGroup.key]) return prev;
+        return { ...prev, [activeGroup.key]: true };
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleLogout = async () => {
     try {
@@ -341,8 +354,11 @@ export default function AdminLayout() {
                 />
               </button>
 
-              {isExpanded && (
-                <div className="ml-2 pl-2 border-l-2 border-border mt-0.5 space-y-0.5">
+              <div className={cn(
+                'overflow-hidden transition-all duration-300 ease-in-out',
+                isExpanded ? 'max-h-[500px] opacity-100 mt-0.5' : 'max-h-0 opacity-0',
+              )}>
+                <div className="ml-2 pl-2 border-l-2 border-border space-y-0.5">
                   {group.items.map((item) => (
                     <NavLink
                       key={item.to}
@@ -363,7 +379,7 @@ export default function AdminLayout() {
                     </NavLink>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
