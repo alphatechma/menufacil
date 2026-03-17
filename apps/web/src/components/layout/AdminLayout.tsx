@@ -237,7 +237,20 @@ export default function AdminLayout() {
   }, [location.pathname]);
 
   const toggleGroup = (key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+    setExpandedGroups((prev) => {
+      const isOpening = !prev[key];
+      if (!isOpening) {
+        // Closing: just close this one
+        return { ...prev, [key]: false };
+      }
+      // Opening: close all non-active groups, open this one
+      const next: Record<string, boolean> = {};
+      for (const k of Object.keys(prev)) {
+        const group = filteredGroups.find((g) => g.key === k);
+        next[k] = k === key || (group ? isGroupActive(group) : false);
+      }
+      return next;
+    });
   };
 
   const handleLogout = async () => {
