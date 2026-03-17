@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery, useGetUnitsQuery } from '@/api/adminApi';
+import { useGetDashboardDataQuery, useGetDeliveryPersonsQuery, useGetUnitsQuery, useGetCashRegisterHistoryQuery } from '@/api/adminApi';
 import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -124,6 +124,8 @@ export default function Reports() {
   const [paymentFilter, setPaymentFilter] = useState('');
   const [deliveryPersonFilter, setDeliveryPersonFilter] = useState('');
   const [unitFilter, setUnitFilter] = useState('');
+
+  const { data: cashHistory = [] } = useGetCashRegisterHistoryQuery();
 
   const dispatch = useAppDispatch();
   const selectedUnitId = useAppSelector(selectSelectedUnitId);
@@ -674,6 +676,55 @@ export default function Reports() {
           </div>
         </div>
       </Card>
+
+      {/* Cash Register History */}
+      {cashHistory.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-primary" />
+            Historico de Caixas
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 text-muted-foreground font-medium">Abertura</th>
+                  <th className="text-left py-2 text-muted-foreground font-medium">Fechamento</th>
+                  <th className="text-left py-2 text-muted-foreground font-medium">Operador</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Abertura R$</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Fechamento R$</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Dinheiro</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Credito</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Debito</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">PIX</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Pedidos</th>
+                  <th className="text-right py-2 text-muted-foreground font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cashHistory.map((reg: any) => {
+                  const grandTotal = Number(reg.total_cash) + Number(reg.total_credit) + Number(reg.total_debit) + Number(reg.total_pix);
+                  return (
+                    <tr key={reg.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 text-xs">{new Date(reg.opened_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                      <td className="py-2 text-xs">{reg.closed_at ? new Date(reg.closed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                      <td className="py-2 text-xs">{reg.opened_by_user?.name || '-'}</td>
+                      <td className="py-2 text-right text-xs">{formatPrice(reg.opening_balance)}</td>
+                      <td className="py-2 text-right text-xs">{formatPrice(reg.closing_balance)}</td>
+                      <td className="py-2 text-right text-xs text-green-600">{formatPrice(reg.total_cash)}</td>
+                      <td className="py-2 text-right text-xs text-blue-600">{formatPrice(reg.total_credit)}</td>
+                      <td className="py-2 text-right text-xs text-indigo-600">{formatPrice(reg.total_debit)}</td>
+                      <td className="py-2 text-right text-xs text-teal-600">{formatPrice(reg.total_pix)}</td>
+                      <td className="py-2 text-right text-xs font-medium">{reg.orders_count}</td>
+                      <td className="py-2 text-right text-xs font-bold text-primary">{formatPrice(grandTotal)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

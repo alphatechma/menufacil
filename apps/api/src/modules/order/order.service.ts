@@ -440,6 +440,15 @@ export class OrderService {
     });
   }
 
+  async getCashRegisterHistory(tenantId: string, limit: number): Promise<CashRegister[]> {
+    return this.cashRegisterRepo.find({
+      where: { tenant_id: tenantId, is_open: false },
+      relations: ['opened_by_user', 'closed_by_user'],
+      order: { closed_at: 'DESC' },
+      take: limit,
+    });
+  }
+
   async openCashRegister(tenantId: string, userId: string, openingBalance: number): Promise<CashRegister> {
     const existing = await this.cashRegisterRepo.findOne({ where: { tenant_id: tenantId, is_open: true } });
     if (existing) {

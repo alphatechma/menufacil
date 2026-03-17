@@ -256,6 +256,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: (data) => ({ url: '/orders/cash-register/close', method: 'POST', data, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['CashRegister'],
     }),
+    getCashRegisterHistory: builder.query<any[], void>({
+      query: () => ({ url: '/orders/cash-register/history', meta: { authContext: 'admin' as const } }),
+      providesTags: ['CashRegister'],
+    }),
 
     // Roles & Permissions
     getRoles: builder.query<any[], void>({
@@ -559,6 +563,7 @@ export const {
   useGetCashRegisterQuery,
   useOpenCashRegisterMutation,
   useCloseCashRegisterMutation,
+  useGetCashRegisterHistoryQuery,
   useGetStaffQuery,
   useGetStaffMemberQuery,
   useCreateStaffMutation,

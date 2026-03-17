@@ -105,6 +105,17 @@ export class OrderController {
     return this.orderService.getOpenCashRegister(tenantId);
   }
 
+  @Get('cash-register/history')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
+  @ApiOperation({ summary: 'List closed cash registers' })
+  getCashRegisterHistory(
+    @CurrentTenant('id') tenantId: string,
+    @Query('limit') limit: string,
+  ) {
+    return this.orderService.getCashRegisterHistory(tenantId, parseInt(limit) || 30);
+  }
+
   @Get('my')
   @ApiOperation({ summary: 'List my orders (customer)' })
   findMyOrders(@CurrentUser('id') userId: string, @CurrentTenant('id') tenantId: string) {
