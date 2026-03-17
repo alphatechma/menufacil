@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Star,
   User,
@@ -75,6 +75,8 @@ interface Address {
 export default function Account() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const dispatch = useAppDispatch();
   const customerAuth = useAppSelector((state) => state.customerAuth);
 
@@ -256,6 +258,13 @@ export default function Account() {
     });
   };
 
+  const onLoginSuccess = (customer: any) => {
+    dispatch(customerLoginSuccess(customer));
+    if (redirectTo === 'checkout') {
+      navigate(`/${slug}/checkout`, { replace: true });
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -275,15 +284,12 @@ export default function Account() {
           password: loginPassword,
         }).unwrap();
 
-        // Cookie is set by backend (httpOnly)
-        // After register, login to get full customer data
         const loginResult = await customerLogin({
           phone: unmaskDigits(loginPhone),
           name: loginName.trim(),
           slug: slug!,
         }).unwrap();
-        // Cookie is set by backend (httpOnly)
-        dispatch(customerLoginSuccess(loginResult.customer));
+        onLoginSuccess(loginResult.customer);
         return;
       }
 
@@ -304,8 +310,7 @@ export default function Account() {
         }).unwrap();
       }
 
-      // Cookie is set by backend (httpOnly)
-      dispatch(customerLoginSuccess(result.customer));
+      onLoginSuccess(result.customer);
     } catch (err: any) {
       setAuthError(err?.data?.message || 'Erro ao entrar. Tente novamente.');
     }
@@ -403,9 +408,13 @@ export default function Account() {
             >
               <User className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Minha Conta</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              {redirectTo === 'checkout' ? 'Identifique-se para continuar' : 'Minha Conta'}
+            </h3>
             <p className="text-sm text-gray-500 mt-1">
-              {loginMode === 'phone'
+              {redirectTo === 'checkout'
+                ? 'Entre ou cadastre-se para finalizar seu pedido'
+                : loginMode === 'phone'
                 ? 'Informe seu telefone para entrar ou criar sua conta'
                 : loginMode === 'email'
                 ? 'Entre com seu email e senha'

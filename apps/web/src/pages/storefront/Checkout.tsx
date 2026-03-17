@@ -9,8 +9,6 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Phone,
-  User,
   Clock,
   Loader2,
   Plus,
@@ -20,12 +18,9 @@ import {
   Truck,
   ShoppingBag,
   UtensilsCrossed,
-  Mail,
-  Lock,
   ShoppingCart,
 } from 'lucide-react';
 import {
-  useCustomerLoginMutation,
   useGetCustomerProfileQuery,
   useAddCustomerAddressMutation,
   useRemoveCustomerAddressMutation,
@@ -35,11 +30,11 @@ import {
   useGetCustomerOrdersQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { customerLoginSuccess } from '@/store/slices/customerAuthSlice';
+// customerLoginSuccess now handled by Account page
 import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
 import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
-import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
+import { maskCep } from '@/utils/masks';
 
 type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash';
 
@@ -111,7 +106,6 @@ export default function Checkout() {
   const effectiveOrderType = availableModes.length === 1 ? availableModes[0].key : orderType;
   const isDelivery = effectiveOrderType === 'delivery';
 
-  const [customerLogin, { isLoading: authLoading }] = useCustomerLoginMutation();
   const { data: customerProfile } = useGetCustomerProfileQuery(
     { slug: slug! },
     { skip: !slug || !customerAuth.isAuthenticated },
@@ -126,12 +120,7 @@ export default function Checkout() {
   const [validateCoupon] = useLazyValidateCouponQuery();
 
   // Login form state
-  const [authTab, setAuthTab] = useState<'login' | 'register'>('register');
-  const [loginPhone, setLoginPhone] = useState('');
-  const [loginName, setLoginName] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
+  // Auth state removed — now handled by Account page
 
   // Previous orders
   const { data: previousOrders } = useGetCustomerOrdersQuery(
@@ -368,34 +357,6 @@ export default function Checkout() {
     };
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    try {
-      if (authTab === 'login') {
-        // Email + password login
-        if (!loginEmail.trim() || !loginPassword.trim()) return;
-        const result = await customerLogin({
-          email: loginEmail.trim(),
-          password: loginPassword,
-          slug: slug!,
-        }).unwrap();
-        dispatch(customerLoginSuccess(result.customer));
-      } else {
-        // Quick register by phone + name (auto-creates)
-        if (!loginPhone.trim() || !loginName.trim()) return;
-        const result = await customerLogin({
-          phone: unmaskDigits(loginPhone),
-          name: loginName.trim(),
-          slug: slug!,
-        }).unwrap();
-        dispatch(customerLoginSuccess(result.customer));
-      }
-    } catch (err: any) {
-      setAuthError(err?.data?.message || 'Erro ao entrar. Tente novamente.');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -514,187 +475,10 @@ export default function Checkout() {
     );
   }
 
-  // Show login screen if not authenticated
+  // Redirect to Account page for auth, preserving cart
   if (!customerAuth.isAuthenticated) {
-    const isLoginDisabled = authTab === 'login'
-      ? authLoading || !loginEmail.trim() || !loginPassword.trim()
-      : authLoading || !loginPhone.trim() || !loginName.trim();
-
-    return (
-      <div className="pb-6">
-        {/* Header */}
-        <div className="bg-white px-4 py-4 border-b border-gray-100 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <h2 className="text-lg font-bold text-gray-900">Identificacao</h2>
-        </div>
-
-        <div className="px-4 pt-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="text-center mb-6">
-              <div
-                className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--tenant-primary-light)' }}
-              >
-                <User className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">
-                Identifique-se para continuar
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Entre com sua conta ou cadastre-se rapidamente
-              </p>
-            </div>
-
-            {/* Auth Tabs */}
-            <div className="flex rounded-xl bg-gray-100 p-1 mb-5">
-              <button
-                type="button"
-                onClick={() => { setAuthTab('register'); setAuthError(null); }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  authTab === 'register'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500'
-                }`}
-              >
-                Cadastro rapido
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('login'); setAuthError(null); }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  authTab === 'login'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500'
-                }`}
-              >
-                Ja tenho conta
-              </button>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              {authError && (
-                <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">{authError}</p>
-                </div>
-              )}
-
-              {authTab === 'register' ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Seu nome <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={loginName}
-                        onChange={(e) => setLoginName(e.target.value)}
-                        placeholder="Como podemos te chamar?"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                        autoFocus
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Telefone <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="tel"
-                        value={loginPhone}
-                        onChange={(e) => setLoginPhone(maskPhone(e.target.value))}
-                        placeholder="(11) 99999-1234"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-400 text-center">
-                    Voce podera cadastrar uma senha depois na sua conta
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="email"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="seu@email.com"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                        autoFocus
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Senha <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="Sua senha"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoginDisabled}
-                className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ background: 'var(--tenant-gradient)' }}
-              >
-                {authLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Entrando...
-                  </>
-                ) : authTab === 'register' ? (
-                  'Continuar'
-                ) : (
-                  'Entrar'
-                )}
-              </button>
-            </form>
-
-            {/* Cart summary */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500 text-center">
-                {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'} no carrinho
-                {' \u2022 '}
-                <span className="font-semibold text-gray-700">{formatPrice(subtotal)}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    navigate(`/${slug}/account?redirect=checkout`, { replace: true });
+    return null;
   }
 
   const customer = customerProfile || customerAuth.customer;
