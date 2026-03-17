@@ -17,7 +17,6 @@ import {
   QrCode,
   Check,
   X,
-  DollarSign,
   Lock,
   Unlock,
 } from 'lucide-react';
