@@ -71,26 +71,39 @@ export class DatabaseOptimizations1710500000000 implements MigrationInterface {
     await queryRunner.query(`CREATE INDEX IF NOT EXISTS idx_cash_registers_tenant ON cash_registers(tenant_id)`);
     await queryRunner.query(`CREATE INDEX IF NOT EXISTS idx_cash_registers_open ON cash_registers(tenant_id, is_open) WHERE is_open = true`);
 
-    // ── 2. FIX column types: varchar → uuid ──
-    await queryRunner.query(`ALTER TABLE order_items ALTER COLUMN product_id TYPE uuid USING product_id::uuid`);
-    await queryRunner.query(`ALTER TABLE order_items ALTER COLUMN variation_id TYPE uuid USING variation_id::uuid`);
-    await queryRunner.query(`ALTER TABLE payment_transactions ALTER COLUMN order_id TYPE uuid USING order_id::uuid`);
+    // ── 2. FIX column types: varchar → uuid (skip if already uuid) ──
+    const uuidFixes = [
+      { table: 'order_items', col: 'product_id' },
+      { table: 'order_items', col: 'variation_id' },
+      { table: 'payment_transactions', col: 'order_id' },
+    ];
+    for (const { table, col } of uuidFixes) {
+      const colInfo = await queryRunner.query(`SELECT data_type FROM information_schema.columns WHERE table_name='${table}' AND column_name='${col}'`);
+      if (colInfo.length > 0 && colInfo[0].data_type !== 'uuid') {
+        await queryRunner.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE uuid USING ${col}::uuid`);
+      }
+    }
 
-    // ── 3. ADD FK constraints (NOT VALID = don't block on existing data) ──
-    await queryRunner.query(`ALTER TABLE order_items ADD CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL NOT VALID`);
-    await queryRunner.query(`ALTER TABLE order_items ADD CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE NOT VALID`);
-    await queryRunner.query(`ALTER TABLE order_item_extras ADD CONSTRAINT fk_order_item_extras_item FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE NOT VALID`);
-    await queryRunner.query(`ALTER TABLE payment_transactions ADD CONSTRAINT fk_payment_transactions_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE NOT VALID`);
+    // ── 3. ADD FK constraints (idempotent — skip if already exists) ──
+    const fks = [
+      { table: 'order_items', name: 'fk_order_items_product', sql: 'ALTER TABLE order_items ADD CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL NOT VALID' },
+      { table: 'order_items', name: 'fk_order_items_order', sql: 'ALTER TABLE order_items ADD CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE NOT VALID' },
+      { table: 'order_item_extras', name: 'fk_order_item_extras_item', sql: 'ALTER TABLE order_item_extras ADD CONSTRAINT fk_order_item_extras_item FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE NOT VALID' },
+      { table: 'payment_transactions', name: 'fk_payment_transactions_order', sql: 'ALTER TABLE payment_transactions ADD CONSTRAINT fk_payment_transactions_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE NOT VALID' },
+    ];
+    for (const fk of fks) {
+      const exists = await queryRunner.query(`SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = '${fk.name}' AND table_name = '${fk.table}'`);
+      if (exists.length === 0) {
+        await queryRunner.query(fk.sql);
+      }
+    }
 
-    // ── 4. FIX numeric precision ──
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN opening_balance TYPE numeric(10,2)`);
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN closing_balance TYPE numeric(10,2)`);
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_cash TYPE numeric(10,2)`);
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_credit TYPE numeric(10,2)`);
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_debit TYPE numeric(10,2)`);
-    await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN total_pix TYPE numeric(10,2)`);
+    // ── 4. FIX numeric precision (safe to re-run) ──
+    for (const col of ['opening_balance', 'closing_balance', 'total_cash', 'total_credit', 'total_debit', 'total_pix']) {
+      await queryRunner.query(`ALTER TABLE cash_registers ALTER COLUMN ${col} TYPE numeric(10,2)`);
+    }
 
-    // ── 5. TIMESTAMPTZ conversion (all tables) ──
+    // ── 5. TIMESTAMPTZ conversion (all tables, skip if already timestamptz) ──
     const timestampTables = [
       { table: 'coupons', cols: ['created_at', 'valid_from', 'valid_until'] },
       { table: 'delivery_persons', cols: ['created_at', 'updated_at'] },
@@ -115,15 +128,26 @@ export class DatabaseOptimizations1710500000000 implements MigrationInterface {
     ];
     for (const { table, cols } of timestampTables) {
       for (const col of cols) {
-        await queryRunner.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE timestamptz USING ${col} AT TIME ZONE 'America/Sao_Paulo'`);
+        const colInfo = await queryRunner.query(`SELECT data_type FROM information_schema.columns WHERE table_name='${table}' AND column_name='${col}'`);
+        if (colInfo.length > 0 && colInfo[0].data_type === 'timestamp without time zone') {
+          await queryRunner.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE timestamptz USING ${col} AT TIME ZONE 'America/Sao_Paulo'`);
+        }
       }
     }
 
-    // ── 6. FIX more varchar → uuid columns ──
-    await queryRunner.query(`ALTER TABLE notifications ALTER COLUMN order_id TYPE uuid USING order_id::uuid`);
-    await queryRunner.query(`ALTER TABLE reservations ALTER COLUMN customer_id TYPE uuid USING customer_id::uuid`);
-    await queryRunner.query(`ALTER TABLE reservations ALTER COLUMN table_id TYPE uuid USING table_id::uuid`);
-    await queryRunner.query(`ALTER TABLE whatsapp_flow_executions ALTER COLUMN tenant_id TYPE uuid USING tenant_id::uuid`);
+    // ── 6. FIX more varchar → uuid columns (skip if already uuid) ──
+    const moreUuidFixes = [
+      { table: 'notifications', col: 'order_id' },
+      { table: 'reservations', col: 'customer_id' },
+      { table: 'reservations', col: 'table_id' },
+      { table: 'whatsapp_flow_executions', col: 'tenant_id' },
+    ];
+    for (const { table, col } of moreUuidFixes) {
+      const colInfo = await queryRunner.query(`SELECT data_type FROM information_schema.columns WHERE table_name='${table}' AND column_name='${col}'`);
+      if (colInfo.length > 0 && colInfo[0].data_type !== 'uuid') {
+        await queryRunner.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE uuid USING ${col}::uuid`);
+      }
+    }
 
     // ── 8. Missing columns ──
     await queryRunner.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS cancel_time_limit INTEGER DEFAULT 5`);
