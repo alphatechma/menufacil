@@ -240,6 +240,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ orderId, ...body }) => ({ url: `/orders/${orderId}/delivery-person`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'DeliveryPersons', 'Dashboard'],
     }),
+    deleteOrder: builder.mutation<void, string>({
+      query: (id) => ({ url: `/orders/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
     createAdminOrder: builder.mutation<any, any>({
       query: (data) => ({ url: '/orders/admin', method: 'POST', data, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard', 'CashRegister'],
@@ -559,6 +563,7 @@ export const {
   useUpdateDeliveryPersonMutation,
   useDeleteDeliveryPersonMutation,
   useAssignDeliveryPersonMutation,
+  useDeleteOrderMutation,
   useCreateAdminOrderMutation,
   useGetCashRegisterQuery,
   useOpenCashRegisterMutation,

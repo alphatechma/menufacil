@@ -276,6 +276,24 @@ export class OrderService {
     return order;
   }
 
+  async deleteOrder(id: string, tenantId: string): Promise<void> {
+    const order = await this.orderRepository.findById(id, tenantId);
+    if (!order) throw new NotFoundException('Pedido nao encontrado');
+
+    // Delete in correct order: extras → items → payment_transactions → notifications → order
+    if (order.items?.length) {
+      for (const item of order.items) {
+        if (item.extras?.length) {
+          await this.orderRepo.query('DELETE FROM order_item_extras WHERE order_item_id = $1', [item.id]);
+        }
+      }
+      await this.orderRepo.query('DELETE FROM order_items WHERE order_id = $1', [id]);
+    }
+    await this.orderRepo.query('DELETE FROM payment_transactions WHERE order_id = $1', [id]);
+    await this.orderRepo.query('DELETE FROM notifications WHERE order_id = $1', [id]);
+    await this.orderRepo.query('DELETE FROM orders WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+  }
+
   async cancelByCustomer(orderId: string, customerId: string, tenantId: string): Promise<Order> {
     const order = await this.orderRepository.findById(orderId, tenantId);
     if (!order) throw new NotFoundException('Pedido nao encontrado');

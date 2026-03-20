@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -162,6 +163,17 @@ export class OrderController {
     @CurrentTenant('id') tenantId: string,
   ) {
     return this.orderService.assignDeliveryPerson(id, dto.delivery_person_id, tenantId);
+  }
+
+  @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:delete')
+  @ApiOperation({ summary: 'Delete order and all references' })
+  deleteOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.orderService.deleteOrder(id, tenantId);
   }
 
   // ── Cash Register ──

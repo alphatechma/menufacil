@@ -14,6 +14,8 @@ import {
   TrendingUp,
   AlertTriangle,
   X,
+  Calendar,
+  Filter,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
@@ -48,16 +50,43 @@ function getTimeSince(dateStr: string): { text: string; minutes: number } {
 }
 
 function calcCommission(order: any, dp: any): number {
-  if (!dp || dp.commission_type === 'none' || !dp.commission_value) return 0;
-  const val = Number(dp.commission_value);
-  if (dp.commission_type === 'fixed') return val;
-  if (dp.commission_type === 'percent') return (Number(order.total || 0) * val) / 100;
-  return 0;
+  let total = 0;
+  if (dp && dp.commission_type !== 'none' && dp.commission_value) {
+    const val = Number(dp.commission_value);
+    if (dp.commission_type === 'fixed') total += val;
+    else if (dp.commission_type === 'percent') total += (Number(order.total || 0) * val) / 100;
+  }
+  // Add delivery fee if driver receives it
+  if (dp?.receives_delivery_fee && order.delivery_fee) {
+    total += Number(order.delivery_fee);
+  }
+  return total;
+}
+
+function formatDateKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const dStr = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const todayStr = today.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const yesterdayStr = yesterday.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+  if (dStr === todayStr) return 'Hoje';
+  if (dStr === yesterdayStr) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
 }
 
 export default function MyDeliveries() {
   const [, setTick] = useState(0);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [dateFilter, setDateFilter] = useState('');
   const tenantSlug = useAppSelector((s) => s.adminAuth.tenantSlug);
   const currentUser = useAppSelector((s) => s.adminAuth.user);
 
@@ -479,65 +508,122 @@ export default function MyDeliveries() {
         );
       })()}
 
-      {/* Completed Deliveries */}
-      {completedDeliveries.length > 0 && (
-        <div className="mt-8">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-3 hover:text-gray-800 dark:hover:text-gray-100"
-          >
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            Entregas Concluidas ({completedDeliveries.length})
-            {showCompleted ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+      {/* Completed Deliveries — Grouped by Date */}
+      {completedDeliveries.length > 0 && (() => {
+        // Filter by date
+        const filtered = dateFilter
+          ? completedDeliveries.filter((o: any) => {
+              const d = new Date(o.delivered_at || o.created_at);
+              return d.toISOString().slice(0, 10) === dateFilter;
+            })
+          : completedDeliveries;
 
-          {showCompleted && (
-            <div className="space-y-2">
-              {completedDeliveries.map((order: any) => {
-                const commission = hasCommission ? calcCommission(order, myDeliveryPerson) : 0;
-                return (
-                  <div
-                    key={order.id}
-                    className="bg-card rounded-xl border border-border px-4 py-3 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">
-                          #{order.order_number || order.id?.slice(0, 6)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.customer?.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-foreground">{formatPrice(order.total || 0)}</p>
-                      {commission > 0 && (
-                        <p className="text-xs font-bold text-green-600 dark:text-green-400">+{formatPrice(commission)}</p>
-                      )}
-                      {order.delivered_at && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(order.delivered_at).toLocaleString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            timeZone: 'America/Sao_Paulo',
-                          })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+        // Group by date
+        const grouped: Record<string, any[]> = {};
+        for (const order of filtered) {
+          const key = formatDateKey(order.delivered_at || order.created_at);
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(order);
+        }
+        const dateKeys = Object.keys(grouped);
+
+        return (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+              >
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Entregas Concluidas ({filtered.length})
+                {showCompleted ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {showCompleted && (
+                <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="px-2 py-1 rounded-lg border border-border bg-card text-xs text-foreground focus:border-primary focus:outline-none"
+                  />
+                  {dateFilter && (
+                    <button onClick={() => setDateFilter('')} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+
+            {showCompleted && (
+              <div className="space-y-4">
+                {dateKeys.map((dateKey) => {
+                  const dayOrders = grouped[dateKey];
+                  const dayEarnings = dayOrders.reduce((sum: number, o: any) => sum + calcCommission(o, myDeliveryPerson), 0);
+                  const dayDeliveryFees = dayOrders.reduce((sum: number, o: any) => sum + Number(o.delivery_fee || 0), 0);
+                  const firstOrder = dayOrders[0];
+                  const label = formatDateLabel(firstOrder.delivered_at || firstOrder.created_at);
+
+                  return (
+                    <div key={dateKey}>
+                      {/* Day header */}
+                      <div className="flex items-center justify-between mb-2 px-1">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-xs font-bold text-foreground uppercase">{label}</span>
+                          <span className="text-xs text-muted-foreground">({dayOrders.length} entrega{dayOrders.length > 1 ? 's' : ''})</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {dayEarnings > 0 && (
+                            <span className="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md">
+                              +{formatPrice(dayEarnings)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Day orders */}
+                      <div className="space-y-1.5">
+                        {dayOrders.map((order: any) => {
+                          const commission = calcCommission(order, myDeliveryPerson);
+                          return (
+                            <div key={order.id} className="bg-card rounded-xl border border-border px-4 py-2.5 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground">#{order.order_number}</p>
+                                  <p className="text-xs text-muted-foreground">{order.customer?.name || 'Cliente'}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-bold text-foreground">{formatPrice(order.total || 0)}</p>
+                                {commission > 0 && (
+                                  <p className="text-[10px] font-bold text-green-600 dark:text-green-400">+{formatPrice(commission)}</p>
+                                )}
+                                {order.delivered_at && (
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {new Date(order.delivered_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                {dateKeys.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma entrega nesta data.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
