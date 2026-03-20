@@ -132,8 +132,10 @@ export function saveReceiptLayout(sections: ReceiptSection[]) {
   try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(sections)); } catch { /* */ }
 }
 
+const DEFAULT_FOOTER = 'Obrigado pela preferencia!\n\nMenuFacil Pedidos\nmenufacil.maistechtecnologia.com.br';
+
 export function getFooterMessage(): string {
-  try { return localStorage.getItem('menufacil_receipt_footer') || 'Obrigado pela preferencia!\nMenuFacil'; } catch { return 'Obrigado pela preferencia!\nMenuFacil'; }
+  try { return localStorage.getItem('menufacil_receipt_footer') || DEFAULT_FOOTER; } catch { return DEFAULT_FOOTER; }
 }
 
 export function setFooterMessage(msg: string) {
@@ -499,8 +501,11 @@ function buildReceipt(order: PrintableOrder, tenantName?: string): string {
 
       case 'footer':
         lines.push('');
+        lines.push(CMD.LINE);
         lines.push(CMD.ALIGN_CENTER);
-        lines.push(getFooterMessage());
+        for (const footerLine of getFooterMessage().split('\n')) {
+          lines.push(footerLine);
+        }
         break;
     }
   }
