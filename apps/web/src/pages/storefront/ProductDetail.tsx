@@ -113,15 +113,16 @@ export default function ProductDetail() {
     if (selectedVariations.size === 0) return Number(product.base_price);
 
     if (isMultiSelect && totalSelectedParts > 0) {
-      // Sum pricing: total is the sum of each variation * qty
-      let total = 0;
-      for (const [varId, qty] of selectedVariations) {
+      // Multi-select: use the highest variation price (pizza rule — price is always the base)
+      let maxPrice = 0;
+      for (const [varId] of selectedVariations) {
         const variation = product.variations?.find((v: any) => v.id === varId);
         if (variation) {
-          total += Number(variation.price) * qty;
+          const p = Number(variation.price);
+          if (p > maxPrice) maxPrice = p;
         }
       }
-      return total;
+      return maxPrice;
     }
 
     // Single-select: use the selected variation's price
