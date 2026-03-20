@@ -333,8 +333,10 @@ export default function DeliveryTracker() {
                             ? new Date(order.delivered_at).toLocaleString('pt-BR', {
                                 day: '2-digit',
                                 month: '2-digit',
+                                year: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
+                                timeZone: 'America/Sao_Paulo',
                               })
                             : '-'}
                         </td>

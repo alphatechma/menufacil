@@ -65,6 +65,26 @@ let _connecting: Promise<void> | null = null;
 let _selectedPrinter: string | null = null;
 
 const PRINTER_STORAGE_KEY = 'menufacil_thermal_printer';
+const PAPER_WIDTH_KEY = 'menufacil_paper_width';
+
+// Paper width presets: chars per line based on paper mm width
+export const PAPER_WIDTHS = [
+  { mm: 80, chars: 48, label: '80mm (PDV/Fiscal)' },
+  { mm: 58, chars: 32, label: '58mm (Compacta)' },
+  { mm: 57, chars: 32, label: '57mm (Maquininha)' },
+] as const;
+
+export function getPaperWidth(): number {
+  try {
+    const saved = localStorage.getItem(PAPER_WIDTH_KEY);
+    if (saved) return parseInt(saved, 10);
+  } catch { /* */ }
+  return 48; // default 80mm
+}
+
+export function setPaperWidth(chars: number) {
+  try { localStorage.setItem(PAPER_WIDTH_KEY, String(chars)); } catch { /* */ }
+}
 
 function loadSavedPrinter(): string | null {
   try {
@@ -279,7 +299,7 @@ function formatLine(left: string, right: string, width = 48): string {
 
 function buildReceipt(order: PrintableOrder, tenantName?: string): string {
   const lines: string[] = [];
-  const w = 48; // 80mm thermal = ~48 chars
+  const w = getPaperWidth();
 
   lines.push(CMD.INIT);
 
