@@ -1174,7 +1174,7 @@ export default function Settings() {
                     >
                       <option value={48}>80mm (PDV/Fiscal)</option>
                       <option value={32}>58mm (Compacta)</option>
-                      <option value={32}>57mm (Maquininha)</option>
+                      <option value={30}>57mm (Maquininha)</option>
                     </select>
                   </div>
               </FormCard>
