@@ -357,7 +357,6 @@ function buildReceipt(order: PrintableOrder, tenantName?: string): string {
   const lines: string[] = [];
   const w = getPaperWidth();
   const layout = getReceiptLayout();
-  const enabled = new Set(layout.filter((s) => s.enabled).map((s) => s.id));
   const sectionOrder = layout.filter((s) => s.enabled).map((s) => s.id);
 
   lines.push(CMD.INIT);

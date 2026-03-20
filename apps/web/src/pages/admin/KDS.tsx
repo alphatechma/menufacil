@@ -2,14 +2,10 @@ import { useMemo, useCallback, useState, useEffect } from 'react';
 import {
   Truck,
   Package,
-  UtensilsCrossed,
-  Play,
-  CheckCircle2,
   Volume2,
   VolumeX,
   Gauge,
   MapPin,
-  ShoppingBag,
   Clock,
   ChefHat,
   Check,
@@ -142,7 +138,6 @@ function KDSCard({
   const itemCount = order.items?.length || 0;
   const isPending = order.status === 'pending' || order.status === 'confirmed';
   const isPreparing = order.status === 'preparing';
-  const allChecked = order.items?.length > 0 && order.items.every((_: any, i: number) => checkedItems.has(i));
 
   return (
     <div className={cn('rounded-2xl border-2 bg-white dark:bg-card overflow-hidden transition-all', config.border)}>
@@ -328,7 +323,6 @@ export default function KDS() {
     });
   };
 
-  const handleOpenDeliveryModal = (orderId: string) => { setSelectedDeliveryPerson(''); setDeliveryModal(orderId); };
   const handleConfirmDelivery = async () => {
     if (!deliveryModal || !selectedDeliveryPerson) return;
     setUpdatingOrderId(deliveryModal);

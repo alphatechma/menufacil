@@ -561,7 +561,6 @@ export default function MyDeliveries() {
                 {dateKeys.map((dateKey) => {
                   const dayOrders = grouped[dateKey];
                   const dayEarnings = dayOrders.reduce((sum: number, o: any) => sum + calcCommission(o, myDeliveryPerson), 0);
-                  const dayDeliveryFees = dayOrders.reduce((sum: number, o: any) => sum + Number(o.delivery_fee || 0), 0);
                   const firstOrder = dayOrders[0];
                   const label = formatDateLabel(firstOrder.delivered_at || firstOrder.created_at);
 
