@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw, Copy, ChefHat, Download, MessageCircle, QrCode, WifiOff } from 'lucide-react';
+import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Package, Printer, Check, AlertCircle, RefreshCw, Copy, ChefHat, Download, MessageCircle, QrCode, WifiOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGetTenantBySlugQuery, useUpdateTenantMutation, useConnectWhatsappMutation, useDisconnectWhatsappMutation, useGetWhatsappStatusQuery } from '@/api/adminApi';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -18,7 +18,7 @@ import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { SettingsPageSkeleton } from '@/components/ui/Skeleton';
 import { selectNotificationSettings, updateSettings } from '@/store/slices/notificationSlice';
 import { playTestSound } from '@/utils/notificationSounds';
-import { isQzAvailable, listPrinters, getSelectedPrinter, selectPrinter, printOrder } from '@/utils/printService';
+import { isQzAvailable, listPrinters, getSelectedPrinter, selectPrinter, printOrder, getReceiptLayout, saveReceiptLayout, getFooterMessage, setFooterMessage, type ReceiptSection } from '@/utils/printService';
 
 interface BusinessHours {
   [day: string]: {
@@ -199,6 +199,8 @@ export default function Settings() {
   const [paperWidth, setPaperWidthState] = useState(() => {
     try { return parseInt(localStorage.getItem('menufacil_paper_width') || '48', 10); } catch { return 48; }
   });
+  const [receiptSections, setReceiptSections] = useState<ReceiptSection[]>(getReceiptLayout);
+  const [footerMsg, setFooterMsg] = useState(getFooterMessage);
 
   const savePrinterSetting = (key: string, value: string) => {
     try { localStorage.setItem(key, value); } catch { /* ignore */ }
@@ -1175,6 +1177,72 @@ export default function Settings() {
                       <option value={32}>57mm (Maquininha)</option>
                     </select>
                   </div>
+              </FormCard>
+
+              {/* Receipt Layout Editor */}
+              <FormCard>
+                <div className="flex items-center gap-2 mb-1">
+                  <Printer className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Layout do Recibo</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Ative/desative e reordene as secoes do recibo impresso.</p>
+
+                <div className="space-y-1">
+                  {receiptSections.map((section, index) => (
+                    <div key={section.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-muted/50">
+                      <Toggle
+                        checked={section.enabled}
+                        onChange={(checked) => {
+                          const updated = receiptSections.map((s, i) => i === index ? { ...s, enabled: checked } : s);
+                          setReceiptSections(updated);
+                          saveReceiptLayout(updated);
+                        }}
+                      />
+                      <span className={`text-xs flex-1 ${section.enabled ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                        {section.label}
+                      </span>
+                      <div className="flex gap-0.5">
+                        <button
+                          disabled={index === 0}
+                          onClick={() => {
+                            const updated = [...receiptSections];
+                            [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                            setReceiptSections(updated);
+                            saveReceiptLayout(updated);
+                          }}
+                          className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          disabled={index === receiptSections.length - 1}
+                          onClick={() => {
+                            const updated = [...receiptSections];
+                            [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                            setReceiptSections(updated);
+                            saveReceiptLayout(updated);
+                          }}
+                          className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          <ChevronDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs font-medium text-foreground mb-1 block">Mensagem do rodape</label>
+                  <Input
+                    value={footerMsg}
+                    onChange={(e) => {
+                      setFooterMsg(e.target.value);
+                      setFooterMessage(e.target.value);
+                    }}
+                    placeholder="Obrigado pela preferencia!"
+                    className="text-xs"
+                  />
+                </div>
               </FormCard>
 
               {/* Setup Instructions */}

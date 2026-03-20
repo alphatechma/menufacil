@@ -86,6 +86,60 @@ export function setPaperWidth(chars: number) {
   try { localStorage.setItem(PAPER_WIDTH_KEY, String(chars)); } catch { /* */ }
 }
 
+// ─── Receipt Layout Config ──────────────────────────────────────────────────
+
+const LAYOUT_KEY = 'menufacil_receipt_layout';
+
+export interface ReceiptSection {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_RECEIPT_SECTIONS: ReceiptSection[] = [
+  { id: 'header', label: 'Cabecalho (nome do estabelecimento)', enabled: true },
+  { id: 'datetime', label: 'Data e hora', enabled: true },
+  { id: 'order_number', label: 'Numero do pedido', enabled: true },
+  { id: 'order_type', label: 'Tipo do pedido (delivery/retirada/mesa)', enabled: true },
+  { id: 'table', label: 'Numero da mesa', enabled: true },
+  { id: 'customer', label: 'Dados do cliente (nome/telefone)', enabled: true },
+  { id: 'items', label: 'Itens do pedido', enabled: true },
+  { id: 'totals', label: 'Subtotal / Taxa / Desconto / Total', enabled: true },
+  { id: 'payment', label: 'Forma de pagamento', enabled: true },
+  { id: 'change', label: 'Troco (quando dinheiro)', enabled: true },
+  { id: 'address', label: 'Endereco de entrega', enabled: true },
+  { id: 'notes', label: 'Observacoes do pedido', enabled: true },
+  { id: 'footer', label: 'Mensagem de agradecimento', enabled: true },
+];
+
+export function getReceiptLayout(): ReceiptSection[] {
+  try {
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as ReceiptSection[];
+      // Merge with defaults (add new sections that didn't exist when saved)
+      const ids = new Set(parsed.map((s) => s.id));
+      for (const def of DEFAULT_RECEIPT_SECTIONS) {
+        if (!ids.has(def.id)) parsed.push(def);
+      }
+      return parsed;
+    }
+  } catch { /* */ }
+  return DEFAULT_RECEIPT_SECTIONS;
+}
+
+export function saveReceiptLayout(sections: ReceiptSection[]) {
+  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(sections)); } catch { /* */ }
+}
+
+export function getFooterMessage(): string {
+  try { return localStorage.getItem('menufacil_receipt_footer') || 'Obrigado pela preferencia!\nMenuFacil'; } catch { return 'Obrigado pela preferencia!\nMenuFacil'; }
+}
+
+export function setFooterMessage(msg: string) {
+  try { localStorage.setItem('menufacil_receipt_footer', msg); } catch { /* */ }
+}
+
 function loadSavedPrinter(): string | null {
   try {
     return localStorage.getItem(PRINTER_STORAGE_KEY);
@@ -300,159 +354,156 @@ function formatLine(left: string, right: string, width = 48): string {
 function buildReceipt(order: PrintableOrder, tenantName?: string): string {
   const lines: string[] = [];
   const w = getPaperWidth();
+  const layout = getReceiptLayout();
+  const enabled = new Set(layout.filter((s) => s.enabled).map((s) => s.id));
+  const sectionOrder = layout.filter((s) => s.enabled).map((s) => s.id);
 
   lines.push(CMD.INIT);
 
-  // Header
-  lines.push(CMD.ALIGN_CENTER);
-  lines.push(CMD.BOLD_ON);
-  lines.push(CMD.DOUBLE_BOTH);
-  lines.push(tenantName || 'PEDIDO');
-  lines.push(CMD.NORMAL);
-  lines.push(CMD.BOLD_OFF);
-
   const orderNum = String(order.order_number || order.id.slice(0, 8));
   const orderType = ORDER_TYPE_LABELS[order.order_type || ''] || '';
-
-  if (order.created_at) {
-    lines.push(
-      new Date(order.created_at).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    );
-  }
-
-  lines.push('');
-  lines.push(CMD.DOUBLE_BOTH);
-  lines.push(CMD.BOLD_ON);
-  lines.push(`PEDIDO #${orderNum}`);
-  lines.push(CMD.NORMAL);
-
-  if (orderType) {
-    lines.push(CMD.BOLD_ON);
-    lines.push(orderType);
-    lines.push(CMD.BOLD_OFF);
-  }
-
-  if (order.order_type === 'dine_in' && order.table?.number) {
-    lines.push(CMD.DOUBLE_BOTH);
-    lines.push(`MESA #${order.table.number}`);
-    lines.push(CMD.NORMAL);
-  }
-
-  lines.push(CMD.ALIGN_LEFT);
-  lines.push(CMD.LINE);
-
-  // Customer
-  if (order.customer?.name) {
-    lines.push(`Cliente: ${order.customer.name}`);
-  }
-  if (order.customer?.phone) {
-    lines.push(`Tel: ${formatPhone(order.customer.phone)}`);
-  }
-
-  lines.push(CMD.LINE);
-
-  // Items
-  lines.push(CMD.BOLD_ON);
-  lines.push(formatLine('ITEM', 'TOTAL', w));
-  lines.push(CMD.BOLD_OFF);
-  lines.push(CMD.DASH);
-
-  for (const item of order.items || []) {
-    const name = item.product_name || item.product?.name || item.name || 'Produto';
-    const unitPrice = Number(item.unit_price || item.price || 0);
-    const extrasTotal = (item.extras || []).reduce(
-      (s, e) => s + Number(e.extra_price || e.price || 0),
-      0,
-    );
-    const lineTotal = (unitPrice + extrasTotal) * (item.quantity || 1);
-
-    lines.push(CMD.BOLD_ON);
-    lines.push(formatLine(`${item.quantity}x ${name}`, formatPrice(lineTotal), w));
-    lines.push(CMD.BOLD_OFF);
-
-    const variation = item.variation_name || item.variation?.name;
-    if (variation) {
-      lines.push(`   ${variation}`);
-    }
-
-    if (item.extras && item.extras.length > 0) {
-      for (const e of item.extras) {
-        lines.push(`   + ${e.extra_name || e.name}`);
-      }
-    }
-
-    if (item.notes) {
-      lines.push(`   OBS: ${item.notes}`);
-    }
-  }
-
-  lines.push(CMD.LINE);
-
-  // Totals
   const subtotal = Number(order.subtotal || 0);
   const deliveryFee = Number(order.delivery_fee || 0);
   const discount = Number(order.discount || 0);
   const total = Number(order.total || 0);
   const changeFor = Number(order.change_for || 0);
 
-  lines.push(formatLine('Subtotal', formatPrice(subtotal), w));
+  // Build sections in configured order
+  for (const section of sectionOrder) {
+    switch (section) {
+      case 'header':
+        lines.push(CMD.ALIGN_CENTER);
+        lines.push(CMD.BOLD_ON);
+        lines.push(CMD.DOUBLE_BOTH);
+        lines.push(tenantName || 'PEDIDO');
+        lines.push(CMD.NORMAL);
+        lines.push(CMD.BOLD_OFF);
+        break;
 
-  if (deliveryFee > 0) {
-    lines.push(formatLine('Taxa entrega', formatPrice(deliveryFee), w));
+      case 'datetime':
+        lines.push(CMD.ALIGN_CENTER);
+        if (order.created_at) {
+          lines.push(new Date(order.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }));
+        }
+        break;
+
+      case 'order_number':
+        lines.push(CMD.ALIGN_CENTER);
+        lines.push('');
+        lines.push(CMD.DOUBLE_BOTH);
+        lines.push(CMD.BOLD_ON);
+        lines.push(`PEDIDO #${orderNum}`);
+        lines.push(CMD.NORMAL);
+        break;
+
+      case 'order_type':
+        if (orderType) {
+          lines.push(CMD.ALIGN_CENTER);
+          lines.push(CMD.BOLD_ON);
+          lines.push(orderType);
+          lines.push(CMD.BOLD_OFF);
+        }
+        break;
+
+      case 'table':
+        if (order.order_type === 'dine_in' && order.table?.number) {
+          lines.push(CMD.ALIGN_CENTER);
+          lines.push(CMD.DOUBLE_BOTH);
+          lines.push(`MESA #${order.table.number}`);
+          lines.push(CMD.NORMAL);
+        }
+        break;
+
+      case 'customer':
+        lines.push(CMD.ALIGN_LEFT);
+        lines.push(CMD.LINE);
+        if (order.customer?.name) lines.push(`Cliente: ${order.customer.name}`);
+        if (order.customer?.phone) lines.push(`Tel: ${formatPhone(order.customer.phone)}`);
+        break;
+
+      case 'items':
+        lines.push(CMD.ALIGN_LEFT);
+        lines.push(CMD.LINE);
+        lines.push(CMD.BOLD_ON);
+        lines.push(formatLine('ITEM', 'TOTAL', w));
+        lines.push(CMD.BOLD_OFF);
+        lines.push(CMD.DASH);
+        for (const item of order.items || []) {
+          const name = item.product_name || item.product?.name || item.name || 'Produto';
+          const unitPrice = Number(item.unit_price || item.price || 0);
+          const extrasTotal = (item.extras || []).reduce((s, e) => s + Number(e.extra_price || e.price || 0), 0);
+          const lineTotal = (unitPrice + extrasTotal) * (item.quantity || 1);
+          lines.push(CMD.BOLD_ON);
+          lines.push(formatLine(`${item.quantity}x ${name}`, formatPrice(lineTotal), w));
+          lines.push(CMD.BOLD_OFF);
+          const variation = item.variation_name || item.variation?.name;
+          if (variation) lines.push(`   ${variation}`);
+          if (item.extras?.length) { for (const e of item.extras) lines.push(`   + ${e.extra_name || e.name}`); }
+          if (item.notes) lines.push(`   OBS: ${item.notes}`);
+        }
+        break;
+
+      case 'totals':
+        lines.push(CMD.ALIGN_LEFT);
+        lines.push(CMD.LINE);
+        lines.push(formatLine('Subtotal', formatPrice(subtotal), w));
+        if (deliveryFee > 0) lines.push(formatLine('Taxa entrega', formatPrice(deliveryFee), w));
+        if (discount > 0) lines.push(formatLine('Desconto', `-${formatPrice(discount)}`, w));
+        lines.push(CMD.DASH);
+        lines.push(CMD.BOLD_ON);
+        lines.push(CMD.DOUBLE_HEIGHT);
+        lines.push(formatLine('TOTAL', formatPrice(total), w));
+        lines.push(CMD.NORMAL);
+        lines.push(CMD.BOLD_OFF);
+        break;
+
+      case 'payment':
+        lines.push(CMD.ALIGN_LEFT);
+        lines.push('');
+        lines.push(formatLine('Pagamento:', PAYMENT_LABELS[order.payment_method || ''] || order.payment_method || '-', w));
+        break;
+
+      case 'change':
+        if (changeFor > 0) {
+          lines.push(CMD.ALIGN_LEFT);
+          lines.push(formatLine('Troco para:', formatPrice(changeFor), w));
+          lines.push(formatLine('Troco:', formatPrice(changeFor - total), w));
+        }
+        break;
+
+      case 'address':
+        if (order.order_type === 'delivery' && order.address_snapshot) {
+          const a = order.address_snapshot;
+          lines.push('');
+          lines.push(CMD.ALIGN_LEFT);
+          lines.push(CMD.LINE);
+          lines.push(CMD.BOLD_ON);
+          lines.push('ENDERECO DE ENTREGA');
+          lines.push(CMD.BOLD_OFF);
+          lines.push(`${a.street || ''}${a.number ? `, ${a.number}` : ''}`);
+          if (a.complement) lines.push(a.complement);
+          if (a.neighborhood) lines.push(a.neighborhood);
+        }
+        break;
+
+      case 'notes':
+        if (order.notes) {
+          lines.push('');
+          lines.push(CMD.ALIGN_LEFT);
+          lines.push(CMD.LINE);
+          lines.push(CMD.BOLD_ON);
+          lines.push(`OBS: ${order.notes}`);
+          lines.push(CMD.BOLD_OFF);
+        }
+        break;
+
+      case 'footer':
+        lines.push('');
+        lines.push(CMD.ALIGN_CENTER);
+        lines.push(getFooterMessage());
+        break;
+    }
   }
-  if (discount > 0) {
-    lines.push(formatLine('Desconto', `-${formatPrice(discount)}`, w));
-  }
-
-  lines.push(CMD.DASH);
-  lines.push(CMD.BOLD_ON);
-  lines.push(CMD.DOUBLE_HEIGHT);
-  lines.push(formatLine('TOTAL', formatPrice(total), w));
-  lines.push(CMD.NORMAL);
-  lines.push(CMD.BOLD_OFF);
-
-  // Payment
-  lines.push('');
-  const payLabel = PAYMENT_LABELS[order.payment_method || ''] || order.payment_method || '-';
-  lines.push(formatLine('Pagamento:', payLabel, w));
-
-  if (changeFor > 0) {
-    lines.push(formatLine('Troco para:', formatPrice(changeFor), w));
-    lines.push(formatLine('Troco:', formatPrice(changeFor - total), w));
-  }
-
-  // Address
-  if (order.order_type === 'delivery' && order.address_snapshot) {
-    const a = order.address_snapshot;
-    lines.push('');
-    lines.push(CMD.LINE);
-    lines.push(CMD.BOLD_ON);
-    lines.push('ENDERECO DE ENTREGA');
-    lines.push(CMD.BOLD_OFF);
-    lines.push(`${a.street || ''}${a.number ? `, ${a.number}` : ''}`);
-    if (a.complement) lines.push(a.complement);
-    if (a.neighborhood) lines.push(a.neighborhood);
-  }
-
-  // Notes
-  if (order.notes) {
-    lines.push('');
-    lines.push(CMD.LINE);
-    lines.push(CMD.BOLD_ON);
-    lines.push(`OBS: ${order.notes}`);
-    lines.push(CMD.BOLD_OFF);
-  }
-
-  // Footer
-  lines.push('');
-  lines.push(CMD.ALIGN_CENTER);
-  lines.push('Obrigado pela preferencia!');
   lines.push(CMD.ALIGN_LEFT);
 
   // Feed and cut
