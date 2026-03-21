@@ -6,7 +6,19 @@ import {
   ChefHat,
   Settings,
   LogOut,
+  BarChart3,
+  FolderTree,
   Package,
+  ListPlus,
+  MapPin,
+  Bike,
+  LayoutGrid,
+  CalendarCheck,
+  Users,
+  Ticket,
+  Heart,
+  Warehouse,
+  UsersRound,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -18,12 +30,71 @@ import SyncIndicator from '@/components/SyncIndicator';
 import { useGetTenantBySlugQuery, useGetOrdersQuery } from '@/api/api';
 import { useMemo, useEffect } from 'react';
 
-const NAV_ITEMS = [
-  { to: '/', icon: Calculator, label: 'PDV', id: 'pdv' },
-  { to: '/orders', icon: ShoppingCart, label: 'Pedidos', id: 'orders' },
-  { to: '/kds', icon: ChefHat, label: 'KDS', id: 'kds' },
-  { to: '/menu', icon: Package, label: 'Cardapio', id: 'menu' },
-  { to: '/settings', icon: Settings, label: 'Configurações', id: 'settings' },
+interface NavItem {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  id: string;
+}
+
+const NAV_GROUPS: { items: NavItem[] }[] = [
+  // PDV, Orders, KDS
+  {
+    items: [
+      { to: '/', icon: Calculator, label: 'PDV', id: 'pdv' },
+      { to: '/orders', icon: ShoppingCart, label: 'Pedidos', id: 'orders' },
+      { to: '/kds', icon: ChefHat, label: 'KDS', id: 'kds' },
+    ],
+  },
+  // Dashboard
+  {
+    items: [
+      { to: '/dashboard', icon: BarChart3, label: 'Dashboard', id: 'dashboard' },
+    ],
+  },
+  // Cardapio group
+  {
+    items: [
+      { to: '/categories', icon: FolderTree, label: 'Categorias', id: 'categories' },
+      { to: '/products', icon: Package, label: 'Produtos', id: 'products' },
+      { to: '/extras', icon: ListPlus, label: 'Extras', id: 'extras' },
+    ],
+  },
+  // Operacao
+  {
+    items: [
+      { to: '/delivery-zones', icon: MapPin, label: 'Entregas', id: 'delivery-zones' },
+      { to: '/delivery-persons', icon: Bike, label: 'Entregadores', id: 'delivery-persons' },
+    ],
+  },
+  // Mesas
+  {
+    items: [
+      { to: '/tables', icon: LayoutGrid, label: 'Mesas', id: 'tables' },
+      { to: '/reservations', icon: CalendarCheck, label: 'Reservas', id: 'reservations' },
+    ],
+  },
+  // Clientes, Cupons, Fidelidade
+  {
+    items: [
+      { to: '/customers', icon: Users, label: 'Clientes', id: 'customers' },
+      { to: '/coupons', icon: Ticket, label: 'Cupons', id: 'coupons' },
+      { to: '/loyalty', icon: Heart, label: 'Fidelidade', id: 'loyalty' },
+    ],
+  },
+  // Estoque, Equipe
+  {
+    items: [
+      { to: '/inventory', icon: Warehouse, label: 'Estoque', id: 'inventory' },
+      { to: '/staff', icon: UsersRound, label: 'Equipe', id: 'staff' },
+    ],
+  },
+  // Config
+  {
+    items: [
+      { to: '/settings', icon: Settings, label: 'Configuracoes', id: 'settings' },
+    ],
+  },
 ];
 
 export default function DesktopLayout() {
@@ -57,7 +128,7 @@ export default function DesktopLayout() {
 
   // Fetch orders to compute pending count
   const { data: orders } = useGetOrdersQuery(undefined, {
-    pollingInterval: 30000, // refresh every 30s
+    pollingInterval: 30000,
   });
 
   const pendingOrdersCount = useMemo(() => {
@@ -78,66 +149,73 @@ export default function DesktopLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
-      <aside className="flex w-16 shrink-0 flex-col items-center bg-gray-900 py-4 z-50">
+      <aside className="flex w-16 shrink-0 flex-col items-center bg-gray-900 py-3 z-50">
         {/* Logo */}
-        <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
           <UtensilsCrossed className="h-5 w-5 text-white" />
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-1 flex-col items-center gap-1">
-          {NAV_ITEMS.map(({ to, icon: Icon, label, id }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                cn(
-                  'group relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
-                  )}
-                  <Icon className="h-5 w-5" />
-                  {/* Pending orders badge */}
-                  {id === 'orders' && pendingOrdersCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
-                    </span>
-                  )}
-                  {/* Tooltip */}
-                  <span className="pointer-events-none absolute left-full ml-3 z-[100] whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                    {label}
-                    {id === 'orders' && pendingOrdersCount > 0 && (
-                      <span className="ml-1.5 inline-flex items-center rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-400">
-                        {pendingOrdersCount}
-                      </span>
-                    )}
-                  </span>
-                </>
+        <nav className="flex flex-1 flex-col items-center gap-0.5 overflow-y-auto scrollbar-none">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {gi > 0 && (
+                <div className="w-8 mx-auto my-1.5 border-t border-gray-700/50" />
               )}
-            </NavLink>
+              {group.items.map(({ to, icon: Icon, label, id }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      'group relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors mb-0.5',
+                      isActive
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300',
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                      )}
+                      <Icon className="h-4 w-4" />
+                      {/* Pending orders badge */}
+                      {id === 'orders' && pendingOrdersCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                          {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                        </span>
+                      )}
+                      {/* Tooltip */}
+                      <span className="pointer-events-none absolute left-full ml-3 z-[100] whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        {label}
+                        {id === 'orders' && pendingOrdersCount > 0 && (
+                          <span className="ml-1.5 inline-flex items-center rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-400">
+                            {pendingOrdersCount}
+                          </span>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
         {/* Bottom: user + logout */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 pt-2">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary"
-            title={user?.name ?? 'Usuário'}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary"
+            title={user?.name ?? 'Usuario'}
           >
             {userInitial}
           </div>
           <button
             onClick={handleLogout}
-            className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-800 hover:text-red-400"
+            className="group relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-800 hover:text-red-400"
             title="Sair"
           >
             <LogOut className="h-4 w-4" />
