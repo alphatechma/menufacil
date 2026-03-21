@@ -200,6 +200,8 @@ function ProductModal({
   const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
   const totalPrice = (unitPrice + extrasTotal) * qty;
 
+  const isSelectionIncomplete = hasVariations && isRequired && isMultiSelect && totalSelectedParts < minVariations;
+
   const validate = (): string[] => {
     const errs: string[] = [];
     if (hasVariations && isRequired) {
@@ -354,8 +356,11 @@ function ProductModal({
         )}
       </div>
       <div className="pt-4 mt-4 border-t border-gray-100">
-        <button onClick={handleAdd} className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95">
-          Adicionar {formatPrice(totalPrice)}
+        {isSelectionIncomplete && (
+          <p className="text-center text-xs text-amber-600 font-medium mb-2">Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar</p>
+        )}
+        <button onClick={handleAdd} disabled={isSelectionIncomplete} className={`w-full font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95 ${isSelectionIncomplete ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark text-white'}`}>
+          {isSelectionIncomplete ? 'Complete a selecao' : `Adicionar ${formatPrice(totalPrice)}`}
         </button>
       </div>
     </ModalOverlay>

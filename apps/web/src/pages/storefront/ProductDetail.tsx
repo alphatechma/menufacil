@@ -148,6 +148,9 @@ export default function ProductDetail() {
     return (getBasePrice() + getExtrasTotal()) * quantity;
   };
 
+  // Check if selection is complete enough to add to cart
+  const isSelectionIncomplete = hasVariations && isRequired && isMultiSelect && totalSelectedParts < minVariations;
+
   const toggleExtra = (extraId: string, name: string, price: number) => {
     setSelectedExtras((prev) => {
       const next = new Map(prev);
@@ -594,19 +597,26 @@ export default function ProductDetail() {
                 {tenant?.next_open_label && <p className="text-xs font-medium mt-0.5">{tenant.next_open_label}</p>}
               </div>
             ) : (
+              {isSelectionIncomplete && (
+                <p className="text-center text-xs text-amber-600 font-medium mb-2">
+                  Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar ao carrinho
+                </p>
+              )}
               <button
                 onClick={handleAddToCart}
-                disabled={addedToCart}
+                disabled={addedToCart || isSelectionIncomplete}
                 className={`w-full flex items-center justify-between px-6 py-3.5 rounded-xl text-white font-semibold transition-all ${
                   addedToCart ? 'bg-green-500 hover:bg-green-500' : ''
-                } disabled:opacity-50`}
-                style={!addedToCart ? { background: 'var(--tenant-gradient)' } : {}}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                style={!addedToCart && !isSelectionIncomplete ? { background: 'var(--tenant-gradient)' } : !addedToCart ? { background: '#9ca3af' } : {}}
               >
                 {addedToCart ? (
                   <span className="flex items-center gap-2 mx-auto">
                     <Check className="w-5 h-5" />
                     Adicionado!
                   </span>
+                ) : isSelectionIncomplete ? (
+                  <span className="mx-auto">Complete a selecao de sabores</span>
                 ) : (
                   <>
                     <span className="flex items-center gap-2">

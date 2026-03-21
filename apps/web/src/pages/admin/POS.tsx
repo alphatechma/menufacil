@@ -158,6 +158,8 @@ function ProductModal({
   const extrasTotal = Array.from(selectedExtras.values()).reduce((s, e) => s + e.price, 0);
   const totalPrice = (unitPrice + extrasTotal) * qty;
 
+  const isSelectionIncomplete = hasVariations && isRequired && isMultiSelect && totalSelectedParts < minVariations;
+
   const validate = (): string[] => {
     const errs: string[] = [];
     if (hasVariations && isRequired) {
@@ -312,7 +314,12 @@ function ProductModal({
         )}
       </div>
       <div className="pt-3 mt-3 border-t border-border">
-        <Button onClick={handleAdd} className="w-full" size="lg">Adicionar {formatPrice(totalPrice)}</Button>
+        {isSelectionIncomplete && (
+          <p className="text-center text-xs text-amber-600 font-medium mb-2">Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar</p>
+        )}
+        <Button onClick={handleAdd} className="w-full" size="lg" disabled={isSelectionIncomplete}>
+          {isSelectionIncomplete ? 'Complete a selecao' : `Adicionar ${formatPrice(totalPrice)}`}
+        </Button>
       </div>
     </Modal>
   );
