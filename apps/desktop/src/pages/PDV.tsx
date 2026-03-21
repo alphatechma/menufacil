@@ -570,10 +570,14 @@ export default function PDV() {
             <textarea value={closingNotes} onChange={(e) => setClosingNotes(e.target.value)} placeholder="Observacoes do fechamento..." rows={2} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
           <button disabled={closingRegister} onClick={async () => {
-            const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
-            setShowCloseRegister(false); setClosingBalance(''); setClosingNotes('');
-            setClosingSummary(result);
-          }} className="w-full bg-danger hover:bg-red-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95">
+            try {
+              const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap();
+              setShowCloseRegister(false); setClosingBalance(''); setClosingNotes('');
+              setClosingSummary(result);
+            } catch (err: any) {
+              alert(err?.data?.message || 'Erro ao fechar caixa');
+            }
+          }} className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95">
             {closingRegister ? 'Fechando...' : 'Fechar Caixa'}
           </button>
         </div>

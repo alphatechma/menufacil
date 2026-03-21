@@ -131,7 +131,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

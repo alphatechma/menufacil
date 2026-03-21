@@ -12,12 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "MenuFacil",
+        "title": "MenuFácil | Desktop",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
         "minHeight": 700,
-        "resizable": true
+        "resizable": true,
+        "maximized": true
       }
     ],
     "security": {

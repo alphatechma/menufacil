@@ -312,7 +312,7 @@ export default function KDS() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -370,7 +370,7 @@ export default function KDS() {
           <p className="text-sm font-medium">Nenhum pedido</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto flex-1 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto flex-1 pb-4 auto-rows-min content-start">
           {displayOrders.map((order: any) => (
             <KDSCard
               key={order.id}

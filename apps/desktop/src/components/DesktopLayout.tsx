@@ -98,12 +98,12 @@ export default function DesktopLayout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header bar */}
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5">
           <span className="text-sm font-semibold text-gray-700">
-            {tenantSlug ?? 'MenuFacil'}
+            {user?.name ? `${user.name}` : tenantSlug ?? 'MenuFacil'}
           </span>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="h-2 w-2 rounded-full bg-success" />
+            <span className="h-2 w-2 rounded-full bg-green-500" />
             Conectado
           </div>
         </header>
