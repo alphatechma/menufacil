@@ -597,6 +597,7 @@ export default function ProductDetail() {
                 {tenant?.next_open_label && <p className="text-xs font-medium mt-0.5">{tenant.next_open_label}</p>}
               </div>
             ) : (
+              <>
               {isSelectionIncomplete && (
                 <p className="text-center text-xs text-amber-600 font-medium mb-2">
                   Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar ao carrinho
@@ -627,6 +628,7 @@ export default function ProductDetail() {
                   </>
                 )}
               </button>
+              </>
             )}
           </div>
         </div>
