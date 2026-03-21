@@ -95,7 +95,11 @@ export function useWebSocket() {
       Notification.requestPermission();
     }
 
-    const socket = io('/', {
+    const wsUrl = import.meta.env.DEV
+      ? '/'
+      : (localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host');
+
+    const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },
       auth: { token },
