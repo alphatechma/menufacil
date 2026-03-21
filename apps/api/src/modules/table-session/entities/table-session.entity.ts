@@ -29,19 +29,19 @@ export class TableSession {
   @Column({ type: 'enum', enum: SessionStatus, default: SessionStatus.OPEN })
   status: SessionStatus;
 
-  @Column({ type: 'timestamp', default: () => 'NOW()' })
+  @Column({ type: 'timestamptz', default: () => 'NOW()' })
   opened_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   closed_at: Date;
 
   @Column({ nullable: true })
   opened_by: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
   @ManyToOne(() => Tenant)

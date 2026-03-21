@@ -39,10 +39,10 @@ export class PaymentTransaction {
   @Column({ nullable: true })
   pix_copy_paste: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
   @ManyToOne(() => Tenant)

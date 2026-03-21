@@ -26,10 +26,10 @@ export class Notification {
   @Column({ type: 'enum', enum: NotificationStatus, default: NotificationStatus.PENDING })
   status: NotificationStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   sent_at: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @ManyToOne(() => Tenant)

@@ -45,10 +45,10 @@ export class LoyaltyReward {
   @Column({ default: 72 })
   expiration_hours: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
   @ManyToOne(() => Tenant, (tenant) => tenant.loyalty_rewards)

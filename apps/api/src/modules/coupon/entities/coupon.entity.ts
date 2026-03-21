@@ -35,16 +35,16 @@ export class Coupon {
   @Column({ default: 0 })
   current_uses: number;
 
-  @Column()
+  @Column({ type: 'timestamptz' })
   valid_from: Date;
 
-  @Column()
+  @Column({ type: 'timestamptz' })
   valid_until: Date;
 
   @Column({ default: true })
   is_active: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @ManyToOne(() => Tenant, (tenant) => tenant.coupons)

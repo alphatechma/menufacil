@@ -48,10 +48,10 @@ export class Customer {
   @Column({ default: 0 })
   loyalty_points: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
   @ManyToOne(() => Tenant, (tenant) => tenant.customers)

@@ -47,10 +47,10 @@ export class CashRegister {
   @Column({ type: 'text', nullable: true })
   closing_notes: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   opened_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   closed_at: Date;
 
   @Column({ default: true })

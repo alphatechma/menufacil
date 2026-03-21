@@ -44,7 +44,7 @@ export class WhatsappMessage {
   @Column({ nullable: true })
   order_id: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @ManyToOne(() => Tenant)
