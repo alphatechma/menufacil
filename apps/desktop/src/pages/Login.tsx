@@ -1,9 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { UtensilsCrossed, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAdminLoginMutation } from '@/api/api';
 import { loginSuccess } from '@/store/slices/authSlice';
 import { useAppDispatch } from '@/store/hooks';
 import { cn } from '@/utils/cn';
+
+const REMEMBER_EMAIL_KEY = 'menufacil-desktop-remember-email';
+const APP_VERSION = __APP_VERSION__;
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -12,7 +15,17 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -21,6 +34,13 @@ export default function Login() {
     if (!email || !password) {
       setError('Preencha todos os campos.');
       return;
+    }
+
+    // Save or remove email based on "Lembrar-me"
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
     }
 
     try {
@@ -86,7 +106,7 @@ export default function Login() {
           </div>
 
           {/* Password */}
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-300">
               Senha
             </label>
@@ -110,6 +130,17 @@ export default function Login() {
             </div>
           </div>
 
+          {/* Remember me */}
+          <label className="mb-6 flex cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-primary accent-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-0"
+            />
+            <span className="text-sm text-gray-400">Lembrar-me</span>
+          </label>
+
           {/* Submit */}
           <button
             type="submit"
@@ -132,7 +163,7 @@ export default function Login() {
         </form>
 
         <p className="mt-6 text-center text-xs text-gray-600">
-          MenuFacil Desktop v0.1.0
+          MenuFacil Desktop v{APP_VERSION}
         </p>
       </div>
     </div>

@@ -12,13 +12,15 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { cn } from '@/utils/cn';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useGetTenantBySlugQuery, useGetOrdersQuery } from '@/api/api';
+import { useMemo } from 'react';
 
 const NAV_ITEMS = [
-  { to: '/', icon: Calculator, label: 'PDV' },
-  { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
-  { to: '/kds', icon: ChefHat, label: 'KDS' },
-  { to: '/menu', icon: Package, label: 'Cardapio' },
-  { to: '/settings', icon: Settings, label: 'Configurações' },
+  { to: '/', icon: Calculator, label: 'PDV', id: 'pdv' },
+  { to: '/orders', icon: ShoppingCart, label: 'Pedidos', id: 'orders' },
+  { to: '/kds', icon: ChefHat, label: 'KDS', id: 'kds' },
+  { to: '/menu', icon: Package, label: 'Cardapio', id: 'menu' },
+  { to: '/settings', icon: Settings, label: 'Configurações', id: 'settings' },
 ];
 
 export default function DesktopLayout() {
@@ -30,7 +32,23 @@ export default function DesktopLayout() {
   // WebSocket for real-time order updates
   useWebSocket();
 
+  // Fetch tenant info for display name
+  const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
+
+  // Fetch orders to compute pending count
+  const { data: orders } = useGetOrdersQuery(undefined, {
+    pollingInterval: 30000, // refresh every 30s
+  });
+
+  const pendingOrdersCount = useMemo(() => {
+    if (!orders || !Array.isArray(orders)) return 0;
+    return orders.filter((o: any) =>
+      ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status),
+    ).length;
+  }, [orders]);
+
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
+  const displayName = tenant?.name ?? tenantSlug ?? 'MenuFacil';
 
   function handleLogout() {
     dispatch(logout());
@@ -48,7 +66,7 @@ export default function DesktopLayout() {
 
         {/* Navigation */}
         <nav className="flex flex-1 flex-col items-center gap-1">
-          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+          {NAV_ITEMS.map(({ to, icon: Icon, label, id }) => (
             <NavLink
               key={to}
               to={to}
@@ -68,9 +86,20 @@ export default function DesktopLayout() {
                     <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
                   )}
                   <Icon className="h-5 w-5" />
+                  {/* Pending orders badge */}
+                  {id === 'orders' && pendingOrdersCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                    </span>
+                  )}
                   {/* Tooltip */}
                   <span className="pointer-events-none absolute left-full ml-3 z-[100] whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                     {label}
+                    {id === 'orders' && pendingOrdersCount > 0 && (
+                      <span className="ml-1.5 inline-flex items-center rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-400">
+                        {pendingOrdersCount}
+                      </span>
+                    )}
                   </span>
                 </>
               )}
@@ -103,12 +132,31 @@ export default function DesktopLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header bar */}
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5">
-          <span className="text-sm font-semibold text-gray-700">
-            {user?.name ? `${user.name}` : tenantSlug ?? 'MenuFacil'}
-          </span>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            Conectado
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">
+              {displayName}
+            </span>
+            {tenant?.units && tenant.units.length > 1 && (
+              <select className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
+                {tenant.units.map((unit: any) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {pendingOrdersCount > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600">
+                <ShoppingCart className="h-3 w-3" />
+                {pendingOrdersCount} pendente{pendingOrdersCount !== 1 ? 's' : ''}
+              </span>
+            )}
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Conectado
+            </div>
           </div>
         </header>
 
