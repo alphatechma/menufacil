@@ -77,6 +77,23 @@ export const api = baseApi.injectEndpoints({
       query: (body) => ({ url: '/customers', method: 'POST', body }),
       invalidatesTags: ['Customers'],
     }),
+
+    // Tenant update
+    updateTenant: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/tenants/${id}`, method: 'PUT', body: data }),
+      invalidatesTags: ['Tenant'],
+    }),
+
+    // WhatsApp
+    getWhatsappStatus: builder.query<any, void>({
+      query: () => ({ url: '/whatsapp/instance/status' }),
+    }),
+    connectWhatsapp: builder.mutation<any, void>({
+      query: () => ({ url: '/whatsapp/instance/connect', method: 'POST' }),
+    }),
+    disconnectWhatsapp: builder.mutation<any, void>({
+      query: () => ({ url: '/whatsapp/instance/disconnect', method: 'POST' }),
+    }),
   }),
 });
 
@@ -94,4 +111,8 @@ export const {
   useCloseCashRegisterMutation,
   useGetTablesQuery,
   useCreateCustomerMutation,
+  useUpdateTenantMutation,
+  useGetWhatsappStatusQuery,
+  useConnectWhatsappMutation,
+  useDisconnectWhatsappMutation,
 } = api;

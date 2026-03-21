@@ -1,251 +1,280 @@
 import { useState, useEffect } from 'react';
 import {
-  Settings as SettingsIcon,
-  Globe,
-  Volume2,
-  VolumeX,
-  Printer,
-  Bell,
-  BellOff,
-  Monitor,
-  ExternalLink,
-  Save,
+  Settings as SettingsIcon, Globe, Store, Clock, Truck, CreditCard, Bell,
+  Printer, MessageCircle, WifiOff, Save, ExternalLink,
+  ShoppingBag, UtensilsCrossed, RefreshCw, AlertCircle, CheckCircle2, XCircle, Loader2,
 } from 'lucide-react';
+import {
+  useGetTenantBySlugQuery, useUpdateTenantMutation,
+  useGetWhatsappStatusQuery, useConnectWhatsappMutation, useDisconnectWhatsappMutation,
+} from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { cn } from '@/utils/cn';
 
-const STORAGE_PREFIX = 'menufacil_desktop_';
+const DAYS = [
+  { key: 'monday', label: 'Segunda' }, { key: 'tuesday', label: 'Terca' },
+  { key: 'wednesday', label: 'Quarta' }, { key: 'thursday', label: 'Quinta' },
+  { key: 'friday', label: 'Sexta' }, { key: 'saturday', label: 'Sabado' },
+  { key: 'sunday', label: 'Domingo' },
+];
 
-function loadSetting(key: string, fallback: string): string {
-  try {
-    return localStorage.getItem(STORAGE_PREFIX + key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+const TABS = [
+  { key: 'geral', label: 'Dados Gerais', icon: Store },
+  { key: 'horarios', label: 'Horarios', icon: Clock },
+  { key: 'modos', label: 'Modos de Pedido', icon: Truck },
+  { key: 'pagamento', label: 'Pagamento', icon: CreditCard },
+  { key: 'parametros', label: 'Parametros', icon: SettingsIcon },
+  { key: 'notificacoes', label: 'Notificacoes', icon: Bell },
+  { key: 'impressora', label: 'Impressora', icon: Printer },
+  { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { key: 'desktop', label: 'Desktop', icon: Globe },
+];
 
-function saveSetting(key: string, value: string) {
-  try {
-    localStorage.setItem(STORAGE_PREFIX + key, value);
-  } catch { /* */ }
-}
-
-function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2',
-        checked ? 'bg-orange-500' : 'bg-gray-300',
-        disabled && 'opacity-50 cursor-not-allowed',
-      )}
-    >
-      <span
-        className={cn(
-          'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-          checked ? 'translate-x-6' : 'translate-x-1',
-        )}
-      />
+    <button onClick={() => onChange(!checked)} className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0', checked ? 'bg-primary' : 'bg-gray-300')}>
+      <span className={cn('inline-block h-4 w-4 rounded-full bg-white transition-transform', checked ? 'translate-x-6' : 'translate-x-1')} />
     </button>
   );
 }
 
+function SaveBtn({ onClick, loading, label }: { onClick: () => void; loading?: boolean; label?: string }) {
+  return (
+    <button onClick={onClick} disabled={loading} className="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95">
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {label || 'Salvar'}
+    </button>
+  );
+}
+
+// Print queue mock (will be replaced by Rust native in Phase 3)
+function PrintQueuePanel() {
+  const [queue] = useState<{ id: string; name: string; status: 'pending' | 'printing' | 'done' | 'error'; time: string }[]>([]);
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500">Fila de impressao do sistema.</p>
+      {queue.length === 0 ? (
+        <div className="text-center py-8 text-gray-400">
+          <Printer className="w-10 h-10 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">Nenhuma impressao na fila</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {queue.map((job) => (
+            <div key={job.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-3">
+                {job.status === 'pending' && <Clock className="w-4 h-4 text-gray-400" />}
+                {job.status === 'printing' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                {job.status === 'done' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {job.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{job.name}</p>
+                  <p className="text-[10px] text-gray-400">{job.time}</p>
+                </div>
+              </div>
+              <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full',
+                job.status === 'pending' ? 'bg-gray-100 text-gray-600' :
+                job.status === 'printing' ? 'bg-blue-100 text-blue-600' :
+                job.status === 'done' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+              )}>
+                {job.status === 'pending' ? 'Na fila' : job.status === 'printing' ? 'Imprimindo' : job.status === 'done' ? 'Concluido' : 'Erro'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
-  const tenantSlug = useAppSelector((state) => state.auth.tenantSlug);
+  const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
+  const { data: tenant, refetch: refetchTenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
+  const [updateTenant, { isLoading: saving }] = useUpdateTenantMutation();
 
-  const [apiUrl, setApiUrl] = useState(() => loadSetting('api_url', ''));
-  const [autoConfirm, setAutoConfirm] = useState(() => loadSetting('auto_confirm', 'false') === 'true');
-  const [autoPrint, setAutoPrint] = useState(() => loadSetting('auto_print', 'false') === 'true');
-  const [soundEnabled, setSoundEnabled] = useState(() => loadSetting('sound_enabled', 'true') === 'true');
-  const [paperWidth, setPaperWidth] = useState(() => loadSetting('paper_width', '80'));
-  const [minimizeToTray, setMinimizeToTray] = useState(() => loadSetting('minimize_to_tray', 'false') === 'true');
-  const [saved, setSaved] = useState(false);
+  const { data: waStatus, refetch: refetchWa } = useGetWhatsappStatusQuery();
+  const [connectWa, { isLoading: connecting, data: connectData }] = useConnectWhatsappMutation();
+  const [disconnectWa, { isLoading: disconnecting }] = useDisconnectWhatsappMutation();
 
-  const handleToggle = (key: string, value: boolean, setter: (v: boolean) => void) => {
-    setter(value);
-    saveSetting(key, String(value));
-  };
+  const [activeTab, setActiveTab] = useState('geral');
+  const [toast, setToast] = useState('');
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [minOrder, setMinOrder] = useState('');
+  const [businessHours, setBusinessHours] = useState<Record<string, any>>({});
+  const [orderModes, setOrderModes] = useState({ delivery: true, pickup: false, dine_in: false });
+  const [paymentConfig, setPaymentConfig] = useState<Record<string, any>>({});
+  const [cancelTimeLimit, setCancelTimeLimit] = useState(5);
+  const [notifSettings, setNotifSettings] = useState<Record<string, boolean>>({ sound_enabled: true, sound_new_order: true, sound_out_for_delivery: true, sound_delivered: true, push_enabled: false });
 
-  const handleSaveApiUrl = () => {
-    saveSetting('api_url', apiUrl);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+  const [autoConfirm, setAutoConfirm] = useState(() => localStorage.getItem('desktop_auto_confirm') === 'true');
+  const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem('desktop_auto_print') !== 'false');
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('desktop_sound') !== 'false');
+  const [minimizeToTray, setMinimizeToTray] = useState(() => localStorage.getItem('desktop_minimize_tray') === 'true');
+  const [paperWidth, setPaperWidth] = useState(() => parseInt(localStorage.getItem('menufacil_paper_width') || '48'));
+  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem('desktop_api_url') || '');
 
-  const handleOpenWebPanel = () => {
-    const baseUrl = apiUrl || 'https://menufacil.maistechtecnologia.com.br';
-    const url = tenantSlug ? `${baseUrl}/${tenantSlug}/admin` : baseUrl;
-    window.open(url, '_blank');
+  useEffect(() => {
+    if (!tenant) return;
+    setName(tenant.name || ''); setSlug(tenant.slug || ''); setPhone(tenant.phone || ''); setAddress(tenant.address || '');
+    setMinOrder(String(tenant.min_order_value || ''));
+    if (tenant.business_hours) setBusinessHours(tenant.business_hours);
+    if (tenant.order_modes) setOrderModes(tenant.order_modes);
+    if (tenant.payment_config) setPaymentConfig(tenant.payment_config);
+    if (tenant.cancel_time_limit !== undefined) setCancelTimeLimit(tenant.cancel_time_limit);
+    if (tenant.notification_settings) setNotifSettings(tenant.notification_settings);
+  }, [tenant]);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2000); };
+  const ds = (key: string, value: string) => localStorage.setItem(key, value);
+
+  const save = async (data: any) => {
+    if (!tenant) return;
+    await updateTenant({ id: tenant.id, data }).unwrap();
+    refetchTenant();
+    showToast('Salvo com sucesso!');
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <SettingsIcon className="w-6 h-6 text-gray-700" />
-        <h1 className="text-xl font-bold text-gray-900">Configuracoes</h1>
+    <div className="h-full flex relative">
+      {toast && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-sm font-medium animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4" /> {toast}
+        </div>
+      )}
+
+      <div className="w-52 shrink-0 border-r border-gray-200 bg-white p-3 space-y-0.5 overflow-y-auto">
+        <h2 className="text-lg font-bold text-gray-900 px-3 py-2 mb-2">Configuracoes</h2>
+        {TABS.map((tab) => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors', activeTab === tab.key ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50')}>
+            <tab.icon className="w-4 h-4 shrink-0" /> {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="space-y-4 overflow-y-auto flex-1 pb-4">
-        {/* API URL */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Globe className="w-5 h-5 text-blue-600" />
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-2xl space-y-6">
+
+          {activeTab === 'geral' && (<>
+            <h3 className="text-base font-bold text-gray-900">Dados do Estabelecimento</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Nome</label><input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Slug</label><div className="flex"><span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm">menufacil.com/</span><input value={slug} onChange={(e) => setSlug(e.target.value)} className="flex-1 px-4 py-2.5 rounded-r-xl border border-gray-200 text-sm font-mono" /></div></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-gray-700 mb-1 block">Telefone</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+                <div><label className="text-sm font-medium text-gray-700 mb-1 block">Pedido minimo (R$)</label><input type="number" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              </div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Endereco</label><input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              <div className="flex justify-end"><SaveBtn onClick={() => save({ name, slug, phone, address, min_order_value: parseFloat(minOrder) || 0 })} loading={saving} /></div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">URL da API</h3>
-              <p className="text-xs text-gray-500">Endereco do servidor. Deixe vazio para usar o padrao.</p>
+          </>)}
+
+          {activeTab === 'horarios' && (<>
+            <h3 className="text-base font-bold text-gray-900">Horario de Funcionamento</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+              {DAYS.map((day) => { const h = businessHours[day.key] || { open: false, openTime: '08:00', closeTime: '22:00' }; return (
+                <div key={day.key} className="flex items-center gap-3">
+                  <Toggle checked={!!h.open} onChange={(v) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], open: v, openTime: h.openTime || '08:00', closeTime: h.closeTime || '22:00' } }))} />
+                  <span className="text-sm font-medium text-gray-700 w-20">{day.label}</span>
+                  {h.open ? (<><input type="time" value={h.openTime || '08:00'} onChange={(e) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], openTime: e.target.value } }))} className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" /><span className="text-xs text-gray-400">ate</span><input type="time" value={h.closeTime || '22:00'} onChange={(e) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], closeTime: e.target.value } }))} className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" /></>) : <span className="text-xs text-gray-400">Fechado</span>}
+                </div>); })}
+              <div className="flex justify-end pt-2"><SaveBtn onClick={() => save({ business_hours: businessHours })} loading={saving} /></div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="https://menufacil.maistechtecnologia.com.br"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
-            />
-            <button
-              onClick={handleSaveApiUrl}
-              className={cn(
-                'px-4 py-2.5 rounded-xl text-sm font-bold transition-colors active:scale-95',
-                saved
-                  ? 'bg-green-500 text-white'
-                  : 'bg-orange-500 text-white hover:bg-orange-600',
+          </>)}
+
+          {activeTab === 'modos' && (<>
+            <h3 className="text-base font-bold text-gray-900">Modos de Pedido</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              {[{ key: 'delivery', label: 'Entrega', desc: 'Pedidos para entrega', icon: Truck }, { key: 'pickup', label: 'Retirada', desc: 'Cliente retira no restaurante', icon: ShoppingBag }, { key: 'dine_in', label: 'Consumo no Local', desc: 'Mesas com QR Code', icon: UtensilsCrossed }].map((mode) => (
+                <div key={mode.key} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><mode.icon className="w-5 h-5 text-primary" /></div><div><p className="text-sm font-medium text-gray-900">{mode.label}</p><p className="text-xs text-gray-500">{mode.desc}</p></div></div>
+                  <Toggle checked={(orderModes as any)[mode.key]} onChange={(v) => { const m = { ...orderModes, [mode.key]: v }; setOrderModes(m); save({ order_modes: m }); }} />
+                </div>
+              ))}
+            </div>
+          </>)}
+
+          {activeTab === 'pagamento' && (<>
+            <h3 className="text-base font-bold text-gray-900">Configuracoes de Pagamento</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Tipo da chave PIX</label><select value={paymentConfig.pix_key_type || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, pix_key_type: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"><option value="">Selecionar...</option><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="phone">Telefone</option><option value="random">Chave Aleatoria</option></select></div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Chave PIX</label><input value={paymentConfig.pix_key || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, pix_key: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Link de pagamento</label><input value={paymentConfig.payment_link_url || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, payment_link_url: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              <div className="flex items-center justify-between py-2"><div><p className="text-sm font-medium text-gray-900">Aceita boleto</p></div><Toggle checked={!!paymentConfig.accepts_boleto} onChange={(v) => setPaymentConfig((p) => ({ ...p, accepts_boleto: v }))} /></div>
+              <div className="flex justify-end"><SaveBtn onClick={() => save({ payment_config: paymentConfig })} loading={saving} /></div>
+            </div>
+          </>)}
+
+          {activeTab === 'parametros' && (<>
+            <h3 className="text-base font-bold text-gray-900">Parametros do Sistema</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Tempo limite para cancelamento (min)</label><input type="number" min={0} max={60} value={cancelTimeLimit} onChange={(e) => setCancelTimeLimit(parseInt(e.target.value) || 0)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /><p className="text-xs text-gray-400 mt-1">0 = desabilitado</p></div>
+              <div className="flex justify-end"><SaveBtn onClick={() => save({ cancel_time_limit: cancelTimeLimit })} loading={saving} /></div>
+            </div>
+          </>)}
+
+          {activeTab === 'notificacoes' && (<>
+            <h3 className="text-base font-bold text-gray-900">Notificacoes</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              {[{ key: 'sound_enabled', label: 'Sons ativados', desc: 'Habilitar sons de notificacao' }, { key: 'sound_new_order', label: 'Novo pedido', desc: 'Tocar som ao receber pedido' }, { key: 'sound_out_for_delivery', label: 'Saiu para entrega', desc: 'Som ao sair para entrega' }, { key: 'sound_delivered', label: 'Entregue', desc: 'Som ao confirmar entrega' }, { key: 'push_enabled', label: 'Push notifications', desc: 'Notificacoes push' }].map((item) => (
+                <div key={item.key} className="flex items-center justify-between py-1"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={!!(notifSettings as any)[item.key]} onChange={(v) => { const s = { ...notifSettings, [item.key]: v }; setNotifSettings(s); save({ notification_settings: s }); }} /></div>
+              ))}
+            </div>
+          </>)}
+
+          {activeTab === 'impressora' && (<>
+            <h3 className="text-base font-bold text-gray-900">Impressora</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm font-medium text-gray-900">Largura do papel</p><p className="text-xs text-gray-500">Tamanho da bobina termica</p></div>
+                <select value={paperWidth} onChange={(e) => { const v = parseInt(e.target.value); setPaperWidth(v); ds('menufacil_paper_width', String(v)); }} className="px-3 py-2 rounded-xl border border-gray-200 text-sm"><option value={48}>80mm (PDV)</option><option value={32}>58mm (compacta)</option><option value={30}>57mm (maquininha)</option></select>
+              </div>
+              <div className="h-px bg-gray-100" />
+              <h4 className="text-sm font-bold text-gray-900">Fila de Impressao</h4>
+              <PrintQueuePanel />
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4"><p className="text-sm font-medium text-amber-800">Impressao nativa USB</p><p className="text-xs text-amber-600 mt-1">Sera disponibilizada em breve (Phase 3).</p></div>
+            </div>
+          </>)}
+
+          {activeTab === 'whatsapp' && (<>
+            <h3 className="text-base font-bold text-gray-900">WhatsApp</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={cn('w-3 h-3 rounded-full', waStatus?.connected ? 'bg-green-500' : 'bg-red-400')} />
+                <span className="text-sm font-medium text-gray-900">{waStatus?.connected ? 'Conectado' : 'Desconectado'}</span>
+                {waStatus?.phone && <span className="text-xs text-gray-500">{waStatus.phone}</span>}
+              </div>
+              {waStatus?.connected ? (
+                <button onClick={() => disconnectWa()} disabled={disconnecting} className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2"><WifiOff className="w-4 h-4" /> {disconnecting ? 'Desconectando...' : 'Desconectar'}</button>
+              ) : (
+                <div className="space-y-3">
+                  <button onClick={() => connectWa()} disabled={connecting} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2"><MessageCircle className="w-4 h-4" /> {connecting ? 'Conectando...' : 'Conectar WhatsApp'}</button>
+                  {connectData?.qrCode && (<div className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-center"><p className="text-sm font-medium text-gray-700 mb-3">Escaneie o QR Code</p><img src={connectData.qrCode} alt="QR Code" className="mx-auto w-48 h-48" /></div>)}
+                </div>
               )}
-            >
-              {saved ? 'Salvo!' : 'Salvar'}
-            </button>
-          </div>
+              <button onClick={() => refetchWa()} className="text-xs text-primary font-medium flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Atualizar status</button>
+            </div>
+          </>)}
+
+          {activeTab === 'desktop' && (<>
+            <h3 className="text-base font-bold text-gray-900">Configuracoes do Desktop</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">URL da API</label><div className="flex gap-2"><input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="Deixe vazio para padrao" className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /><SaveBtn onClick={() => ds('desktop_api_url', apiUrl)} label="Salvar" /></div></div>
+              <div className="h-px bg-gray-100" />
+              {[{ key: 'desktop_auto_confirm', label: 'Confirmar pedidos automaticamente', desc: 'Novos pedidos confirmados sem intervencao', value: autoConfirm, set: setAutoConfirm },
+                { key: 'desktop_auto_print', label: 'Imprimir ao receber pedido', desc: 'Imprime automaticamente quando chegar', value: autoPrint, set: setAutoPrint },
+                { key: 'desktop_sound', label: 'Sons de notificacao', desc: 'Tocar som quando pedidos chegarem', value: soundEnabled, set: setSoundEnabled },
+                { key: 'desktop_minimize_tray', label: 'Minimizar para bandeja', desc: 'App continua rodando ao fechar', value: minimizeToTray, set: setMinimizeToTray },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between py-2"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={item.value} onChange={(v) => { item.set(v); ds(item.key, String(v)); }} /></div>
+              ))}
+              <div className="h-px bg-gray-100" />
+              <button onClick={() => window.open('https://menufacil.maistechtecnologia.com.br/login', '_blank')} className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark"><ExternalLink className="w-4 h-4" /> Abrir Painel Web completo</button>
+            </div>
+          </>)}
+
         </div>
-
-        {/* Toggles Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          {/* Auto-confirm */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', autoConfirm ? 'bg-orange-100' : 'bg-gray-100')}>
-                <Bell className={cn('w-5 h-5', autoConfirm ? 'text-orange-600' : 'text-gray-400')} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Confirmar pedidos automaticamente</p>
-                <p className="text-xs text-gray-500">Novos pedidos serao confirmados sem intervencao manual</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={autoConfirm}
-              onChange={(v) => handleToggle('auto_confirm', v, setAutoConfirm)}
-            />
-          </div>
-
-          <div className="h-px bg-gray-100" />
-
-          {/* Auto-print */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', autoPrint ? 'bg-orange-100' : 'bg-gray-100')}>
-                <Printer className={cn('w-5 h-5', autoPrint ? 'text-orange-600' : 'text-gray-400')} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Imprimir ao receber pedido</p>
-                <p className="text-xs text-gray-500">Imprime automaticamente quando um novo pedido chegar</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={autoPrint}
-              onChange={(v) => handleToggle('auto_print', v, setAutoPrint)}
-            />
-          </div>
-
-          <div className="h-px bg-gray-100" />
-
-          {/* Sound */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', soundEnabled ? 'bg-orange-100' : 'bg-gray-100')}>
-                {soundEnabled ? (
-                  <Volume2 className="w-5 h-5 text-orange-600" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Sons de notificacao</p>
-                <p className="text-xs text-gray-500">Tocar som quando novos pedidos chegarem</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={soundEnabled}
-              onChange={(v) => handleToggle('sound_enabled', v, setSoundEnabled)}
-            />
-          </div>
-
-          <div className="h-px bg-gray-100" />
-
-          {/* Minimize to tray */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', minimizeToTray ? 'bg-orange-100' : 'bg-gray-100')}>
-                <Monitor className={cn('w-5 h-5', minimizeToTray ? 'text-orange-600' : 'text-gray-400')} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Minimizar para bandeja</p>
-                <p className="text-xs text-gray-500">Ao fechar, o app continua rodando na bandeja do sistema</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={minimizeToTray}
-              onChange={(v) => handleToggle('minimize_to_tray', v, setMinimizeToTray)}
-            />
-          </div>
-        </div>
-
-        {/* Paper Width */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
-                <Printer className="w-5 h-5 text-gray-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Largura do papel</p>
-                <p className="text-xs text-gray-500">Tamanho da bobina termica da impressora</p>
-              </div>
-            </div>
-            <select
-              value={paperWidth}
-              onChange={(e) => {
-                setPaperWidth(e.target.value);
-                saveSetting('paper_width', e.target.value);
-              }}
-              className="px-3 py-2 border border-gray-200 bg-white text-gray-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="80">80mm (padrao)</option>
-              <option value="58">58mm (compacta)</option>
-              <option value="57">57mm (maquininha)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Open Web Panel */}
-        <button
-          onClick={handleOpenWebPanel}
-          className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center gap-3 hover:bg-gray-50 transition-colors active:scale-[0.99]"
-        >
-          <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
-            <ExternalLink className="w-5 h-5 text-orange-600" />
-          </div>
-          <div className="text-left flex-1">
-            <p className="text-sm font-bold text-gray-900">Abrir Painel Web</p>
-            <p className="text-xs text-gray-500">Acessar o painel de administracao completo no navegador</p>
-          </div>
-          <ExternalLink className="w-4 h-4 text-gray-400" />
-        </button>
       </div>
     </div>
   );
