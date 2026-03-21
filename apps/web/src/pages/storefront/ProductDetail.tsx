@@ -113,16 +113,18 @@ export default function ProductDetail() {
     if (selectedVariations.size === 0) return Number(product.base_price);
 
     if (isMultiSelect && totalSelectedParts > 0) {
-      // Multi-select: use the highest variation price (pizza rule — price is always the base)
-      let maxPrice = 0;
+      // Multi-select (pizza rule): price is the product base_price or the highest
+      // variation price if any variation is more expensive than base
+      const basePrice = Number(product.base_price);
+      let maxVarPrice = 0;
       for (const [varId] of selectedVariations) {
         const variation = product.variations?.find((v: any) => v.id === varId);
         if (variation) {
           const p = Number(variation.price);
-          if (p > maxPrice) maxPrice = p;
+          if (p > maxVarPrice) maxVarPrice = p;
         }
       }
-      return maxPrice;
+      return Math.max(basePrice, maxVarPrice);
     }
 
     // Single-select: use the selected variation's price

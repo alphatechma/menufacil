@@ -135,21 +135,22 @@ export class OrderService {
         if (resolvedVariations.length > 0) {
           const hasQuantities = item.variation_quantities && Object.keys(item.variation_quantities).length > 0;
           if (hasQuantities) {
-            // Multi-select: use the highest variation price (pizza rule — price is always the base)
+            // Multi-select (pizza rule): use base_price or highest variation if more expensive
             const totalParts = Object.values(item.variation_quantities!).reduce((a, b) => a + b, 0);
-            let maxPrice = 0;
+            const basePrice = Number(product.base_price);
+            let maxVarPrice = 0;
             const nameParts: string[] = [];
             for (const v of resolvedVariations) {
               const qty = item.variation_quantities![v.id] || 1;
               const p = Number(v.price);
-              if (p > maxPrice) maxPrice = p;
+              if (p > maxVarPrice) maxVarPrice = p;
               nameParts.push(`${qty}/${totalParts} ${v.name}`);
             }
-            unitPrice = maxPrice;
+            unitPrice = Math.max(basePrice, maxVarPrice);
             variationName = nameParts.join(' / ');
           } else {
-            // Multiple variations without quantities: use the highest price
-            unitPrice = Math.max(...resolvedVariations.map((v) => Number(v.price)));
+            // Multiple variations without quantities: use base_price or highest variation
+            unitPrice = Math.max(Number(product.base_price), ...resolvedVariations.map((v) => Number(v.price)));
             variationName = resolvedVariations.map((v) => v.name).join(' / ');
           }
         } else {

@@ -138,16 +138,17 @@ function ProductModal({
   const getBasePrice = () => {
     if (selectedVariations.size === 0) return Number(product.base_price);
     if (isMultiSelect && totalSelectedParts > 0) {
-      // Multi-select: use the highest variation price (pizza rule)
-      let maxPrice = 0;
+      // Multi-select (pizza rule): use base_price or highest variation if more expensive
+      const basePrice = Number(product.base_price);
+      let maxVarPrice = 0;
       for (const [varId] of selectedVariations) {
         const variation = product.variations?.find((v: any) => v.id === varId);
         if (variation) {
           const p = Number(variation.price);
-          if (p > maxPrice) maxPrice = p;
+          if (p > maxVarPrice) maxVarPrice = p;
         }
       }
-      return maxPrice;
+      return Math.max(basePrice, maxVarPrice);
     }
     const selected = product.variations?.find((v: any) => selectedVariations.has(v.id));
     return selected ? Number(selected.price) : Number(product.base_price);
