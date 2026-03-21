@@ -8,7 +8,7 @@ import PDV from '@/pages/PDV';
 import Orders from '@/pages/Orders';
 import KDS from '@/pages/KDS';
 // CashRegister is integrated into PDV
-import PrinterManager from '@/pages/PrinterManager';
+// PrinterManager is now inside Settings
 import Settings from '@/pages/Settings';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,6 @@ function AppRoutes() {
         <Route index element={<PDV />} />
         <Route path="orders" element={<Orders />} />
         <Route path="kds" element={<KDS />} />
-        <Route path="printer" element={<PrinterManager />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

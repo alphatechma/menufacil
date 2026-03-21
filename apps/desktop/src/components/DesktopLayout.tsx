@@ -4,7 +4,6 @@ import {
   Calculator,
   ShoppingCart,
   ChefHat,
-  Printer,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -16,7 +15,6 @@ const NAV_ITEMS = [
   { to: '/', icon: Calculator, label: 'PDV' },
   { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
   { to: '/kds', icon: ChefHat, label: 'KDS' },
-  { to: '/printer', icon: Printer, label: 'Impressora' },
   { to: '/settings', icon: Settings, label: 'Configurações' },
 ];
 
