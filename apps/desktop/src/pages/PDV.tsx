@@ -19,6 +19,7 @@ import {
   Lock,
   Unlock,
   Receipt,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   useGetProductsQuery,
@@ -353,12 +354,13 @@ export default function PDV() {
   const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
   const { data: tables = [] } = useGetTablesQuery();
-  const { data: allOrders = [] } = useGetOrdersQuery();
+  const { data: allOrders = [], refetch: refetchOrders } = useGetOrdersQuery(undefined, { pollingInterval: 15000 });
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
   const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
 
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
+  const [pendingOrdersWarning, setPendingOrdersWarning] = useState('');
   const [closingSummary, setClosingSummary] = useState<any>(null);
   const [openingBalance, setOpeningBalance] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
@@ -522,10 +524,13 @@ export default function PDV() {
         </div>
         <div>
           {isCashRegisterOpen ? (
-            <button onClick={() => {
-              const pendingOrders = allOrders.filter((o: any) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
-              if (pendingOrders.length > 0) {
-                alert(`Nao e possivel fechar o caixa com ${pendingOrders.length} pedido(s) pendente(s).\n\nFinalize ou cancele todos os pedidos antes de fechar.`);
+            <button onClick={async () => {
+              setPendingOrdersWarning('');
+              const { data: freshOrders } = await refetchOrders();
+              const pending = (freshOrders || []).filter((o: any) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+              if (pending.length > 0) {
+                setPendingOrdersWarning(`Nao e possivel fechar o caixa com ${pending.length} pedido(s) pendente(s). Finalize ou cancele todos os pedidos antes de fechar.`);
+                setTimeout(() => setPendingOrdersWarning(''), 5000);
                 return;
               }
               setShowCloseRegister(true);
@@ -683,6 +688,12 @@ export default function PDV() {
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
           <Check className="w-5 h-5" />
           <span className="font-semibold">Pedido #{orderSuccess} criado!</span>
+        </div>
+      )}
+      {pendingOrdersWarning && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 max-w-lg">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span className="text-sm font-medium">{pendingOrdersWarning}</span>
         </div>
       )}
 
