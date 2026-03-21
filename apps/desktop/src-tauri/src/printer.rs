@@ -1,4 +1,4 @@
-use rusb::{Context, DeviceHandle, GlobalContext, UsbContext};
+use rusb::GlobalContext;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -171,7 +171,7 @@ pub fn print_raw(printer_key: &str, data: &[u8]) -> Result<(), String> {
                 .to_string()
         })?;
 
-    let mut handle = device
+    let handle = device
         .open()
         .map_err(|e| format!("Failed to open printer: {}. Check permissions.", e))?;
 

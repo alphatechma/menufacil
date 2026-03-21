@@ -135,7 +135,7 @@ fn main() {
             }
 
             // --- System Tray ---
-            let open_item = MenuItemBuilder::with_id("open", "Abrir MenuFacil").build(app)?;
+            let open_item = MenuItemBuilder::with_id("open", "Abrir MenuFácil").build(app)?;
             let separator = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Sair").build(app)?;
 
@@ -145,7 +145,7 @@ fn main() {
 
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("MenuFacil Desktop")
+                .tooltip("MenuFácil | Desktop")
                 .menu(&tray_menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id().as_ref() {

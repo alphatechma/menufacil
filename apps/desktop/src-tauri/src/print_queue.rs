@@ -25,6 +25,7 @@ pub struct PrintJob {
     pub error_message: Option<String>,
     pub created_at: String,
     #[serde(skip)]
+    #[allow(dead_code)]
     pub data: Vec<u8>,
 }
 
