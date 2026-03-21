@@ -65,6 +65,8 @@ export class TableService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const table = await this.findById(id, tenantId);
+    // Delete related table_sessions first to avoid FK constraint violation
+    await this.tableRepo.query('DELETE FROM table_sessions WHERE table_id = $1', [id]);
     await this.tableRepo.remove(table);
   }
 
