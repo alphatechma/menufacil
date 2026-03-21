@@ -95,7 +95,8 @@ export function useWebSocket() {
       Notification.requestPermission();
     }
 
-    const socket = io('/', {
+    const apiUrl = localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host';
+    const socket = io(apiUrl, {
       path: '/socket.io',
       query: { tenantSlug },
       auth: { token },

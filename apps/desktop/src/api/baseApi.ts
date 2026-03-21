@@ -4,7 +4,7 @@ import type { RootState } from '@/store';
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host/api',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const { token, tenantSlug } = state.auth;

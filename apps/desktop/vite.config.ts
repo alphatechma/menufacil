@@ -27,18 +27,5 @@ export default defineConfig({
           port: 1421,
         }
       : undefined,
-    proxy: {
-      '/api': {
-        target: 'https://menufacil-api.mp1rvc.easypanel.host',
-        changeOrigin: true,
-        secure: true,
-      },
-      '/socket.io': {
-        target: 'https://menufacil-api.mp1rvc.easypanel.host',
-        changeOrigin: true,
-        secure: true,
-        ws: true,
-      },
-    },
   },
 });
