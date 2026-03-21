@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppSelector } from '@/store/hooks';
@@ -9,6 +9,7 @@ import { playNewOrderSound, playStatusUpdateSound } from '@/utils/sounds';
 
 export function useWebSocket() {
   const socketRef = useRef<Socket | null>(null);
+  const pendingOrdersRef = useRef<Set<string>>(new Set());
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
   const token = useAppSelector((s) => s.auth.token);
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
@@ -16,8 +17,9 @@ export function useWebSocket() {
 
   const handleNewOrder = useCallback(
     (order: any) => {
-      // Play sound
-      playNewOrderSound();
+      // Play sound (if enabled)
+      const soundEnabled = localStorage.getItem('desktop_sound') !== 'false';
+      if (soundEnabled) playNewOrderSound();
 
       // Show browser notification
       if (Notification.permission === 'granted') {
@@ -61,14 +63,25 @@ export function useWebSocket() {
         }
       }
 
+      // Track pending orders for intermittent sound
+      if (order.status === 'pending') {
+        pendingOrdersRef.current.add(order.id);
+      }
+
       // Invalidate RTK Query cache
       store.dispatch(baseApi.util.invalidateTags(['Orders', 'CashRegister']));
     },
     [updateOrderStatus],
   );
 
-  const handleStatusUpdated = useCallback((_data: any) => {
-    playStatusUpdateSound();
+  const handleStatusUpdated = useCallback((data: any) => {
+    const soundEnabled = localStorage.getItem('desktop_sound') !== 'false';
+    if (soundEnabled) playStatusUpdateSound();
+
+    // Remove from pending if no longer pending
+    if (data?.id && data?.status !== 'pending') {
+      pendingOrdersRef.current.delete(data.id);
+    }
 
     // Invalidate RTK Query cache
     store.dispatch(baseApi.util.invalidateTags(['Orders', 'CashRegister']));
@@ -102,6 +115,17 @@ export function useWebSocket() {
       socketRef.current = null;
     };
   }, [isAuthenticated, tenantSlug, token, handleNewOrder, handleStatusUpdated]);
+
+  // Intermittent sound for pending orders (every 5 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const soundEnabled = localStorage.getItem('desktop_sound') !== 'false';
+      if (soundEnabled && pendingOrdersRef.current.size > 0) {
+        playNewOrderSound();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return socketRef;
 }
