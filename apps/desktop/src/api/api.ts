@@ -71,6 +71,12 @@ export const api = baseApi.injectEndpoints({
       query: () => ({ url: '/tables' }),
       providesTags: ['Tables'],
     }),
+
+    // Create Customer
+    createCustomer: builder.mutation<any, { name: string; phone: string; email?: string }>({
+      query: (body) => ({ url: '/customers', method: 'POST', body }),
+      invalidatesTags: ['Customers'],
+    }),
   }),
 });
 
@@ -87,4 +93,5 @@ export const {
   useOpenCashRegisterMutation,
   useCloseCashRegisterMutation,
   useGetTablesQuery,
+  useCreateCustomerMutation,
 } = api;
