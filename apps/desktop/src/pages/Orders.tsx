@@ -86,10 +86,12 @@ function getTimeColor(order: any): string {
 }
 
 export default function Orders() {
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('pending');
   const [, setTick] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deliveryModalOrderId, setDeliveryModalOrderId] = useState<string | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10));
 
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery(undefined, {
     pollingInterval: 15000,
@@ -105,12 +107,23 @@ export default function Orders() {
 
   const filtered = useMemo(() => {
     return orders
-      .filter((o: any) => statusFilter === 'all' || o.status === statusFilter)
+      .filter((o: any) => {
+        if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+        // For "all" tab, filter by selected date
+        if (statusFilter === 'all' && dateFilter) {
+          const orderDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+          if (orderDate !== dateFilter) return false;
+        }
+        return true;
+      })
       .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [orders, statusFilter]);
+  }, [orders, statusFilter, dateFilter]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length };
+    const todayOrders = dateFilter
+      ? orders.filter((o: any) => new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) === dateFilter)
+      : orders;
+    const counts: Record<string, number> = { all: todayOrders.length };
     for (const tab of STATUS_TABS) if (tab.key !== 'all') counts[tab.key] = 0;
     for (const o of orders) {
       if (counts[o.status] !== undefined) counts[o.status]++;
@@ -169,8 +182,16 @@ export default function Orders() {
         </button>
       </div>
 
-      {/* Status Tabs */}
+      {/* Status Tabs + Date Filter */}
       <div className="flex items-center gap-1 mb-4 border-b border-gray-200 overflow-x-auto">
+        {statusFilter === 'all' && (
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="mr-2 px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 focus:border-orange-400 focus:outline-none"
+          />
+        )}
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.key}
@@ -266,11 +287,19 @@ export default function Orders() {
                     <span className="text-base font-bold text-gray-900">
                       {formatPrice(order.total || 0)}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      {order.created_at
-                        ? new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        : ''}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">
+                        {order.created_at
+                          ? new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+                          : ''}
+                      </span>
+                      <button
+                        onClick={() => setDetailOrderId(order.id)}
+                        className="text-xs text-primary font-medium hover:underline"
+                      >
+                        Detalhes
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -364,6 +393,109 @@ export default function Orders() {
           </div>
         </div>
       )}
+
+      {/* Order Detail Modal */}
+      {detailOrderId && (() => {
+        const order = orders.find((o: any) => o.id === detailOrderId);
+        if (!order) return null;
+        const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-gray-900">Pedido #{order.order_number}</h2>
+                  <span className={cn('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold', config.color)}>
+                    {config.icon} {config.label}
+                  </span>
+                </div>
+                <button onClick={() => setDetailOrderId(null)} className="p-1 text-gray-400 hover:text-gray-600"><XCircle className="w-5 h-5" /></button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {/* Customer */}
+                <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                    {(order.customer?.name || 'C').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">{order.customer?.name || order.customer_name || 'Cliente'}</p>
+                    {order.customer?.phone && <p className="text-xs text-gray-500">{order.customer.phone}</p>}
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
+                      {getOrderTypeIcon(order.order_type)} {getOrderTypeLabel(order.order_type)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Address */}
+                {order.order_type === 'delivery' && order.address_snapshot && (
+                  <div className="bg-blue-50 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-blue-700 mb-1 flex items-center gap-1"><Truck className="w-3 h-3" /> Endereco de entrega</p>
+                    <p className="text-sm text-blue-900">{order.address_snapshot.street}{order.address_snapshot.number ? `, ${order.address_snapshot.number}` : ''}</p>
+                    {order.address_snapshot.complement && <p className="text-xs text-blue-700">{order.address_snapshot.complement}</p>}
+                    {order.address_snapshot.neighborhood && <p className="text-xs text-blue-700">{order.address_snapshot.neighborhood}</p>}
+                  </div>
+                )}
+
+                {/* Table */}
+                {order.order_type === 'dine_in' && order.table && (
+                  <div className="bg-amber-50 rounded-xl p-3">
+                    <p className="text-sm font-bold text-amber-800 flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Mesa {order.table.number}</p>
+                  </div>
+                )}
+
+                {/* Items */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Itens</p>
+                  <div className="space-y-2">
+                    {order.items?.map((item: any, idx: number) => {
+                      const extras = item.extras || [];
+                      const unitPrice = Number(item.unit_price || 0);
+                      const extrasTotal = extras.reduce((s: number, e: any) => s + Number(e.extra_price || e.price || 0), 0);
+                      const lineTotal = (unitPrice + extrasTotal) * (item.quantity || 1);
+                      return (
+                        <div key={idx} className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{item.quantity}x {item.product_name || 'Produto'}</p>
+                            {item.variation_name && <p className="text-xs text-gray-500 ml-4">{item.variation_name}</p>}
+                            {extras.map((e: any, i: number) => <p key={i} className="text-xs text-gray-400 ml-4">+ {e.extra_name || e.name}</p>)}
+                            {item.notes && <p className="text-xs text-amber-600 ml-4 italic">Obs: {item.notes}</p>}
+                          </div>
+                          <span className="text-sm font-semibold text-gray-700">{formatPrice(lineTotal)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Totals */}
+                <div className="border-t border-gray-100 pt-3 space-y-1">
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span>{formatPrice(order.subtotal || 0)}</span></div>
+                  {Number(order.delivery_fee) > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Taxa entrega</span><span>{formatPrice(order.delivery_fee)}</span></div>}
+                  {Number(order.discount) > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Desconto</span><span className="text-green-600">-{formatPrice(order.discount)}</span></div>}
+                  <div className="flex justify-between text-base font-bold pt-1 border-t border-gray-100"><span>Total</span><span className="text-primary">{formatPrice(order.total || 0)}</span></div>
+                </div>
+
+                {/* Payment + timestamps */}
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1 text-xs text-gray-600">
+                  <p>Pagamento: <span className="font-medium text-gray-900">{order.payment_method === 'cash' ? 'Dinheiro' : order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'credit_card' ? 'Credito' : order.payment_method === 'debit_card' ? 'Debito' : order.payment_method || '-'}</span></p>
+                  {order.change_for > 0 && <p>Troco para: {formatPrice(order.change_for)}</p>}
+                  <p>Criado: {new Date(order.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+                  {order.delivery_person && <p>Entregador: <span className="font-medium text-gray-900">{order.delivery_person.name}</span></p>}
+                </div>
+
+                {/* Notes */}
+                {order.notes && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p className="text-xs font-bold text-amber-800">Obs: {order.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
