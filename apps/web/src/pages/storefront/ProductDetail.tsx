@@ -342,7 +342,7 @@ export default function ProductDetail() {
             <div className="mb-3">
               <p className="text-sm text-gray-400">
                 {minVariations === maxVariations
-                  ? `Escolha ${maxVariations} ${maxVariations === 1 ? 'sabor' : 'sabores'} (pode repetir)`
+                  ? `Escolha ${maxVariations} ${maxVariations === 1 ? 'sabor' : 'sabores'} — pode ser um so sabor ou sabores diferentes`
                   : minVariations > 0
                     ? `Escolha de ${minVariations} a ${maxVariations} sabores`
                     : `Escolha ate ${maxVariations} sabores`}
