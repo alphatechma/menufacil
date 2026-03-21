@@ -204,7 +204,7 @@ function ProductModal({
     const errs: string[] = [];
     if (hasVariations && isRequired) {
       if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opcao');
-      else if (isMultiSelect && totalSelectedParts < minVariations) errs.push(`Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'}`);
+      else if (isMultiSelect && totalSelectedParts < minVariations) errs.push(`Escolha ${minVariations} ${minVariations === 1 ? 'sabor' : 'sabores'} para completar. Falta${minVariations - totalSelectedParts === 1 ? '' : 'm'} ${minVariations - totalSelectedParts}.`);
     }
     if (product.extra_groups) {
       for (const group of product.extra_groups) {
@@ -246,10 +246,29 @@ function ProductModal({
               {isRequired && <span className="text-red-500 text-xs font-bold">*</span>}
             </div>
             {isMultiSelect && (
-              <p className="text-xs text-gray-500 mb-2">
-                {minVariations > 0 ? `De ${minVariations} a ${maxVariations} partes` : `Ate ${maxVariations} partes`}
-                {totalSelectedParts > 0 && <span className="ml-1 font-semibold text-primary">({totalSelectedParts}/{maxVariations})</span>}
-              </p>
+              <div className="mb-2">
+                <p className="text-xs text-gray-500">
+                  {minVariations === maxVariations
+                    ? `Escolha ${maxVariations} ${maxVariations === 1 ? 'sabor' : 'sabores'} (pode repetir)`
+                    : minVariations > 0
+                      ? `Escolha de ${minVariations} a ${maxVariations} sabores`
+                      : `Escolha ate ${maxVariations} sabores`}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${Math.min(100, (totalSelectedParts / maxVariations) * 100)}%`, backgroundColor: totalSelectedParts >= minVariations ? '#FF6B35' : '#f59e0b' }} />
+                  </div>
+                  <span className={`text-xs font-bold ${totalSelectedParts >= minVariations ? 'text-green-600' : 'text-amber-600'}`}>
+                    {totalSelectedParts}/{maxVariations}
+                  </span>
+                </div>
+                {totalSelectedParts > 0 && totalSelectedParts < minVariations && (
+                  <p className="text-[10px] text-amber-600 mt-0.5">Falta{minVariations - totalSelectedParts === 1 ? '' : 'm'} {minVariations - totalSelectedParts}</p>
+                )}
+                {totalSelectedParts === maxVariations && (
+                  <p className="text-[10px] text-green-600 mt-0.5 font-medium">Selecao completa!</p>
+                )}
+              </div>
             )}
             <div className="space-y-1">
               {product.variations.map((v: any) => {

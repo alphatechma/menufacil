@@ -204,10 +204,29 @@ function ProductModal({
               {isRequired && <span className="text-red-500 text-xs font-bold">*</span>}
             </div>
             {isMultiSelect && (
-              <p className="text-xs text-muted-foreground mb-2">
-                {minVariations > 0 ? `De ${minVariations} a ${maxVariations} partes` : `Ate ${maxVariations} partes`}
-                {totalSelectedParts > 0 && <span className="ml-1 font-semibold text-primary">({totalSelectedParts}/{maxVariations})</span>}
-              </p>
+              <div className="mb-2">
+                <p className="text-xs text-muted-foreground">
+                  {minVariations === maxVariations
+                    ? `Escolha ${maxVariations} ${maxVariations === 1 ? 'sabor' : 'sabores'} (pode repetir)`
+                    : minVariations > 0
+                      ? `Escolha de ${minVariations} a ${maxVariations} sabores`
+                      : `Escolha ate ${maxVariations} sabores`}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full transition-all duration-300 bg-primary" style={{ width: `${Math.min(100, (totalSelectedParts / maxVariations) * 100)}%`, backgroundColor: totalSelectedParts >= minVariations ? undefined : '#f59e0b' }} />
+                  </div>
+                  <span className={cn('text-xs font-bold', totalSelectedParts >= minVariations ? 'text-green-600' : 'text-amber-600')}>
+                    {totalSelectedParts}/{maxVariations}
+                  </span>
+                </div>
+                {totalSelectedParts > 0 && totalSelectedParts < minVariations && (
+                  <p className="text-[10px] text-amber-600 mt-0.5">Falta{minVariations - totalSelectedParts === 1 ? '' : 'm'} {minVariations - totalSelectedParts}</p>
+                )}
+                {totalSelectedParts === maxVariations && (
+                  <p className="text-[10px] text-green-600 mt-0.5 font-medium">Selecao completa!</p>
+                )}
+              </div>
             )}
             <div className="space-y-1">
               {product.variations.map((v: any) => {
