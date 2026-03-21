@@ -32,6 +32,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 };
 
 const STATUS_TABS = [
+  { key: 'all', label: 'Todos' },
   { key: 'pending', label: 'Pendentes' },
   { key: 'confirmed', label: 'Confirmados' },
   { key: 'preparing', label: 'Em Preparo' },
@@ -85,7 +86,7 @@ function getTimeColor(order: any): string {
 }
 
 export default function Orders() {
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [, setTick] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deliveryModalOrderId, setDeliveryModalOrderId] = useState<string | null>(null);
@@ -104,13 +105,13 @@ export default function Orders() {
 
   const filtered = useMemo(() => {
     return orders
-      .filter((o: any) => o.status === statusFilter)
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .filter((o: any) => statusFilter === 'all' || o.status === statusFilter)
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [orders, statusFilter]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const tab of STATUS_TABS) counts[tab.key] = 0;
+    const counts: Record<string, number> = { all: orders.length };
+    for (const tab of STATUS_TABS) if (tab.key !== 'all') counts[tab.key] = 0;
     for (const o of orders) {
       if (counts[o.status] !== undefined) counts[o.status]++;
     }
