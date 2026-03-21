@@ -36,7 +36,7 @@ export default function DesktopLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
-      <aside className="flex w-16 shrink-0 flex-col items-center bg-gray-900 py-4">
+      <aside className="flex w-16 shrink-0 flex-col items-center bg-gray-900 py-4 z-50">
         {/* Logo */}
         <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
           <UtensilsCrossed className="h-5 w-5 text-white" />
@@ -65,7 +65,7 @@ export default function DesktopLayout() {
                   )}
                   <Icon className="h-5 w-5" />
                   {/* Tooltip */}
-                  <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-full ml-3 z-[100] whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                     {label}
                   </span>
                 </>
@@ -88,7 +88,7 @@ export default function DesktopLayout() {
             title="Sair"
           >
             <LogOut className="h-4 w-4" />
-            <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute left-full ml-3 z-[100] whitespace-nowrap rounded-lg bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               Sair
             </span>
           </button>
