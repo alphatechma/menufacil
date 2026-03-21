@@ -48,3 +48,5 @@ temp/
 # Private keys
 *.key
 *-private.pem
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/target/
