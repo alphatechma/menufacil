@@ -8,6 +8,8 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             #[cfg(debug_assertions)]
             {
@@ -28,7 +30,7 @@ fn main() {
                 .icon(app.default_window_icon().unwrap().clone())
                 .tooltip("MenuFacil Desktop")
                 .menu(&tray_menu)
-                .menu_on_left_click(false)
+                .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "open" => {
                         if let Some(window) = app.get_webview_window("main") {
