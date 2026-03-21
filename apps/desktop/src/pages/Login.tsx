@@ -5,18 +5,12 @@ import { loginSuccess } from '@/store/slices/authSlice';
 import { useAppDispatch } from '@/store/hooks';
 import { cn } from '@/utils/cn';
 
-const SLUG_STORAGE_KEY = 'menufacil-desktop-slug';
-
 export default function Login() {
   const dispatch = useAppDispatch();
   const [adminLogin, { isLoading }] = useAdminLoginMutation();
 
-  const savedSlug = localStorage.getItem(SLUG_STORAGE_KEY) ?? '';
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [tenantSlug, setTenantSlug] = useState(savedSlug);
-  const [rememberSlug, setRememberSlug] = useState(!!savedSlug);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,25 +18,22 @@ export default function Login() {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password || !tenantSlug) {
+    if (!email || !password) {
       setError('Preencha todos os campos.');
       return;
     }
 
     try {
-      if (rememberSlug) {
-        localStorage.setItem(SLUG_STORAGE_KEY, tenantSlug);
-      } else {
-        localStorage.removeItem(SLUG_STORAGE_KEY);
-      }
-
       const result = await adminLogin({ email, password }).unwrap();
 
       dispatch(
         loginSuccess({
           user: result.user,
           token: result.access_token,
-          tenantSlug,
+          tenantSlug: result.tenant_slug,
+          modules: result.modules,
+          permissions: result.permissions,
+          plan: result.plan,
         }),
       );
     } catch (err: any) {
@@ -72,27 +63,11 @@ export default function Login() {
           className="rounded-2xl border border-gray-800 bg-gray-800/60 p-8 shadow-xl backdrop-blur-sm"
         >
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-xl bg-danger/10 p-4 text-sm text-danger">
+            <div className="mb-6 flex items-start gap-3 rounded-xl bg-red-500/10 p-4 text-sm text-red-400">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
-
-          {/* Tenant Slug */}
-          <div className="mb-5">
-            <label htmlFor="slug" className="mb-1.5 block text-sm font-medium text-gray-300">
-              Identificador do restaurante
-            </label>
-            <input
-              id="slug"
-              type="text"
-              value={tenantSlug}
-              onChange={(e) => setTenantSlug(e.target.value.toLowerCase().replace(/\s/g, ''))}
-              placeholder="meu-restaurante"
-              className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              autoFocus
-            />
-          </div>
 
           {/* Email */}
           <div className="mb-5">
@@ -106,11 +81,12 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@restaurante.com"
               className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              autoFocus
             />
           </div>
 
           {/* Password */}
-          <div className="mb-5">
+          <div className="mb-6">
             <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-300">
               Senha
             </label>
@@ -133,17 +109,6 @@ export default function Login() {
               </button>
             </div>
           </div>
-
-          {/* Remember */}
-          <label className="mb-6 flex items-center gap-2 text-sm text-gray-400 select-none">
-            <input
-              type="checkbox"
-              checked={rememberSlug}
-              onChange={(e) => setRememberSlug(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-primary accent-primary"
-            />
-            Lembrar identificador
-          </label>
 
           {/* Submit */}
           <button

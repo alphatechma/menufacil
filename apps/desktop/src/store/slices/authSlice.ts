@@ -13,6 +13,9 @@ interface AuthState {
   user: DesktopUser | null;
   tenantSlug: string | null;
   token: string | null;
+  modules: string[];
+  permissions: string[];
+  plan: any;
   isAuthenticated: boolean;
 }
 
@@ -34,6 +37,9 @@ const initialState: AuthState = {
   user: persisted.user ?? null,
   tenantSlug: persisted.tenantSlug ?? null,
   token: persisted.token ?? null,
+  modules: (persisted as any).modules ?? [],
+  permissions: (persisted as any).permissions ?? [],
+  plan: (persisted as any).plan ?? null,
   isAuthenticated: persisted.isAuthenticated ?? false,
 };
 
@@ -47,18 +53,27 @@ const authSlice = createSlice({
         user: DesktopUser;
         token: string;
         tenantSlug: string;
+        modules?: string[];
+        permissions?: string[];
+        plan?: any;
       }>,
     ) {
-      const { user, token, tenantSlug } = action.payload;
+      const { user, token, tenantSlug, modules, permissions, plan } = action.payload;
       state.user = user;
       state.token = token;
       state.tenantSlug = tenantSlug;
+      state.modules = modules || [];
+      state.permissions = permissions || [];
+      state.plan = plan || null;
       state.isAuthenticated = true;
     },
     logout(state) {
       state.user = null;
       state.token = null;
       state.tenantSlug = null;
+      state.modules = [];
+      state.permissions = [];
+      state.plan = null;
       state.isAuthenticated = false;
     },
   },
