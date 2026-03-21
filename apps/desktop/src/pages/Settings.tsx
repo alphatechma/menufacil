@@ -3,7 +3,9 @@ import {
   Settings as SettingsIcon, Globe, Store, Clock, Truck, CreditCard, Bell,
   Printer, MessageCircle, WifiOff, Save, ExternalLink,
   ShoppingBag, UtensilsCrossed, RefreshCw, AlertCircle, CheckCircle2, XCircle, Loader2,
+  Download, ArrowUpCircle,
 } from 'lucide-react';
+import { check } from '@tauri-apps/plugin-updater';
 import {
   useGetTenantBySlugQuery, useUpdateTenantMutation,
   useGetWhatsappStatusQuery, useConnectWhatsappMutation, useDisconnectWhatsappMutation,
@@ -107,6 +109,42 @@ export default function Settings() {
   const [paymentConfig, setPaymentConfig] = useState<Record<string, any>>({});
   const [cancelTimeLimit, setCancelTimeLimit] = useState(5);
   const [notifSettings, setNotifSettings] = useState<Record<string, boolean>>({ sound_enabled: true, sound_new_order: true, sound_out_for_delivery: true, sound_delivered: true, push_enabled: false });
+
+  // Auto-update state
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'up-to-date' | 'error'>('idle');
+  const [updateVersion, setUpdateVersion] = useState('');
+  const [updateError, setUpdateError] = useState('');
+  const currentVersion = '0.1.0';
+
+  const checkForUpdates = async () => {
+    setUpdateStatus('checking');
+    setUpdateError('');
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateVersion(update.version);
+        setUpdateStatus('available');
+      } else {
+        setUpdateStatus('up-to-date');
+      }
+    } catch (err) {
+      setUpdateError(String(err));
+      setUpdateStatus('error');
+    }
+  };
+
+  const downloadAndInstall = async () => {
+    setUpdateStatus('downloading');
+    try {
+      const update = await check();
+      if (update) {
+        await update.downloadAndInstall();
+      }
+    } catch (err) {
+      setUpdateError(String(err));
+      setUpdateStatus('error');
+    }
+  };
 
   const [autoConfirm, setAutoConfirm] = useState(() => localStorage.getItem('desktop_auto_confirm') === 'true');
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem('desktop_auto_print') !== 'false');
@@ -271,6 +309,70 @@ export default function Settings() {
               ))}
               <div className="h-px bg-gray-100" />
               <button onClick={() => window.open('https://menufacil.maistechtecnologia.com.br/login', '_blank')} className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark"><ExternalLink className="w-4 h-4" /> Abrir Painel Web completo</button>
+            </div>
+
+            {/* Auto-update section */}
+            <h3 className="text-base font-bold text-gray-900 pt-4">Atualizacoes</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Versao atual</p>
+                  <p className="text-xs text-gray-500">v{currentVersion}</p>
+                </div>
+                <button
+                  onClick={checkForUpdates}
+                  disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+                  className="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95"
+                >
+                  {updateStatus === 'checking' ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4" /> Verificar atualizacoes</>
+                  )}
+                </button>
+              </div>
+
+              {updateStatus === 'up-to-date' && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <p className="text-sm text-green-700">Voce esta usando a versao mais recente.</p>
+                </div>
+              )}
+
+              {updateStatus === 'available' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpCircle className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">Nova versao disponivel: v{updateVersion}</p>
+                      <p className="text-xs text-blue-600">Atual: v{currentVersion}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={downloadAndInstall}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95"
+                  >
+                    <Download className="w-4 h-4" /> Atualizar agora
+                  </button>
+                </div>
+              )}
+
+              {updateStatus === 'downloading' && (
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                  <p className="text-sm text-blue-700">Baixando e instalando atualizacao...</p>
+                </div>
+              )}
+
+              {updateStatus === 'error' && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-red-700">Erro ao verificar atualizacoes.</p>
+                    {updateError && <p className="text-xs text-red-500 mt-1">{updateError}</p>}
+                  </div>
+                </div>
+              )}
             </div>
           </>)}
 

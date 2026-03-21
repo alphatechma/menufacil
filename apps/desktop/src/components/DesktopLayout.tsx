@@ -12,8 +12,11 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { cn } from '@/utils/cn';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useOfflineCache } from '@/hooks/useOfflineCache';
+import { useOfflineOrders } from '@/hooks/useOfflineOrders';
+import SyncIndicator from '@/components/SyncIndicator';
 import { useGetTenantBySlugQuery, useGetOrdersQuery } from '@/api/api';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 
 const NAV_ITEMS = [
   { to: '/', icon: Calculator, label: 'PDV', id: 'pdv' },
@@ -30,7 +33,24 @@ export default function DesktopLayout() {
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
 
   // WebSocket for real-time order updates
-  useWebSocket();
+  const socketRef = useWebSocket();
+
+  // Offline cache & orders
+  const { syncStatus, lastSyncTime, syncCache } = useOfflineCache();
+  const { pendingCount: pendingOfflineOrders, syncPendingOrders, isSyncing: isSyncingOrders } = useOfflineOrders();
+
+  // Auto-sync offline orders when WebSocket reconnects
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    const handleConnect = () => {
+      if (pendingOfflineOrders > 0) {
+        syncPendingOrders();
+      }
+    };
+    socket.on('connect', handleConnect);
+    return () => { socket.off('connect', handleConnect); };
+  }, [socketRef, pendingOfflineOrders, syncPendingOrders]);
 
   // Fetch tenant info for display name
   const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
@@ -153,10 +173,14 @@ export default function DesktopLayout() {
                 {pendingOrdersCount} pendente{pendingOrdersCount !== 1 ? 's' : ''}
               </span>
             )}
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              Conectado
-            </div>
+            <SyncIndicator
+              syncStatus={syncStatus}
+              pendingOrdersCount={pendingOfflineOrders}
+              lastSyncTime={lastSyncTime}
+              onSync={syncCache}
+              onSyncOrders={syncPendingOrders}
+              isSyncingOrders={isSyncingOrders}
+            />
           </div>
         </header>
 
