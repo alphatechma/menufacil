@@ -10,6 +10,7 @@ import KDS from '@/pages/KDS';
 // CashRegister is integrated into PDV
 // PrinterManager is now inside Settings
 import Settings from '@/pages/Settings';
+import Menu from '@/pages/Menu';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route index element={<PDV />} />
         <Route path="orders" element={<Orders />} />
         <Route path="kds" element={<KDS />} />
+        <Route path="menu" element={<Menu />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

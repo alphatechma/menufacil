@@ -6,15 +6,18 @@ import {
   ChefHat,
   Settings,
   LogOut,
+  Package,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { cn } from '@/utils/cn';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 const NAV_ITEMS = [
   { to: '/', icon: Calculator, label: 'PDV' },
   { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
   { to: '/kds', icon: ChefHat, label: 'KDS' },
+  { to: '/menu', icon: Package, label: 'Cardapio' },
   { to: '/settings', icon: Settings, label: 'Configurações' },
 ];
 
@@ -23,6 +26,9 @@ export default function DesktopLayout() {
   const navigate = useNavigate();
   const user = useAppSelector((s) => s.auth.user);
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
+
+  // WebSocket for real-time order updates
+  useWebSocket();
 
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
 

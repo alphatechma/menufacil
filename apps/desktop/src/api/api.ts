@@ -84,6 +84,23 @@ export const api = baseApi.injectEndpoints({
       invalidatesTags: ['Tenant'],
     }),
 
+    // Delivery Persons
+    getDeliveryPersons: builder.query<any[], void>({
+      query: () => ({ url: '/delivery-persons' }),
+      providesTags: ['DeliveryPersons'],
+    }),
+
+    assignDeliveryPerson: builder.mutation<void, { id: string; delivery_person_id: string }>({
+      query: ({ id, ...body }) => ({ url: `/orders/${id}/delivery-person`, method: 'PUT', body }),
+      invalidatesTags: ['Orders'],
+    }),
+
+    // Product update
+    updateProduct: builder.mutation<void, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/products/${id}`, method: 'PUT', body: data }),
+      invalidatesTags: ['Products'],
+    }),
+
     // WhatsApp
     getWhatsappStatus: builder.query<any, void>({
       query: () => ({ url: '/whatsapp/instance/status' }),
@@ -115,4 +132,7 @@ export const {
   useGetWhatsappStatusQuery,
   useConnectWhatsappMutation,
   useDisconnectWhatsappMutation,
+  useGetDeliveryPersonsQuery,
+  useAssignDeliveryPersonMutation,
+  useUpdateProductMutation,
 } = api;
