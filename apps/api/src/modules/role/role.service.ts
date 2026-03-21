@@ -74,6 +74,9 @@ export class RoleService {
     if (role.is_system_default) {
       throw new BadRequestException('Cannot delete system default roles');
     }
+    // Delete role_permissions and nullify users referencing this role to avoid FK constraint violation
+    await this.roleRepository.query('DELETE FROM role_permissions WHERE role_id = $1', [id]);
+    await this.roleRepository.query('UPDATE users SET role_id = NULL WHERE role_id = $1', [id]);
     await this.roleRepository.remove(role);
   }
 }

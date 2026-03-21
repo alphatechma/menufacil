@@ -51,6 +51,8 @@ export class UserRepository {
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
+    // Nullify delivery_persons referencing this user to avoid FK constraint violation
+    await this.repo.query('UPDATE delivery_persons SET user_id = NULL WHERE user_id = $1', [id]);
     await this.repo.update({ id, tenant_id: tenantId }, { is_active: false });
   }
 }

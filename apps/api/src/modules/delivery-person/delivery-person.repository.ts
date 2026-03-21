@@ -45,6 +45,8 @@ export class DeliveryPersonRepository {
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
+    // Nullify orders referencing this delivery person to avoid FK constraint violation
+    await this.repo.query('UPDATE orders SET delivery_person_id = NULL WHERE delivery_person_id = $1', [id]);
     await this.repo.delete({ id, tenant_id: tenantId });
   }
 }

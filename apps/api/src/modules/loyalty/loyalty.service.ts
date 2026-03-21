@@ -52,6 +52,8 @@ export class LoyaltyService {
   async removeReward(id: string, tenantId: string): Promise<void> {
     const reward = await this.rewardRepo.findOne({ where: { id, tenant_id: tenantId } });
     if (!reward) throw new NotFoundException('Reward not found');
+    // Delete redemptions referencing this reward to avoid FK constraint violation
+    await this.redemptionRepo.delete({ reward_id: id });
     await this.rewardRepo.delete(id);
   }
 

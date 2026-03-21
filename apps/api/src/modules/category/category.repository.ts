@@ -41,6 +41,8 @@ export class CategoryRepository {
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
+    // Nullify products referencing this category to avoid FK constraint violation
+    await this.repo.query('UPDATE products SET category_id = NULL WHERE category_id = $1', [id]);
     await this.repo.delete({ id, tenant_id: tenantId });
   }
 }

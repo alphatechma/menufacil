@@ -98,7 +98,9 @@ export class ProductRepository {
   }
 
   async removeExtraGroup(id: string, tenantId: string): Promise<void> {
+    // Delete extras first, then product_extra_groups links, then the group itself
     await this.extraRepo.delete({ group_id: id });
+    await this.extraGroupRepo.query('DELETE FROM product_extra_groups WHERE extra_group_id = $1', [id]);
     await this.extraGroupRepo.delete({ id, tenant_id: tenantId });
   }
 
