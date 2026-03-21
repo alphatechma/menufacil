@@ -363,6 +363,7 @@ export default function POS() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
+      if (p.is_active === false) return false;
       if (selectedCategory && p.category_id !== selectedCategory) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -656,7 +657,7 @@ export default function POS() {
               <button onClick={() => setSelectedCategory(null)} className={cn('px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors', !selectedCategory ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
                 Todos
               </button>
-              {categories.map((cat: any) => (
+              {categories.filter((c: any) => c.is_active !== false).map((cat: any) => (
                 <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={cn('px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors', selectedCategory === cat.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
                   {cat.name}
                 </button>
