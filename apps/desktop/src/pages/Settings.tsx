@@ -12,6 +12,7 @@ import {
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { cn } from '@/utils/cn';
+import PrinterManager from './PrinterManager';
 
 const DAYS = [
   { key: 'monday', label: 'Segunda' }, { key: 'tuesday', label: 'Terca' },
@@ -48,45 +49,6 @@ function SaveBtn({ onClick, loading, label }: { onClick: () => void; loading?: b
   );
 }
 
-// Print queue mock (will be replaced by Rust native in Phase 3)
-function PrintQueuePanel() {
-  const [queue] = useState<{ id: string; name: string; status: 'pending' | 'printing' | 'done' | 'error'; time: string }[]>([]);
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-gray-500">Fila de impressao do sistema.</p>
-      {queue.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          <Printer className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">Nenhuma impressao na fila</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {queue.map((job) => (
-            <div key={job.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
-              <div className="flex items-center gap-3">
-                {job.status === 'pending' && <Clock className="w-4 h-4 text-gray-400" />}
-                {job.status === 'printing' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
-                {job.status === 'done' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                {job.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{job.name}</p>
-                  <p className="text-[10px] text-gray-400">{job.time}</p>
-                </div>
-              </div>
-              <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                job.status === 'pending' ? 'bg-gray-100 text-gray-600' :
-                job.status === 'printing' ? 'bg-blue-100 text-blue-600' :
-                job.status === 'done' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              )}>
-                {job.status === 'pending' ? 'Na fila' : job.status === 'printing' ? 'Imprimindo' : job.status === 'done' ? 'Concluido' : 'Erro'}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function Settings() {
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
@@ -262,16 +224,7 @@ export default function Settings() {
 
           {activeTab === 'impressora' && (<>
             <h3 className="text-base font-bold text-gray-900">Impressora</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div><p className="text-sm font-medium text-gray-900">Largura do papel</p><p className="text-xs text-gray-500">Tamanho da bobina termica</p></div>
-                <select value={paperWidth} onChange={(e) => { const v = parseInt(e.target.value); setPaperWidth(v); ds('menufacil_paper_width', String(v)); }} className="px-3 py-2 rounded-xl border border-gray-200 text-sm"><option value={48}>80mm (PDV)</option><option value={32}>58mm (compacta)</option><option value={30}>57mm (maquininha)</option></select>
-              </div>
-              <div className="h-px bg-gray-100" />
-              <h4 className="text-sm font-bold text-gray-900">Fila de Impressao</h4>
-              <PrintQueuePanel />
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4"><p className="text-sm font-medium text-amber-800">Impressao nativa USB</p><p className="text-xs text-amber-600 mt-1">Sera disponibilizada em breve (Phase 3).</p></div>
-            </div>
+            <PrinterManager />
           </>)}
 
           {activeTab === 'whatsapp' && (<>

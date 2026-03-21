@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { invoke } from '@tauri-apps/api/core';
 import { useAppSelector } from '@/store/hooks';
 import { baseApi } from '@/api/baseApi';
 import { useUpdateOrderStatusMutation } from '@/api/api';
@@ -30,6 +31,34 @@ export function useWebSocket() {
       const autoConfirm = localStorage.getItem('desktop_auto_confirm') === 'true';
       if (autoConfirm && order.id) {
         updateOrderStatus({ id: order.id, status: 'confirmed' }).catch(() => {});
+      }
+
+      // Auto-print if enabled
+      const shouldAutoPrint = localStorage.getItem('desktop_auto_print') !== 'false';
+      if (shouldAutoPrint) {
+        const defaultPrinter = localStorage.getItem('menufacil_default_printer');
+        const kitchenPrinter = localStorage.getItem('menufacil_kitchen_printer');
+        const tenantName = localStorage.getItem('menufacil_tenant_name') || 'MenuFacil';
+        const paperWidth = parseInt(localStorage.getItem('menufacil_paper_width') || '80');
+        const orderJson = JSON.stringify(order);
+
+        if (defaultPrinter) {
+          invoke('print_receipt', {
+            orderJson,
+            printerKey: defaultPrinter,
+            tenantName,
+            paperWidth,
+          }).catch(() => {});
+        }
+
+        if (kitchenPrinter && kitchenPrinter !== defaultPrinter) {
+          invoke('print_receipt', {
+            orderJson,
+            printerKey: kitchenPrinter,
+            tenantName,
+            paperWidth,
+          }).catch(() => {});
+        }
       }
 
       // Invalidate RTK Query cache
