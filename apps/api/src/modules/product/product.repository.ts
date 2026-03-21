@@ -63,6 +63,10 @@ export class ProductRepository {
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
+    // Delete related records to avoid FK constraints
+    await this.repo.query('DELETE FROM product_recipes WHERE product_id = $1', [id]);
+    await this.repo.query('DELETE FROM product_extra_groups WHERE product_id = $1', [id]);
+    await this.repo.query('DELETE FROM product_variations WHERE product_id = $1', [id]);
     await this.repo.delete({ id, tenant_id: tenantId });
   }
 
