@@ -19,6 +19,9 @@ const OrderList = lazy(() => import('@/pages/admin/orders/OrderList'));
 const OrderDetail = lazy(() => import('@/pages/admin/orders/OrderDetail'));
 const POS = lazy(() => import('@/pages/admin/POS'));
 const KDS = lazy(() => import('@/pages/admin/KDS'));
+const InventoryList = lazy(() => import('@/pages/admin/inventory/InventoryList'));
+const InventoryForm = lazy(() => import('@/pages/admin/inventory/InventoryForm'));
+const StockMovements = lazy(() => import('@/pages/admin/inventory/StockMovements'));
 const DeliveryTracker = lazy(() => import('@/pages/admin/DeliveryTracker'));
 const MyDeliveries = lazy(() => import('@/pages/admin/MyDeliveries'));
 const CustomerList = lazy(() => import('@/pages/admin/customers/CustomerList'));
@@ -107,6 +110,10 @@ export default function App() {
           <Route path="products/new" element={<ProductForm />} />
           <Route path="products/:id/edit" element={<ProductForm />} />
           <Route path="extras" element={<ExtraGroupList />} />
+          <Route path="inventory" element={<InventoryList />} />
+          <Route path="inventory/new" element={<InventoryForm />} />
+          <Route path="inventory/:id" element={<InventoryForm />} />
+          <Route path="inventory/movements" element={<StockMovements />} />
           <Route path="pos" element={<POS />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/:id" element={<OrderDetail />} />

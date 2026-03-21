@@ -31,6 +31,7 @@ import { FloorPlanModule } from './modules/floor-plan/floor-plan.module';
 import { QzTrayModule } from './modules/qz-tray/qz-tray.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { UnitModule } from './modules/unit/unit.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { UnitModule } from './modules/unit/unit.module';
     QzTrayModule,
     WhatsappModule,
     UnitModule,
+    InventoryModule,
   ],
 })
 export class AppModule implements NestModule {

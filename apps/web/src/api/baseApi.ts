@@ -39,6 +39,7 @@ export const baseApi = createApi({
     'Units',
     'ExtraGroups',
     'CashRegister',
+    'Inventory',
   ],
   endpoints: () => ({}),
 });

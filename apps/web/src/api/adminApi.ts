@@ -265,6 +265,52 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: ['CashRegister'],
     }),
 
+    // Inventory
+    getInventoryItems: builder.query<any[], void>({
+      query: () => ({ url: '/inventory/items', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+    getInventoryItem: builder.query<any, string>({
+      query: (id) => ({ url: `/inventory/items/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+    getLowStockItems: builder.query<any[], void>({
+      query: () => ({ url: '/inventory/items/low-stock', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+    createInventoryItem: builder.mutation<any, any>({
+      query: (data) => ({ url: '/inventory/items', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+    updateInventoryItem: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/inventory/items/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+    deleteInventoryItem: builder.mutation<void, string>({
+      query: (id) => ({ url: `/inventory/items/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+    getStockMovements: builder.query<any[], string | void>({
+      query: (itemId) => ({ url: `/inventory/movements${itemId ? `?item_id=${itemId}` : ''}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+    createStockMovement: builder.mutation<any, any>({
+      query: (data) => ({ url: '/inventory/movements', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+    getProductRecipes: builder.query<any[], string>({
+      query: (productId) => ({ url: `/inventory/recipes/${productId}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+    setProductRecipe: builder.mutation<any, any>({
+      query: (data) => ({ url: '/inventory/recipes', method: 'POST', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+    removeProductRecipe: builder.mutation<void, string>({
+      query: (id) => ({ url: `/inventory/recipes/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Inventory'],
+    }),
+
     // Roles & Permissions
     getRoles: builder.query<any[], void>({
       query: () => ({ url: '/roles', meta: { authContext: 'admin' as const } }),
@@ -569,6 +615,17 @@ export const {
   useOpenCashRegisterMutation,
   useCloseCashRegisterMutation,
   useGetCashRegisterHistoryQuery,
+  useGetInventoryItemsQuery,
+  useGetInventoryItemQuery,
+  useGetLowStockItemsQuery,
+  useCreateInventoryItemMutation,
+  useUpdateInventoryItemMutation,
+  useDeleteInventoryItemMutation,
+  useGetStockMovementsQuery,
+  useCreateStockMovementMutation,
+  useGetProductRecipesQuery,
+  useSetProductRecipeMutation,
+  useRemoveProductRecipeMutation,
   useGetStaffQuery,
   useGetStaffMemberQuery,
   useCreateStaffMutation,

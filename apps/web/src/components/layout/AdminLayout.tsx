@@ -35,6 +35,7 @@ import {
   Sun,
   Moon,
   Calculator,
+  Warehouse,
   type LucideIcon,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -82,6 +83,7 @@ const sidebarGroups: SidebarGroup[] = [
       { to: '/admin/categories', icon: FolderTree, label: 'Categorias', module: 'categories', permission: 'category:read' },
       { to: '/admin/products', icon: Package, label: 'Produtos', module: 'products', permission: 'product:read' },
       { to: '/admin/extras', icon: LayoutGrid, label: 'Extras', module: 'products', permission: 'product:read' },
+      { to: '/admin/inventory', icon: Warehouse, label: 'Estoque', module: 'products', permission: 'product:read' },
     ],
   },
   {
