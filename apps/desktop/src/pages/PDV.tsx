@@ -31,6 +31,7 @@ import {
   useCloseCashRegisterMutation,
   useGetTablesQuery,
   useGetTenantBySlugQuery,
+  useGetOrdersQuery,
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { cn } from '@/utils/cn';
@@ -352,6 +353,7 @@ export default function PDV() {
   const [openRegister, { isLoading: openingRegister }] = useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] = useCloseCashRegisterMutation();
   const { data: tables = [] } = useGetTablesQuery();
+  const { data: allOrders = [] } = useGetOrdersQuery();
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
   const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
 
@@ -520,7 +522,14 @@ export default function PDV() {
         </div>
         <div>
           {isCashRegisterOpen ? (
-            <button onClick={() => setShowCloseRegister(true)} className="text-xs font-medium text-gray-400 hover:text-gray-700 flex items-center gap-1 transition-colors">
+            <button onClick={() => {
+              const pendingOrders = allOrders.filter((o: any) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+              if (pendingOrders.length > 0) {
+                alert(`Nao e possivel fechar o caixa com ${pendingOrders.length} pedido(s) pendente(s).\n\nFinalize ou cancele todos os pedidos antes de fechar.`);
+                return;
+              }
+              setShowCloseRegister(true);
+            }} className="text-xs font-medium text-gray-400 hover:text-gray-700 flex items-center gap-1 transition-colors">
               <Lock className="w-3.5 h-3.5" /> Fechar Caixa
             </button>
           ) : (

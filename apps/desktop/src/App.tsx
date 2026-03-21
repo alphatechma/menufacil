@@ -7,7 +7,7 @@ import DesktopLayout from '@/components/DesktopLayout';
 import PDV from '@/pages/PDV';
 import Orders from '@/pages/Orders';
 import KDS from '@/pages/KDS';
-import CashRegister from '@/pages/CashRegister';
+// CashRegister is integrated into PDV
 import PrinterManager from '@/pages/PrinterManager';
 import Settings from '@/pages/Settings';
 
@@ -44,7 +44,6 @@ function AppRoutes() {
         <Route index element={<PDV />} />
         <Route path="orders" element={<Orders />} />
         <Route path="kds" element={<KDS />} />
-        <Route path="cash" element={<CashRegister />} />
         <Route path="printer" element={<PrinterManager />} />
         <Route path="settings" element={<Settings />} />
       </Route>

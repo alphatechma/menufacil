@@ -4,7 +4,6 @@ import {
   Calculator,
   ShoppingCart,
   ChefHat,
-  Receipt,
   Printer,
   Settings,
   LogOut,
@@ -17,7 +16,6 @@ const NAV_ITEMS = [
   { to: '/', icon: Calculator, label: 'PDV' },
   { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
   { to: '/kds', icon: ChefHat, label: 'KDS' },
-  { to: '/cash', icon: Receipt, label: 'Caixa' },
   { to: '/printer', icon: Printer, label: 'Impressora' },
   { to: '/settings', icon: Settings, label: 'Configurações' },
 ];
