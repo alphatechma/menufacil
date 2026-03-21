@@ -188,9 +188,10 @@ export default function Settings() {
               {[{ key: 'delivery', label: 'Entrega', desc: 'Pedidos para entrega', icon: Truck }, { key: 'pickup', label: 'Retirada', desc: 'Cliente retira no restaurante', icon: ShoppingBag }, { key: 'dine_in', label: 'Consumo no Local', desc: 'Mesas com QR Code', icon: UtensilsCrossed }].map((mode) => (
                 <div key={mode.key} className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><mode.icon className="w-5 h-5 text-primary" /></div><div><p className="text-sm font-medium text-gray-900">{mode.label}</p><p className="text-xs text-gray-500">{mode.desc}</p></div></div>
-                  <Toggle checked={(orderModes as any)[mode.key]} onChange={(v) => { const m = { ...orderModes, [mode.key]: v }; setOrderModes(m); save({ order_modes: m }); }} />
+                  <Toggle checked={(orderModes as any)[mode.key]} onChange={(v) => setOrderModes((prev) => ({ ...prev, [mode.key]: v }))} />
                 </div>
               ))}
+              <div className="flex justify-end pt-2"><SaveBtn onClick={() => save({ order_modes: orderModes })} loading={saving} /></div>
             </div>
           </>)}
 
@@ -217,8 +218,9 @@ export default function Settings() {
             <h3 className="text-base font-bold text-gray-900">Notificacoes</h3>
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
               {[{ key: 'sound_enabled', label: 'Sons ativados', desc: 'Habilitar sons de notificacao' }, { key: 'sound_new_order', label: 'Novo pedido', desc: 'Tocar som ao receber pedido' }, { key: 'sound_out_for_delivery', label: 'Saiu para entrega', desc: 'Som ao sair para entrega' }, { key: 'sound_delivered', label: 'Entregue', desc: 'Som ao confirmar entrega' }, { key: 'push_enabled', label: 'Push notifications', desc: 'Notificacoes push' }].map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-1"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={!!(notifSettings as any)[item.key]} onChange={(v) => { const s = { ...notifSettings, [item.key]: v }; setNotifSettings(s); save({ notification_settings: s }); }} /></div>
+                <div key={item.key} className="flex items-center justify-between py-1"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={!!(notifSettings as any)[item.key]} onChange={(v) => setNotifSettings((prev) => ({ ...prev, [item.key]: v }))} /></div>
               ))}
+              <div className="flex justify-end pt-2"><SaveBtn onClick={() => save({ notification_settings: notifSettings })} loading={saving} /></div>
             </div>
           </>)}
 
@@ -257,10 +259,19 @@ export default function Settings() {
                 { key: 'desktop_sound', label: 'Sons de notificacao', desc: 'Tocar som quando pedidos chegarem', value: soundEnabled, set: setSoundEnabled },
                 { key: 'desktop_minimize_tray', label: 'Minimizar para bandeja', desc: 'App continua rodando ao fechar', value: minimizeToTray, set: setMinimizeToTray },
               ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-2"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={item.value} onChange={(v) => { item.set(v); ds(item.key, String(v)); }} /></div>
+                <div key={item.key} className="flex items-center justify-between py-2"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={item.value} onChange={(v) => item.set(v)} /></div>
               ))}
               <div className="h-px bg-gray-100" />
               <button onClick={() => window.open('https://menufacil.maistechtecnologia.com.br/login', '_blank')} className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark"><ExternalLink className="w-4 h-4" /> Abrir Painel Web completo</button>
+              <div className="flex justify-end pt-2">
+                <SaveBtn onClick={() => {
+                  ds('desktop_auto_confirm', String(autoConfirm));
+                  ds('desktop_auto_print', String(autoPrint));
+                  ds('desktop_sound', String(soundEnabled));
+                  ds('desktop_minimize_tray', String(minimizeToTray));
+                  showToast('Configuracoes salvas!');
+                }} label="Salvar Configuracoes" />
+              </div>
             </div>
 
             {/* Auto-update section */}
