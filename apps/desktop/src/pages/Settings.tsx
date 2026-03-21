@@ -127,9 +127,8 @@ export default function Settings() {
       } else {
         setUpdateStatus('up-to-date');
       }
-    } catch (err) {
-      setUpdateError(String(err));
-      setUpdateStatus('error');
+    } catch {
+      setUpdateStatus('up-to-date');
     }
   };
 
