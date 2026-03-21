@@ -29,12 +29,14 @@ export default defineConfig({
       : undefined,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://menufacil-api.mp1rvc.easypanel.host',
         changeOrigin: true,
+        secure: true,
       },
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: 'https://menufacil-api.mp1rvc.easypanel.host',
         changeOrigin: true,
+        secure: true,
         ws: true,
       },
     },
