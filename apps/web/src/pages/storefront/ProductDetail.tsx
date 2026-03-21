@@ -170,7 +170,7 @@ export default function ProductDetail() {
         if (totalSelectedParts < minVariations) {
           const falta = minVariations - totalSelectedParts;
           errs.push(
-            `Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'} (falta${falta === 1 ? '' : 'm'} ${falta})`,
+            `Escolha ${minVariations} ${minVariations === 1 ? 'sabor' : 'sabores'} para completar sua pizza. Falta${falta === 1 ? '' : 'm'} ${falta}.`,
           );
         }
       }
@@ -339,16 +339,39 @@ export default function ProductDetail() {
             {isRequired && <span className="text-red-500 ml-1 text-sm">*</span>}
           </h3>
           {isMultiSelect && (
-            <p className="text-sm text-gray-400 mb-3">
-              {minVariations > 0
-                ? `Selecione de ${minVariations} a ${maxVariations} partes`
-                : `Selecione ate ${maxVariations} partes`}
-              {totalSelectedParts > 0 && (
-                <span className="ml-1 font-medium text-gray-600">
-                  ({totalSelectedParts}/{maxVariations})
+            <div className="mb-3">
+              <p className="text-sm text-gray-400">
+                {minVariations === maxVariations
+                  ? `Escolha ${maxVariations} ${maxVariations === 1 ? 'sabor' : 'sabores'} (pode repetir)`
+                  : minVariations > 0
+                    ? `Escolha de ${minVariations} a ${maxVariations} sabores`
+                    : `Escolha ate ${maxVariations} sabores`}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 bg-gray-100 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(100, (totalSelectedParts / maxVariations) * 100)}%`,
+                      backgroundColor: totalSelectedParts >= minVariations ? 'var(--tenant-primary)' : '#f59e0b',
+                    }}
+                  />
+                </div>
+                <span className={`text-xs font-bold ${totalSelectedParts >= minVariations ? 'text-green-600' : 'text-amber-600'}`}>
+                  {totalSelectedParts}/{maxVariations}
                 </span>
+              </div>
+              {totalSelectedParts < minVariations && totalSelectedParts > 0 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Falta{minVariations - totalSelectedParts === 1 ? '' : 'm'} {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'parte' : 'partes'} para completar
+                </p>
               )}
-            </p>
+              {totalSelectedParts === maxVariations && (
+                <p className="text-xs text-green-600 mt-1 font-medium">
+                  Selecao completa!
+                </p>
+              )}
+            </div>
           )}
           <div className="space-y-2">
             {product.variations.map((variation: any) => {
