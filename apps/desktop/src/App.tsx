@@ -26,6 +26,7 @@ const Staff = lazy(() => import('@/pages/Staff'));
 const Loyalty = lazy(() => import('@/pages/Loyalty'));
 const Inventory = lazy(() => import('@/pages/Inventory'));
 const Units = lazy(() => import('@/pages/Units'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
 
 function PageLoader() {
   return (
@@ -83,6 +84,7 @@ function AppRoutes() {
         <Route path="loyalty" element={<Suspense fallback={<PageLoader />}><Loyalty /></Suspense>} />
         <Route path="inventory" element={<Suspense fallback={<PageLoader />}><Inventory /></Suspense>} />
         <Route path="units" element={<Suspense fallback={<PageLoader />}><Units /></Suspense>} />
+        <Route path="analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
       </Route>
     </Routes>

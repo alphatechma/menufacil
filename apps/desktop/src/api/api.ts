@@ -309,6 +309,24 @@ export const api = baseApi.injectEndpoints({
     disconnectWhatsapp: builder.mutation<any, void>({
       query: () => ({ url: '/whatsapp/instance/disconnect', method: 'POST' }),
     }),
+
+    // Analytics
+    getAnalyticsOverview: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/analytics/overview', params }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsProducts: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/analytics/products', params }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsCustomers: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/analytics/customers', params }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsDelivery: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/analytics/delivery', params }),
+      providesTags: ['Analytics'],
+    }),
   }),
 });
 
@@ -400,4 +418,9 @@ export const {
   useGetWhatsappStatusQuery,
   useConnectWhatsappMutation,
   useDisconnectWhatsappMutation,
+  // Analytics
+  useGetAnalyticsOverviewQuery,
+  useGetAnalyticsProductsQuery,
+  useGetAnalyticsCustomersQuery,
+  useGetAnalyticsDeliveryQuery,
 } = api;

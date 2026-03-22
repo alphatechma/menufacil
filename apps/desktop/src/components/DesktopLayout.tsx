@@ -4,7 +4,7 @@ import {
   UtensilsCrossed, Calculator, ShoppingCart, ChefHat, Settings, LogOut,
   BarChart3, FolderTree, Package, ListPlus, MapPin, Bike, LayoutGrid,
   CalendarCheck, Users, Ticket, Heart, Warehouse, UsersRound, ChevronDown,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, PieChart,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -42,6 +42,9 @@ const SIDEBAR_GROUPS: NavGroup[] = [
     { to: '/customers', icon: Users, label: 'Clientes' },
     { to: '/coupons', icon: Ticket, label: 'Cupons' },
     { to: '/loyalty', icon: Heart, label: 'Fidelidade' },
+  ]},
+  { key: 'reports', label: 'Relatorios', icon: BarChart3, items: [
+    { to: '/analytics', icon: PieChart, label: 'Analytics' },
   ]},
   { key: 'admin', label: 'Administracao', icon: Settings, items: [
     { to: '/inventory', icon: Warehouse, label: 'Estoque' },
