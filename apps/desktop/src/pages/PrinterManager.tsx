@@ -16,7 +16,7 @@ function StatusBadge({ status }: { status: QueueJob['status'] }) {
   const config = {
     pending: { bg: 'bg-gray-100 text-gray-600', icon: Clock, label: 'Na fila' },
     printing: { bg: 'bg-blue-100 text-blue-600', icon: Loader2, label: 'Imprimindo' },
-    done: { bg: 'bg-green-100 text-green-600', icon: CheckCircle2, label: 'Concluido' },
+    done: { bg: 'bg-green-100 text-green-600', icon: CheckCircle2, label: 'Concluído' },
     error: { bg: 'bg-red-100 text-red-600', icon: XCircle, label: 'Erro' },
   }[status];
 
@@ -95,7 +95,7 @@ export default function PrinterManager() {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-bold text-gray-900">Impressoras USB</h4>
-            <p className="text-xs text-gray-500">Detecte impressoras termicas conectadas via USB</p>
+            <p className="text-xs text-gray-500">Detecte impressoras térmicas conectadas via USB</p>
           </div>
           <button
             onClick={handleDetect}
@@ -139,7 +139,7 @@ export default function PrinterManager() {
                 <div className="flex items-center gap-2">
                   {defaultPrinter === p.key && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                      Padrao
+                      Padrão
                     </span>
                   )}
                   {kitchenPrinter === p.key && (
@@ -156,7 +156,7 @@ export default function PrinterManager() {
                         : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100',
                     )}
                   >
-                    Padrao
+                    Padrão
                   </button>
                   <button
                     onClick={() => handleSetKitchen(p.key)}
@@ -218,7 +218,7 @@ export default function PrinterManager() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-gray-900">Largura do papel</p>
-            <p className="text-xs text-gray-500">Tamanho da bobina termica</p>
+            <p className="text-xs text-gray-500">Tamanho da bobina térmica</p>
           </div>
           <select
             value={paperWidth}
@@ -238,15 +238,15 @@ export default function PrinterManager() {
       <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-bold text-gray-900">Fila de Impressao</h4>
-            <p className="text-xs text-gray-500">Trabalhos de impressao recentes</p>
+            <h4 className="text-sm font-bold text-gray-900">Fila de Impressão</h4>
+            <p className="text-xs text-gray-500">Trabalhos de impressão recentes</p>
           </div>
           {completedCount > 0 && (
             <button
               onClick={clearPrintQueue}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
             >
-              <Trash2 className="w-3 h-3" /> Limpar concluidos
+              <Trash2 className="w-3 h-3" /> Limpar concluídos
             </button>
           )}
         </div>
@@ -254,7 +254,7 @@ export default function PrinterManager() {
         {queue.length === 0 ? (
           <div className="text-center py-6 text-gray-400">
             <Printer className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nenhuma impressao na fila</p>
+            <p className="text-sm">Nenhuma impressão na fila</p>
           </div>
         ) : (
           <div className="space-y-2">

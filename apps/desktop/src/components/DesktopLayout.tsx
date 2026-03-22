@@ -43,13 +43,13 @@ const SIDEBAR_GROUPS: NavGroup[] = [
     { to: '/coupons', icon: Ticket, label: 'Cupons' },
     { to: '/loyalty', icon: Heart, label: 'Fidelidade' },
   ]},
-  { key: 'reports', label: 'Relatorios', icon: BarChart3, items: [
+  { key: 'reports', label: 'Relatórios', icon: BarChart3, items: [
     { to: '/analytics', icon: PieChart, label: 'Analytics' },
   ]},
-  { key: 'admin', label: 'Administracao', icon: Settings, items: [
+  { key: 'admin', label: 'Administração', icon: Settings, items: [
     { to: '/inventory', icon: Warehouse, label: 'Estoque' },
     { to: '/staff', icon: UsersRound, label: 'Equipe' },
-    { to: '/settings', icon: Settings, label: 'Configuracoes' },
+    { to: '/settings', icon: Settings, label: 'Configurações' },
   ]},
 ];
 
