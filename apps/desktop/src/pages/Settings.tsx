@@ -6,6 +6,7 @@ import {
   Download, ArrowUpCircle,
 } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
+import { getVersion } from '@tauri-apps/api/app';
 import {
   useGetTenantBySlugQuery, useUpdateTenantMutation,
   useGetWhatsappStatusQuery, useConnectWhatsappMutation, useDisconnectWhatsappMutation,
@@ -79,7 +80,11 @@ export default function Settings() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'up-to-date' | 'error'>('idle');
   const [updateVersion, setUpdateVersion] = useState('');
   const [updateError, setUpdateError] = useState('');
-  const currentVersion = '0.1.0';
+  const [currentVersion, setCurrentVersion] = useState('...');
+
+  useEffect(() => {
+    getVersion().then((v) => setCurrentVersion(v)).catch(() => setCurrentVersion('?'));
+  }, []);
 
   const checkForUpdates = async () => {
     setUpdateStatus('checking');
@@ -92,8 +97,14 @@ export default function Settings() {
       } else {
         setUpdateStatus('up-to-date');
       }
-    } catch {
-      setUpdateStatus('up-to-date');
+    } catch (err) {
+      const msg = String(err);
+      if (msg.includes('Could not fetch') || msg.includes('404') || msg.includes('latest.json')) {
+        setUpdateStatus('up-to-date');
+      } else {
+        setUpdateError(msg);
+        setUpdateStatus('error');
+      }
     }
   };
 
