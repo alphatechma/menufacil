@@ -40,15 +40,12 @@ jobs:
           - platform: ubuntu-22.04
             args: ''
             rust_targets: ''
-            artifact_name: linux-sigs
           - platform: macos-latest
             args: '--target universal-apple-darwin'
             rust_targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-            artifact_name: macos-sigs
           - platform: windows-latest
             args: ''
             rust_targets: ''
-            artifact_name: windows-sigs
 
     runs-on: ${{ matrix.platform }}
 
@@ -93,36 +90,15 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
-          includeUpdaterJson: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
 
-      - name: Collect signature and updater files
-        shell: bash
-        run: |
-          mkdir -p /tmp/updater-artifacts
-          find . -name "*.sig" -type f -not -path "*/node_modules/*" -not -path "*/deps/*" -exec cp {} /tmp/updater-artifacts/ \;
-          find . \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" \) -not -path "*/node_modules/*" -not -path "*/deps/*" -exec cp {} /tmp/updater-artifacts/ \;
-          echo "=== Collected files ==="
-          ls -la /tmp/updater-artifacts/ || echo "No files found"
-
-      - name: Upload updater artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: /tmp/updater-artifacts/
-          if-no-files-found: warn
-          retention-days: 1
-
+  # Generate latest.json from release assets (fallback if tauri-action didn't)
   updater-json:
     needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Download all signature artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/all-sigs
-          merge-multiple: true
-
-      - name: Generate and upload latest.json
+      - name: Generate latest.json from release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -132,34 +108,43 @@ jobs:
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
           DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          echo "=== Downloaded artifacts ==="
-          ls -laR /tmp/all-sigs/ || echo "No artifacts"
+          # Check if tauri-action already created a valid latest.json
+          mkdir -p /tmp/check
+          gh release download "$TAG" --repo "$REPO" --pattern "latest.json" --dir /tmp/check 2>/dev/null || true
+          if [ -f /tmp/check/latest.json ]; then
+            PLATFORMS=$(python3 -c "import json; print(len(json.load(open('/tmp/check/latest.json')).get('platforms',{})))" 2>/dev/null || echo "0")
+            if [ "$PLATFORMS" != "0" ]; then
+              echo "tauri-action already created latest.json with $PLATFORMS platforms. Done!"
+              cat /tmp/check/latest.json
+              exit 0
+            fi
+          fi
 
-          # Also upload .sig files to the release
-          for f in /tmp/all-sigs/*.sig; do
-            [ -f "$f" ] || continue
-            echo "Uploading to release: $(basename $f)"
-            gh release upload "$TAG" "$f" --repo "$REPO" --clobber || true
-          done
+          echo "Building latest.json manually from release assets..."
 
-          # Upload updater bundles too
-          for f in /tmp/all-sigs/*.tar.gz /tmp/all-sigs/*.nsis.zip /tmp/all-sigs/*.msi.zip; do
-            [ -f "$f" ] || continue
-            echo "Uploading bundle: $(basename $f)"
-            gh release upload "$TAG" "$f" --repo "$REPO" --clobber || true
-          done
+          # List all release assets
+          echo "=== Release assets ==="
+          gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name'
 
-          # Read signatures for latest.json
-          python3 << 'PYEOF'
+          # Download .sig files from the release
+          mkdir -p /tmp/sigs
+          gh release download "$TAG" --repo "$REPO" --pattern "*.sig" --dir /tmp/sigs 2>/dev/null || true
+          echo "=== Downloaded .sig files ==="
+          ls -la /tmp/sigs/ 2>/dev/null || echo "No .sig files in release"
+
+          # If no .sig files in release, try to read them from the updater bundles
+          SIG_COUNT=$(ls /tmp/sigs/*.sig 2>/dev/null | wc -l)
+
+          python3 << PYEOF
           import json, os, glob
 
-          sigs_dir = "/tmp/all-sigs"
-          version = os.environ.get("VERSION", "0.0.0")
-          tag = os.environ.get("TAG", "")
-          base_url = os.environ.get("BASE_URL", "")
-          date = os.environ.get("DATE", "")
+          version = "${VERSION}"
+          tag = "${TAG}"
+          base_url = "${BASE_URL}"
+          date = "${DATE}"
 
           platforms = {}
+          sigs_dir = "/tmp/sigs"
 
           for f in glob.glob(os.path.join(sigs_dir, "*.sig")):
               name = os.path.basename(f)
@@ -167,47 +152,24 @@ jobs:
                   sig = fh.read().strip()
               if not sig:
                   continue
+              print(f"Found sig: {name}")
 
-              print(f"Processing: {name}")
-
-              if "AppImage.tar.gz.sig" in name:
-                  platforms["linux-x86_64"] = {
-                      "signature": sig,
-                      "url": f"{base_url}/MenuFacil_{version}_amd64.AppImage.tar.gz"
-                  }
+              if "AppImage.tar.gz.sig" in name and "menu-facil" not in name:
+                  platforms["linux-x86_64"] = {"signature": sig, "url": f"{base_url}/MenuFacil_{version}_amd64.AppImage.tar.gz"}
               elif "app.tar.gz.sig" in name:
-                  platforms["darwin-aarch64"] = {
-                      "signature": sig,
-                      "url": f"{base_url}/MenuFacil_universal.app.tar.gz"
-                  }
-                  platforms["darwin-x86_64"] = {
-                      "signature": sig,
-                      "url": f"{base_url}/MenuFacil_universal.app.tar.gz"
-                  }
+                  platforms["darwin-aarch64"] = {"signature": sig, "url": f"{base_url}/MenuFacil_universal.app.tar.gz"}
+                  platforms["darwin-x86_64"] = {"signature": sig, "url": f"{base_url}/MenuFacil_universal.app.tar.gz"}
               elif "nsis.zip.sig" in name:
-                  platforms["windows-x86_64"] = {
-                      "signature": sig,
-                      "url": f"{base_url}/MenuFacil_{version}_x64-setup.nsis.zip"
-                  }
-              elif "setup.exe.sig" in name and "windows-x86_64" not in platforms:
-                  platforms["windows-x86_64"] = {
-                      "signature": sig,
-                      "url": f"{base_url}/MenuFacil_{version}_x64-setup.nsis.zip"
-                  }
+                  platforms["windows-x86_64"] = {"signature": sig, "url": f"{base_url}/MenuFacil_{version}_x64-setup.nsis.zip"}
 
-          data = {
-              "version": version,
-              "notes": f"MenuFácil Desktop {tag}",
-              "pub_date": date,
-              "platforms": platforms
-          }
+          data = {"version": version, "notes": f"MenuFácil Desktop {tag}", "pub_date": date, "platforms": platforms}
 
           with open("/tmp/latest.json", "w") as f:
               json.dump(data, f, indent=2)
 
-          print(f"\nGenerated latest.json with {len(platforms)} platform(s):")
+          print(f"\nGenerated latest.json with {len(platforms)} platform(s)")
           print(json.dumps(data, indent=2))
           PYEOF
 
           gh release upload "$TAG" /tmp/latest.json --repo "$REPO" --clobber
-          echo "Done! latest.json uploaded."
+          echo "Done!"
