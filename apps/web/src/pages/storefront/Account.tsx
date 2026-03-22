@@ -232,6 +232,7 @@ export default function Account() {
       }).unwrap();
 
       setShowAddressForm(false);
+      notify.success('Endereco adicionado com sucesso!');
       setNewAddress({
         label: '',
         street: '',
@@ -242,8 +243,8 @@ export default function Account() {
         state: '',
         zip_code: '',
       });
-    } catch {
-      // Error handled by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao adicionar endereco.');
     }
     setAddressLoading(false);
   };

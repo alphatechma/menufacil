@@ -10,6 +10,7 @@ import {
   useGetCategoriesQuery,
 } from '@/api/adminApi';
 import { cn } from '@/utils/cn';
+import { useNotify } from '@/hooks/useNotify';
 
 const PROMO_TYPES = [
   { value: 'combo', label: 'Combo' },
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export default function PromotionFormModal({ open, onClose, promotion }: Props) {
+  const notify = useNotify();
   const [createPromotion, { isLoading: isCreating }] = useCreatePromotionMutation();
   const [updatePromotion, { isLoading: isUpdating }] = useUpdatePromotionMutation();
   const { data: products = [] } = useGetProductsQuery();
@@ -149,9 +151,10 @@ export default function PromotionFormModal({ open, onClose, promotion }: Props) 
       } else {
         await createPromotion(data).unwrap();
       }
+      notify.success(isEditing ? 'Promocao atualizada com sucesso!' : 'Promocao criada com sucesso!');
       onClose();
-    } catch {
-      // error handled by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar promocao.');
     }
   };
 

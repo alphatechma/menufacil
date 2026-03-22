@@ -14,6 +14,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useGetCustomerQuery, useGetCustomerWalletQuery, useAddWalletCreditMutation } from '@/api/adminApi';
+import { useNotify } from '@/hooks/useNotify';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -35,6 +36,7 @@ const ORDER_STATUS_LABELS: Record<string, { label: string; variant: 'default' | 
 };
 
 export default function CustomerDetail() {
+  const notify = useNotify();
   const { id } = useParams<{ id: string }>();
   const { data: customer, isLoading } = useGetCustomerQuery(id!);
   const { data: walletInfo } = useGetCustomerWalletQuery(id!, { skip: !id });
@@ -55,8 +57,9 @@ export default function CustomerDetail() {
       setCreditAmount('');
       setCreditDescription('');
       setShowCreditForm(false);
-    } catch {
-      // error handled by RTK Query
+      notify.success('Credito adicionado com sucesso!');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao adicionar credito.');
     }
   };
 

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetCustomersQuery, useCreateAdminOrderMutation, useCreateCustomerMutation, useGetCashRegisterQuery, useOpenCashRegisterMutation, useCloseCashRegisterMutation, useGetTablesQuery, useGetTenantBySlugQuery } from '@/api/adminApi';
 import { useAppSelector as useAppSelectorStore } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -327,6 +328,7 @@ function ProductModal({
 
 // ── Main POS Component ──
 export default function POS() {
+  const notify = useNotify();
   const navigate = useNavigate();
   const { data: products = [] } = useGetProductsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
@@ -477,7 +479,7 @@ export default function POS() {
       setCart([]); setSelectedCustomer(null); setNotes(''); setDeliveryNotes(''); setChangeFor(''); setSelectedTableId('');
       setPaymentSplits([{ method: 'cash', amount: 0 }]);
       setTimeout(() => setOrderSuccess(null), 4000);
-    } catch (err) { console.error('Erro ao criar pedido:', err); }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao criar pedido.'); }
   };
 
   return (
@@ -797,7 +799,7 @@ export default function POS() {
                   <div className="flex gap-1.5">
                     <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); }}>Cancelar</Button>
                     <Button size="sm" className="h-7 text-xs" loading={creatingCustomer} disabled={!newCustomerName.trim() || !newCustomerPhone.trim()} onClick={async () => {
-                      try { const c = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap(); setSelectedCustomer(c); setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); } catch { /* */ }
+                      try { const c = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap(); setSelectedCustomer(c); setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); } catch (err: any) { notify.error(err?.data?.message || 'Erro ao cadastrar cliente.'); }
                     }}>Salvar</Button>
                   </div>
                 </div>

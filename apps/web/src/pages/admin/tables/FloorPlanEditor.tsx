@@ -25,6 +25,7 @@ import {
   useCreateFloorPlanMutation,
   useUpdateFloorPlanMutation,
 } from '@/api/adminApi';
+import { useNotify } from '@/hooks/useNotify';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -111,6 +112,7 @@ const DEFAULT_ITEM_SIZE = 80;
 // ---------------------------------------------------------------------------
 
 export default function FloorPlanEditor() {
+  const notify = useNotify();
   // --- API hooks ---
   const { data: tables = [], isLoading: tablesLoading } = useGetTablesQuery();
   const { data: floorPlans = [], isLoading: plansLoading } = useGetFloorPlansQuery();
@@ -247,10 +249,11 @@ export default function FloorPlanEditor() {
     try {
       await updateFloorPlan({ id: selectedPlanId, data: { layout: layoutItems } }).unwrap();
       setHasUnsavedChanges(false);
-    } catch {
-      // RTK Query handles error state
+      notify.success('Layout salvo com sucesso!');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar layout.');
     }
-  }, [selectedPlanId, layoutItems, updateFloorPlan]);
+  }, [selectedPlanId, layoutItems, updateFloorPlan, notify]);
 
   const handleCreatePlan = useCallback(async () => {
     if (!newPlanName.trim()) return;
@@ -261,10 +264,11 @@ export default function FloorPlanEditor() {
       if (result && typeof result === 'object' && 'id' in result) {
         setSelectedPlanId((result as { id: string }).id);
       }
-    } catch {
-      // RTK Query handles error state
+      notify.success('Planta criada com sucesso!');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao criar planta.');
     }
-  }, [newPlanName, createFloorPlan]);
+  }, [newPlanName, createFloorPlan, notify]);
 
   const handleCanvasClick = useCallback(() => {
     if (!dragState) {

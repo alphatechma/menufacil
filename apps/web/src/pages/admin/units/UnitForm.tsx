@@ -19,6 +19,7 @@ import {
   useGetTenantBySlugQuery,
 } from '@/api/adminApi';
 import { useAppSelector } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 
 const schema = z.object({
@@ -56,6 +57,7 @@ const DEFAULT_HOURS: BusinessHours = {
 };
 
 export default function UnitForm() {
+  const notify = useNotify();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -120,8 +122,9 @@ export default function UnitForm() {
       } else {
         await createUnit(payload).unwrap();
       }
+      notify.success(isEditing ? 'Unidade atualizada com sucesso!' : 'Unidade criada com sucesso!');
       navigate('/admin/units');
-    } catch { /* */ }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao salvar unidade.'); }
   };
 
   if (isEditing && loadingUnit) {

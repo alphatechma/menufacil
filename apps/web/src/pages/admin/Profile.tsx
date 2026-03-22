@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Mail, Shield, Lock, Save, Check, KeyRound } from 'lucide-react';
 import { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation } from '@/api/adminApi';
+import { useNotify } from '@/hooks/useNotify';
 import { profileSchema, type ProfileFormData, passwordChangeSchema, type PasswordChangeFormData } from '@/schemas/admin/profileSchema';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
@@ -45,6 +46,7 @@ const ACTION_LABELS: Record<string, string> = {
 const getRoleLabel = (role: string) => SYSTEM_ROLE_LABELS[role] || role;
 
 export default function Profile() {
+  const notify = useNotify();
   const { data: profile, isLoading } = useGetProfileQuery();
   const [updateProfile, { isLoading: isSavingName, error: nameError }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isSavingPassword, error: passwordError }] = useChangePasswordMutation();
@@ -102,9 +104,10 @@ export default function Profile() {
     try {
       await updateProfile({ id: profile.id, name: data.name }).unwrap();
       setNameSuccess('Nome atualizado com sucesso!');
+      notify.success('Nome atualizado com sucesso!');
       setTimeout(() => setNameSuccess(''), 3000);
-    } catch {
-      // Error is captured by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao atualizar nome.');
     }
   };
 
@@ -115,10 +118,11 @@ export default function Profile() {
         new_password: data.new_password,
       }).unwrap();
       setPasswordSuccess('Senha alterada com sucesso!');
+      notify.success('Senha alterada com sucesso!');
       resetPassword();
       setTimeout(() => setPasswordSuccess(''), 3000);
-    } catch {
-      // Error is captured by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao alterar senha. Verifique sua senha atual.');
     }
   };
 

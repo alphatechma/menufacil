@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
+import { useNotify } from '@/hooks/useNotify';
 
 const tableSchema = z.object({
   number: z.coerce
@@ -31,6 +32,7 @@ const tableSchema = z.object({
 type TableFormData = z.infer<typeof tableSchema>;
 
 export default function TableForm() {
+  const notify = useNotify();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -81,9 +83,10 @@ export default function TableForm() {
       } else {
         await createTable(payload).unwrap();
       }
+      notify.success(isEditing ? 'Mesa atualizada com sucesso!' : 'Mesa criada com sucesso!');
       navigate('/admin/tables');
-    } catch {
-      // Error is captured by RTK Query and displayed via ErrorAlert
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar mesa.');
     }
   };
 

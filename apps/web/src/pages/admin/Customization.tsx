@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, AlertCircle, Eye, Palette, Type, Image as ImageIcon, Plus, X } from 'lucide-react';
 import { useGetTenantBySlugQuery, useUpdateTenantMutation } from '@/api/adminApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { setTenantSlug } from '@/store/slices/adminAuthSlice';
 import { customizationSchema, type CustomizationFormData } from '@/schemas/admin/customizationSchema';
 import { FormField } from '@/components/ui/FormField';
@@ -28,6 +29,7 @@ function buildGradientCSS(colors: (string | null)[]): string {
 }
 
 export default function Customization() {
+  const notify = useNotify();
   const dispatch = useAppDispatch();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const { data: tenant, isLoading } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
@@ -116,12 +118,14 @@ export default function Customization() {
       }
 
       setSuccessMessage('Personalizacao salva com sucesso!');
+      notify.success('Personalizacao salva com sucesso!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       const msg = err?.data?.message || '';
       if (msg.toLowerCase().includes('slug')) {
         setSlugError('Este slug ja esta em uso. Escolha outro.');
       }
+      notify.error(msg || 'Erro ao salvar personalizacao.');
     }
   };
 

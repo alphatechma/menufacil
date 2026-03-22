@@ -5,6 +5,7 @@ import { Save, Volume2, VolumeX, Bell, Truck, Store, UtensilsCrossed, Crown, Pac
 import { useGetTenantBySlugQuery, useUpdateTenantMutation, useConnectWhatsappMutation, useDisconnectWhatsappMutation, useGetWhatsappStatusQuery } from '@/api/adminApi';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 import { settingsSchema, type SettingsFormData } from '@/schemas/admin/settingsSchema';
 import { FormField } from '@/components/ui/FormField';
@@ -152,6 +153,7 @@ function WhatsappSettingsTab() {
 }
 
 export default function Settings() {
+  const notify = useNotify();
   const dispatch = useAppDispatch();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const modules = useAppSelector((state) => state.adminAuth.modules);
@@ -288,6 +290,7 @@ export default function Settings() {
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
+    notify.success(msg);
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
@@ -304,8 +307,8 @@ export default function Settings() {
         },
       }).unwrap();
       showSuccess('Configuracoes gerais salvas com sucesso!');
-    } catch {
-      // Error is captured by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar configuracoes gerais.');
     }
   };
 
@@ -319,8 +322,9 @@ export default function Settings() {
         data: { business_hours: businessHours },
       }).unwrap();
       showSuccess('Horarios de funcionamento salvos com sucesso!');
-    } catch {
+    } catch (err: any) {
       setHoursError('Erro ao salvar horarios de funcionamento.');
+      notify.error(err?.data?.message || 'Erro ao salvar horarios de funcionamento.');
     } finally {
       setSavingHours(false);
     }
@@ -347,8 +351,8 @@ export default function Settings() {
         data: { order_modes: updated },
       }).unwrap();
       showSuccess('Modo de pedido atualizado com sucesso!');
-    } catch {
-      // Revert on error
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao atualizar modo de pedido.');
       setOrderModes((prev) => ({ ...prev, [mode]: !checked }));
     } finally {
       setSavingModes(false);
@@ -364,8 +368,8 @@ export default function Settings() {
         data: { payment_config: paymentConfig },
       }).unwrap();
       showSuccess('Configuracoes de pagamento salvas com sucesso!');
-    } catch {
-      // ignore
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar configuracoes de pagamento.');
     } finally {
       setSavingPayment(false);
     }
@@ -380,7 +384,7 @@ export default function Settings() {
         data: { cancel_time_limit: cancelTimeLimit },
       }).unwrap();
       showSuccess('Parametros salvos com sucesso!');
-    } catch { /* ignore */ }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao salvar parametros.'); }
     finally { setSavingParams(false); }
   };
 

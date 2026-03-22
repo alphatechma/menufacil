@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useUploadImageMutation } from '@/api/adminApi';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 interface ImageUploadProps {
@@ -10,6 +11,7 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
+  const notify = useNotify();
   const [uploadImage, { isLoading }] = useUploadImageMutation();
   const [dragActive, setDragActive] = useState(false);
 
@@ -20,8 +22,8 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
       try {
         const result = await uploadImage(formData).unwrap();
         onChange(result.url);
-      } catch {
-        // Error handled by RTK Query
+      } catch (err: any) {
+        notify.error(err?.data?.message || 'Erro ao enviar imagem.');
       }
     },
     [uploadImage, onChange],

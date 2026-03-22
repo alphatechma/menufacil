@@ -19,6 +19,7 @@ import {
   useCreateReservationMutation,
   useUpdateReservationStatusMutation,
 } from '@/api/adminApi';
+import { useNotify } from '@/hooks/useNotify';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -86,6 +87,7 @@ type ReservationFormData = z.infer<typeof reservationSchema>;
 // --- Component ---
 
 export default function ReservationList() {
+  const notify = useNotify();
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,17 +137,19 @@ export default function ReservationList() {
   const onSubmit = async (data: ReservationFormData) => {
     try {
       await createReservation(data).unwrap();
+      notify.success('Reserva criada com sucesso!');
       handleCloseModal();
-    } catch {
-      // Error is handled by RTK Query
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao criar reserva.');
     }
   };
 
   const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
     try {
       await updateStatus({ id, status }).unwrap();
-    } catch {
-      // Error is handled by RTK Query
+      notify.success('Status da reserva atualizado!');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao atualizar status da reserva.');
     }
   };
 

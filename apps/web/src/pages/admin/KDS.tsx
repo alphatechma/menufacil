@@ -21,6 +21,7 @@ import {
   useAssignDeliveryPersonMutation,
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
+import { useNotify } from '@/hooks/useNotify';
 import { useAppSelector } from '@/store/hooks';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
@@ -265,6 +266,7 @@ export default function KDS() {
 
   useLiveTimer();
 
+  const notify = useNotify();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
@@ -300,7 +302,7 @@ export default function KDS() {
         if (order) printOrderReceipt(order);
       }
       await updateStatus({ id: orderId, status: 'preparing' }).unwrap();
-    } catch { /* */ }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao iniciar preparo.'); }
     setUpdatingOrderId(null);
   };
 
@@ -309,7 +311,7 @@ export default function KDS() {
     try {
       await updateStatus({ id: orderId, status: 'ready' }).unwrap();
       setCheckedItems((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
-    } catch { /* */ }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao finalizar pedido.'); }
     setUpdatingOrderId(null);
   };
 
@@ -329,7 +331,7 @@ export default function KDS() {
     try {
       await assignDeliveryPerson({ orderId: deliveryModal, delivery_person_id: selectedDeliveryPerson }).unwrap();
       await updateStatus({ id: deliveryModal, status: 'out_for_delivery' }).unwrap();
-    } catch { /* */ }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao atribuir entregador.'); }
     setUpdatingOrderId(null); setDeliveryModal(null); setSelectedDeliveryPerson('');
   };
 
