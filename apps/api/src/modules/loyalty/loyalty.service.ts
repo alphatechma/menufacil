@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, LessThanOrEqual } from 'typeorm';
 import { LoyaltyReward } from './entities/loyalty-reward.entity';
 import { LoyaltyRedemption } from './entities/loyalty-redemption.entity';
+import { LoyaltyTier } from './entities/loyalty-tier.entity';
 import { Customer } from '../customer/entities/customer.entity';
 import { CreateRewardDto } from './dto/create-reward.dto';
+import { CreateTierDto } from './dto/create-tier.dto';
 
 @Injectable()
 export class LoyaltyService {
@@ -13,9 +15,86 @@ export class LoyaltyService {
     private readonly rewardRepo: Repository<LoyaltyReward>,
     @InjectRepository(LoyaltyRedemption)
     private readonly redemptionRepo: Repository<LoyaltyRedemption>,
+    @InjectRepository(LoyaltyTier)
+    private readonly tierRepo: Repository<LoyaltyTier>,
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
   ) {}
+
+  // ─── Tier Methods ──────────────────────────────────────────
+
+  async getTiers(tenantId: string): Promise<LoyaltyTier[]> {
+    return this.tierRepo.find({
+      where: { tenant_id: tenantId },
+      order: { min_points: 'ASC' },
+    });
+  }
+
+  async createTier(tenantId: string, dto: CreateTierDto): Promise<LoyaltyTier> {
+    const tier = this.tierRepo.create({ ...dto, tenant_id: tenantId });
+    return this.tierRepo.save(tier);
+  }
+
+  async updateTier(tenantId: string, id: string, dto: Partial<CreateTierDto>): Promise<LoyaltyTier> {
+    const tier = await this.tierRepo.findOne({ where: { id, tenant_id: tenantId } });
+    if (!tier) throw new NotFoundException('Tier not found');
+    Object.assign(tier, dto);
+    return this.tierRepo.save(tier);
+  }
+
+  async deleteTier(tenantId: string, id: string): Promise<void> {
+    const tier = await this.tierRepo.findOne({ where: { id, tenant_id: tenantId } });
+    if (!tier) throw new NotFoundException('Tier not found');
+    await this.tierRepo.delete(id);
+  }
+
+  async getCustomerTier(
+    tenantId: string,
+    customerId: string,
+  ): Promise<{ tier: LoyaltyTier | null; nextTier: LoyaltyTier | null; points: number }> {
+    const customer = await this.customerRepo.findOne({ where: { id: customerId } });
+    if (!customer) throw new NotFoundException('Cliente nao encontrado');
+
+    const tiers = await this.getTiers(tenantId);
+    if (tiers.length === 0) {
+      return { tier: null, nextTier: null, points: customer.loyalty_points };
+    }
+
+    // Find the tier where min_points <= customer.loyalty_points with highest min_points
+    let currentTier: LoyaltyTier | null = null;
+    let nextTier: LoyaltyTier | null = null;
+
+    for (const t of tiers) {
+      if (t.min_points <= customer.loyalty_points) {
+        currentTier = t;
+      } else {
+        if (!nextTier) {
+          nextTier = t;
+        }
+        break;
+      }
+    }
+
+    return { tier: currentTier, nextTier, points: customer.loyalty_points };
+  }
+
+  async seedDefaultTiers(tenantId: string): Promise<LoyaltyTier[]> {
+    const existing = await this.tierRepo.count({ where: { tenant_id: tenantId } });
+    if (existing > 0) {
+      throw new BadRequestException('Tiers ja existem para este tenant');
+    }
+
+    const defaults = [
+      { name: 'Bronze', min_points: 0, multiplier: 1.0, benefits: ['Acumule pontos a cada pedido'], icon: 'medal', color: '#CD7F32', sort_order: 0 },
+      { name: 'Prata', min_points: 500, multiplier: 1.5, benefits: ['1.5x pontos por pedido', 'Acesso antecipado a promocoes'], icon: 'award', color: '#C0C0C0', sort_order: 1 },
+      { name: 'Ouro', min_points: 2000, multiplier: 2.0, benefits: ['2x pontos por pedido', 'Frete gratis', 'Descontos exclusivos'], icon: 'crown', color: '#FFD700', sort_order: 2 },
+    ];
+
+    const tiers = defaults.map((d) => this.tierRepo.create({ ...d, tenant_id: tenantId }));
+    return this.tierRepo.save(tiers);
+  }
+
+  // ─── Reward Methods ────────────────────────────────────────
 
   async createReward(dto: CreateRewardDto, tenantId: string): Promise<LoyaltyReward> {
     const reward = this.rewardRepo.create({ ...dto, tenant_id: tenantId });
@@ -57,7 +136,14 @@ export class LoyaltyService {
     await this.rewardRepo.delete(id);
   }
 
-  async addPoints(customerId: string, points: number): Promise<void> {
+  async addPoints(customerId: string, points: number, tenantId?: string): Promise<void> {
+    // If tenantId is provided, apply tier multiplier
+    if (tenantId) {
+      const tierInfo = await this.getCustomerTier(tenantId, customerId);
+      if (tierInfo.tier && Number(tierInfo.tier.multiplier) > 1) {
+        points = Math.floor(points * Number(tierInfo.tier.multiplier));
+      }
+    }
     await this.customerRepo.increment({ id: customerId }, 'loyalty_points', points);
   }
 

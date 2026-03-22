@@ -14,6 +14,7 @@ import { Tenant } from '../tenant/entities/tenant.entity';
 import { DeliveryZoneService } from '../delivery-zone/delivery-zone.service';
 import { CouponService } from '../coupon/coupon.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
+import { ReferralService } from '../referral/referral.service';
 import { EventsGateway } from '../../websocket/events.gateway';
 import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.service';
 
@@ -38,6 +39,7 @@ export class OrderService {
     private readonly deliveryZoneService: DeliveryZoneService,
     private readonly couponService: CouponService,
     private readonly loyaltyService: LoyaltyService,
+    private readonly referralService: ReferralService,
     private readonly eventsGateway: EventsGateway,
     private readonly whatsappMessageService: WhatsappMessageService,
   ) {}
@@ -361,7 +363,14 @@ export class OrderService {
     if (status === OrderStatus.DELIVERED) {
       const points = Math.floor(Number(order.total));
       if (points > 0) {
-        await this.loyaltyService.addPoints(order.customer_id, points);
+        await this.loyaltyService.addPoints(order.customer_id, points, tenantId);
+      }
+
+      // Award referral points on first delivered order
+      try {
+        await this.referralService.awardReferralPoints(order.customer_id, tenantId);
+      } catch (err) {
+        this.logger.warn(`Referral award failed: ${err.message}`);
       }
     }
 

@@ -36,6 +36,10 @@ import {
   Moon,
   Calculator,
   Warehouse,
+  Share2,
+  Star,
+  ShoppingBag,
+  PieChart,
   type LucideIcon,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -116,7 +120,10 @@ const sidebarGroups: SidebarGroup[] = [
     icon: Users,
     items: [
       { to: '/admin/customers', icon: Users, label: 'Clientes', module: 'customers', permission: 'customer:read' },
+      { to: '/admin/customers/segments', icon: PieChart, label: 'Segmentos', module: 'customers', permission: 'report:read' },
       { to: '/admin/loyalty', icon: Heart, label: 'Fidelidade', module: 'loyalty', permission: 'loyalty:read' },
+      { to: '/admin/loyalty/tiers', icon: Crown, label: 'Tiers', module: 'loyalty', permission: 'loyalty:read' },
+      { to: '/admin/referrals', icon: Share2, label: 'Indicacoes', module: 'loyalty', permission: 'loyalty:read' },
     ],
   },
   {
@@ -125,6 +132,8 @@ const sidebarGroups: SidebarGroup[] = [
     icon: Ticket,
     items: [
       { to: '/admin/coupons', icon: Ticket, label: 'Cupons', module: 'coupons', permission: 'coupon:read' },
+      { to: '/admin/reviews', icon: Star, label: 'Avaliacoes', module: 'customers', permission: 'customer:read' },
+      { to: '/admin/abandoned-carts', icon: ShoppingBag, label: 'Carrinhos Aband.', module: 'customers', permission: 'customer:read' },
       { to: '/admin/whatsapp', icon: MessageCircle, label: 'WhatsApp', module: null, permission: 'whatsapp:chat' },
     ],
   },
@@ -134,6 +143,7 @@ const sidebarGroups: SidebarGroup[] = [
     icon: BarChart3,
     items: [
       { to: '/admin/reports', icon: BarChart3, label: 'Relatorios', module: 'reports', permission: 'report:read' },
+      { to: '/admin/analytics', icon: PieChart, label: 'Analytics', module: 'reports', permission: 'report:read' },
     ],
   },
   {

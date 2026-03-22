@@ -32,6 +32,10 @@ import { QzTrayModule } from './modules/qz-tray/qz-tray.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { UnitModule } from './modules/unit/unit.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { ReferralModule } from './modules/referral/referral.module';
+import { ReviewModule } from './modules/review/review.module';
+import { AbandonedCartModule } from './modules/abandoned-cart/abandoned-cart.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -77,6 +81,10 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     WhatsappModule,
     UnitModule,
     InventoryModule,
+    ReferralModule,
+    ReviewModule,
+    AbandonedCartModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule implements NestModule {

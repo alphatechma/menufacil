@@ -6,8 +6,11 @@ import { selectTotalItems, openDrawer } from '@/store/slices/cartSlice';
 import { selectTenant, setSelectedUnitId } from '@/store/slices/tenantSlice';
 import { useGetPublicUnitsQuery } from '@/api/customerApi';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { useAbandonedCartSync } from '@/hooks/useAbandonedCartSync';
 
 export function CustomerLayout({ children }: { children?: ReactNode }) {
+  // Sync cart to API for abandoned cart tracking
+  useAbandonedCartSync();
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const dispatch = useAppDispatch();

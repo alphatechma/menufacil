@@ -221,6 +221,34 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: ['Loyalty'],
     }),
 
+    // Loyalty Tiers
+    getLoyaltyTiers: builder.query<any[], void>({
+      query: () => ({ url: '/loyalty/tiers', meta: { authContext: 'admin' as const } }),
+      providesTags: ['LoyaltyTiers'],
+    }),
+    createLoyaltyTier: builder.mutation<any, any>({
+      query: (body) => ({ url: '/loyalty/tiers', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['LoyaltyTiers'],
+    }),
+    updateLoyaltyTier: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/loyalty/tiers/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['LoyaltyTiers'],
+    }),
+    deleteLoyaltyTier: builder.mutation<void, string>({
+      query: (id) => ({ url: `/loyalty/tiers/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['LoyaltyTiers'],
+    }),
+    seedLoyaltyTiers: builder.mutation<any[], void>({
+      query: () => ({ url: '/loyalty/tiers/seed', method: 'POST', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['LoyaltyTiers'],
+    }),
+
+    // Referral Stats (admin)
+    getReferralStats: builder.query<any, void>({
+      query: () => ({ url: '/referrals/stats', meta: { authContext: 'admin' as const } }),
+      providesTags: ['ReferralStats'],
+    }),
+
     // Tenant Settings
     getTenantBySlug: builder.query<any, string>({
       query: (slug) => ({ url: `/tenants/slug/${slug}`, meta: { authContext: 'admin' as const } }),
@@ -559,6 +587,74 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['Units'],
     }),
 
+    // Reviews (admin)
+    getAdminReviews: builder.query<any, { rating?: number; page?: number; limit?: number }>({
+      query: (params) => ({ url: '/reviews', params, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Reviews'],
+    }),
+    getReviewStats: builder.query<any, void>({
+      query: () => ({ url: '/reviews/stats', meta: { authContext: 'admin' as const } }),
+      providesTags: ['ReviewStats'],
+    }),
+    getProductRatings: builder.query<any[], void>({
+      query: () => ({ url: '/reviews/product-ratings', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Reviews'],
+    }),
+    replyToReview: builder.mutation<any, { id: string; reply: string }>({
+      query: ({ id, reply }) => ({ url: `/reviews/${id}/reply`, method: 'PUT', data: { reply }, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Reviews'],
+    }),
+
+    // Abandoned Carts (admin)
+    getAbandonedCarts: builder.query<any[], void>({
+      query: () => ({ url: '/abandoned-carts', meta: { authContext: 'admin' as const } }),
+      providesTags: ['AbandonedCarts'],
+    }),
+    getAbandonedCartStats: builder.query<any, void>({
+      query: () => ({ url: '/abandoned-carts/stats', meta: { authContext: 'admin' as const } }),
+      providesTags: ['AbandonedCartStats'],
+    }),
+
+    // Customer Segmentation (admin)
+    getCustomerSegments: builder.query<any, void>({
+      query: () => ({ url: '/analytics/segments', meta: { authContext: 'admin' as const } }),
+      providesTags: ['CustomerSegments'],
+    }),
+
+    // Analytics
+    getAnalyticsOverview: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({
+        url: '/analytics/overview',
+        params,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsProducts: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({
+        url: '/analytics/products',
+        params,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsCustomers: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({
+        url: '/analytics/customers',
+        params,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Analytics'],
+    }),
+    getAnalyticsDelivery: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({
+        url: '/analytics/delivery',
+        params,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Analytics'],
+    }),
+
     // Upload
     uploadImage: builder.mutation<{ url: string }, FormData>({
       query: (formData) => ({
@@ -619,6 +715,12 @@ export const {
   useUpdateLoyaltyRewardMutation,
   useDeleteLoyaltyRewardMutation,
   useGetLoyaltyRedemptionsQuery,
+  useGetLoyaltyTiersQuery,
+  useCreateLoyaltyTierMutation,
+  useUpdateLoyaltyTierMutation,
+  useDeleteLoyaltyTierMutation,
+  useSeedLoyaltyTiersMutation,
+  useGetReferralStatsQuery,
   useGetTenantBySlugQuery,
   useUpdateTenantMutation,
   useUploadImageMutation,
@@ -700,4 +802,15 @@ export const {
   useCreateUnitMutation,
   useUpdateUnitMutation,
   useDeleteUnitMutation,
+  useGetAdminReviewsQuery,
+  useGetReviewStatsQuery,
+  useGetProductRatingsQuery,
+  useReplyToReviewMutation,
+  useGetAbandonedCartsQuery,
+  useGetAbandonedCartStatsQuery,
+  useGetCustomerSegmentsQuery,
+  useGetAnalyticsOverviewQuery,
+  useGetAnalyticsProductsQuery,
+  useGetAnalyticsCustomersQuery,
+  useGetAnalyticsDeliveryQuery,
 } = adminApi;

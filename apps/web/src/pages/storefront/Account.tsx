@@ -20,6 +20,10 @@ import {
   History,
   Ticket,
   RotateCcw,
+  Share2,
+  Crown,
+  Medal,
+  Award,
 } from 'lucide-react';
 import {
   useCustomerLoginMutation,
@@ -33,6 +37,7 @@ import {
   useGetLoyaltyRewardsQuery,
   useRedeemRewardMutation,
   useGetMyRedemptionsQuery,
+  useGetMyTierQuery,
 } from '@/api/customerApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { customerLoginSuccess, customerLogout } from '@/store/slices/customerAuthSlice';
@@ -109,6 +114,10 @@ export default function Account() {
     { skip: !slug || !customerAuth.isAuthenticated },
   );
   const [redeemReward, { isLoading: isRedeeming }] = useRedeemRewardMutation();
+  const { data: tierData } = useGetMyTierQuery(
+    { slug: slug! },
+    { skip: !slug || !customerAuth.isAuthenticated },
+  );
 
   // Redeem states
   const [confirmReward, setConfirmReward] = useState<any>(null);
@@ -901,9 +910,9 @@ export default function Account() {
       {/* Rewards Tab */}
       {activeTab === 'rewards' && (
         <div className="space-y-4">
-          {/* Points summary */}
+          {/* Tier + Points summary */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
@@ -916,12 +925,81 @@ export default function Account() {
                   <p className="text-xs text-gray-500">pontos disponiveis</p>
                 </div>
               </div>
+              {tierData?.tier && (
+                <div className="text-right">
+                  <span
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold"
+                    style={{ backgroundColor: `${tierData.tier.color}20`, color: tierData.tier.color }}
+                  >
+                    {tierData.tier.icon === 'crown' ? <Crown className="w-4 h-4" /> : tierData.tier.icon === 'award' ? <Award className="w-4 h-4" /> : <Medal className="w-4 h-4" />}
+                    {tierData.tier.name}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">{Number(tierData.tier.multiplier)}x pontos</p>
+                </div>
+              )}
+            </div>
+
+            {/* Progress to next tier */}
+            {tierData?.nextTier && (
+              <div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>{tierData.tier?.name || 'Inicio'}</span>
+                  <span>{tierData.nextTier.name} ({tierData.nextTier.min_points} pts)</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, (tierData.points / tierData.nextTier.min_points) * 100)}%`,
+                      backgroundColor: tierData.tier?.color || 'var(--tenant-primary)',
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Faltam {tierData.nextTier.min_points - tierData.points} pontos para {tierData.nextTier.name}
+                </p>
+              </div>
+            )}
+
+            {/* Tier benefits */}
+            {tierData?.tier?.benefits && tierData.tier.benefits.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Seus beneficios</p>
+                <ul className="space-y-1">
+                  {tierData.tier.benefits.map((b: string, i: number) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <Check className="w-3 h-3" style={{ color: tierData.tier.color }} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {!tierData?.tier && (
               <div className="text-right">
                 <p className="text-[10px] text-gray-400 uppercase font-bold">Como ganhar</p>
                 <p className="text-xs text-gray-600">1 ponto por R$1 gasto</p>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Referral Link */}
+          <button
+            onClick={() => navigate(`/${slug}/referral`)}
+            className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 15%, transparent)' }}>
+                <Share2 className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-gray-900">Indique Amigos</p>
+                <p className="text-xs text-gray-500">Ganhe 100 pontos por indicacao</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
 
           {/* Error message */}
           {redeemError && (
@@ -1353,34 +1431,49 @@ export default function Account() {
                     <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
                   </button>
                   {(order.status === 'delivered' || order.status === 'cancelled') && order.items?.length > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        order.items.forEach((item: any) => {
-                          dispatch(
-                            addItem({
-                              product_id: item.product_id,
-                              product_name: item.product_name,
-                              product_image: null,
-                              variation_id: item.variation_id || null,
-                              variation_name: item.variation_name || null,
-                              unit_price: Number(item.unit_price),
-                              quantity: item.quantity,
-                              extras: item.extras?.map((ex: any) => ({
-                                name: ex.name,
-                                price: Number(ex.price),
-                              })) ?? [],
-                            }),
-                          );
-                        });
-                        toast.success('Itens adicionados ao carrinho!');
-                      }}
-                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold transition-colors"
-                      style={{ color: 'var(--tenant-primary)' }}
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      Pedir novamente
-                    </button>
+                    <div className="mt-2 flex items-center gap-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          order.items.forEach((item: any) => {
+                            dispatch(
+                              addItem({
+                                product_id: item.product_id,
+                                product_name: item.product_name,
+                                product_image: null,
+                                variation_id: item.variation_id || null,
+                                variation_name: item.variation_name || null,
+                                unit_price: Number(item.unit_price),
+                                quantity: item.quantity,
+                                extras: item.extras?.map((ex: any) => ({
+                                  name: ex.name,
+                                  price: Number(ex.price),
+                                })) ?? [],
+                              }),
+                            );
+                          });
+                          toast.success('Itens adicionados ao carrinho!');
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                        style={{ color: 'var(--tenant-primary)' }}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Pedir novamente
+                      </button>
+                      {order.status === 'delivered' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/${slug}/review/${order.id}`);
+                          }}
+                          className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                          style={{ color: 'var(--tenant-primary)' }}
+                        >
+                          <Star className="w-3.5 h-3.5" />
+                          Avaliar Pedido
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

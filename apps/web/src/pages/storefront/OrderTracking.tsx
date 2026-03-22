@@ -9,9 +9,11 @@ import {
   Home,
   XCircle,
   RefreshCw,
+  Star,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useGetOrderTrackingQuery, useCancelOrderMutation } from '@/api/customerApi';
+import { useAppSelector } from '@/store/hooks';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { formatPrice } from '@/utils/formatPrice';
 
@@ -72,6 +74,7 @@ export default function OrderTracking() {
   const { slug, orderId } = useParams<{ slug: string; orderId: string }>();
   const navigate = useNavigate();
 
+  const isAuthenticated = useAppSelector((s) => s.customerAuth.isAuthenticated);
   const [cancelOrder, { isLoading: cancelling }] = useCancelOrderMutation();
   const [cancelError, setCancelError] = useState('');
 
@@ -127,7 +130,7 @@ export default function OrderTracking() {
 
   const currentStepIndex = getStepIndex(order.status);
   const isCancelled = order.status === 'cancelled';
-  const isDelivered = order.status === 'delivered';
+  const isDelivered = order.status === 'delivered' || order.status === 'picked_up' || order.status === 'served';
 
   return (
     <div className="pb-6">
@@ -369,8 +372,22 @@ export default function OrderTracking() {
         </section>
       )}
 
+      {/* Review CTA - shown when order is delivered */}
+      {isDelivered && isAuthenticated && (
+        <div className="px-4 pt-4">
+          <Link
+            to={`/${slug}/review/${orderId}`}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold transition-all duration-200 active:scale-95"
+            style={{ background: 'var(--tenant-gradient, var(--tenant-primary))' }}
+          >
+            <Star className="w-5 h-5" />
+            Avaliar Pedido
+          </Link>
+        </div>
+      )}
+
       {/* Back to store */}
-      <div className="px-4 pt-6">
+      <div className="px-4 pt-4 pb-6">
         <Link
           to={`/${slug}`}
           className="block w-full text-center py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors"

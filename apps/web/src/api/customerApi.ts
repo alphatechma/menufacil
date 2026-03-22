@@ -148,6 +148,46 @@ export const customerApi = baseApi.injectEndpoints({
       providesTags: ['LoyaltyRedemptions'],
     }),
 
+    // Loyalty Tier
+    getMyTier: builder.query<any, { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/loyalty/my-tier',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['LoyaltyTiers'],
+    }),
+    getPublicTiers: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/loyalty/tiers/public',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+
+    // Referrals
+    getMyReferralCode: builder.query<{ code: string }, { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/referrals/my-code',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['Referrals'],
+    }),
+    getMyReferrals: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/referrals/my-referrals',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['Referrals'],
+    }),
+    applyReferralCode: builder.mutation<any, { slug: string; code: string }>({
+      query: ({ slug, code }) => ({
+        url: '/referrals/apply',
+        method: 'POST',
+        data: { code },
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      invalidatesTags: ['Referrals', 'CustomerProfile'],
+    }),
+
     // Coupon validation
     validateCoupon: builder.query<{ discount: number; coupon: any }, { slug: string; code: string; total: number }>({
       query: ({ slug, code, total }) => ({
@@ -187,6 +227,46 @@ export const customerApi = baseApi.injectEndpoints({
     // Public Units
     getPublicUnits: builder.query<any[], string>({
       query: (tenantSlug) => ({ url: `/public/units/${tenantSlug}`, method: 'GET' }),
+    }),
+
+    // Reviews (customer)
+    createReview: builder.mutation<any, { slug: string; data: { orderId: string; rating: number; comment?: string } }>({
+      query: ({ slug, data }) => ({
+        url: '/reviews',
+        method: 'POST',
+        data,
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      invalidatesTags: ['Reviews'],
+    }),
+    canReviewOrder: builder.query<{ can_review: boolean; reason?: string }, { slug: string; orderId: string }>({
+      query: ({ slug, orderId }) => ({
+        url: `/reviews/can-review/${orderId}`,
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+    getMyReviews: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/reviews/my-reviews',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['Reviews'],
+    }),
+
+    // Abandoned Cart (customer)
+    saveAbandonedCart: builder.mutation<any, { slug: string; items: any[]; total: number }>({
+      query: ({ slug, items, total }) => ({
+        url: '/abandoned-carts/save',
+        method: 'POST',
+        data: { items, total },
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+    getRecoverableCart: builder.query<any, { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/abandoned-carts/recover',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
     }),
 
     // Public Reservation
@@ -229,4 +309,14 @@ export const {
   useJoinTableMutation,
   useCreatePublicReservationMutation,
   useGetPublicUnitsQuery,
+  useCreateReviewMutation,
+  useCanReviewOrderQuery,
+  useGetMyReviewsQuery,
+  useSaveAbandonedCartMutation,
+  useGetRecoverableCartQuery,
+  useGetMyTierQuery,
+  useGetPublicTiersQuery,
+  useGetMyReferralCodeQuery,
+  useGetMyReferralsQuery,
+  useApplyReferralCodeMutation,
 } = customerApi;

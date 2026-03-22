@@ -15,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { LoyaltyService } from './loyalty.service';
 import { CreateRewardDto } from './dto/create-reward.dto';
+import { CreateTierDto } from './dto/create-tier.dto';
 import { CurrentTenant, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
@@ -25,6 +26,79 @@ export class LoyaltyController {
   private readonly logger = new Logger(LoyaltyController.name);
 
   constructor(private readonly service: LoyaltyService) {}
+
+  // ─── Tier Endpoints ────────────────────────────────────────
+
+  @Get('tiers')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('loyalty:read')
+  @ApiOperation({ summary: 'List all loyalty tiers (admin)' })
+  async getTiers(@CurrentTenant('id') tenantId: string) {
+    return this.service.getTiers(tenantId);
+  }
+
+  @Get('tiers/public')
+  @ApiOperation({ summary: 'List loyalty tiers (public)' })
+  async getPublicTiers(@CurrentTenant('id') tenantId: string) {
+    return this.service.getTiers(tenantId);
+  }
+
+  @Post('tiers')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('loyalty:create')
+  @ApiOperation({ summary: 'Create a loyalty tier' })
+  async createTier(@Body() dto: CreateTierDto, @CurrentTenant('id') tenantId: string) {
+    return this.service.createTier(tenantId, dto);
+  }
+
+  @Put('tiers/:id')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('loyalty:update')
+  @ApiOperation({ summary: 'Update a loyalty tier' })
+  async updateTier(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateTierDto>,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.service.updateTier(tenantId, id, dto);
+  }
+
+  @Delete('tiers/:id')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('loyalty:delete')
+  @ApiOperation({ summary: 'Delete a loyalty tier' })
+  async deleteTier(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.service.deleteTier(tenantId, id);
+  }
+
+  @Post('tiers/seed')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('loyalty:create')
+  @ApiOperation({ summary: 'Seed default loyalty tiers' })
+  async seedTiers(@CurrentTenant('id') tenantId: string) {
+    return this.service.seedDefaultTiers(tenantId);
+  }
+
+  @Get('my-tier')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my current tier (customer)' })
+  async getMyTier(
+    @CurrentUser('id') customerId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.service.getCustomerTier(tenantId, customerId);
+  }
+
+  // ─── Reward Endpoints ──────────────────────────────────────
 
   @Get('rewards/all')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)

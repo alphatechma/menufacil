@@ -35,6 +35,8 @@ const CouponList = lazy(() => import('@/pages/admin/coupons/CouponList'));
 const CouponForm = lazy(() => import('@/pages/admin/coupons/CouponForm'));
 const LoyaltyList = lazy(() => import('@/pages/admin/loyalty/LoyaltyList'));
 const LoyaltyForm = lazy(() => import('@/pages/admin/loyalty/LoyaltyForm'));
+const LoyaltyTiers = lazy(() => import('@/pages/admin/loyalty/LoyaltyTiers'));
+const ReferralDashboard = lazy(() => import('@/pages/admin/referral/ReferralDashboard'));
 const StaffList = lazy(() => import('@/pages/admin/staff/StaffList'));
 const StaffForm = lazy(() => import('@/pages/admin/staff/StaffForm'));
 const RoleList = lazy(() => import('@/pages/admin/staff/RoleList'));
@@ -52,6 +54,10 @@ const WhatsappPage = lazy(() => import('@/pages/admin/whatsapp/WhatsappPage'));
 const FlowEditor = lazy(() => import('@/pages/admin/whatsapp/FlowEditor'));
 const UnitsList = lazy(() => import('@/pages/admin/units/UnitsList'));
 const UnitForm = lazy(() => import('@/pages/admin/units/UnitForm'));
+const ReviewList = lazy(() => import('@/pages/admin/reviews/ReviewList'));
+const AbandonedCarts = lazy(() => import('@/pages/admin/marketing/AbandonedCarts'));
+const CustomerSegments = lazy(() => import('@/pages/admin/customers/CustomerSegments'));
+const AnalyticsDashboard = lazy(() => import('@/pages/admin/analytics/AnalyticsDashboard'));
 
 // Customer / storefront pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -64,6 +70,8 @@ const Account = lazy(() => import('@/pages/storefront/Account'));
 const TableLanding = lazy(() => import('@/pages/storefront/TableLanding'));
 const ReservationRequest = lazy(() => import('@/pages/storefront/ReservationRequest'));
 const Favorites = lazy(() => import('@/pages/storefront/Favorites'));
+const Referral = lazy(() => import('@/pages/storefront/Referral'));
+const ReviewOrder = lazy(() => import('@/pages/storefront/ReviewOrder'));
 
 export default function App() {
   return (
@@ -122,6 +130,7 @@ export default function App() {
           <Route path="deliveries" element={<DeliveryTracker />} />
           <Route path="my-deliveries" element={<MyDeliveries />} />
           <Route path="customers" element={<CustomerList />} />
+          <Route path="customers/segments" element={<CustomerSegments />} />
           <Route path="customers/:id" element={<CustomerDetail />} />
           <Route path="delivery-zones" element={<DeliveryZoneList />} />
           <Route path="delivery-zones/new" element={<DeliveryZoneForm />} />
@@ -142,7 +151,10 @@ export default function App() {
           <Route path="loyalty" element={<LoyaltyList />} />
           <Route path="loyalty/new" element={<LoyaltyForm />} />
           <Route path="loyalty/:id/edit" element={<LoyaltyForm />} />
+          <Route path="loyalty/tiers" element={<LoyaltyTiers />} />
+          <Route path="referrals" element={<ReferralDashboard />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="customization" element={<Customization />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="whatsapp" element={<WhatsappPage />} />
@@ -156,6 +168,8 @@ export default function App() {
           <Route path="units" element={<UnitsList />} />
           <Route path="units/new" element={<UnitForm />} />
           <Route path="units/:id" element={<UnitForm />} />
+          <Route path="reviews" element={<ReviewList />} />
+          <Route path="abandoned-carts" element={<AbandonedCarts />} />
         </Route>
 
         {/* Tenant storefront routes — /:slug AFTER static routes */}
@@ -168,6 +182,8 @@ export default function App() {
             <Route path="order/:orderId" element={<OrderTracking />} />
             <Route path="account" element={<Account />} />
             <Route path="favorites" element={<Favorites />} />
+            <Route path="referral" element={<Referral />} />
+            <Route path="review/:orderId" element={<ReviewOrder />} />
             <Route path="mesa/:tableNumber" element={<TableLanding />} />
             <Route path="reservar" element={<ReservationRequest />} />
           </Route>
