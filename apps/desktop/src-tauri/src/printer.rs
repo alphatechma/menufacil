@@ -209,22 +209,24 @@ fn list_system_printers() -> Result<Vec<PrinterInfo>, String> {
 
     #[cfg(target_os = "windows")]
     {
-        if let Ok(output) = Command::new("wmic")
-            .args(["printer", "get", "Name,PortName,Default,DriverName", "/format:csv"])
+        // Use PowerShell for reliable printer listing
+        let ps_script = r#"Get-Printer | ForEach-Object { "$($_.Name)|$($_.PortName)|$($_.Default)|$($_.DriverName)|$($_.Type)" }"#;
+        if let Ok(output) = Command::new("powershell")
+            .args(["-NoProfile", "-Command", ps_script])
             .output()
         {
             if let Ok(text) = String::from_utf8(output.stdout) {
-                for line in text.lines().skip(1) {
-                    let parts: Vec<&str> = line.split(',').collect();
-                    if parts.len() >= 5 {
-                        let is_default = parts[1].trim().eq_ignore_ascii_case("TRUE");
-                        let driver = parts[2].trim().to_string();
-                        let name = parts[3].trim().to_string();
-                        let port = parts[4].trim().to_string();
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.split('|').collect();
+                    if parts.len() >= 4 {
+                        let name = parts[0].trim().to_string();
+                        let port = parts[1].trim().to_string();
+                        let is_default = parts[2].trim().eq_ignore_ascii_case("True");
+                        let driver = parts[3].trim().to_string();
 
-                        if name.is_empty() { continue; }
+                        if name.is_empty() || name == "Name" { continue; }
 
-                        let connection = if port.contains('.') && port.contains(':') {
+                        let connection = if port.contains('.') || port.to_uppercase().starts_with("IP_") || port.to_uppercase().contains("TCP") {
                             "network".to_string()
                         } else if port.to_uppercase().starts_with("USB") {
                             "usb".to_string()
@@ -236,7 +238,7 @@ fn list_system_printers() -> Result<Vec<PrinterInfo>, String> {
                             name: name.clone(),
                             key: format!("sys:{}", name),
                             connection,
-                            address: port,
+                            address: if port == "null" || port.is_empty() { "N/A".to_string() } else { port },
                             manufacturer: driver,
                             serial: String::new(),
                             is_default,
@@ -356,27 +358,55 @@ pub fn print_raw_network(address: &str, data: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-/// Send raw bytes via system print queue (lp command on macOS/Linux)
+/// Send raw bytes via system print queue
 fn print_raw_system(queue_name: &str, data: &[u8]) -> Result<(), String> {
     use std::process::Stdio;
 
-    let mut child = Command::new("lp")
-        .args(["-d", queue_name, "-o", "raw", "-"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Erro ao iniciar impressão: {}", e))?;
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut child = Command::new("lp")
+            .args(["-d", queue_name, "-o", "raw", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Erro ao iniciar impressão: {}", e))?;
 
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(data).map_err(|e| format!("Erro ao enviar dados: {}", e))?;
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(data).map_err(|e| format!("Erro ao enviar dados: {}", e))?;
+        }
+
+        let output = child.wait_with_output().map_err(|e| format!("Erro na impressão: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Erro na impressão: {}", stderr));
+        }
     }
 
-    let output = child.wait_with_output().map_err(|e| format!("Erro na impressão: {}", e))?;
+    #[cfg(target_os = "windows")]
+    {
+        // Write data to temp file, then print via PowerShell
+        let temp_path = std::env::temp_dir().join(format!("menufacil_print_{}.bin", std::process::id()));
+        std::fs::write(&temp_path, data).map_err(|e| format!("Erro ao criar arquivo temporário: {}", e))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Erro na impressão: {}", stderr));
+        let ps_cmd = format!(
+            "Get-Content -Path '{}' -Encoding Byte -Raw | Out-Printer -Name '{}'",
+            temp_path.display(),
+            queue_name.replace("'", "''")
+        );
+
+        let output = Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps_cmd])
+            .output()
+            .map_err(|e| format!("Erro ao iniciar impressão: {}", e))?;
+
+        let _ = std::fs::remove_file(&temp_path);
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Erro na impressão: {}", stderr));
+        }
     }
 
     Ok(())
