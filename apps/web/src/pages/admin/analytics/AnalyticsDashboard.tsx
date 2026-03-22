@@ -34,6 +34,7 @@ import {
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
 import { cn } from '@/utils/cn';
+import { env } from '@/config/env';
 import {
   useGetAnalyticsOverviewQuery,
   useGetAnalyticsProductsQuery,
@@ -90,10 +91,7 @@ export default function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState(getDefaultDateRange);
 
   const handleExport = async (type: string) => {
-    const apiBase = import.meta.env.VITE_API_URL
-      ? `${import.meta.env.VITE_API_URL}/api`
-      : 'https://menufacil-api.mp1rvc.easypanel.host/api';
-    const url = `${apiBase}/analytics/export/csv?type=${type}&from=${dateRange.from}&to=${dateRange.to}`;
+    const url = `${env.apiUrl}/analytics/export/csv?type=${type}&from=${dateRange.from}&to=${dateRange.to}`;
     window.open(url, '_blank');
   };
 

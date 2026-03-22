@@ -1,16 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '@/store';
-
-// In dev mode, Vite proxy handles /api → production API
-// In production build (Tauri), connect directly to API
-const API_BASE = import.meta.env.DEV
-  ? '/api'
-  : (localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host/api');
+import { env } from '@/config/env';
 
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE,
+    baseUrl: env.apiUrl,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const { token, tenantSlug } = state.auth;

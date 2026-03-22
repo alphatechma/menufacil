@@ -14,6 +14,7 @@ import {
 } from '@/api/adminApi';
 import { useAppSelector } from '@/store/hooks';
 import { io } from 'socket.io-client';
+import { env } from '@/config/env';
 
 const WHATSAPP_MESSAGE_NEW = 'whatsapp:message-new';
 
@@ -104,7 +105,7 @@ function ChatArea({ phone, customerName, onBack }: { phone: string; customerName
 
   useEffect(() => {
     if (!tenantId) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://menufacil-api.mp1rvc.easypanel.host';
+    const apiUrl = env.wsUrl;
     const socket = io(apiUrl, { transports: ['websocket'] });
     socket.emit('join:tenant-whatsapp', { tenantId });
     socket.on(WHATSAPP_MESSAGE_NEW, (msg: any) => {

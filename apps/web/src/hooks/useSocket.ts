@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { env } from '@/config/env';
 
 export function useSocket(tenantSlug: string | null, handlers?: Record<string, (...args: any[]) => void>) {
   const socketRef = useRef<Socket | null>(null);
@@ -7,7 +8,7 @@ export function useSocket(tenantSlug: string | null, handlers?: Record<string, (
   useEffect(() => {
     if (!tenantSlug) return;
 
-    const wsUrl = import.meta.env.VITE_API_URL || 'https://menufacil-api.mp1rvc.easypanel.host';
+    const wsUrl = env.wsUrl;
     const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },

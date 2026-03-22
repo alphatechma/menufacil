@@ -2,6 +2,7 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import type { RootState } from '../store/index';
 import { adminLogout } from '../store/slices/adminAuthSlice';
+import { env } from '@/config/env';
 
 export type AuthContext = 'admin' | 'customer' | 'public';
 
@@ -14,12 +15,8 @@ interface AxiosBaseQueryArgs {
   meta?: { authContext?: AuthContext; tenantSlug?: string };
 }
 
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'https://menufacil-api.mp1rvc.easypanel.host/api';
-
 const axiosInstance = axios.create({
-  baseURL: API_BASE,
+  baseURL: env.apiUrl,
   withCredentials: true,
 });
 

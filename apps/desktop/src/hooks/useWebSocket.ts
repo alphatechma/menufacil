@@ -3,6 +3,7 @@ import { io, type Socket } from 'socket.io-client';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppSelector } from '@/store/hooks';
 import { baseApi } from '@/api/baseApi';
+import { env } from '@/config/env';
 import { useUpdateOrderStatusMutation } from '@/api/api';
 import { store } from '@/store';
 import { playNewOrderSound, playStatusUpdateSound } from '@/utils/sounds';
@@ -95,11 +96,7 @@ export function useWebSocket() {
       Notification.requestPermission();
     }
 
-    const wsUrl = import.meta.env.DEV
-      ? '/'
-      : (localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host');
-
-    const socket = io(wsUrl, {
+    const socket = io(env.wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },
       auth: { token },

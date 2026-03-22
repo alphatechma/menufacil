@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { env } from '@/config/env';
 const WEBSOCKET_EVENTS = {
   ORDER_NEW: 'order:new',
   ORDER_STATUS_UPDATED: 'order:status-updated',
@@ -122,7 +123,7 @@ export function useOrderNotifications() {
     const tenantId = user.tenant_id;
     if (!tenantId) return;
 
-    const wsUrl = import.meta.env.VITE_API_URL || 'https://menufacil-api.mp1rvc.easypanel.host';
+    const wsUrl = env.wsUrl;
     const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },
