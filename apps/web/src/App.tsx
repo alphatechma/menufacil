@@ -63,6 +63,7 @@ const OrderTracking = lazy(() => import('@/pages/storefront/OrderTracking'));
 const Account = lazy(() => import('@/pages/storefront/Account'));
 const TableLanding = lazy(() => import('@/pages/storefront/TableLanding'));
 const ReservationRequest = lazy(() => import('@/pages/storefront/ReservationRequest'));
+const Favorites = lazy(() => import('@/pages/storefront/Favorites'));
 
 export default function App() {
   return (
@@ -166,6 +167,7 @@ export default function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="order/:orderId" element={<OrderTracking />} />
             <Route path="account" element={<Account />} />
+            <Route path="favorites" element={<Favorites />} />
             <Route path="mesa/:tableNumber" element={<TableLanding />} />
             <Route path="reservar" element={<ReservationRequest />} />
           </Route>

@@ -4,79 +4,86 @@ import {
   DollarSign,
   ShoppingCart,
   TrendingUp,
-  Users,
+  XCircle,
   ArrowUp,
   ArrowDown,
+  Calendar,
 } from 'lucide-react';
-import { useGetDashboardDataQuery } from '@/api/api';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from 'recharts';
+import { useGetAdvancedStatsQuery } from '@/api/api';
+import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 
-function getDateRange(period: string) {
-  const now = new Date();
-  const until = now.toISOString().split('T')[0];
-  let since: string;
+type DatePreset = 'today' | '7days' | '30days' | '90days' | 'custom';
 
-  switch (period) {
-    case 'today': {
-      since = until;
-      break;
-    }
-    case 'week': {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 7);
-      since = d.toISOString().split('T')[0];
-      break;
-    }
-    case 'month': {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 1);
-      since = d.toISOString().split('T')[0];
-      break;
-    }
-    default: {
-      since = until;
-    }
+function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string) {
+  const now = new Date();
+  const to = now.toISOString().split('T')[0];
+
+  if (preset === 'custom' && customFrom && customTo) {
+    return { from: customFrom, to: customTo };
   }
-  return { since, until };
+
+  const daysMap: Record<string, number> = {
+    today: 0,
+    '7days': 7,
+    '30days': 30,
+    '90days': 90,
+  };
+
+  const days = daysMap[preset] ?? 7;
+  const d = new Date(now);
+  d.setDate(d.getDate() - days);
+  return { from: d.toISOString().split('T')[0], to };
+}
+
+const presets: { key: DatePreset; label: string }[] = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7days', label: '7 dias' },
+  { key: '30days', label: '30 dias' },
+  { key: '90days', label: '90 dias' },
+  { key: 'custom', label: 'Personalizado' },
+];
+
+function ComparisonBadge({ value }: { value: number }) {
+  if (value === 0) return null;
+  const isPositive = value > 0;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-2 py-0.5',
+        isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700',
+      )}
+    >
+      {isPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+      {Math.abs(value).toFixed(1)}%
+    </span>
+  );
 }
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('today');
-  const { since, until } = useMemo(() => getDateRange(period), [period]);
-  const { data, isLoading } = useGetDashboardDataQuery({ since, until });
+  const [preset, setPreset] = useState<DatePreset>('7days');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
-  const stats = data || {};
+  const range = useMemo(
+    () => getDateRange(preset, customFrom, customTo),
+    [preset, customFrom, customTo],
+  );
 
-  const cards = [
-    {
-      label: 'Receita',
-      value: formatPrice(stats.revenue || stats.total_revenue || 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-    {
-      label: 'Pedidos',
-      value: String(stats.orders_count || stats.total_orders || 0),
-      icon: ShoppingCart,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      label: 'Ticket Medio',
-      value: formatPrice(stats.average_ticket || stats.avg_ticket || 0),
-      icon: TrendingUp,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50',
-    },
-    {
-      label: 'Clientes',
-      value: String(stats.customers_count || stats.new_customers || 0),
-      icon: Users,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-    },
-  ];
+  const { data, isLoading } = useGetAdvancedStatsQuery(range, {
+    refetchOnMountOrArgChange: true,
+  });
 
   if (isLoading) {
     return (
@@ -86,106 +93,217 @@ export default function Dashboard() {
     );
   }
 
+  const revenue = Number(data?.revenue || 0);
+  const orderCount = Number(data?.orderCount || 0);
+  const avgTicket = Number(data?.avgTicket || 0);
+  const cancelRate = Number(data?.cancelRate || 0);
+
+  const kpis = [
+    {
+      label: 'Receita',
+      value: formatPrice(revenue),
+      comparison: data?.revenueComparison ?? 0,
+      icon: DollarSign,
+      bg: 'bg-green-50',
+      color: 'text-green-600',
+    },
+    {
+      label: 'Pedidos',
+      value: String(orderCount),
+      comparison: data?.orderCountComparison ?? 0,
+      icon: ShoppingCart,
+      bg: 'bg-blue-50',
+      color: 'text-blue-600',
+    },
+    {
+      label: 'Ticket Medio',
+      value: formatPrice(avgTicket),
+      comparison: data?.avgTicketComparison ?? 0,
+      icon: TrendingUp,
+      bg: 'bg-orange-50',
+      color: 'text-orange-600',
+    },
+    {
+      label: 'Cancelamento',
+      value: `${cancelRate.toFixed(1)}%`,
+      comparison: data?.cancelRateComparison ?? 0,
+      icon: XCircle,
+      bg: 'bg-red-50',
+      color: 'text-red-500',
+      invertComparison: true,
+    },
+  ];
+
+  const trendData = (data?.ordersPerDay || []).map((d: any) => ({
+    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    revenue: Number(d.revenue),
+    pedidos: Number(d.count),
+  }));
+
+  const hourData = data?.ordersByHour || [];
+  const topProducts = data?.topProducts || [];
+
   return (
-    <div className="flex h-full flex-col p-5">
+    <div className="flex h-full flex-col p-5 overflow-y-auto">
+      {/* Header + Date Range */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BarChart3 className="w-6 h-6 text-gray-700" />
           <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
         </div>
-        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
-          {[
-            { key: 'today', label: 'Hoje' },
-            { key: 'week', label: '7 dias' },
-            { key: 'month', label: '30 dias' },
-          ].map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                period === p.key ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
+            {presets.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPreset(p.key)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                  preset === p.key
+                    ? 'bg-orange-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-100',
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {preset === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="px-2 py-1 text-xs border border-gray-200 rounded-lg bg-white text-gray-900"
+              />
+              <span className="text-xs text-gray-400">ate</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="px-2 py-1 text-xs border border-gray-200 rounded-lg bg-white text-gray-900"
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {cards.map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500">{card.label}</span>
-              <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center`}>
-                <card.icon className={`w-4 h-4 ${card.color}`} />
+        {kpis.map((kpi) => {
+          const compValue = kpi.invertComparison ? -kpi.comparison : kpi.comparison;
+          return (
+            <div key={kpi.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-gray-500">{kpi.label}</span>
+                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', kpi.bg)}>
+                  <kpi.icon className={cn('w-4 h-4', kpi.color)} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
+              <div className="mt-1">
+                <ComparisonBadge value={compValue} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Order status breakdown */}
-      {stats.status_breakdown && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Por Status</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {Object.entries(stats.status_breakdown as Record<string, number>).map(([status, count]) => (
-              <div key={status} className="text-center p-3 rounded-xl bg-gray-50">
-                <p className="text-lg font-bold text-gray-900">{count}</p>
-                <p className="text-xs text-gray-500 capitalize">{status.replace('_', ' ')}</p>
-              </div>
-            ))}
-          </div>
+      {/* Revenue + Orders Trend Chart */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <h2 className="text-sm font-bold text-gray-900 mb-4">Receita e Pedidos</h2>
+        <div className="h-64">
+          {trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
+                <YAxis yAxisId="revenue" stroke="#9ca3af" fontSize={12} tickFormatter={(v) => `R$${v}`} />
+                <YAxis yAxisId="orders" orientation="right" stroke="#9ca3af" fontSize={12} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                  formatter={(value: number, name: string) => [
+                    name === 'revenue' ? formatPrice(value) : value,
+                    name === 'revenue' ? 'Receita' : 'Pedidos',
+                  ]}
+                />
+                <Area yAxisId="revenue" type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area yAxisId="orders" type="monotone" dataKey="pedidos" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorOrders)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Payment methods breakdown */}
-      {stats.payment_breakdown && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Por Pagamento</h2>
-          <div className="space-y-2">
-            {Object.entries(stats.payment_breakdown as Record<string, number>).map(([method, value]) => {
-              const total = stats.revenue || stats.total_revenue || 1;
-              const pct = ((value as number) / total) * 100;
-              return (
-                <div key={method} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-24 capitalize">{method.replace('_', ' ')}</span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 w-24 text-right">{formatPrice(value as number)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Top products */}
-      {stats.top_products && stats.top_products.length > 0 && (
+      {/* Bottom row: Top Products + Orders by Hour */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 5 Products */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Produtos Mais Vendidos</h2>
-          <div className="space-y-2">
-            {stats.top_products.map((p: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center">
-                    {idx + 1}
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">{p.name || p.product_name}</span>
+          <h2 className="text-sm font-bold text-gray-900 mb-4">Top 5 Produtos</h2>
+          {topProducts.length > 0 ? (
+            <div className="space-y-2">
+              {topProducts.map((product: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-gray-500">{product.count}x</span>
+                    <span className="text-sm font-bold text-gray-900">{formatPrice(product.revenue)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-500">{p.quantity || p.count}x</span>
-                  <span className="text-sm font-bold text-gray-900">{formatPrice(p.total || p.revenue || 0)}</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+          )}
+        </div>
+
+        {/* Orders by Hour */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-900 mb-4">Pedidos por Hora</h2>
+          <div className="h-56">
+            {hourData.some((h: any) => h.count > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="hour"
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickFormatter={(h) => `${String(h).padStart(2, '0')}h`}
+                  />
+                  <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }}
+                    labelFormatter={(h) => `${String(h).padStart(2, '0')}:00`}
+                    formatter={(value: number) => [value, 'Pedidos']}
+                  />
+                  <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} name="Pedidos" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

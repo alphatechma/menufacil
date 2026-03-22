@@ -35,12 +35,30 @@ export class ProductRepository {
     });
   }
 
-  async findActiveByTenant(tenantId: string): Promise<Product[]> {
-    return this.repo.find({
+  async findActiveByTenant(tenantId: string): Promise<(Product & { order_count: number })[]> {
+    const products = await this.repo.find({
       where: { tenant_id: tenantId, is_active: true },
       relations: ['category', 'variations', 'extra_groups', 'extra_groups.extras'],
       order: { sort_order: 'ASC' },
     });
+
+    // Count how many times each product appears in order_items
+    const orderCounts = await this.repo
+      .createQueryBuilder('product')
+      .select('product.id', 'product_id')
+      .addSelect('COALESCE(COUNT(oi.id), 0)', 'order_count')
+      .leftJoin('order_items', 'oi', 'oi.product_id = product.id')
+      .where('product.tenant_id = :tenantId', { tenantId })
+      .andWhere('product.is_active = :isActive', { isActive: true })
+      .groupBy('product.id')
+      .getRawMany();
+
+    const countMap = new Map(orderCounts.map((r: any) => [r.product_id, parseInt(r.order_count, 10)]));
+
+    return products.map((p) => ({
+      ...p,
+      order_count: countMap.get(p.id) || 0,
+    }));
   }
 
   async findByCategory(categoryId: string, tenantId: string): Promise<Product[]> {
@@ -127,5 +145,40 @@ export class ProductRepository {
         this.repo.update({ id: item.id, tenant_id: tenantId }, { sort_order: item.sort_order }),
       ),
     );
+  }
+
+  async bulkUpdateActive(ids: string[], tenantId: string, isActive: boolean): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(Product)
+      .set({ is_active: isActive })
+      .where('id IN (:...ids)', { ids })
+      .andWhere('tenant_id = :tenantId', { tenantId })
+      .execute();
+  }
+
+  async bulkDelete(ids: string[], tenantId: string): Promise<void> {
+    for (const id of ids) {
+      await this.remove(id, tenantId);
+    }
+  }
+
+  async bulkAdjustPrice(ids: string[], tenantId: string, value: number, type: 'percent' | 'fixed'): Promise<void> {
+    const products = await this.repo.find({
+      where: { tenant_id: tenantId },
+    });
+
+    const targetProducts = products.filter((p) => ids.includes(p.id));
+
+    for (const product of targetProducts) {
+      let newPrice: number;
+      if (type === 'percent') {
+        newPrice = Number(product.base_price) * (1 + value / 100);
+      } else {
+        newPrice = Number(product.base_price) + value;
+      }
+      newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
+      await this.repo.update({ id: product.id, tenant_id: tenantId }, { base_price: newPrice });
+    }
   }
 }

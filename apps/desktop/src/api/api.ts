@@ -202,6 +202,10 @@ export const api = baseApi.injectEndpoints({
       query: ({ since, until }) => ({ url: `/orders/stats/dashboard?since=${since}&until=${until}` }),
       providesTags: ['Dashboard'],
     }),
+    getAdvancedStats: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/orders/stats/advanced', params }),
+      providesTags: ['Dashboard'],
+    }),
 
     // Loyalty
     getLoyaltyRewards: builder.query<any[], void>({
@@ -365,6 +369,7 @@ export const {
   useGetPermissionsQuery,
   // Dashboard
   useGetDashboardDataQuery,
+  useGetAdvancedStatsQuery,
   // Loyalty
   useGetLoyaltyRewardsQuery,
   useCreateLoyaltyRewardMutation,

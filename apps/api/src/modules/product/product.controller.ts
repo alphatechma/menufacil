@@ -15,6 +15,7 @@ import { ProductService } from './product.service';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ReorderProductsDto } from './dto/reorder-products.dto';
+import { BulkProductActionDto } from './dto/bulk-product-action.dto';
 import { CurrentTenant, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
@@ -61,6 +62,15 @@ export class ProductController {
   @ApiOperation({ summary: 'Create a product' })
   create(@Body() dto: CreateProductDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.create(dto, tenantId);
+  }
+
+  @Put('bulk')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('product:update')
+  @ApiOperation({ summary: 'Bulk product action (activate, deactivate, delete, adjust_price)' })
+  bulkAction(@Body() dto: BulkProductActionDto, @CurrentTenant('id') tenantId: string) {
+    return this.productService.bulkAction(tenantId, dto);
   }
 
   @Put('reorder')

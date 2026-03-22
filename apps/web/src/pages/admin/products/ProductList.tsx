@@ -1,6 +1,21 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Package, GripVertical, Eye, EyeOff } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Package,
+  GripVertical,
+  Eye,
+  EyeOff,
+  CheckSquare,
+  Square,
+  ToggleRight,
+  ToggleLeft,
+  DollarSign,
+  X,
+  Minus,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -23,7 +38,9 @@ import {
   useGetCategoriesQuery,
   useDeleteProductMutation,
   useReorderProductsMutation,
+  useBulkProductActionMutation,
 } from '@/api/adminApi';
+import { usePermission } from '@/hooks/usePermission';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Select } from '@/components/ui/Select';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -31,16 +48,21 @@ import { Button } from '@/components/ui/Button';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
 import { formatPrice } from '@/utils/formatPrice';
+import { cn } from '@/utils/cn';
 import { toast } from 'sonner';
 
 interface SortableRowProps {
   product: any;
   onDelete: (product: { id: string; name: string }) => void;
   categoriesMap: Record<string, string>;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
 }
 
-function SortableRow({ product, onDelete, categoriesMap }: SortableRowProps) {
+function SortableRow({ product, onDelete, categoriesMap, selected, onToggleSelect }: SortableRowProps) {
   const {
     attributes,
     listeners,
@@ -60,8 +82,27 @@ function SortableRow({ product, onDelete, categoriesMap }: SortableRowProps) {
     <tr
       ref={setNodeRef}
       style={style}
-      className="hover:bg-muted/50 transition-colors"
+      className={cn(
+        'hover:bg-muted/50 transition-colors',
+        selected && 'bg-primary/5',
+      )}
     >
+      <td className="px-3 py-4 w-10">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(product.id);
+          }}
+          className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {selected ? (
+            <CheckSquare className="w-4 h-4 text-primary" />
+          ) : (
+            <Square className="w-4 h-4" />
+          )}
+        </button>
+      </td>
       <td className="px-3 py-4 w-10">
         <button
           type="button"
@@ -130,11 +171,18 @@ export default function ProductList() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [priceAdjustModal, setPriceAdjustModal] = useState(false);
+  const [adjustmentType, setAdjustmentType] = useState<'percent' | 'fixed'>('percent');
+  const [adjustmentValue, setAdjustmentValue] = useState('');
 
+  const { hasPermission } = usePermission();
   const { data: products = [], isLoading } = useGetProductsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [reorderProducts] = useReorderProductsMutation();
+  const [bulkAction, { isLoading: isBulkLoading }] = useBulkProductActionMutation();
 
   const categoriesMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -194,7 +242,98 @@ export default function ProductList() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const allIds = filtered.map((p: any) => p.id);
+    if (selectedIds.length === allIds.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(allIds);
+    }
+  };
+
+  const handleBulkActivate = async () => {
+    try {
+      await bulkAction({ action: 'activate', ids: selectedIds }).unwrap();
+      toast.success(`${selectedIds.length} produto(s) ativado(s)!`);
+      setSelectedIds([]);
+    } catch {
+      toast.error('Erro ao ativar produtos.');
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    try {
+      await bulkAction({ action: 'deactivate', ids: selectedIds }).unwrap();
+      toast.success(`${selectedIds.length} produto(s) desativado(s)!`);
+      setSelectedIds([]);
+    } catch {
+      toast.error('Erro ao desativar produtos.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await bulkAction({ action: 'delete', ids: selectedIds }).unwrap();
+      toast.success(`${selectedIds.length} produto(s) excluido(s)!`);
+      setSelectedIds([]);
+    } catch {
+      toast.error('Erro ao excluir produtos.');
+    } finally {
+      setBulkDeleteConfirm(false);
+    }
+  };
+
+  const handleBulkPriceAdjust = async () => {
+    const value = parseFloat(adjustmentValue);
+    if (isNaN(value)) {
+      toast.error('Informe um valor valido.');
+      return;
+    }
+    try {
+      await bulkAction({
+        action: 'adjust_price',
+        ids: selectedIds,
+        value,
+        adjustment_type: adjustmentType,
+      }).unwrap();
+      toast.success(`Preco de ${selectedIds.length} produto(s) atualizado!`);
+      setSelectedIds([]);
+      setPriceAdjustModal(false);
+      setAdjustmentValue('');
+    } catch {
+      toast.error('Erro ao reajustar precos.');
+    }
+  };
+
+  // Preview of price changes for selected products
+  const pricePreview = useMemo(() => {
+    const value = parseFloat(adjustmentValue);
+    if (isNaN(value)) return [];
+    return products
+      .filter((p: any) => selectedIds.includes(p.id))
+      .map((p: any) => {
+        const currentPrice = Number(p.base_price);
+        let newPrice: number;
+        if (adjustmentType === 'percent') {
+          newPrice = currentPrice * (1 + value / 100);
+        } else {
+          newPrice = currentPrice + value;
+        }
+        newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
+        return { name: p.name, currentPrice, newPrice };
+      });
+  }, [products, selectedIds, adjustmentType, adjustmentValue]);
+
   if (isLoading) return <ListPageSkeleton />;
+
+  const allSelected = filtered.length > 0 && selectedIds.length === filtered.length;
+  const someSelected = selectedIds.length > 0;
 
   return (
     <div>
@@ -260,6 +399,21 @@ export default function ProductList() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="w-10 px-3 py-4">
+                      <button
+                        type="button"
+                        onClick={toggleSelectAll}
+                        className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {allSelected ? (
+                          <CheckSquare className="w-4 h-4 text-primary" />
+                        ) : someSelected ? (
+                          <Minus className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
                     <th className="w-10 px-3 py-4" />
                     <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Produto
@@ -289,6 +443,8 @@ export default function ProductList() {
                         product={product}
                         onDelete={setDeleteTarget}
                         categoriesMap={categoriesMap}
+                        selected={selectedIds.includes(product.id)}
+                        onToggleSelect={toggleSelect}
                       />
                     ))}
                   </tbody>
@@ -299,6 +455,69 @@ export default function ProductList() {
         </div>
       )}
 
+      {/* Floating Bulk Action Bar */}
+      {someSelected && hasPermission('product:update') && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-gray-900 px-6 py-3 text-white shadow-2xl">
+          <span className="text-sm font-medium whitespace-nowrap">
+            {selectedIds.length} produto(s) selecionado(s)
+          </span>
+          <div className="w-px h-6 bg-gray-700" />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-gray-800"
+            onClick={handleBulkActivate}
+            disabled={isBulkLoading}
+          >
+            <ToggleRight className="w-4 h-4" />
+            <span className="ml-1">Ativar</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-gray-800"
+            onClick={handleBulkDeactivate}
+            disabled={isBulkLoading}
+          >
+            <ToggleLeft className="w-4 h-4" />
+            <span className="ml-1">Desativar</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-gray-800"
+            onClick={() => {
+              setAdjustmentValue('');
+              setAdjustmentType('percent');
+              setPriceAdjustModal(true);
+            }}
+            disabled={isBulkLoading}
+          >
+            <DollarSign className="w-4 h-4" />
+            <span className="ml-1">Reajustar Preco</span>
+          </Button>
+          {hasPermission('product:delete') && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-400 hover:bg-red-900/30 hover:text-red-300"
+              onClick={() => setBulkDeleteConfirm(true)}
+              disabled={isBulkLoading}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="ml-1">Excluir</span>
+            </Button>
+          )}
+          <button
+            onClick={() => setSelectedIds([])}
+            className="p-1.5 rounded-lg hover:bg-gray-800 transition-colors ml-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Single Delete Confirm */}
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -308,6 +527,112 @@ export default function ProductList() {
         confirmLabel="Excluir"
         loading={isDeleting}
       />
+
+      {/* Bulk Delete Confirm */}
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title="Excluir Produtos"
+        message={`Tem certeza que deseja excluir ${selectedIds.length} produto(s)? Esta acao nao pode ser desfeita.`}
+        confirmLabel="Excluir Todos"
+        loading={isBulkLoading}
+      />
+
+      {/* Price Adjustment Modal */}
+      <Modal
+        open={priceAdjustModal}
+        onClose={() => setPriceAdjustModal(false)}
+        title="Reajustar Precos"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Ajuste o preco de {selectedIds.length} produto(s) selecionado(s).
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">
+                Tipo de ajuste
+              </label>
+              <Select
+                value={adjustmentType}
+                onChange={(e) => setAdjustmentType(e.target.value as 'percent' | 'fixed')}
+              >
+                <option value="percent">Percentual (%)</option>
+                <option value="fixed">Valor fixo (R$)</option>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">
+                Valor
+              </label>
+              <Input
+                type="number"
+                step={adjustmentType === 'percent' ? '1' : '0.01'}
+                placeholder={adjustmentType === 'percent' ? 'Ex: 10 ou -5' : 'Ex: 2.50 ou -1.00'}
+                value={adjustmentValue}
+                onChange={(e) => setAdjustmentValue(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Use valores negativos para reduzir o preco.
+          </p>
+
+          {/* Price preview */}
+          {pricePreview.length > 0 && (
+            <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">
+                      Produto
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">
+                      Atual
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">
+                      Novo
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {pricePreview.map((item) => (
+                    <tr key={item.name}>
+                      <td className="px-3 py-2 text-foreground">{item.name}</td>
+                      <td className="px-3 py-2 text-right text-muted-foreground">
+                        {formatPrice(item.currentPrice)}
+                      </td>
+                      <td className={cn(
+                        'px-3 py-2 text-right font-medium',
+                        item.newPrice > item.currentPrice ? 'text-red-600' : 'text-green-600',
+                      )}>
+                        {formatPrice(item.newPrice)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setPriceAdjustModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleBulkPriceAdjust}
+              disabled={!adjustmentValue || isBulkLoading}
+              loading={isBulkLoading}
+            >
+              <DollarSign className="w-4 h-4" />
+              <span className="ml-1">Aplicar Reajuste</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

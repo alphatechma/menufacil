@@ -10,22 +10,29 @@ import {
   XCircle,
   Timer,
   X,
+  CheckSquare,
+  Square,
+  Minus,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
   useUpdateOrderStatusMutation,
   useGetDeliveryPersonsQuery,
+  useBulkOrderStatusMutation,
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
+import { usePermission } from '@/hooks/usePermission';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Tabs } from '@/components/ui/Tabs';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone } from '@/utils/formatPhone';
+import { cn } from '@/utils/cn';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<
@@ -129,18 +136,25 @@ function getTimeColor(order: any): string {
   return 'text-gray-500';
 }
 
+// Orders that can be bulk-acted upon (not finished/cancelled)
+const BULK_ELIGIBLE_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
+
 export default function OrderList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [, setTick] = useState(0);
   const [deliveryModal, setDeliveryModal] = useState<{ orderId: string; currentStatus: string } | null>(null);
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkCancelConfirm, setBulkCancelConfirm] = useState(false);
 
   const navigate = useNavigate();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
+  const { hasPermission } = usePermission();
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
+  const [bulkOrderStatus, { isLoading: isBulkLoading }] = useBulkOrderStatusMutation();
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 30000);
@@ -174,6 +188,11 @@ export default function OrderList() {
 
     return result;
   }, [orders, statusFilter, search]);
+
+  // Only eligible orders for bulk actions
+  const eligibleFiltered = useMemo(() => {
+    return filtered.filter((o: any) => BULK_ELIGIBLE_STATUSES.includes(o.status));
+  }, [filtered]);
 
   const handleAdvanceStatus = async (orderId: string, currentStatus: string, orderType?: string) => {
     const flow = getStatusFlow(orderType);
@@ -226,9 +245,57 @@ export default function OrderList() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const eligibleIds = eligibleFiltered.map((o: any) => o.id);
+    if (selectedIds.length === eligibleIds.length && eligibleIds.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(eligibleIds);
+    }
+  };
+
+  const handleBulkCancel = async () => {
+    try {
+      const result = await bulkOrderStatus({ action: 'cancel', ids: selectedIds }).unwrap();
+      if (result.errors?.length) {
+        toast.warning(`${result.affected} pedido(s) cancelado(s), ${result.errors.length} erro(s).`);
+      } else {
+        toast.success(`${result.affected} pedido(s) cancelado(s)!`);
+      }
+      setSelectedIds([]);
+    } catch {
+      toast.error('Erro ao cancelar pedidos.');
+    } finally {
+      setBulkCancelConfirm(false);
+    }
+  };
+
+  const handleBulkStatusUpdate = async (status: string) => {
+    try {
+      const result = await bulkOrderStatus({ action: 'update_status', ids: selectedIds, status }).unwrap();
+      if (result.errors?.length) {
+        toast.warning(`${result.affected} pedido(s) atualizado(s), ${result.errors.length} erro(s).`);
+      } else {
+        toast.success(`${result.affected} pedido(s) atualizado(s)!`);
+      }
+      setSelectedIds([]);
+    } catch {
+      toast.error('Erro ao atualizar pedidos.');
+    }
+  };
+
   const activeDeliveryPersons = deliveryPersons.filter((p: any) => p.is_active);
 
   if (isLoading) return <ListPageSkeleton />;
+
+  const allEligibleSelected = eligibleFiltered.length > 0 && selectedIds.length === eligibleFiltered.length;
+  const someSelected = selectedIds.length > 0;
 
   return (
     <div>
@@ -264,6 +331,21 @@ export default function OrderList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
+                  <th className="w-10 px-3 py-4">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAll}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {allEligibleSelected ? (
+                        <CheckSquare className="w-4 h-4 text-primary" />
+                      ) : someSelected ? (
+                        <Minus className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                  </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Pedido
                   </th>
@@ -295,9 +377,34 @@ export default function OrderList() {
                   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
                   const flow = getStatusFlow(order.order_type);
                   const nextStatus = flow[order.status];
+                  const isEligible = BULK_ELIGIBLE_STATUSES.includes(order.status);
+                  const isSelected = selectedIds.includes(order.id);
 
                   return (
-                    <tr key={order.id} className="hover:bg-muted/50 transition-colors">
+                    <tr
+                      key={order.id}
+                      className={cn(
+                        'hover:bg-muted/50 transition-colors',
+                        isSelected && 'bg-primary/5',
+                      )}
+                    >
+                      <td className="px-3 py-4 w-10">
+                        {isEligible ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleSelect(order.id)}
+                            className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Square className="w-4 h-4" />
+                            )}
+                          </button>
+                        ) : (
+                          <div className="w-6 h-6" />
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         <Link
                           to={`/admin/orders/${order.id}`}
@@ -387,6 +494,63 @@ export default function OrderList() {
           </div>
         </div>
       )}
+
+      {/* Floating Bulk Action Bar */}
+      {someSelected && hasPermission('order:update') && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-gray-900 px-6 py-3 text-white shadow-2xl">
+          <span className="text-sm font-medium whitespace-nowrap">
+            {selectedIds.length} pedido(s) selecionado(s)
+          </span>
+          <div className="w-px h-6 bg-gray-700" />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-gray-800"
+            onClick={() => handleBulkStatusUpdate('preparing')}
+            disabled={isBulkLoading}
+          >
+            <ChefHat className="w-4 h-4" />
+            <span className="ml-1">Preparando</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-gray-800"
+            onClick={() => handleBulkStatusUpdate('ready')}
+            disabled={isBulkLoading}
+          >
+            <Package className="w-4 h-4" />
+            <span className="ml-1">Pronto</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-red-400 hover:bg-red-900/30 hover:text-red-300"
+            onClick={() => setBulkCancelConfirm(true)}
+            disabled={isBulkLoading}
+          >
+            <XCircle className="w-4 h-4" />
+            <span className="ml-1">Cancelar</span>
+          </Button>
+          <button
+            onClick={() => setSelectedIds([])}
+            className="p-1.5 rounded-lg hover:bg-gray-800 transition-colors ml-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Cancel Confirm */}
+      <ConfirmDialog
+        open={bulkCancelConfirm}
+        onClose={() => setBulkCancelConfirm(false)}
+        onConfirm={handleBulkCancel}
+        title="Cancelar Pedidos"
+        message={`Tem certeza que deseja cancelar ${selectedIds.length} pedido(s)? Esta acao nao pode ser desfeita.`}
+        confirmLabel="Cancelar Todos"
+        loading={isBulkLoading}
+      />
 
       {/* Modal: Selecionar Entregador */}
       {deliveryModal && (

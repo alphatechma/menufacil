@@ -67,6 +67,7 @@ export default function ProductForm() {
       sort_order: 0,
       min_variations: 0,
       max_variations: 0,
+      dietary_tags: [],
       variations: [],
       extra_group_ids: [],
     },
@@ -92,6 +93,23 @@ export default function ProductForm() {
   };
 
   const watchedExtraGroupIds = watch('extra_group_ids');
+  const watchedDietaryTags = watch('dietary_tags');
+
+  const DIETARY_TAG_OPTIONS = [
+    { key: 'vegetariano', label: 'Vegetariano' },
+    { key: 'vegano', label: 'Vegano' },
+    { key: 'sem_gluten', label: 'Sem Gluten' },
+    { key: 'sem_lactose', label: 'Sem Lactose' },
+  ];
+
+  const handleToggleDietaryTag = (tag: string) => {
+    const current = watchedDietaryTags ?? [];
+    if (current.includes(tag)) {
+      setValue('dietary_tags', current.filter((t: string) => t !== tag));
+    } else {
+      setValue('dietary_tags', [...current, tag]);
+    }
+  };
 
   useEffect(() => {
     if (product) {
@@ -105,6 +123,7 @@ export default function ProductForm() {
         sort_order: product.sort_order ?? 0,
         min_variations: product.min_variations ?? 0,
         max_variations: product.max_variations ?? 0,
+        dietary_tags: product.dietary_tags ?? [],
         variations: product.variations?.map((v: any) => ({ name: v.name, description: v.description ?? '', price: Number(v.price) })) ?? [],
         extra_group_ids: product.extra_groups?.map((g: any) => g.id) ?? [],
       });
@@ -234,6 +253,30 @@ export default function ProductForm() {
               />
             )}
           </FormField>
+        </FormCard>
+
+        {/* Dietary Tags */}
+        <FormCard>
+          <h2 className="text-lg font-semibold text-foreground">Tags Alimentares</h2>
+          <p className="text-xs text-muted-foreground">
+            Selecione as restricoes alimentares que se aplicam a este produto.
+          </p>
+          <div className="flex flex-wrap gap-3 mt-2">
+            {DIETARY_TAG_OPTIONS.map((tag) => (
+              <label
+                key={tag.key}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border hover:bg-accent cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={watchedDietaryTags?.includes(tag.key) ?? false}
+                  onChange={() => handleToggleDietaryTag(tag.key)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-foreground">{tag.label}</span>
+              </label>
+            ))}
+          </div>
         </FormCard>
 
         {/* Variations */}

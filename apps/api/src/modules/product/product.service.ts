@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ProductRepository } from './product.repository';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ReorderProductsDto } from './dto/reorder-products.dto';
+import { BulkProductActionDto, BulkProductActionType } from './dto/bulk-product-action.dto';
 import { Product } from './entities/product.entity';
 import { ExtraGroup } from './entities/extra-group.entity';
 
@@ -87,6 +88,36 @@ export class ProductService {
   async remove(id: string, tenantId: string): Promise<void> {
     await this.findById(id, tenantId);
     await this.productRepository.remove(id, tenantId);
+  }
+
+  async bulkAction(tenantId: string, dto: BulkProductActionDto): Promise<{ affected: number }> {
+    if (!dto.ids.length) {
+      throw new BadRequestException('No product IDs provided');
+    }
+
+    switch (dto.action) {
+      case BulkProductActionType.ACTIVATE:
+        await this.productRepository.bulkUpdateActive(dto.ids, tenantId, true);
+        return { affected: dto.ids.length };
+
+      case BulkProductActionType.DEACTIVATE:
+        await this.productRepository.bulkUpdateActive(dto.ids, tenantId, false);
+        return { affected: dto.ids.length };
+
+      case BulkProductActionType.DELETE:
+        await this.productRepository.bulkDelete(dto.ids, tenantId);
+        return { affected: dto.ids.length };
+
+      case BulkProductActionType.ADJUST_PRICE:
+        if (dto.value === undefined || !dto.adjustment_type) {
+          throw new BadRequestException('Value and adjustment_type are required for price adjustment');
+        }
+        await this.productRepository.bulkAdjustPrice(dto.ids, tenantId, dto.value, dto.adjustment_type);
+        return { affected: dto.ids.length };
+
+      default:
+        throw new BadRequestException(`Unknown bulk action: ${dto.action}`);
+    }
   }
 
   // Extra Groups

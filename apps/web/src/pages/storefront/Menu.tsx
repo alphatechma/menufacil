@@ -1,9 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Search, X, Lock } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { Lock, Flame, Heart } from 'lucide-react';
 import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery } from '@/api/customerApi';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { toggleFavorite, selectFavoriteIds } from '@/store/slices/favoritesSlice';
 import { formatPrice } from '@/utils/formatPrice';
+import { cn } from '@/utils/cn';
+import { SmartSearch } from '@/components/ui/SmartSearch';
+
+const DIETARY_FILTERS = [
+  { key: 'vegetariano', label: 'Vegetariano' },
+  { key: 'vegano', label: 'Vegano' },
+  { key: 'sem_gluten', label: 'Sem Gluten' },
+  { key: 'sem_lactose', label: 'Sem Lactose' },
+] as const;
 
 export default function Menu() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,11 +30,55 @@ export default function Menu() {
     { skip: !slug },
   );
 
+  const navigate = useNavigate();
+
   const [activeCategory, setActiveCategory] = useState<string | null>(
     searchParams.get('category'),
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeDietaryFilters, setActiveDietaryFilters] = useState<string[]>([]);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+
+  // Compute top 5 products by order_count for "Mais Pedido" badge
+  const topProductIds = useMemo(() => {
+    const sorted = [...products]
+      .filter((p: any) => (p.order_count ?? 0) > 0)
+      .sort((a: any, b: any) => (b.order_count ?? 0) - (a.order_count ?? 0))
+      .slice(0, 5)
+      .map((p: any) => p.id);
+    return new Set(sorted);
+  }, [products]);
+
+  // Items for SmartSearch
+  const searchItems = useMemo(
+    () =>
+      products
+        .filter((p: any) => p.is_active)
+        .map((p: any) => ({
+          id: p.id,
+          label: p.name,
+          description: p.description || undefined,
+          image: p.image_url || p.category?.image_url || undefined,
+        })),
+    [products],
+  );
+
+  // Popular items: first 5 active products (could be sorted by order count in the future)
+  const popularItems = useMemo(
+    () => searchItems.slice(0, 5),
+    [searchItems],
+  );
+
+  const handleSmartSelect = useCallback(
+    (item: { id: string; label: string }) => {
+      navigate(`/${slug}/menu/${item.id}`);
+    },
+    [navigate, slug],
+  );
+
+  const handleSmartSearch = useCallback((q: string) => {
+    setSearchQuery(q);
+  }, []);
 
   useEffect(() => {
     const cat = searchParams.get('category');
@@ -42,6 +96,12 @@ export default function Menu() {
     }
   };
 
+  const handleToggleDietaryFilter = (key: string) => {
+    setActiveDietaryFilters((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key],
+    );
+  };
+
   const filteredProducts = products.filter((product: any) => {
     if (!product.is_active) return false;
 
@@ -54,7 +114,14 @@ export default function Menu() {
         product.description?.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
-    return matchesCategory && matchesSearch;
+    const matchesDietary =
+      activeDietaryFilters.length === 0
+        ? true
+        : activeDietaryFilters.every((tag) =>
+            (product.dietary_tags ?? []).includes(tag),
+          );
+
+    return matchesCategory && matchesSearch && matchesDietary;
   });
 
   // Group products by category for display when no category filter is active
@@ -71,24 +138,14 @@ export default function Menu() {
     <div className="pb-6">
       {/* Search bar */}
       <div className="sticky top-16 z-30 bg-white border-b border-gray-100 px-4 py-3">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar no cardapio..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100"
-            >
-              <X className="w-4 h-4 text-gray-400" />
-            </button>
-          )}
-        </div>
+        <SmartSearch
+          items={searchItems}
+          onSelect={handleSmartSelect}
+          onSearch={handleSmartSearch}
+          placeholder="Buscar no cardapio..."
+          storageKey="menu-search-recent"
+          popularItems={popularItems}
+        />
       </div>
 
       {/* Category tabs */}
@@ -133,6 +190,29 @@ export default function Menu() {
         </div>
       )}
 
+      {/* Dietary filter pills */}
+      <div className="px-4 pt-3 flex gap-2 overflow-x-auto scrollbar-none">
+        {DIETARY_FILTERS.map((filter) => (
+          <button
+            key={filter.key}
+            onClick={() => handleToggleDietaryFilter(filter.key)}
+            className={cn(
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+              activeDietaryFilters.includes(filter.key)
+                ? 'text-white border-transparent shadow-sm'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
+            )}
+            style={
+              activeDietaryFilters.includes(filter.key)
+                ? { background: 'var(--tenant-primary)' }
+                : {}
+            }
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
       {/* Products */}
       <div className="px-4 pt-4">
         {activeCategory || searchQuery ? (
@@ -144,6 +224,7 @@ export default function Menu() {
                 product={product}
                 slug={slug!}
                 isClosed={isClosed}
+                isTopProduct={topProductIds.has(product.id)}
               />
             ))}
           </div>
@@ -189,11 +270,17 @@ function ProductCard({
   product,
   slug,
   isClosed,
+  isTopProduct,
 }: {
   product: any;
   slug: string;
   isClosed: boolean;
+  isTopProduct: boolean;
 }) {
+  const dispatch = useAppDispatch();
+  const favoriteIds = useAppSelector(selectFavoriteIds);
+  const isFavorited = favoriteIds.includes(product.id);
+
   const hasVariations = product.variations && product.variations.length > 0;
 
   const minPrice = hasVariations
@@ -202,6 +289,12 @@ function ProductCard({
 
   const Wrapper = isClosed ? 'div' : Link;
   const wrapperProps = isClosed ? {} : { to: `/${slug}/menu/${product.id}` };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(toggleFavorite(product.id));
+  };
 
   return (
     <Wrapper
@@ -222,7 +315,29 @@ function ProductCard({
       )}
       <div className={`flex-1 p-4 flex flex-col justify-between ${isClosed ? 'opacity-50' : ''}`}>
         <div>
-          <h4 className="font-semibold text-gray-900 mb-1">{product.name}</h4>
+          <div className="flex items-start gap-2">
+            <h4 className="font-semibold text-gray-900 mb-1 flex-1">{product.name}</h4>
+            <button
+              onClick={handleFavoriteClick}
+              className="shrink-0 p-1 -mt-0.5 -mr-1 rounded-full hover:bg-gray-100 transition-colors z-20 relative"
+              aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            >
+              <Heart
+                className={cn(
+                  'w-4 h-4 transition-colors',
+                  isFavorited
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-gray-300 hover:text-red-400',
+                )}
+              />
+            </button>
+          </div>
+          {isTopProduct && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-600 mb-1">
+              <Flame className="w-3 h-3" />
+              Mais Pedido
+            </span>
+          )}
           {product.description && (
             <p className="text-sm text-gray-500 line-clamp-2">
               {product.description}

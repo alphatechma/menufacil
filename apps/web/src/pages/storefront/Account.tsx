@@ -19,6 +19,7 @@ import {
   Copy,
   History,
   Ticket,
+  RotateCcw,
 } from 'lucide-react';
 import {
   useCustomerLoginMutation,
@@ -35,6 +36,8 @@ import {
 } from '@/api/customerApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { customerLoginSuccess, customerLogout } from '@/store/slices/customerAuthSlice';
+import { addItem } from '@/store/slices/cartSlice';
+import { toast } from 'sonner';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone, formatCpf } from '@/utils/formatPhone';
 import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
@@ -1319,36 +1322,67 @@ export default function Account() {
           ) : (
             <div className="divide-y divide-gray-100">
               {orders.map((order: any) => (
-                <button
-                  key={order.id}
-                  onClick={() => navigate(`/${slug}/order/${order.id}`)}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900 text-sm">
-                        Pedido #{order.order_number || order.id.slice(0, 8)}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                          STATUS_COLORS[order.status as OrderStatus] || 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {STATUS_LABELS[order.status as OrderStatus] || order.status}
-                      </span>
+                <div key={order.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <button
+                    onClick={() => navigate(`/${slug}/order/${order.id}`)}
+                    className="w-full flex items-center gap-3 text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-gray-900 text-sm">
+                          Pedido #{order.order_number || order.id.slice(0, 8)}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            STATUS_COLORS[order.status as OrderStatus] || 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {STATUS_LABELS[order.status as OrderStatus] || order.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(order.created_at)}
+                        </span>
+                        <span className="font-medium text-gray-600">
+                          {formatPrice(order.total)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(order.created_at)}
-                      </span>
-                      <span className="font-medium text-gray-600">
-                        {formatPrice(order.total)}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-                </button>
+                    <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                  </button>
+                  {(order.status === 'delivered' || order.status === 'cancelled') && order.items?.length > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        order.items.forEach((item: any) => {
+                          dispatch(
+                            addItem({
+                              product_id: item.product_id,
+                              product_name: item.product_name,
+                              product_image: null,
+                              variation_id: item.variation_id || null,
+                              variation_name: item.variation_name || null,
+                              unit_price: Number(item.unit_price),
+                              quantity: item.quantity,
+                              extras: item.extras?.map((ex: any) => ({
+                                name: ex.name,
+                                price: Number(ex.price),
+                              })) ?? [],
+                            }),
+                          );
+                        });
+                        toast.success('Itens adicionados ao carrinho!');
+                      }}
+                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                      style={{ color: 'var(--tenant-primary)' }}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Pedir novamente
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}

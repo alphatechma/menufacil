@@ -48,6 +48,9 @@ export class Product {
   @Column({ default: 0 })
   max_variations: number;
 
+  @Column({ type: 'simple-json', nullable: true, default: '[]' })
+  dietary_tags: string[];
+
   @ManyToOne(() => Tenant, (tenant) => tenant.products)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;

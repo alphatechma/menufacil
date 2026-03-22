@@ -1,16 +1,13 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import {
-  ShoppingCart,
   DollarSign,
-  Users,
+  ShoppingCart,
   TrendingUp,
+  TrendingDown,
   XCircle,
-  Clock,
-  Check,
-  ChefHat,
-  Truck,
-  Package,
+  ArrowUp,
+  ArrowDown,
+  Calendar,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -23,21 +20,42 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { useGetDashboardDataQuery, useGetOrdersQuery, useGetCustomersQuery } from '@/api/adminApi';
+import { useGetAdvancedStatsQuery } from '@/api/adminApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Badge } from '@/components/ui/Badge';
+import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 
-const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700', icon: <Clock className="w-3 h-3" /> },
-  confirmed: { label: 'Confirmado', color: 'bg-blue-100 text-blue-700', icon: <Check className="w-3 h-3" /> },
-  preparing: { label: 'Preparando', color: 'bg-indigo-100 text-indigo-700', icon: <ChefHat className="w-3 h-3" /> },
-  ready: { label: 'Pronto', color: 'bg-green-100 text-green-700', icon: <Package className="w-3 h-3" /> },
-  out_for_delivery: { label: 'Em Entrega', color: 'bg-purple-100 text-purple-700', icon: <Truck className="w-3 h-3" /> },
-  delivered: { label: 'Entregue', color: 'bg-emerald-100 text-emerald-700', icon: <Check className="w-3 h-3" /> },
-  cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-700', icon: <XCircle className="w-3 h-3" /> },
-};
+type DatePreset = 'today' | '7days' | '30days' | '90days' | 'custom';
+
+function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string) {
+  const now = new Date();
+  const to = now.toISOString().split('T')[0];
+
+  if (preset === 'custom' && customFrom && customTo) {
+    return { from: customFrom, to: customTo };
+  }
+
+  const daysMap: Record<string, number> = {
+    today: 0,
+    '7days': 7,
+    '30days': 30,
+    '90days': 90,
+  };
+
+  const days = daysMap[preset] ?? 7;
+  const d = new Date(now);
+  d.setDate(d.getDate() - days);
+  return { from: d.toISOString().split('T')[0], to };
+}
+
+const presets: { key: DatePreset; label: string }[] = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7days', label: '7 dias' },
+  { key: '30days', label: '30 dias' },
+  { key: '90days', label: '90 dias' },
+  { key: 'custom', label: 'Personalizado' },
+];
 
 const tooltipStyle = {
   borderRadius: '12px',
@@ -47,28 +65,45 @@ const tooltipStyle = {
   color: 'hsl(var(--foreground))',
 };
 
-function formatDateRange() {
-  const now = new Date();
-  const since = new Date(now);
-  since.setDate(now.getDate() - 6);
-  return {
-    since: since.toISOString().split('T')[0],
-    until: now.toISOString().split('T')[0],
-  };
+function ComparisonBadge({ value }: { value: number }) {
+  if (value === 0) return null;
+  const isPositive = value > 0;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-2 py-0.5',
+        isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700',
+      )}
+    >
+      {isPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+      {Math.abs(value).toFixed(1)}%
+    </span>
+  );
 }
 
 export default function Dashboard() {
-  const range = useMemo(formatDateRange, []);
-  const { data: dashboard, isLoading } = useGetDashboardDataQuery(range, { refetchOnMountOrArgChange: true });
-  const { data: orders = [] } = useGetOrdersQuery(undefined, { refetchOnMountOrArgChange: true });
-  const { data: customers = [] } = useGetCustomersQuery();
+  const [preset, setPreset] = useState<DatePreset>('7days');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  const range = useMemo(
+    () => getDateRange(preset, customFrom, customTo),
+    [preset, customFrom, customTo],
+  );
+
+  const { data, isLoading } = useGetAdvancedStatsQuery(range, {
+    refetchOnMountOrArgChange: true,
+  });
 
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64 mt-2" />
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-72 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -91,193 +126,296 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-        <Card>
-          <CardContent className="p-5">
-            <Skeleton className="h-5 w-40 mb-4" />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full mt-2" />
-            ))}
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  const totalRevenue = Number(dashboard?.totals?.total_revenue || 0);
-  const totalOrders = Number(dashboard?.totals?.total_orders || 0);
-  const cancelledOrders = Number(dashboard?.totals?.cancelled_orders || 0);
-  const validOrders = totalOrders - cancelledOrders;
-  const avgTicket = validOrders > 0 ? totalRevenue / validOrders : 0;
+  const revenue = Number(data?.revenue || 0);
+  const orderCount = Number(data?.orderCount || 0);
+  const avgTicket = Number(data?.avgTicket || 0);
+  const cancelRate = Number(data?.cancelRate || 0);
 
-  const recentOrders = orders.slice(0, 8);
-
-  const revenueData = (dashboard?.daily || []).map((d: any) => ({
-    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-    revenue: Number(d.revenue),
-  }));
-
-  const ordersChartData = (dashboard?.daily || []).map((d: any) => ({
-    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-    pedidos: Number(d.orders),
-  }));
-
-  const stats = [
+  const kpis = [
     {
-      label: 'Receita (7 dias)',
-      value: formatPrice(totalRevenue),
+      label: 'Receita',
+      value: formatPrice(revenue),
+      comparison: data?.revenueComparison ?? 0,
       icon: DollarSign,
-      bgColor: 'bg-green-50 dark:bg-green-950/40',
+      bgColor: 'bg-green-50',
       iconColor: 'text-green-600',
     },
     {
-      label: 'Pedidos (7 dias)',
-      value: String(validOrders),
+      label: 'Pedidos',
+      value: String(orderCount),
+      comparison: data?.orderCountComparison ?? 0,
       icon: ShoppingCart,
-      bgColor: 'bg-orange-50 dark:bg-orange-950/40',
-      iconColor: 'text-primary',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600',
     },
     {
       label: 'Ticket Medio',
       value: formatPrice(avgTicket),
+      comparison: data?.avgTicketComparison ?? 0,
       icon: TrendingUp,
-      bgColor: 'bg-blue-50 dark:bg-blue-950/40',
-      iconColor: 'text-blue-600',
+      bgColor: 'bg-orange-50',
+      iconColor: 'text-primary',
     },
     {
-      label: 'Clientes',
-      value: String(customers.length),
-      icon: Users,
-      bgColor: 'bg-purple-50 dark:bg-purple-950/40',
-      iconColor: 'text-purple-600',
+      label: 'Taxa de Cancelamento',
+      value: `${cancelRate.toFixed(1)}%`,
+      comparison: data?.cancelRateComparison ?? 0,
+      icon: XCircle,
+      bgColor: 'bg-red-50',
+      iconColor: 'text-red-500',
+      invertComparison: true,
     },
   ];
 
+  const trendData = (data?.ordersPerDay || []).map((d: any) => ({
+    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    revenue: Number(d.revenue),
+    pedidos: Number(d.count),
+  }));
+
+  const hourData = data?.ordersByHour || [];
+
+  const topProducts = data?.topProducts || [];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Visao geral do seu restaurante</p>
+      {/* Header + Date Range */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Visao geral do seu restaurante</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1">
+            {presets.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPreset(p.key)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                  preset === p.key
+                    ? 'bg-primary text-white'
+                    : 'text-muted-foreground hover:bg-muted',
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {preset === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="px-3 py-1.5 text-xs border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <span className="text-xs text-muted-foreground">ate</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="px-3 py-1.5 text-xs border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="rounded-xl">
-            <CardContent className="p-5">
-              <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
-                <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-              </div>
-              <p className="mt-3 text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {kpis.map((kpi) => {
+          const compValue = kpi.invertComparison ? -kpi.comparison : kpi.comparison;
+          return (
+            <Card key={kpi.label}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', kpi.bgColor)}>
+                    <kpi.icon className={cn('w-5 h-5', kpi.iconColor)} />
+                  </div>
+                  <ComparisonBadge value={compValue} />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                <p className="text-sm text-muted-foreground">{kpi.label}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Charts */}
+      {/* Revenue + Orders Trend Chart */}
+      <Card>
+        <CardHeader className="p-5 pb-0">
+          <CardTitle>Receita e Pedidos</CardTitle>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="h-72">
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-2, 200 80% 50%))" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="hsl(var(--chart-2, 200 80% 50%))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis
+                    yAxisId="revenue"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(v) => `R$${v}`}
+                  />
+                  <YAxis
+                    yAxisId="orders"
+                    orientation="right"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number, name: string) => [
+                      name === 'revenue' ? formatPrice(value) : value,
+                      name === 'revenue' ? 'Receita' : 'Pedidos',
+                    ]}
+                  />
+                  <Area
+                    yAxisId="revenue"
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="hsl(var(--chart-1))"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
+                  />
+                  <Area
+                    yAxisId="orders"
+                    type="monotone"
+                    dataKey="pedidos"
+                    stroke="hsl(var(--chart-2, 200 80% 50%))"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorOrders)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                Sem dados no periodo
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bottom row: Top Products + Orders by Hour */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-xl">
+        {/* Top 5 Products */}
+        <Card>
           <CardHeader className="p-5 pb-0">
-            <CardTitle>Receita (7 dias)</CardTitle>
+            <CardTitle>Top 5 Produtos</CardTitle>
           </CardHeader>
           <CardContent className="p-5">
-            <div className="h-64">
-              {revenueData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `R$${v}`} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatPrice(value), 'Receita']} />
-                    <Area type="monotone" dataKey="revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
-              )}
-            </div>
+            {topProducts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Produto
+                      </th>
+                      <th className="text-right py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Qtd
+                      </th>
+                      <th className="text-right py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Receita
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {topProducts.map((product: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-muted/50 transition-colors">
+                        <td className="py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <span className="text-sm font-medium text-foreground">
+                              {product.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-right text-sm text-muted-foreground">
+                          {product.count}x
+                        </td>
+                        <td className="py-3 text-right text-sm font-medium text-foreground">
+                          {formatPrice(product.revenue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+                Sem dados no periodo
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl">
+        {/* Orders by Hour */}
+        <Card>
           <CardHeader className="p-5 pb-0">
-            <CardTitle>Pedidos por Dia</CardTitle>
+            <CardTitle>Pedidos por Hora</CardTitle>
           </CardHeader>
           <CardContent className="p-5">
             <div className="h-64">
-              {ordersChartData.length > 0 ? (
+              {hourData.some((h: any) => h.count > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={ordersChartData}>
+                  <BarChart data={hourData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey="pedidos" fill="hsl(var(--chart-1))" radius={[6, 6, 0, 0]} name="Pedidos" />
+                    <XAxis
+                      dataKey="hour"
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickFormatter={(h) => `${String(h).padStart(2, '0')}h`}
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      labelFormatter={(h) => `${String(h).padStart(2, '0')}:00`}
+                      formatter={(value: number) => [value, 'Pedidos']}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="hsl(var(--chart-1))"
+                      radius={[4, 4, 0, 0]}
+                      name="Pedidos"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                  Sem dados no periodo
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Orders */}
-      <Card className="rounded-xl">
-        <CardHeader className="px-5 py-4 flex-row items-center justify-between space-y-0 border-b border-border">
-          <CardTitle>Pedidos Recentes</CardTitle>
-          <Link to="/admin/orders" className="text-sm text-primary hover:underline">Ver todos</Link>
-        </CardHeader>
-        {recentOrders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedido</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {recentOrders.map((order: any) => {
-                  const status = STATUS_LABELS[order.status] || STATUS_LABELS.pending;
-                  return (
-                    <tr key={order.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <Link to={`/admin/orders/${order.id}`} className="text-sm font-medium text-primary hover:underline">
-                          #{order.order_number}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-muted-foreground">{order.customer?.name || '-'}</td>
-                      <td className="px-5 py-3.5 text-sm font-medium text-foreground">{formatPrice(order.total || 0)}</td>
-                      <td className="px-5 py-3.5">
-                        <Badge className={status.color}>
-                          {status.icon}
-                          <span className="ml-1">{status.label}</span>
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                        {order.created_at ? new Date(order.created_at.endsWith('Z') ? order.created_at : order.created_at + 'Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido registrado</div>
-        )}
-      </Card>
     </div>
   );
 }

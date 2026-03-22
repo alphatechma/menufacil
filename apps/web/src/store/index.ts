@@ -6,6 +6,7 @@ import cartReducer from './slices/cartSlice';
 import tenantReducer from './slices/tenantSlice';
 import uiReducer from './slices/uiSlice';
 import notificationReducer from './slices/notificationSlice';
+import favoritesReducer from './slices/favoritesSlice';
 import { baseApi } from '../api/baseApi';
 
 const persistMiddleware: Middleware = (store) => (next) => (action) => {
@@ -36,6 +37,11 @@ const persistMiddleware: Middleware = (store) => (next) => (action) => {
     localStorage.setItem('menufacil-theme', state.ui.themeMode);
   }
 
+  // Persist favorites
+  if (typeof action === 'object' && action !== null && 'type' in action && typeof (action as { type: string }).type === 'string' && (action as { type: string }).type.startsWith('favorites/')) {
+    localStorage.setItem('menufacil-favorites', JSON.stringify(state.favorites.productIds));
+  }
+
   return result;
 };
 
@@ -47,6 +53,7 @@ export const store = configureStore({
     tenant: tenantReducer,
     ui: uiReducer,
     notification: notificationReducer,
+    favorites: favoritesReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

@@ -17,6 +17,7 @@ export const productSchema = z.object({
   sort_order: z.coerce.number().int().min(0).default(0),
   min_variations: z.coerce.number().int().min(0).default(0),
   max_variations: z.coerce.number().int().min(0).default(0),
+  dietary_tags: z.array(z.string()).default([]),
   variations: z.array(variationSchema).default([]),
   extra_group_ids: z.array(z.string()).default([]),
 });

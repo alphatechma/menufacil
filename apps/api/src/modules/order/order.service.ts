@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { OrderStatus, OrderType, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
+import { BulkOrderStatusDto, BulkOrderActionType } from './dto/bulk-order-status.dto';
 import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
@@ -433,6 +434,126 @@ export class OrderService {
     };
   }
 
+  async getAdvancedStats(tenantId: string, dateFrom: string, dateTo: string) {
+    const sinceDate = new Date(`${dateFrom}T00:00:00`);
+    const untilDate = new Date(`${dateTo}T23:59:59.999`);
+
+    // Calculate previous period of same length for comparison
+    const periodMs = untilDate.getTime() - sinceDate.getTime();
+    const prevUntil = new Date(sinceDate.getTime() - 1);
+    const prevSince = new Date(prevUntil.getTime() - periodMs);
+
+    // Current period totals
+    const currentTotals = await this.orderRepo
+      .createQueryBuilder('o')
+      .select('COUNT(*)::int', 'total_orders')
+      .addSelect("COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total ELSE 0 END), 0)::numeric", 'revenue')
+      .addSelect("COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END)::int", 'cancelled_orders')
+      .where('o.tenant_id = :tenantId', { tenantId })
+      .andWhere('o.created_at >= :since', { since: sinceDate })
+      .andWhere('o.created_at <= :until', { until: untilDate })
+      .getRawOne();
+
+    // Previous period totals
+    const prevTotals = await this.orderRepo
+      .createQueryBuilder('o')
+      .select('COUNT(*)::int', 'total_orders')
+      .addSelect("COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total ELSE 0 END), 0)::numeric", 'revenue')
+      .addSelect("COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END)::int", 'cancelled_orders')
+      .where('o.tenant_id = :tenantId', { tenantId })
+      .andWhere('o.created_at >= :since', { since: prevSince })
+      .andWhere('o.created_at <= :until', { until: prevUntil })
+      .getRawOne();
+
+    const revenue = Number(currentTotals.revenue) || 0;
+    const orderCount = Number(currentTotals.total_orders) || 0;
+    const cancelledOrders = Number(currentTotals.cancelled_orders) || 0;
+    const validOrders = orderCount - cancelledOrders;
+    const avgTicket = validOrders > 0 ? revenue / validOrders : 0;
+    const cancelRate = orderCount > 0 ? (cancelledOrders / orderCount) * 100 : 0;
+
+    const prevRevenue = Number(prevTotals.revenue) || 0;
+    const prevOrderCount = Number(prevTotals.total_orders) || 0;
+    const prevCancelled = Number(prevTotals.cancelled_orders) || 0;
+    const prevValidOrders = prevOrderCount - prevCancelled;
+    const prevAvgTicket = prevValidOrders > 0 ? prevRevenue / prevValidOrders : 0;
+    const prevCancelRate = prevOrderCount > 0 ? (prevCancelled / prevOrderCount) * 100 : 0;
+
+    const pctChange = (curr: number, prev: number) => {
+      if (prev === 0) return curr > 0 ? 100 : 0;
+      return ((curr - prev) / prev) * 100;
+    };
+
+    // Top 5 products
+    const topProducts = await this.orderRepo
+      .query(
+        `SELECT oi.product_name as name, SUM(oi.quantity)::int as count,
+                COALESCE(SUM(oi.unit_price * oi.quantity), 0)::numeric as revenue
+         FROM order_items oi
+         INNER JOIN orders o ON o.id = oi.order_id
+         WHERE o.tenant_id = $1 AND o.status != 'cancelled'
+           AND o.created_at >= $2 AND o.created_at <= $3
+         GROUP BY oi.product_name
+         ORDER BY count DESC
+         LIMIT 5`,
+        [tenantId, sinceDate, untilDate],
+      );
+
+    // Orders by hour (0-23)
+    const ordersByHourRaw = await this.orderRepo
+      .query(
+        `SELECT EXTRACT(HOUR FROM o.created_at)::int as hour, COUNT(*)::int as count
+         FROM orders o
+         WHERE o.tenant_id = $1 AND o.status != 'cancelled'
+           AND o.created_at >= $2 AND o.created_at <= $3
+         GROUP BY hour
+         ORDER BY hour`,
+        [tenantId, sinceDate, untilDate],
+      );
+
+    const hourMap = new Map(ordersByHourRaw.map((r: any) => [r.hour, r.count]));
+    const ordersByHour = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      count: Number(hourMap.get(i) || 0),
+    }));
+
+    // Orders per day (for trend chart)
+    const ordersPerDay = await this.orderRepo
+      .query(
+        `SELECT DATE(o.created_at) as date,
+                COUNT(CASE WHEN o.status != 'cancelled' THEN 1 END)::int as count,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total ELSE 0 END), 0)::numeric as revenue
+         FROM orders o
+         WHERE o.tenant_id = $1
+           AND o.created_at >= $2 AND o.created_at <= $3
+         GROUP BY DATE(o.created_at)
+         ORDER BY date ASC`,
+        [tenantId, sinceDate, untilDate],
+      );
+
+    return {
+      revenue,
+      orderCount: validOrders,
+      avgTicket: Math.round(avgTicket * 100) / 100,
+      cancelRate: Math.round(cancelRate * 100) / 100,
+      revenueComparison: Math.round(pctChange(revenue, prevRevenue) * 100) / 100,
+      orderCountComparison: Math.round(pctChange(validOrders, prevValidOrders) * 100) / 100,
+      avgTicketComparison: Math.round(pctChange(avgTicket, prevAvgTicket) * 100) / 100,
+      cancelRateComparison: Math.round(pctChange(cancelRate, prevCancelRate) * 100) / 100,
+      topProducts: topProducts.map((p: any) => ({
+        name: p.name,
+        count: Number(p.count),
+        revenue: Number(p.revenue),
+      })),
+      ordersByHour,
+      ordersPerDay: ordersPerDay.map((d: any) => ({
+        date: d.date,
+        count: Number(d.count),
+        revenue: Number(d.revenue),
+      })),
+    };
+  }
+
   async assignDeliveryPerson(orderId: string, deliveryPersonId: string | null, tenantId: string): Promise<Order> {
     await this.findById(orderId, tenantId);
     await this.orderRepository.updateStatus(orderId, tenantId, { delivery_person_id: deliveryPersonId } as any);
@@ -450,6 +571,30 @@ export class OrderService {
     const sinceDate = new Date(`${since}T00:00:00`);
     const untilDate = new Date(`${until}T23:59:59.999`);
     return this.orderRepository.getDashboardData(tenantId, sinceDate, untilDate, filters);
+  }
+
+  async bulkStatusUpdate(tenantId: string, dto: BulkOrderStatusDto): Promise<{ affected: number; errors: string[] }> {
+    if (!dto.ids.length) {
+      throw new BadRequestException('No order IDs provided');
+    }
+
+    const errors: string[] = [];
+    let affected = 0;
+
+    for (const id of dto.ids) {
+      try {
+        if (dto.action === BulkOrderActionType.CANCEL) {
+          await this.updateStatus(id, OrderStatus.CANCELLED, tenantId);
+        } else if (dto.action === BulkOrderActionType.UPDATE_STATUS && dto.status) {
+          await this.updateStatus(id, dto.status as OrderStatus, tenantId);
+        }
+        affected++;
+      } catch (err: any) {
+        errors.push(`Order ${id}: ${err?.message || 'Unknown error'}`);
+      }
+    }
+
+    return { affected, errors };
   }
 
   // ── Cash Register ──

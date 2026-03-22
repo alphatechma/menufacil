@@ -118,6 +118,12 @@ export class CreateProductDto {
   @Min(0)
   max_variations?: number;
 
+  @ApiPropertyOptional({ type: [String], example: ['vegetariano', 'vegano'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  dietary_tags?: string[];
+
   @ApiPropertyOptional({ type: [CreateVariationDto] })
   @IsOptional()
   @IsArray()

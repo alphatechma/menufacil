@@ -16,6 +16,7 @@ import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AssignDeliveryPersonDto } from './dto/assign-delivery-person.dto';
+import { BulkOrderStatusDto } from './dto/bulk-order-status.dto';
 import { CurrentTenant, CurrentUnit, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
@@ -87,6 +88,25 @@ export class OrderController {
     );
   }
 
+  @Get('stats/advanced')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:read')
+  @ApiOperation({ summary: 'Get advanced dashboard stats with comparisons' })
+  getAdvancedStats(
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const now = new Date();
+    const defaultFrom = new Date(now);
+    defaultFrom.setDate(now.getDate() - 7);
+    return this.orderService.getAdvancedStats(
+      tenantId,
+      from || defaultFrom.toISOString().split('T')[0],
+      to || now.toISOString().split('T')[0],
+    );
+  }
+
   @Get('stats/performance')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('order:read')
@@ -115,6 +135,17 @@ export class OrderController {
     @Query('limit') limit: string,
   ) {
     return this.orderService.getCashRegisterHistory(tenantId, parseInt(limit) || 30);
+  }
+
+  @Put('bulk-status')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('order:update')
+  @ApiOperation({ summary: 'Bulk update order status (cancel, update_status)' })
+  bulkStatusUpdate(
+    @Body() dto: BulkOrderStatusDto,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.orderService.bulkStatusUpdate(tenantId, dto);
   }
 
   @Get('my')

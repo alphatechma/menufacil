@@ -78,6 +78,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/products/reorder', method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Products'],
     }),
+    bulkProductAction: builder.mutation<{ affected: number }, { action: string; ids: string[]; value?: number; adjustment_type?: string }>({
+      query: (body) => ({ url: '/products/bulk', method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Products'],
+    }),
     getExtraGroups: builder.query<any[], void>({
       query: () => ({ url: '/extra-groups', meta: { authContext: 'admin' as const } }),
       providesTags: ['ExtraGroups'],
@@ -108,10 +112,22 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard'],
     }),
+    bulkOrderStatus: builder.mutation<{ affected: number; errors: string[] }, { action: string; ids: string[]; status?: string }>({
+      query: (body) => ({ url: '/orders/bulk-status', method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
     getDashboardData: builder.query<any, { since: string; until: string; status?: string; payment_method?: string; delivery_person_id?: string }>({
       query: ({ since, until, status, payment_method, delivery_person_id }) => ({
         url: '/orders/stats/dashboard',
         params: { since, until, ...(status && { status }), ...(payment_method && { payment_method }), ...(delivery_person_id && { delivery_person_id }) },
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['Dashboard'],
+    }),
+    getAdvancedStats: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({
+        url: '/orders/stats/advanced',
+        params,
         meta: { authContext: 'admin' as const },
       }),
       providesTags: ['Dashboard'],
@@ -573,6 +589,7 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useReorderProductsMutation,
+  useBulkProductActionMutation,
   useGetExtraGroupsQuery,
   useCreateExtraGroupMutation,
   useUpdateExtraGroupMutation,
@@ -580,7 +597,9 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
+  useBulkOrderStatusMutation,
   useGetDashboardDataQuery,
+  useGetAdvancedStatsQuery,
   useGetOrderPerformanceStatsQuery,
   useGetCustomersQuery,
   useGetCustomerQuery,

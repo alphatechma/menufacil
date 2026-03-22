@@ -15,6 +15,7 @@ import {
   Trash2,
   Tag,
   Check,
+  CheckCircle,
   Truck,
   ShoppingBag,
   UtensilsCrossed,
@@ -30,11 +31,11 @@ import {
   useGetCustomerOrdersQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-// customerLoginSuccess now handled by Account page
 import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
 import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
 import { maskCep } from '@/utils/masks';
+import { cn } from '@/utils/cn';
 
 type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash';
 
@@ -81,6 +82,226 @@ const PAYMENT_METHODS: {
   },
 ];
 
+// --- Checkout Step Indicator ---
+const CHECKOUT_STEPS = [
+  { label: 'Entrega', icon: MapPin },
+  { label: 'Pagamento', icon: CreditCard },
+  { label: 'Confirmacao', icon: CheckCircle },
+] as const;
+
+function CheckoutSteps({ currentStep }: { currentStep: number }) {
+  return (
+    <div className="flex items-center justify-center gap-0 w-full px-2">
+      {CHECKOUT_STEPS.map((step, index) => {
+        const Icon = step.icon;
+        const isCompleted = index < currentStep;
+        const isActive = index === currentStep;
+        const isLast = index === CHECKOUT_STEPS.length - 1;
+
+        return (
+          <div key={step.label} className="flex items-center flex-1 last:flex-initial">
+            <div className="flex flex-col items-center gap-1.5 min-w-0">
+              <div
+                className={cn(
+                  'w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-200',
+                  isCompleted && 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]',
+                  isActive && 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/10',
+                  !isCompleted && !isActive && 'border-gray-200 bg-gray-50',
+                )}
+              >
+                {isCompleted ? (
+                  <Check className="w-4 h-4 text-white" />
+                ) : (
+                  <Icon
+                    className="w-4 h-4"
+                    style={{ color: isActive ? 'var(--tenant-primary)' : '#9CA3AF' }}
+                  />
+                )}
+              </div>
+              <span
+                className={cn(
+                  'text-xs font-medium transition-colors whitespace-nowrap',
+                  isActive && 'text-[var(--tenant-primary)]',
+                  isCompleted && 'text-[var(--tenant-primary)]',
+                  !isActive && !isCompleted && 'text-gray-400',
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+            {!isLast && (
+              <div
+                className={cn(
+                  'h-0.5 flex-1 mx-2 mt-[-1.25rem] rounded-full transition-colors duration-200',
+                  index < currentStep ? 'bg-[var(--tenant-primary)]' : 'bg-gray-200',
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// --- Order Summary Sidebar / Section ---
+function OrderSummary({
+  cartItems,
+  subtotal,
+  isDelivery,
+  deliveryFee,
+  lookingUpFee,
+  zoneNotFound,
+  neighborhood,
+  couponDiscount,
+  appliedCoupon,
+  total,
+  deliveryTime,
+  effectiveOrderType,
+  paymentMethod,
+  needsChange,
+  changeAmount,
+  sticky,
+}: {
+  cartItems: any[];
+  subtotal: number;
+  isDelivery: boolean;
+  deliveryFee: number;
+  lookingUpFee: boolean;
+  zoneNotFound: boolean;
+  neighborhood: string;
+  couponDiscount: number;
+  appliedCoupon: string | null;
+  total: number;
+  deliveryTime: string;
+  effectiveOrderType: string;
+  paymentMethod: string;
+  needsChange: boolean;
+  changeAmount: string;
+  sticky?: boolean;
+}) {
+  const getItemTotal = (item: any) => {
+    const extrasTotal = item.extras.reduce((s: number, e: any) => s + e.price, 0);
+    return (item.unit_price + extrasTotal) * item.quantity;
+  };
+
+  return (
+    <div className={cn(sticky && 'lg:sticky lg:top-4')}>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="font-bold text-gray-900 mb-4">Resumo do pedido</h3>
+
+        <div className="space-y-3 max-h-64 overflow-y-auto">
+          {cartItems.map((item, index) => (
+            <div key={index} className="flex justify-between text-sm">
+              <div className="flex-1 min-w-0 mr-4">
+                <p className="text-gray-800 font-medium">
+                  {item.quantity}x {item.product_name}
+                </p>
+                {item.variation_name && (
+                  <p className="text-xs text-gray-400">{item.variation_name}</p>
+                )}
+                {item.extras.length > 0 && (
+                  <p className="text-xs text-gray-400">
+                    + {item.extras.map((e: any) => e.name).join(', ')}
+                  </p>
+                )}
+              </div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">
+                {formatPrice(getItemTotal(item))}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+          {isDelivery && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Taxa de entrega</span>
+              <span>
+                {lookingUpFee ? (
+                  <Loader2 className="w-4 h-4 animate-spin inline" />
+                ) : zoneNotFound && neighborhood.trim() ? (
+                  <span className="text-red-500 font-medium text-xs">Bairro nao atendido</span>
+                ) : deliveryFee === 0 ? (
+                  <span className="text-green-600 font-medium">Gratis</span>
+                ) : (
+                  formatPrice(deliveryFee)
+                )}
+              </span>
+            </div>
+          )}
+          {!isDelivery && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>{effectiveOrderType === 'pickup' ? 'Retirada' : 'Mesa'}</span>
+              <span className="text-green-600 font-medium">Sem taxa</span>
+            </div>
+          )}
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Desconto ({appliedCoupon})</span>
+              <span>-{formatPrice(couponDiscount)}</span>
+            </div>
+          )}
+          {deliveryTime && !lookingUpFee && !zoneNotFound && (
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Tempo estimado</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {deliveryTime}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
+            <span>Total</span>
+            <span>{formatPrice(total)}</span>
+          </div>
+          {paymentMethod === 'cash' && needsChange && parseFloat(changeAmount) > total && (
+            <div className="flex justify-between text-sm pt-1">
+              <span className="text-gray-500">Troco para {formatPrice(parseFloat(changeAmount))}</span>
+              <span className="font-semibold" style={{ color: 'var(--tenant-primary)' }}>
+                {formatPrice(parseFloat(changeAmount) - total)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Estimated Delivery Time Card ---
+function EstimatedTimeCard({ deliveryTime, isPickup }: { deliveryTime: string; isPickup: boolean }) {
+  if (isPickup) {
+    return (
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tenant-primary)]/5 border border-[var(--tenant-primary)]/20">
+        <Clock className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Retirada em: ~15 min</p>
+          <p className="text-xs text-gray-500">Tempo estimado apos confirmacao</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!deliveryTime) return null;
+
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tenant-primary)]/5 border border-[var(--tenant-primary)]/20">
+      <Clock className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
+      <div>
+        <p className="text-sm font-semibold text-gray-900">
+          Tempo estimado de entrega: {deliveryTime}
+        </p>
+        <p className="text-xs text-gray-500">Pode variar conforme demanda</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Checkout() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -119,14 +340,14 @@ export default function Checkout() {
   );
   const [validateCoupon] = useLazyValidateCouponQuery();
 
-  // Login form state
-  // Auth state removed — now handled by Account page
-
   // Previous orders
   const { data: previousOrders } = useGetCustomerOrdersQuery(
     { slug: slug! },
     { skip: !slug || !customerAuth.isAuthenticated },
   );
+
+  // Checkout step state
+  const [currentStep, setCurrentStep] = useState(0);
 
   // Address state
   const [address, setAddress] = useState<Address>({
@@ -146,7 +367,6 @@ export default function Checkout() {
   const [needsChange, setNeedsChange] = useState(false);
   const [changeAmount, setChangeAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryTime, setDeliveryTime] = useState('');
   const [lookingUpFee, setLookingUpFee] = useState(false);
@@ -197,6 +417,7 @@ export default function Checkout() {
       setZoneNotFound(false);
       return;
     }
+
     setLookingUpFee(true);
     setZoneNotFound(false);
 
@@ -338,6 +559,49 @@ export default function Checkout() {
           zip_code: '',
         });
       }
+    }
+  };
+
+  // Step navigation
+  const canGoToStep = (step: number): boolean => {
+    if (step === 0) return true;
+    if (step === 1) {
+      // Must have completed delivery/address step
+      if (isDelivery) {
+        if (!address.street || !address.number || !address.neighborhood || !address.city) return false;
+        if (zoneNotFound) return false;
+      }
+      return true;
+    }
+    if (step === 2) {
+      return canGoToStep(1);
+    }
+    return false;
+  };
+
+  const handleNextStep = () => {
+    setError(null);
+    if (currentStep === 0) {
+      if (isDelivery) {
+        if (!address.street || !address.number || !address.neighborhood || !address.city) {
+          setError('Preencha todos os campos obrigatorios do endereco.');
+          return;
+        }
+        if (zoneNotFound) {
+          setError('O bairro informado nao esta em nenhuma zona de entrega. Verifique o nome do bairro.');
+          return;
+        }
+      }
+    }
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      setError(null);
     }
   };
 
@@ -483,146 +747,93 @@ export default function Checkout() {
 
   const customer = customerProfile || customerAuth.customer;
 
-  return (
-    <div className="pb-6">
-      {/* Header */}
-      <div className="bg-white px-4 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <h2 className="text-lg font-bold text-gray-900">Finalizar Pedido</h2>
-        </div>
-        {customer && (
-          <span className="text-sm text-gray-500">
-            Ola, <span className="font-medium text-gray-700">{customer.name}</span>
-          </span>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 pt-4">
-        {/* Error message */}
-        {error && (
-          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Order Mode Selection */}
-        {availableModes.length > 1 && (
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="font-bold text-gray-900 mb-3">Como deseja receber?</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {availableModes.map((mode) => {
-                const Icon = mode.icon;
-                const isSelected = effectiveOrderType === mode.key;
-                return (
-                  <button
-                    key={mode.key}
-                    type="button"
-                    onClick={() => dispatch(setOrderType(mode.key))}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
-                        : 'border-gray-100 hover:border-gray-200'
-                    }`}
-                  >
-                    <Icon
-                      className="w-6 h-6"
-                      style={{ color: isSelected ? 'var(--tenant-primary)' : '#9CA3AF' }}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        isSelected ? 'text-gray-900' : 'text-gray-500'
-                      }`}
-                    >
-                      {mode.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Pickup info */}
-        {effectiveOrderType === 'pickup' && (
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <ShoppingBag className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
-              <h3 className="font-bold text-gray-900">Retirada no balcao</h3>
-            </div>
-            <p className="text-sm text-gray-600">
-              Retire seu pedido em: <span className="font-medium text-gray-900">{tenant?.address || 'Endereco do restaurante'}</span>
-            </p>
-          </section>
-        )}
-
-        {/* Dine-in info */}
-        {effectiveOrderType === 'dine_in' && (
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <UtensilsCrossed className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
-              <h3 className="font-bold text-gray-900">Consumo no local</h3>
-            </div>
-            {tableNumber && (
-              <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-gray-50 rounded-xl">
-                <span className="text-sm text-gray-500">Mesa</span>
-                <span className="text-lg font-bold text-gray-900">{tableNumber}</span>
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seu nome <span className="text-gray-400 font-normal">(para a comanda)</span>
-              </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Ex: Joao"
-                maxLength={50}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
-              />
-            </div>
-          </section>
-        )}
-
-        {/* Previous Orders */}
-        {previousOrders && previousOrders.length > 0 && (
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <ShoppingCart className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
-              <h3 className="font-bold text-gray-900">Pedidos anteriores</h3>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {previousOrders.slice(0, 5).map((order: any) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+  // --- Step content renderers ---
+  const renderStep0Delivery = () => (
+    <>
+      {/* Order Mode Selection */}
+      {availableModes.length > 1 && (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-3">Como deseja receber?</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {availableModes.map((mode) => {
+              const Icon = mode.icon;
+              const isSelected = effectiveOrderType === mode.key;
+              return (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={() => dispatch(setOrderType(mode.key))}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                    isSelected
+                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
+                      : 'border-gray-100 hover:border-gray-200',
+                  )}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">
-                      {order.items?.map((i: any) => `${i.quantity}x ${i.product?.name || i.product_name || 'Produto'}`).join(', ') || `Pedido #${order.id.slice(-6)}`}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 ml-3 whitespace-nowrap">
-                    {formatPrice(Number(order.total || 0))}
+                  <Icon
+                    className="w-6 h-6"
+                    style={{ color: isSelected ? 'var(--tenant-primary)' : '#9CA3AF' }}
+                  />
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      isSelected ? 'text-gray-900' : 'text-gray-500',
+                    )}
+                  >
+                    {mode.label}
                   </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
-        {/* Address Section - only for delivery */}
-        {isDelivery && <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      {/* Pickup info */}
+      {effectiveOrderType === 'pickup' && (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <ShoppingBag className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+            <h3 className="font-bold text-gray-900">Retirada no balcao</h3>
+          </div>
+          <p className="text-sm text-gray-600">
+            Retire seu pedido em: <span className="font-medium text-gray-900">{tenant?.address || 'Endereco do restaurante'}</span>
+          </p>
+        </section>
+      )}
+
+      {/* Dine-in info */}
+      {effectiveOrderType === 'dine_in' && (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <UtensilsCrossed className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+            <h3 className="font-bold text-gray-900">Consumo no local</h3>
+          </div>
+          {tableNumber && (
+            <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-gray-50 rounded-xl">
+              <span className="text-sm text-gray-500">Mesa</span>
+              <span className="text-lg font-bold text-gray-900">{tableNumber}</span>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Seu nome <span className="text-gray-400 font-normal">(para a comanda)</span>
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Ex: Joao"
+              maxLength={50}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Address Section - only for delivery */}
+      {isDelivery && (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin
@@ -653,11 +864,12 @@ export default function Checkout() {
                 <div
                   key={addr.id}
                   onClick={() => handleSelectAddress(addr)}
-                  className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={cn(
+                    'relative p-4 rounded-xl border-2 cursor-pointer transition-all',
                     selectedAddressId === addr.id
                       ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
-                      : 'border-gray-100 hover:border-gray-200'
-                  }`}
+                      : 'border-gray-100 hover:border-gray-200',
+                  )}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -680,11 +892,12 @@ export default function Checkout() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        className={cn(
+                          'w-5 h-5 rounded-full border-2 flex items-center justify-center',
                           selectedAddressId === addr.id
                             ? 'border-[var(--tenant-primary)]'
-                            : 'border-gray-300'
-                        }`}
+                            : 'border-gray-300',
+                        )}
                       >
                         {selectedAddressId === addr.id && (
                           <div
@@ -708,7 +921,7 @@ export default function Checkout() {
             </div>
           )}
 
-          {/* New address form — only when no saved addresses OR user clicked "Novo endereco" */}
+          {/* New address form */}
           {(isAddingNewAddress || !customer?.addresses || customer.addresses.length === 0) && (
             <div className="space-y-3">
               <div>
@@ -851,314 +1064,480 @@ export default function Checkout() {
               </div>
             </div>
           )}
-        </section>}
-
-        {/* Payment Method */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard
-              className="w-5 h-5"
-              style={{ color: 'var(--tenant-primary)' }}
-            />
-            <h3 className="font-bold text-gray-900">Forma de pagamento</h3>
-          </div>
-
-          <div className="space-y-2">
-            {PAYMENT_METHODS.map((method) => {
-              const Icon = method.icon;
-              const isSelected = paymentMethod === method.value;
-              return (
-                <label
-                  key={method.value}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
-                      : 'border-gray-100 hover:border-gray-200'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={method.value}
-                    checked={isSelected}
-                    onChange={() => {
-                      setPaymentMethod(method.value);
-                      if (method.value !== 'cash') {
-                        setNeedsChange(false);
-                        setChangeAmount('');
-                      }
-                    }}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      isSelected
-                        ? 'border-[var(--tenant-primary)]'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: 'var(--tenant-primary)' }}
-                      />
-                    )}
-                  </div>
-                  <Icon className="w-5 h-5 text-gray-600" />
-                  <div>
-                    <p className="font-medium text-gray-800 text-sm">
-                      {method.label}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {method.description}
-                    </p>
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-
-          {/* Change section for cash */}
-          {paymentMethod === 'cash' && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-700 mb-3">Precisa de troco?</p>
-              <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => { setNeedsChange(false); setChangeAmount(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 ${
-                    !needsChange
-                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  Nao preciso
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNeedsChange(true)}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 ${
-                    needsChange
-                      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  Sim, preciso
-                </button>
-              </div>
-
-              {needsChange && (
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1.5">Troco para quanto?</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">R$</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min={total}
-                      value={changeAmount}
-                      onChange={(e) => setChangeAmount(e.target.value)}
-                      placeholder={formatPrice(Math.ceil(total / 10) * 10).replace('R$\u00a0', '')}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
-                    />
-                  </div>
-                  {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) > total && (
-                    <p className="text-xs font-medium mt-2" style={{ color: 'var(--tenant-primary)' }}>
-                      Troco: {formatPrice(parseFloat(changeAmount) - total)}
-                    </p>
-                  )}
-                  {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) <= total && (
-                    <p className="text-xs font-medium text-red-500 mt-2">
-                      O valor deve ser maior que o total do pedido ({formatPrice(total)})
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </section>
+      )}
 
-        {/* Coupon */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Tag
-              className="w-5 h-5"
-              style={{ color: 'var(--tenant-primary)' }}
-            />
-            <h3 className="font-bold text-gray-900">Cupom de desconto</h3>
-          </div>
+      {/* Estimated delivery time card - shown after address is selected */}
+      {isDelivery && deliveryTime && !lookingUpFee && !zoneNotFound && (
+        <EstimatedTimeCard deliveryTime={deliveryTime} isPickup={false} />
+      )}
+      {effectiveOrderType === 'pickup' && (
+        <EstimatedTimeCard deliveryTime="" isPickup />
+      )}
+    </>
+  );
 
-          {appliedCoupon ? (
-            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-semibold text-green-700">{appliedCoupon}</span>
-                <span className="text-xs text-green-600">-{formatPrice(couponDiscount)}</span>
-              </div>
+  const renderStep1Payment = () => (
+    <>
+      {/* Payment Method - visual cards */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard
+            className="w-5 h-5"
+            style={{ color: 'var(--tenant-primary)' }}
+          />
+          <h3 className="font-bold text-gray-900">Forma de pagamento</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {PAYMENT_METHODS.map((method) => {
+            const Icon = method.icon;
+            const isSelected = paymentMethod === method.value;
+            return (
+              <button
+                key={method.value}
+                type="button"
+                onClick={() => {
+                  setPaymentMethod(method.value);
+                  if (method.value !== 'cash') {
+                    setNeedsChange(false);
+                    setChangeAmount('');
+                  }
+                }}
+                className={cn(
+                  'flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all text-center',
+                  isSelected
+                    ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5'
+                    : 'border-gray-100 hover:border-gray-200',
+                )}
+              >
+                <Icon
+                  className="w-6 h-6"
+                  style={{ color: isSelected ? 'var(--tenant-primary)' : '#6B7280' }}
+                />
+                <div>
+                  <p className={cn(
+                    'font-medium text-sm',
+                    isSelected ? 'text-gray-900' : 'text-gray-700',
+                  )}>
+                    {method.label}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {method.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Change section for cash */}
+        {paymentMethod === 'cash' && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-3">Precisa de troco?</p>
+            <div className="flex gap-2 mb-3">
               <button
                 type="button"
-                onClick={handleRemoveCoupon}
-                className="text-xs font-medium text-red-500 hover:underline"
+                onClick={() => { setNeedsChange(false); setChangeAmount(''); }}
+                className={cn(
+                  'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2',
+                  !needsChange
+                    ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300',
+                )}
               >
-                Remover
+                Nao preciso
+              </button>
+              <button
+                type="button"
+                onClick={() => setNeedsChange(true)}
+                className={cn(
+                  'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2',
+                  needsChange
+                    ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/5 text-[var(--tenant-primary)]'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300',
+                )}
+              >
+                Sim, preciso
               </button>
             </div>
-          ) : (
-            <div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => {
-                    setCouponCode(e.target.value.toUpperCase());
-                    setCouponError(null);
-                  }}
-                  placeholder="Digite o codigo"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm uppercase"
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  disabled={couponLoading || !couponCode.trim()}
-                  className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-colors"
-                  style={{ background: 'var(--tenant-gradient)' }}
-                >
-                  {couponLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    'Aplicar'
-                  )}
-                </button>
+
+            {needsChange && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">Troco para quanto?</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">R$</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min={total}
+                    value={changeAmount}
+                    onChange={(e) => setChangeAmount(e.target.value)}
+                    placeholder={formatPrice(Math.ceil(total / 10) * 10).replace('R$\u00a0', '')}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 text-sm focus:outline-none focus:border-[var(--tenant-primary)] transition-colors"
+                  />
+                </div>
+                {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) > total && (
+                  <p className="text-xs font-medium mt-2" style={{ color: 'var(--tenant-primary)' }}>
+                    Troco: {formatPrice(parseFloat(changeAmount) - total)}
+                  </p>
+                )}
+                {parseFloat(changeAmount) > 0 && parseFloat(changeAmount) <= total && (
+                  <p className="text-xs font-medium text-red-500 mt-2">
+                    O valor deve ser maior que o total do pedido ({formatPrice(total)})
+                  </p>
+                )}
               </div>
-              {couponError && (
-                <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {couponError}
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Coupon */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Tag
+            className="w-5 h-5"
+            style={{ color: 'var(--tenant-primary)' }}
+          />
+          <h3 className="font-bold text-gray-900">Cupom de desconto</h3>
+        </div>
+
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-semibold text-green-700">{appliedCoupon}</span>
+              <span className="text-xs text-green-600">-{formatPrice(couponDiscount)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveCoupon}
+              className="text-xs font-medium text-red-500 hover:underline"
+            >
+              Remover
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value.toUpperCase());
+                  setCouponError(null);
+                }}
+                placeholder="Digite o codigo"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm uppercase"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                style={{ background: 'var(--tenant-gradient)' }}
+              >
+                {couponLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Aplicar'
+                )}
+              </button>
+            </div>
+            {couponError && (
+              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {couponError}
+              </p>
+            )}
+          </div>
+        )}
+      </section>
+    </>
+  );
+
+  const renderStep2Confirmation = () => (
+    <>
+      {/* Review summary - inline on mobile (sidebar handles desktop) */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 lg:hidden">
+        <h3 className="font-bold text-gray-900 mb-4">Resumo do pedido</h3>
+
+        <div className="space-y-3">
+          {cartItems.map((item, index) => (
+            <div key={index} className="flex justify-between text-sm">
+              <div className="flex-1 min-w-0 mr-4">
+                <p className="text-gray-800 font-medium">
+                  {item.quantity}x {item.product_name}
+                </p>
+                {item.variation_name && (
+                  <p className="text-xs text-gray-400">{item.variation_name}</p>
+                )}
+                {item.extras.length > 0 && (
+                  <p className="text-xs text-gray-400">
+                    + {item.extras.map((e) => e.name).join(', ')}
+                  </p>
+                )}
+              </div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">
+                {formatPrice(getItemTotal(item))}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+          {isDelivery && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Taxa de entrega</span>
+              <span>
+                {deliveryFee === 0 ? (
+                  <span className="text-green-600 font-medium">Gratis</span>
+                ) : (
+                  formatPrice(deliveryFee)
+                )}
+              </span>
+            </div>
+          )}
+          {!isDelivery && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>{effectiveOrderType === 'pickup' ? 'Retirada' : 'Mesa'}</span>
+              <span className="text-green-600 font-medium">Sem taxa</span>
+            </div>
+          )}
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Desconto ({appliedCoupon})</span>
+              <span>-{formatPrice(couponDiscount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
+            <span>Total</span>
+            <span>{formatPrice(total)}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Delivery/Pickup summary */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="font-bold text-gray-900 mb-3">Detalhes da entrega</h3>
+        {isDelivery && (
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
+            <div>
+              <p className="text-sm font-medium text-gray-800">
+                {address.street}, {address.number}
+                {address.complement && ` - ${address.complement}`}
+              </p>
+              <p className="text-xs text-gray-500">
+                {address.neighborhood} - {address.city}/{address.state}
+              </p>
+              {deliveryTime && (
+                <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--tenant-primary)' }}>
+                  <Clock className="w-3 h-3" />
+                  {deliveryTime}
                 </p>
               )}
             </div>
-          )}
-        </section>
+          </div>
+        )}
+        {effectiveOrderType === 'pickup' && (
+          <div className="flex items-start gap-3">
+            <ShoppingBag className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
+            <div>
+              <p className="text-sm font-medium text-gray-800">Retirada no balcao</p>
+              <p className="text-xs text-gray-500">{tenant?.address || 'Endereco do restaurante'}</p>
+              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--tenant-primary)' }}>
+                <Clock className="w-3 h-3" />
+                ~15 min
+              </p>
+            </div>
+          </div>
+        )}
+        {effectiveOrderType === 'dine_in' && (
+          <div className="flex items-start gap-3">
+            <UtensilsCrossed className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
+            <div>
+              <p className="text-sm font-medium text-gray-800">Mesa {tableNumber}</p>
+              {customerName && <p className="text-xs text-gray-500">Nome: {customerName}</p>}
+            </div>
+          </div>
+        )}
+      </section>
 
-        {/* Order Summary */}
+      {/* Payment summary */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="font-bold text-gray-900 mb-3">Forma de pagamento</h3>
+        {(() => {
+          const method = PAYMENT_METHODS.find((m) => m.value === paymentMethod);
+          if (!method) return null;
+          const Icon = method.icon;
+          return (
+            <div className="flex items-center gap-3">
+              <Icon className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              <div>
+                <p className="text-sm font-medium text-gray-800">{method.label}</p>
+                <p className="text-xs text-gray-400">{method.description}</p>
+              </div>
+            </div>
+          );
+        })()}
+        {paymentMethod === 'cash' && needsChange && parseFloat(changeAmount) > total && (
+          <p className="text-xs mt-2 ml-8" style={{ color: 'var(--tenant-primary)' }}>
+            Troco para {formatPrice(parseFloat(changeAmount))} ({formatPrice(parseFloat(changeAmount) - total)})
+          </p>
+        )}
+      </section>
+
+      {/* Previous Orders */}
+      {previousOrders && previousOrders.length > 0 && (
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <button
-            type="button"
-            onClick={() => setShowOrderSummary(!showOrderSummary)}
-            className="flex items-center justify-between w-full"
-          >
-            <h3 className="font-bold text-gray-900">Resumo do pedido</h3>
-            {showOrderSummary ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            )}
-          </button>
-
-          {showOrderSummary && (
-            <div className="mt-4 space-y-3">
-              {cartItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex justify-between text-sm"
-                >
-                  <div className="flex-1 min-w-0 mr-4">
-                    <p className="text-gray-800 font-medium">
-                      {item.quantity}x {item.product_name}
-                    </p>
-                    {item.variation_name && (
-                      <p className="text-xs text-gray-400">
-                        {item.variation_name}
-                      </p>
-                    )}
-                    {item.extras.length > 0 && (
-                      <p className="text-xs text-gray-400">
-                        + {item.extras.map((e) => e.name).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-gray-700 font-medium whitespace-nowrap">
-                    {formatPrice(getItemTotal(item))}
-                  </span>
+          <div className="flex items-center gap-2 mb-3">
+            <ShoppingCart className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+            <h3 className="font-bold text-gray-900">Pedidos anteriores</h3>
+          </div>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {previousOrders.slice(0, 5).map((order: any) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">
+                    {order.items?.map((i: any) => `${i.quantity}x ${i.product?.name || i.product_name || 'Produto'}`).join(', ') || `Pedido #${order.id.slice(-6)}`}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal</span>
-              <span>{formatPrice(subtotal)}</span>
-            </div>
-            {isDelivery && (
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Taxa de entrega</span>
-                <span>
-                  {lookingUpFee ? (
-                    <Loader2 className="w-4 h-4 animate-spin inline" />
-                  ) : zoneNotFound && address.neighborhood.trim() ? (
-                    <span className="text-red-500 font-medium text-xs">Bairro nao atendido</span>
-                  ) : deliveryFee === 0 ? (
-                    <span className="text-green-600 font-medium">Gratis</span>
-                  ) : (
-                    formatPrice(deliveryFee)
-                  )}
+                <span className="text-sm font-semibold text-gray-700 ml-3 whitespace-nowrap">
+                  {formatPrice(Number(order.total || 0))}
                 </span>
               </div>
-            )}
-            {!isDelivery && (
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>{effectiveOrderType === 'pickup' ? 'Retirada' : 'Mesa'}</span>
-                <span className="text-green-600 font-medium">Sem taxa</span>
-              </div>
-            )}
-            {couponDiscount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Desconto ({appliedCoupon})</span>
-                <span>-{formatPrice(couponDiscount)}</span>
-              </div>
-            )}
-            {deliveryTime && !lookingUpFee && !zoneNotFound && (
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Tempo estimado</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {deliveryTime}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
-              <span>Total</span>
-              <span>{formatPrice(total)}</span>
-            </div>
-            {paymentMethod === 'cash' && needsChange && parseFloat(changeAmount) > total && (
-              <div className="flex justify-between text-sm pt-1">
-                <span className="text-gray-500">Troco para {formatPrice(parseFloat(changeAmount))}</span>
-                <span className="font-semibold" style={{ color: 'var(--tenant-primary)' }}>
-                  {formatPrice(parseFloat(changeAmount) - total)}
-                </span>
-              </div>
-            )}
+            ))}
           </div>
         </section>
+      )}
+    </>
+  );
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3.5 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-          style={{ background: 'var(--tenant-gradient)' }}
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Processando...
-            </>
-          ) : (
-            <>Confirmar Pedido - {formatPrice(total)}</>
-          )}
-        </button>
+  return (
+    <div className="pb-6">
+      {/* Header */}
+      <div className="bg-white px-4 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (currentStep > 0) {
+                handlePrevStep();
+              } else {
+                navigate(-1);
+              }
+            }}
+            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
+          <h2 className="text-lg font-bold text-gray-900">Finalizar Pedido</h2>
+        </div>
+        {customer && (
+          <span className="text-sm text-gray-500">
+            Ola, <span className="font-medium text-gray-700">{customer.name}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Progress Steps */}
+      <div className="bg-white px-4 py-4 border-b border-gray-100">
+        <CheckoutSteps currentStep={currentStep} />
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        {/* 2-column layout on desktop */}
+        <div className="lg:flex lg:gap-6 lg:px-6 lg:pt-6">
+          {/* Left: checkout form steps */}
+          <div className="flex-1 lg:max-w-[70%] space-y-4 px-4 pt-4 lg:px-0 lg:pt-0">
+            {/* Error message */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            {/* Step content */}
+            {currentStep === 0 && renderStep0Delivery()}
+            {currentStep === 1 && renderStep1Payment()}
+            {currentStep === 2 && renderStep2Confirmation()}
+
+            {/* Navigation buttons */}
+            <div className="flex gap-3">
+              {currentStep > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePrevStep}
+                  className="flex-1 py-3.5 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-700 hover:border-gray-300 transition-all active:scale-95"
+                >
+                  Voltar
+                </button>
+              )}
+              {currentStep < 2 && (
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="flex-1 py-3.5 rounded-xl text-white font-semibold text-sm transition-all active:scale-95"
+                  style={{ background: 'var(--tenant-gradient)' }}
+                >
+                  Continuar
+                </button>
+              )}
+              {currentStep === 2 && (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3.5 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                  style={{ background: 'var(--tenant-gradient)' }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>Confirmar Pedido - {formatPrice(total)}</>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Right: sticky order summary sidebar (desktop only) */}
+          <div className="hidden lg:block lg:w-[30%] lg:min-w-[280px] lg:pt-0">
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              isDelivery={isDelivery}
+              deliveryFee={deliveryFee}
+              lookingUpFee={lookingUpFee}
+              zoneNotFound={zoneNotFound}
+              neighborhood={address.neighborhood}
+              couponDiscount={couponDiscount}
+              appliedCoupon={appliedCoupon}
+              total={total}
+              deliveryTime={deliveryTime}
+              effectiveOrderType={effectiveOrderType}
+              paymentMethod={paymentMethod}
+              needsChange={needsChange}
+              changeAmount={changeAmount}
+              sticky
+            />
+          </div>
+        </div>
       </form>
     </div>
   );
