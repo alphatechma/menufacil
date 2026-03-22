@@ -14,7 +14,7 @@ export function useOrderTracking(orderId: string | null, tenantSlug: string | nu
   useEffect(() => {
     if (!orderId || !tenantSlug) return;
 
-    const wsUrl = import.meta.env.VITE_API_URL || '/';
+    const wsUrl = import.meta.env.VITE_API_URL || 'https://menufacil-api.mp1rvc.easypanel.host';
     const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },

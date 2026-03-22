@@ -16,7 +16,7 @@ interface AxiosBaseQueryArgs {
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+  : 'https://menufacil-api.mp1rvc.easypanel.host/api';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE,

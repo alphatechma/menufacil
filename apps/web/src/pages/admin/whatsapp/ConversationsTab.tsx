@@ -104,7 +104,7 @@ function ChatArea({ phone, customerName, onBack }: { phone: string; customerName
 
   useEffect(() => {
     if (!tenantId) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://menufacil-api.mp1rvc.easypanel.host';
     const socket = io(apiUrl, { transports: ['websocket'] });
     socket.emit('join:tenant-whatsapp', { tenantId });
     socket.on(WHATSAPP_MESSAGE_NEW, (msg: any) => {

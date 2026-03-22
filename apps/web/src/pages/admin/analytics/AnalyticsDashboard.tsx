@@ -92,7 +92,7 @@ export default function AnalyticsDashboard() {
   const handleExport = async (type: string) => {
     const apiBase = import.meta.env.VITE_API_URL
       ? `${import.meta.env.VITE_API_URL}/api`
-      : '/api';
+      : 'https://menufacil-api.mp1rvc.easypanel.host/api';
     const url = `${apiBase}/analytics/export/csv?type=${type}&from=${dateRange.from}&to=${dateRange.to}`;
     window.open(url, '_blank');
   };
