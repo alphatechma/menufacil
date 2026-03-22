@@ -13,11 +13,11 @@
 ### Task 1: Install dependencies and configure project
 
 **Files:**
-- Modify: `apps/super-admin/package.json`
-- Modify: `apps/super-admin/tsconfig.json`
-- Modify: `apps/super-admin/vite.config.ts`
-- Create: `apps/super-admin/src/lib/utils.ts`
-- Create: `apps/super-admin/components.json`
+- Modify: `apps/manager/package.json`
+- Modify: `apps/manager/tsconfig.json`
+- Modify: `apps/manager/vite.config.ts`
+- Create: `apps/manager/src/lib/utils.ts`
+- Create: `apps/manager/components.json`
 
 **Steps:**
 1. Remove `zustand`, `@tanstack/react-query`, `axios`
@@ -26,20 +26,20 @@
 4. Create `cn()` utility in `src/lib/utils.ts`
 5. Create `components.json` for shadcn config
 6. Run `pnpm install`
-7. Verify: `pnpm --filter super-admin build`
+7. Verify: `pnpm --filter manager build`
 
 ---
 
 ### Task 2: Setup Redux store, auth slice, and RTK Query base API
 
 **Files:**
-- Create: `apps/super-admin/src/store/index.ts`
-- Create: `apps/super-admin/src/store/hooks.ts`
-- Create: `apps/super-admin/src/store/slices/authSlice.ts`
-- Create: `apps/super-admin/src/api/baseApi.ts`
-- Create: `apps/super-admin/src/api/axiosBaseQuery.ts`
-- Delete: `apps/super-admin/src/store/authStore.ts`
-- Delete: `apps/super-admin/src/services/api.ts`
+- Create: `apps/manager/src/store/index.ts`
+- Create: `apps/manager/src/store/hooks.ts`
+- Create: `apps/manager/src/store/slices/authSlice.ts`
+- Create: `apps/manager/src/api/baseApi.ts`
+- Create: `apps/manager/src/api/axiosBaseQuery.ts`
+- Delete: `apps/manager/src/store/authStore.ts`
+- Delete: `apps/manager/src/services/api.ts`
 
 **Steps:**
 1. Create `axiosBaseQuery.ts` with Bearer token auth from Redux state, 401 refresh logic
@@ -54,7 +54,7 @@
 ### Task 3: Create RTK Query API endpoints
 
 **Files:**
-- Create: `apps/super-admin/src/api/superAdminApi.ts`
+- Create: `apps/manager/src/api/superAdminApi.ts`
 
 **Steps:**
 1. Define all endpoints matching existing React Query usage:
@@ -72,8 +72,8 @@
 ### Task 4: Update entry points (main.tsx, App.tsx)
 
 **Files:**
-- Modify: `apps/super-admin/src/main.tsx`
-- Modify: `apps/super-admin/src/App.tsx`
+- Modify: `apps/manager/src/main.tsx`
+- Modify: `apps/manager/src/App.tsx`
 
 **Steps:**
 1. Replace `QueryClientProvider` with Redux `Provider` in `main.tsx`
@@ -85,24 +85,24 @@
 ### Task 5: Create shadcn/ui components
 
 **Files:**
-- Create: `apps/super-admin/src/components/ui/button.tsx`
-- Create: `apps/super-admin/src/components/ui/input.tsx`
-- Create: `apps/super-admin/src/components/ui/label.tsx`
-- Create: `apps/super-admin/src/components/ui/card.tsx`
-- Create: `apps/super-admin/src/components/ui/badge.tsx`
-- Create: `apps/super-admin/src/components/ui/table.tsx`
-- Create: `apps/super-admin/src/components/ui/dialog.tsx`
-- Create: `apps/super-admin/src/components/ui/select.tsx`
-- Create: `apps/super-admin/src/components/ui/textarea.tsx`
-- Create: `apps/super-admin/src/components/ui/separator.tsx`
-- Create: `apps/super-admin/src/components/ui/dropdown-menu.tsx`
-- Create: `apps/super-admin/src/components/ui/sheet.tsx`
-- Create: `apps/super-admin/src/components/ui/skeleton.tsx`
-- Create: `apps/super-admin/src/components/ui/switch.tsx`
-- Create: `apps/super-admin/src/components/ui/checkbox.tsx`
-- Create: `apps/super-admin/src/components/ui/tooltip.tsx`
-- Create: `apps/super-admin/src/components/ui/tabs.tsx`
-- Modify: `apps/super-admin/src/index.css`
+- Create: `apps/manager/src/components/ui/button.tsx`
+- Create: `apps/manager/src/components/ui/input.tsx`
+- Create: `apps/manager/src/components/ui/label.tsx`
+- Create: `apps/manager/src/components/ui/card.tsx`
+- Create: `apps/manager/src/components/ui/badge.tsx`
+- Create: `apps/manager/src/components/ui/table.tsx`
+- Create: `apps/manager/src/components/ui/dialog.tsx`
+- Create: `apps/manager/src/components/ui/select.tsx`
+- Create: `apps/manager/src/components/ui/textarea.tsx`
+- Create: `apps/manager/src/components/ui/separator.tsx`
+- Create: `apps/manager/src/components/ui/dropdown-menu.tsx`
+- Create: `apps/manager/src/components/ui/sheet.tsx`
+- Create: `apps/manager/src/components/ui/skeleton.tsx`
+- Create: `apps/manager/src/components/ui/switch.tsx`
+- Create: `apps/manager/src/components/ui/checkbox.tsx`
+- Create: `apps/manager/src/components/ui/tooltip.tsx`
+- Create: `apps/manager/src/components/ui/tabs.tsx`
+- Modify: `apps/manager/src/index.css`
 
 **Steps:**
 1. Update `index.css` with shadcn/ui CSS variables (indigo theme, dark mode support)
@@ -113,7 +113,7 @@
 ### Task 6: Rewrite SuperAdminLayout with shadcn/ui
 
 **Files:**
-- Modify: `apps/super-admin/src/components/layout/SuperAdminLayout.tsx`
+- Modify: `apps/manager/src/components/layout/SuperAdminLayout.tsx`
 
 **Steps:**
 1. Rewrite sidebar using shadcn Sheet (mobile) and fixed panel (desktop)
@@ -127,7 +127,7 @@
 ### Task 7: Rewrite Login page
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/Login.tsx`
+- Modify: `apps/manager/src/pages/Login.tsx`
 
 **Steps:**
 1. Use shadcn Card, Input, Label, Button
@@ -139,7 +139,7 @@
 ### Task 8: Rewrite Dashboard page
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/Dashboard.tsx`
+- Modify: `apps/manager/src/pages/Dashboard.tsx`
 
 **Steps:**
 1. Use shadcn Card, Skeleton for loading states
@@ -152,9 +152,9 @@
 ### Task 9: Rewrite Tenants pages (List, Form, Detail)
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/tenants/TenantList.tsx`
-- Modify: `apps/super-admin/src/pages/tenants/TenantForm.tsx`
-- Modify: `apps/super-admin/src/pages/tenants/TenantDetail.tsx`
+- Modify: `apps/manager/src/pages/tenants/TenantList.tsx`
+- Modify: `apps/manager/src/pages/tenants/TenantForm.tsx`
+- Modify: `apps/manager/src/pages/tenants/TenantDetail.tsx`
 
 **Steps:**
 1. TenantList: shadcn Table, Input (search), Select (filter), Badge (status), Button
@@ -167,8 +167,8 @@
 ### Task 10: Rewrite Plans pages (List, Form)
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/plans/PlanList.tsx`
-- Modify: `apps/super-admin/src/pages/plans/PlanForm.tsx`
+- Modify: `apps/manager/src/pages/plans/PlanList.tsx`
+- Modify: `apps/manager/src/pages/plans/PlanForm.tsx`
 
 **Steps:**
 1. PlanList: shadcn Card grid, Badge, Button
@@ -180,8 +180,8 @@
 ### Task 11: Rewrite System Modules pages (List, Form)
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/system-modules/SystemModuleList.tsx`
-- Modify: `apps/super-admin/src/pages/system-modules/SystemModuleForm.tsx`
+- Modify: `apps/manager/src/pages/system-modules/SystemModuleList.tsx`
+- Modify: `apps/manager/src/pages/system-modules/SystemModuleForm.tsx`
 
 **Steps:**
 1. SystemModuleList: shadcn Table, Button, Dialog (delete confirmation)
@@ -193,8 +193,8 @@
 ### Task 12: Rewrite Permissions pages (List, Form)
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/permissions/PermissionList.tsx`
-- Modify: `apps/super-admin/src/pages/permissions/PermissionForm.tsx`
+- Modify: `apps/manager/src/pages/permissions/PermissionList.tsx`
+- Modify: `apps/manager/src/pages/permissions/PermissionForm.tsx`
 
 **Steps:**
 1. PermissionList: shadcn Card (grouped by module), Badge, Select (filter), Button, Dialog (delete)
@@ -206,7 +206,7 @@
 ### Task 13: Rewrite Settings page
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/Settings.tsx`
+- Modify: `apps/manager/src/pages/Settings.tsx`
 
 **Steps:**
 1. Use shadcn Card, Input, Label, Separator, Button
@@ -218,6 +218,6 @@
 ### Task 14: Final build verification and commit
 
 **Steps:**
-1. Run `pnpm --filter super-admin build` - must pass
+1. Run `pnpm --filter manager build` - must pass
 2. Manually verify all routes render
 3. Commit all changes

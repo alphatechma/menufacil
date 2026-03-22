@@ -941,8 +941,8 @@ git commit -m "feat: add pickup and dine-in features to landing page"
 ### Task 19: Update Super Admin with new modules
 
 **Files:**
-- Modify: `apps/super-admin/src/pages/plans/PlanForm.tsx` (if module list is hardcoded)
-- Modify: `apps/super-admin/src/pages/system-modules/SystemModuleList.tsx` (if needed)
+- Modify: `apps/manager/src/pages/plans/PlanForm.tsx` (if module list is hardcoded)
+- Modify: `apps/manager/src/pages/system-modules/SystemModuleList.tsx` (if needed)
 
 The super-admin already has a SystemModules CRUD and Plans page that lists modules dynamically. After running seed (Task 8), the new `pickup` and `dine_in` modules will appear automatically.
 
@@ -1019,7 +1019,7 @@ cd apps/api && pnpm run seed
 **Step 2: Build and verify**
 ```bash
 pnpm --filter web build
-pnpm --filter super-admin build
+pnpm --filter manager build
 ```
 
 **Step 3: Manual smoke test checklist:**

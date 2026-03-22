@@ -56,7 +56,7 @@ spec:
                 name: web
                 port:
                   number: 80
-    # Super Admin
+    # Manager (Super Admin)
     - host: admin.menufacil.maistechtecnologia.com.br
       http:
         paths:
@@ -64,7 +64,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: super-admin
+                name: manager
                 port:
                   number: 80
     # Waiter (Garcom)

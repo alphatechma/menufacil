@@ -6,7 +6,7 @@ MenuFacil is a multi-tenant restaurant SaaS platform built as a pnpm monorepo wi
 - `apps/web` — Main unified app (admin + customer storefront)
 - `apps/admin` — Standalone admin panel
 - `apps/customer` — Standalone customer app
-- `apps/super-admin` — Super admin panel
+- `apps/manager` — Super admin panel
 - `apps/api` — NestJS backend
 
 **Stack:** React 19, Vite 6, TypeScript, Tailwind CSS v4, Redux Toolkit + RTK Query, React Router v7, React Hook Form + Zod, Lucide React icons, Framer Motion, Recharts.
@@ -66,7 +66,7 @@ Customer-facing components use `var(--tenant-primary)` for theming. Admin compon
 - IMPORTANT: Never hardcode hex colors. Use Tailwind token classes: `bg-primary`, `text-primary-dark`, `border-primary-50`, etc.
 - For customer-facing/storefront code, use CSS variables: `bg-[var(--tenant-primary)]`, `hover:bg-[var(--tenant-primary-dark)]`
 - For semantic colors use: `text-gray-900` (headings), `text-gray-700` (body), `text-gray-500` (secondary), `text-gray-400` (muted)
-- Super-admin uses a different primary: `#4F46E5` (indigo) — check `apps/super-admin/src/index.css`
+- Super-admin uses a different primary: `#4F46E5` (indigo) — check `apps/manager/src/index.css`
 
 ### Typography
 

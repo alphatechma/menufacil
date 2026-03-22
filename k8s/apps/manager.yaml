@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: super-admin
+  name: manager
   namespace: menufacil
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: super-admin
+      app: manager
   template:
     metadata:
       labels:
-        app: super-admin
+        app: manager
     spec:
       containers:
-        - name: super-admin
-          image: menufacil/super-admin:latest
+        - name: manager
+          image: menufacil/manager:latest
           ports:
             - containerPort: 80
           env:
@@ -38,11 +38,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: super-admin
+  name: manager
   namespace: menufacil
 spec:
   selector:
-    app: super-admin
+    app: manager
   ports:
     - port: 80
       targetPort: 80

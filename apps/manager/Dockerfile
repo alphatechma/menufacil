@@ -4,20 +4,20 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/tsconfig.json packages/shared/
-COPY apps/super-admin/package.json apps/super-admin/tsconfig.json apps/super-admin/
+COPY apps/manager/package.json apps/manager/tsconfig.json apps/manager/
 
 RUN pnpm install --frozen-lockfile
 
 COPY packages/shared/src packages/shared/src
-COPY apps/super-admin/ apps/super-admin/
+COPY apps/manager/ apps/manager/
 
 RUN pnpm --filter @menufacil/shared build
-RUN pnpm --filter super-admin build
+RUN pnpm --filter manager build
 
 # --- Nginx ---
 FROM nginx:alpine
-COPY apps/super-admin/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/apps/super-admin/dist /usr/share/nginx/html
+COPY apps/manager/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/manager/dist /usr/share/nginx/html
 EXPOSE 80
 
 CMD ["/bin/sh", "-c", "sed -i \"s|__API_URL__|${API_URL:-http://api:3000}|g\" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

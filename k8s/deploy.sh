@@ -11,7 +11,7 @@ echo "Tag: $TAG"
 # 1. Build and push images
 echo ""
 echo "--- Building Docker images ---"
-for app in api web super-admin waiter; do
+for app in api web manager waiter; do
   echo "Building $app..."
   docker build -t "$REGISTRY/$app:$TAG" -f "apps/$app/Dockerfile" .
   docker push "$REGISTRY/$app:$TAG"
@@ -41,7 +41,7 @@ kubectl -n menufacil wait --for=condition=ready pod -l app=minio --timeout=60s
 # Applications
 kubectl apply -f k8s/apps/api.yaml
 kubectl apply -f k8s/apps/web.yaml
-kubectl apply -f k8s/apps/super-admin.yaml
+kubectl apply -f k8s/apps/manager.yaml
 kubectl apply -f k8s/apps/waiter.yaml
 
 # Ingress & TLS

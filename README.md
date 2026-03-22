@@ -72,12 +72,12 @@
   VITE_CUSTOMER_URL=https://app.seudominio.com.br
 
   ---
-  Servico 4: super-admin
+  Servico 4: manager
 
   - Source: GitHub → alphatechma/menufacil
   - Branch: main
   - Build: Dockerfile
-  - Dockerfile Path: apps/super-admin/Dockerfile
+  - Dockerfile Path: apps/manager/Dockerfile
   - Port: 80
   - Domain: super.seudominio.com.br
 
@@ -88,7 +88,7 @@
   3. Ordem de deploy
 
   1. api primeiro (esperar ficar verde)
-  2. customer, admin, super-admin (podem ir em paralelo)
+  2. customer, admin, manager (podem ir em paralelo)
 
   4. Apos o deploy da API, rodar o seed
 

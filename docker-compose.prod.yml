@@ -31,10 +31,10 @@ services:
     environment:
       API_URL: http://api:3000
 
-  super-admin:
+  manager:
     build:
       context: .
-      dockerfile: apps/super-admin/Dockerfile
+      dockerfile: apps/manager/Dockerfile
     restart: unless-stopped
     ports:
       - '82:80'

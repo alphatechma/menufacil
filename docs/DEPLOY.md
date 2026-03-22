@@ -10,7 +10,7 @@ O MenuFacil e composto por 6 servicos:
 |---------|-----------|--------------|-----------|
 | **API** | `apps/api` | 3000 | Backend NestJS + TypeORM + PostgreSQL |
 | **Web** | `apps/web` | 80 | App principal (admin + storefront do cliente) |
-| **Super Admin** | `apps/super-admin` | 82 | Painel do super administrador |
+| **Manager** | `apps/manager` | 82 | Painel do super administrador |
 | **Waiter** | `apps/waiter` | 83 | App dos garcons (gestao de mesas e pedidos) |
 | **PostgreSQL** | - | 5432 | Banco de dados |
 | **Redis** | - | 6379 | Cache e filas |
@@ -23,7 +23,7 @@ O MenuFacil e composto por 6 servicos:
 
 ## Estrutura de Deploy
 
-Cada app frontend (web, super-admin, waiter) segue o mesmo padrao:
+Cada app frontend (web, manager, waiter) segue o mesmo padrao:
 
 ```
 apps/<app>/
@@ -49,7 +49,7 @@ Os apps rodam localmente via `pnpm dev`:
 ```bash
 pnpm --filter web dev        # http://localhost:5173
 pnpm --filter @menufacil/waiter dev  # http://localhost:5174
-pnpm --filter super-admin dev # http://localhost:5175
+pnpm --filter manager dev     # http://localhost:5175
 pnpm --filter api dev         # http://localhost:3000
 ```
 
@@ -65,7 +65,7 @@ Servicos disponiveis:
 
 - API: `http://localhost:3000`
 - Web: `http://localhost:80`
-- Super Admin: `http://localhost:82`
+- Manager: `http://localhost:82`
 - Waiter: `http://localhost:83`
 - MinIO Console: `http://localhost:9001`
 
@@ -97,10 +97,10 @@ No Easypanel, cada app e criado como um servico separado.
   Se o Easypanel ainda aponta para `apps/admin/Dockerfile`, atualize para
   `apps/web/Dockerfile`.
 
-### 3. Super Admin
+### 3. Manager
 
 - **Tipo:** App (Dockerfile)
-- **Dockerfile:** `apps/super-admin/Dockerfile`
+- **Dockerfile:** `apps/manager/Dockerfile`
 - **Porta:** 80
 - **Variaveis de ambiente:**
   - `API_URL` — URL interna da API
@@ -170,7 +170,7 @@ pnpm --filter @menufacil/shared build
 # Build de cada app
 pnpm --filter web build
 pnpm --filter @menufacil/waiter build
-pnpm --filter super-admin build
+pnpm --filter manager build
 pnpm --filter api build
 ```
 
