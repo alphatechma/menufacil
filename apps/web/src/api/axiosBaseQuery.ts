@@ -92,6 +92,22 @@ export const axiosBaseQuery: BaseQueryFn<
 
   let result = await rawBaseQuery(fetchArgs, api, extraOptions);
 
+  // Handle network/connection errors
+  if (result.error && result.error.status === 'FETCH_ERROR') {
+    window.dispatchEvent(new CustomEvent('api-error', {
+      detail: { type: 'network', message: 'Não foi possível conectar ao servidor. Verifique sua conexão.' },
+    }));
+  } else if (result.error && result.error.status === 'TIMEOUT_ERROR') {
+    window.dispatchEvent(new CustomEvent('api-error', {
+      detail: { type: 'timeout', message: 'O servidor demorou para responder. Tente novamente.' },
+    }));
+  } else if (result.error && typeof result.error.status === 'number' && result.error.status >= 500) {
+    const msg = (result.error.data as any)?.message || 'Erro interno do servidor. Tente novamente.';
+    window.dispatchEvent(new CustomEvent('api-error', {
+      detail: { type: 'server', message: msg },
+    }));
+  }
+
   // Handle admin 401 with token refresh via cookie
   if (result.error?.status === 401 && authContext === 'admin') {
     try {

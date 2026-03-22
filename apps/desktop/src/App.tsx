@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { lazy, Suspense } from 'react';
 import { store } from '@/store';
 import { useAppSelector } from '@/store/hooks';
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 import Login from '@/pages/Login';
 import DesktopLayout from '@/components/DesktopLayout';
 import PDV from '@/pages/PDV';
@@ -49,6 +50,8 @@ function GuestGuard({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  useApiErrorHandler();
+
   return (
     <Routes>
       <Route

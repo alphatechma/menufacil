@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 
 const Login = lazy(() => import('@/pages/Login'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -37,9 +38,10 @@ function PageFallback() {
   );
 }
 
-export default function App() {
+function AppContent() {
+  useApiErrorHandler();
+
   return (
-    <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
@@ -68,4 +70,8 @@ export default function App() {
       </Suspense>
     </BrowserRouter>
   );
+}
+
+export default function App() {
+  return <AppContent />;
 }

@@ -18,11 +18,13 @@ import {
   X,
   CalendarDays,
   CreditCard,
+  Trash2,
 } from 'lucide-react';
 import { useNotify } from '@/hooks/useNotify';
 import {
   useGetTenantsQuery,
   useRestoreTenantMutation,
+  useHardDeleteTenantMutation,
   useBulkUpdateTenantsMutation,
   useGetPlansQuery,
 } from '@/api/superAdminApi';
@@ -120,7 +122,10 @@ export default function TenantList() {
   } as any);
 
   const [restoreTenant] = useRestoreTenantMutation();
+  const [hardDeleteTenant] = useHardDeleteTenantMutation();
   const [bulkUpdate, { isLoading: isBulkLoading }] = useBulkUpdateTenantsMutation();
+  const [hardDeleteDialog, setHardDeleteDialog] = useState<{ open: boolean; id: string; slug: string; name: string }>({ open: false, id: '', slug: '', name: '' });
+  const [hardDeleteConfirmSlug, setHardDeleteConfirmSlug] = useState('');
   const { data: plans } = useGetPlansQuery();
 
   const tenants = useMemo(() => {
@@ -137,6 +142,21 @@ export default function TenantList() {
       notify.success(`"${name}" restaurado com sucesso!`);
     } catch {
       notify.error('Erro ao restaurar estabelecimento.');
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (hardDeleteConfirmSlug !== hardDeleteDialog.slug) {
+      notify.error('Slug nao confere.');
+      return;
+    }
+    try {
+      await hardDeleteTenant(hardDeleteDialog.id).unwrap();
+      notify.success(`"${hardDeleteDialog.name}" excluido permanentemente.`);
+      setHardDeleteDialog({ open: false, id: '', slug: '', name: '' });
+      setHardDeleteConfirmSlug('');
+    } catch {
+      notify.error('Erro ao excluir permanentemente.');
     }
   };
 
@@ -294,6 +314,7 @@ export default function TenantList() {
                 <SelectItem value="all">Todos os Status</SelectItem>
                 <SelectItem value="true">Ativos</SelectItem>
                 <SelectItem value="false">Inativos</SelectItem>
+                <SelectItem value="deleted">Excluídos</SelectItem>
                 <SelectItem value="deleted">Excluidos</SelectItem>
               </SelectContent>
             </Select>
@@ -512,14 +533,28 @@ export default function TenantList() {
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       {isDeleted ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRestore(tenant.id, tenant.name)}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Restaurar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRestore(tenant.id, tenant.name)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Restaurar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setHardDeleteConfirmSlug('');
+                              setHardDeleteDialog({ open: true, id: tenant.id, slug: tenant.slug, name: tenant.name });
+                            }}
+                            className="bg-red-700 hover:bg-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </Button>
+                        </div>
                       ) : (
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/tenants/${tenant.id}`}>
@@ -612,6 +647,42 @@ export default function TenantList() {
               variant={bulkDialog.action === 'deactivate' ? 'destructive' : 'default'}
             >
               {isBulkLoading ? 'Processando...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard Delete Confirmation Dialog */}
+      <Dialog open={hardDeleteDialog.open} onOpenChange={(open) => setHardDeleteDialog((prev) => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Excluir Permanentemente</DialogTitle>
+            <DialogDescription>
+              <span className="font-semibold text-red-500">ATENCAO: Esta acao e irreversivel!</span> Todos os dados de "{hardDeleteDialog.name}" serao apagados permanentemente. Para confirmar, digite o slug "<span className="font-mono font-bold">{hardDeleteDialog.slug}</span>" abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              value={hardDeleteConfirmSlug}
+              onChange={(e) => setHardDeleteConfirmSlug(e.target.value)}
+              placeholder={hardDeleteDialog.slug}
+              className="font-mono"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setHardDeleteDialog({ open: false, id: '', slug: '', name: '' }); setHardDeleteConfirmSlug(''); }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleHardDelete}
+              disabled={hardDeleteConfirmSlug !== hardDeleteDialog.slug}
+              className="bg-red-700 hover:bg-red-800"
+            >
+              Excluir Permanentemente
             </Button>
           </DialogFooter>
         </DialogContent>

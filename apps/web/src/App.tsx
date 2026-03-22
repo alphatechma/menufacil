@@ -6,6 +6,7 @@ import { TenantProvider } from '@/routes/TenantProvider';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 
 // Admin pages
 const AdminLogin = lazy(() => import('@/pages/admin/Login'));
@@ -78,6 +79,8 @@ const ReviewOrder = lazy(() => import('@/pages/storefront/ReviewOrder'));
 const WalletPage = lazy(() => import('@/pages/storefront/Wallet'));
 
 export default function App() {
+  useApiErrorHandler();
+
   return (
     <Suspense fallback={<PageSpinner />}>
       <Routes>
