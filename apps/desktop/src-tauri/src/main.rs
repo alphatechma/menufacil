@@ -17,24 +17,26 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 struct PrinterInfoResponse {
     name: String,
     key: String,
-    vendor_id: u16,
-    product_id: u16,
+    connection: String,
+    address: String,
     manufacturer: String,
     serial: String,
+    is_default: bool,
 }
 
 #[tauri::command]
 fn list_printers() -> Result<Vec<PrinterInfoResponse>, String> {
-    let printers = printer::list_printers()?;
+    let printers = printer::list_all_printers()?;
     Ok(printers
         .into_iter()
         .map(|p| PrinterInfoResponse {
-            name: p.name.clone(),
-            key: p.key(),
-            vendor_id: p.vendor_id,
-            product_id: p.product_id,
+            name: p.name,
+            key: p.key,
+            connection: p.connection,
+            address: p.address,
             manufacturer: p.manufacturer,
             serial: p.serial,
+            is_default: p.is_default,
         })
         .collect())
 }
@@ -71,45 +73,18 @@ fn test_print(printer_key: String) -> Result<(), String> {
     printer::test_print(&printer_key)
 }
 
-#[derive(Debug, Clone, Serialize)]
-struct NetworkPrinterResponse {
-    name: String,
-    key: String,
-    address: String,
-    ip: String,
-    port: u16,
-}
-
 #[tauri::command]
-fn scan_network_printers(subnet: String) -> Vec<NetworkPrinterResponse> {
-    printer::scan_network_printers(&subnet)
-        .into_iter()
-        .map(|p| NetworkPrinterResponse {
-            name: p.name.clone(),
-            key: format!("net:{}", p.address),
-            address: p.address,
-            ip: p.ip,
-            port: p.port,
-        })
-        .collect()
-}
-
-#[tauri::command]
-fn add_network_printer(ip: String, port: u16) -> Result<NetworkPrinterResponse, String> {
+fn add_network_printer(ip: String, port: u16) -> Result<PrinterInfoResponse, String> {
+    printer::test_network_connection(&ip, port)?;
     let address = format!("{}:{}", ip, port);
-    // Test connection
-    let addr: std::net::SocketAddr = address
-        .parse()
-        .map_err(|_| format!("Endereço inválido: {}", address))?;
-    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(3))
-        .map_err(|e| format!("Não foi possível conectar em {}: {}", address, e))?;
-
-    Ok(NetworkPrinterResponse {
+    Ok(PrinterInfoResponse {
         name: format!("Impressora de Rede ({})", ip),
         key: format!("net:{}", address),
+        connection: "network".to_string(),
         address,
-        ip,
-        port,
+        manufacturer: "Rede".to_string(),
+        serial: String::new(),
+        is_default: false,
     })
 }
 
@@ -168,7 +143,6 @@ fn main() {
             test_print,
             get_print_queue,
             clear_print_queue,
-            scan_network_printers,
             add_network_printer,
         ])
         .setup(|app| {

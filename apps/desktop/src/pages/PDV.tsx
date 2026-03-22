@@ -577,7 +577,7 @@ export default function PDV() {
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1 block">Valor de abertura (R$)</label>
-            <input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} placeholder="0.00" autoFocus className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !openingRegister) { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); } }} placeholder="0.00" autoFocus className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
           <button disabled={openingRegister} onClick={async () => { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); }} className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95">
             {openingRegister ? 'Abrindo...' : 'Abrir Caixa'}
@@ -595,7 +595,7 @@ export default function PDV() {
           )}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1 block">Valor em caixa (R$)</label>
-            <input type="number" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} placeholder="0.00" autoFocus className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <input type="number" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !closingRegister) { try { const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap(); setShowCloseRegister(false); setClosingBalance(''); setClosingNotes(''); setClosingSummary(result); } catch (err: any) { notify.error(err?.data?.message || 'Erro ao fechar caixa'); } } }} placeholder="0.00" autoFocus className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1 block">Observacoes</label>

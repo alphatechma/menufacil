@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Printer, Search, CheckCircle2, XCircle, Loader2, Clock, Trash2, Zap,
-  Usb, AlertTriangle, Wifi, Plus, X,
+  Usb, AlertTriangle, Wifi, Plus, X, Monitor,
 } from 'lucide-react';
 import { usePrinter, type PrinterInfo, type QueueJob } from '@/hooks/usePrinter';
 import { useNotify } from '@/hooks/useNotify';
@@ -93,29 +93,71 @@ export default function PrinterManager() {
     localStorage.setItem('menufacil_paper_width', String(value));
   };
 
+  const handleAddNetwork = async () => {
+    if (!networkIp.trim() || addingNetwork) return;
+    setAddingNetwork(true);
+    try {
+      await addNetworkPrinter(networkIp.trim(), parseInt(networkPort) || 9100);
+      notify.success(`Impressora ${networkIp} adicionada!`);
+      setNetworkIp('');
+      setNetworkPort('9100');
+      setShowNetworkForm(false);
+    } catch (err: any) {
+      notify.error(err?.message || 'Não foi possível conectar');
+    } finally {
+      setAddingNetwork(false);
+    }
+  };
+
   const completedCount = queue.filter((j) => j.status === 'done' || j.status === 'error').length;
 
   return (
     <div className="space-y-6">
-      {/* Detect Printers */}
+      {/* All Printers (unified) */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-bold text-gray-900">Impressoras USB</h4>
-            <p className="text-xs text-gray-500">Detecte impressoras térmicas conectadas via USB</p>
+            <h4 className="text-sm font-bold text-gray-900">Impressoras</h4>
+            <p className="text-xs text-gray-500">USB, rede e instaladas no sistema (detectadas automaticamente)</p>
           </div>
-          <button
-            onClick={handleDetect}
-            disabled={loading}
-            className="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95"
-          >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Detectando...</>
-            ) : (
-              <><Search className="w-4 h-4" /> Detectar Impressoras</>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNetworkForm(!showNetworkForm)}
+              className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors"
+            >
+              {showNetworkForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {showNetworkForm ? 'Cancelar' : 'Adicionar IP'}
+            </button>
+            <button
+              onClick={handleDetect}
+              disabled={loading}
+              className="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95"
+            >
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Detectando...</> : <><Search className="w-4 h-4" /> Detectar</>}
+            </button>
+          </div>
         </div>
+
+        {showNetworkForm && (
+          <div className="flex items-end gap-3 bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div className="flex-1">
+              <label className="text-xs font-medium text-gray-700 mb-1 block">Endereço IP</label>
+              <input type="text" value={networkIp} onChange={(e) => setNetworkIp(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddNetwork()} placeholder="192.168.0.100"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+            </div>
+            <div className="w-24">
+              <label className="text-xs font-medium text-gray-700 mb-1 block">Porta</label>
+              <input type="text" value={networkPort} onChange={(e) => setNetworkPort(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddNetwork()} placeholder="9100"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+            </div>
+            <button onClick={handleAddNetwork} disabled={addingNetwork || !networkIp.trim()}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              {addingNetwork ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />} Conectar
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -126,85 +168,47 @@ export default function PrinterManager() {
 
         {printers.length > 0 && (
           <div className="space-y-2">
-            {printers.map((p: PrinterInfo) => (
-              <div
-                key={p.key}
-                className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Usb className="w-5 h-5 text-primary" />
+            {printers.map((p: PrinterInfo) => {
+              const connType = p.connection || (p.key.startsWith('net:') ? 'network' : 'usb');
+              const ConnIcon = connType === 'network' ? Wifi : connType === 'system' ? Monitor : Usb;
+              const connColor = connType === 'network' ? 'text-blue-600 bg-blue-500/10' : connType === 'system' ? 'text-purple-600 bg-purple-500/10' : 'text-green-600 bg-green-500/10';
+              const connLabel = connType === 'network' ? 'Rede' : connType === 'system' ? 'Sistema' : 'USB';
+
+              return (
+                <div key={p.key} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', connColor)}>
+                      <ConnIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900">{p.name}</p>
+                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', connColor)}>{connLabel}</span>
+                        {p.is_default && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Padrão do Sistema</span>}
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono">{p.address}{p.serial && ` | SN: ${p.serial}`}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">
-                      {p.key}
-                      {p.serial && ` | SN: ${p.serial}`}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    {defaultPrinter === p.key && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Padrão</span>}
+                    {kitchenPrinter === p.key && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Cozinha</span>}
+                    <button onClick={() => handleSetDefault(p.key)} className={cn('text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors', defaultPrinter === p.key ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100')}>Padrão</button>
+                    <button onClick={() => handleSetKitchen(p.key)} className={cn('text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors', kitchenPrinter === p.key ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100')}>Cozinha</button>
+                    <button onClick={() => handleTestPrint(p.key)} disabled={testingPrinter === p.key} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1">
+                      {testingPrinter === p.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />} Teste
+                    </button>
+                    {p.key.startsWith('net:') && (
+                      <button onClick={() => { removeNetworkPrinter(p.key); notify.info('Impressora removida'); }} className="text-xs font-medium px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {defaultPrinter === p.key && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                      Padrão
-                    </span>
-                  )}
-                  {kitchenPrinter === p.key && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      Cozinha
-                    </span>
-                  )}
-                  <button
-                    onClick={() => handleSetDefault(p.key)}
-                    className={cn(
-                      'text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors',
-                      defaultPrinter === p.key
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100',
-                    )}
-                  >
-                    Padrão
-                  </button>
-                  <button
-                    onClick={() => handleSetKitchen(p.key)}
-                    className={cn(
-                      'text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors',
-                      kitchenPrinter === p.key
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100',
-                    )}
-                  >
-                    Cozinha
-                  </button>
-                  <button
-                    onClick={() => handleTestPrint(p.key)}
-                    disabled={testingPrinter === p.key}
-                    className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1"
-                  >
-                    {testingPrinter === p.key ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Zap className="w-3 h-3" />
-                    )}
-                    Teste
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {testResult && (
-              <div
-                className={cn(
-                  'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm',
-                  testResult.success
-                    ? 'bg-green-50 border border-green-200 text-green-700'
-                    : 'bg-red-50 border border-red-200 text-red-700',
-                )}
-              >
-                {testResult.success ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
+              <div className={cn('flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm', testResult.success ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700')}>
+                {testResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                 {testResult.message}
               </div>
             )}
@@ -215,114 +219,7 @@ export default function PrinterManager() {
           <div className="text-center py-6 text-gray-400">
             <Printer className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm">Nenhuma impressora detectada</p>
-            <p className="text-xs mt-1">Conecte uma impressora USB e clique em Detectar</p>
-          </div>
-        )}
-      </div>
-
-      {/* Network Printers */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-bold text-gray-900">Impressoras de Rede</h4>
-            <p className="text-xs text-gray-500">Adicione impressoras conectadas via Wi-Fi ou cabo de rede (porta 9100)</p>
-          </div>
-          <button
-            onClick={() => setShowNetworkForm(!showNetworkForm)}
-            className="bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-colors active:scale-95"
-          >
-            {showNetworkForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showNetworkForm ? 'Cancelar' : 'Adicionar'}
-          </button>
-        </div>
-
-        {showNetworkForm && (
-          <div className="flex items-end gap-3 bg-gray-50 rounded-xl p-4">
-            <div className="flex-1">
-              <label className="text-xs font-medium text-gray-700 mb-1 block">Endereço IP</label>
-              <input
-                type="text"
-                value={networkIp}
-                onChange={(e) => setNetworkIp(e.target.value)}
-                placeholder="192.168.0.100"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              />
-            </div>
-            <div className="w-24">
-              <label className="text-xs font-medium text-gray-700 mb-1 block">Porta</label>
-              <input
-                type="text"
-                value={networkPort}
-                onChange={(e) => setNetworkPort(e.target.value)}
-                placeholder="9100"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              />
-            </div>
-            <button
-              onClick={async () => {
-                if (!networkIp.trim()) return;
-                setAddingNetwork(true);
-                try {
-                  await addNetworkPrinter(networkIp.trim(), parseInt(networkPort) || 9100);
-                  notify.success(`Impressora ${networkIp} adicionada com sucesso!`);
-                  setNetworkIp('');
-                  setNetworkPort('9100');
-                  setShowNetworkForm(false);
-                } catch (err: any) {
-                  notify.error(err?.message || 'Não foi possível conectar à impressora');
-                } finally {
-                  setAddingNetwork(false);
-                }
-              }}
-              disabled={addingNetwork || !networkIp.trim()}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
-            >
-              {addingNetwork ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
-              Conectar
-            </button>
-          </div>
-        )}
-
-        {/* Network printers list */}
-        {printers.filter((p) => p.type === 'network').length > 0 && (
-          <div className="space-y-2">
-            {printers.filter((p) => p.type === 'network').map((p) => (
-              <div key={p.key} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                    <Wifi className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">{p.serial || p.key.replace('net:', '')}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {defaultPrinter === p.key && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Padrão</span>
-                  )}
-                  {kitchenPrinter === p.key && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Cozinha</span>
-                  )}
-                  <button onClick={() => handleSetDefault(p.key)} className={cn('text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors', defaultPrinter === p.key ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100')}>Padrão</button>
-                  <button onClick={() => handleSetKitchen(p.key)} className={cn('text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors', kitchenPrinter === p.key ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100')}>Cozinha</button>
-                  <button onClick={() => handleTestPrint(p.key)} disabled={testingPrinter === p.key} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1">
-                    {testingPrinter === p.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />} Teste
-                  </button>
-                  <button onClick={() => { removeNetworkPrinter(p.key); notify.info('Impressora removida'); }} className="text-xs font-medium px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {printers.filter((p) => p.type === 'network').length === 0 && !showNetworkForm && (
-          <div className="text-center py-4 text-gray-400">
-            <Wifi className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nenhuma impressora de rede configurada</p>
-            <p className="text-xs mt-1">Clique em Adicionar para conectar uma impressora via IP</p>
+            <p className="text-xs mt-1">Clique em Detectar ou adicione por IP</p>
           </div>
         )}
       </div>

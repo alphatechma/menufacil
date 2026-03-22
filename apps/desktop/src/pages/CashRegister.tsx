@@ -295,6 +295,7 @@ export default function CashRegister() {
                     inputMode="decimal"
                     value={closingBalance}
                     onChange={(e) => setClosingBalance(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !isClosing) handleClose(); }}
                     placeholder="0,00"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-lg font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                   />
