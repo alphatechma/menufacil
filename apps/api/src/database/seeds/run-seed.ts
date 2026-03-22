@@ -54,26 +54,26 @@ async function seed() {
   // ==========================================
   const moduleRepo = dataSource.getRepository('SystemModule');
   const defaultModules = [
-    // Modulos administrativos (disponiveis em todos os planos)
-    { key: 'dashboard', name: 'Dashboard', description: 'Painel principal com metricas e resumo' },
+    // Módulos administrativos (disponíveis em todos os planos)
+    { key: 'dashboard', name: 'Dashboard', description: 'Painel principal com métricas e resumo' },
     { key: 'staff', name: 'Equipe', description: 'Gerenciamento de membros da equipe e perfis de acesso' },
-    { key: 'settings', name: 'Configuracoes', description: 'Configuracoes gerais e personalizacao da loja' },
-    // Modulos de funcionalidades (dependem do plano)
+    { key: 'settings', name: 'Configurações', description: 'Configurações gerais e personalização da loja' },
+    // Módulos de funcionalidades (dependem do plano)
     { key: 'orders', name: 'Pedidos', description: 'Gerenciamento de pedidos' },
-    { key: 'products', name: 'Produtos', description: 'Gerenciamento de produtos e cardapio' },
+    { key: 'products', name: 'Produtos', description: 'Gerenciamento de produtos e cardápio' },
     { key: 'categories', name: 'Categorias', description: 'Gerenciamento de categorias' },
     { key: 'customers', name: 'Clientes', description: 'Gerenciamento de clientes' },
     { key: 'delivery', name: 'Delivery', description: 'Zonas de entrega e delivery' },
     { key: 'coupons', name: 'Cupons', description: 'Sistema de cupons de desconto' },
     { key: 'loyalty', name: 'Fidelidade', description: 'Programa de fidelidade e pontos' },
     { key: 'kds', name: 'KDS', description: 'Kitchen Display System' },
-    { key: 'reports', name: 'Relatorios', description: 'Relatorios e analytics' },
+    { key: 'reports', name: 'Relatórios', description: 'Relatórios e analytics' },
     { key: 'delivery_driver', name: 'Painel Entregador', description: 'Painel do entregador para acompanhar e concluir entregas' },
-    { key: 'pickup', name: 'Retirada', description: 'Pedidos para retirada no balcao' },
-    { key: 'dine_in', name: 'Atendimento Presencial', description: 'Mesas, comandas, reservas e mapa do salao' },
-    { key: 'waiter', name: 'Garcom', description: 'App do garcom para pedidos presenciais' },
-    { key: 'multi_unit', name: 'Multi-Unidade', description: 'Suporte a multiplas unidades/filiais' },
-    { key: 'whatsapp_flows', name: 'Fluxos WhatsApp', description: 'Automacao de conversas WhatsApp com fluxos condicionais' },
+    { key: 'pickup', name: 'Retirada', description: 'Pedidos para retirada no balcão' },
+    { key: 'dine_in', name: 'Atendimento Presencial', description: 'Mesas, comandas, reservas e mapa do salão' },
+    { key: 'waiter', name: 'Garçom', description: 'App do garçom para pedidos presenciais' },
+    { key: 'multi_unit', name: 'Multi-Unidade', description: 'Suporte a múltiplas unidades/filiais' },
+    { key: 'whatsapp_flows', name: 'Fluxos WhatsApp', description: 'Automação de conversas WhatsApp com fluxos condicionais' },
   ];
 
   const savedModules: Record<string, any> = {};
@@ -95,7 +95,7 @@ async function seed() {
 
   const defaultPlans = [
     {
-      name: 'Basico',
+      name: 'Básico',
       price: 99,
       max_users: 3,
       max_products: 50,
@@ -148,7 +148,7 @@ async function seed() {
   const permissionRepo = dataSource.getRepository('Permission');
 
   const permissionsByModule: Record<string, { key: string; name: string }[]> = {
-    // ── Modulos administrativos ──
+    // ── Módulos administrativos ──
     dashboard: [
       { key: 'dashboard:read', name: 'Ver Dashboard' },
     ],
@@ -165,14 +165,14 @@ async function seed() {
       { key: 'roles:delete', name: 'Remover Perfil de Acesso' },
     ],
     settings: [
-      // Configuracoes
-      { key: 'settings:read', name: 'Ver Configuracoes' },
-      { key: 'settings:update', name: 'Editar Configuracoes' },
-      // Personalizacao
-      { key: 'customization:read', name: 'Ver Personalizacao' },
-      { key: 'customization:update', name: 'Editar Personalizacao' },
+      // Configurações
+      { key: 'settings:read', name: 'Ver Configurações' },
+      { key: 'settings:update', name: 'Editar Configurações' },
+      // Personalização
+      { key: 'customization:read', name: 'Ver Personalização' },
+      { key: 'customization:update', name: 'Editar Personalização' },
     ],
-    // ── Modulos de funcionalidades ──
+    // ── Módulos de funcionalidades ──
     products: [
       { key: 'product:create', name: 'Criar Produto' },
       { key: 'product:read', name: 'Ver Produtos' },
@@ -220,7 +220,7 @@ async function seed() {
       { key: 'kds:update', name: 'Atualizar KDS' },
     ],
     reports: [
-      { key: 'report:read', name: 'Ver Relatorios' },
+      { key: 'report:read', name: 'Ver Relatórios' },
     ],
     delivery_driver: [
       { key: 'delivery_driver:read', name: 'Ver Minhas Entregas' },
@@ -234,11 +234,11 @@ async function seed() {
       { key: 'table:delete', name: 'Remover Mesa' },
       { key: 'reservation:read', name: 'Ver Reservas' },
       { key: 'reservation:update', name: 'Gerenciar Reservas' },
-      { key: 'floor_plan:read', name: 'Ver Mapa do Salao' },
-      { key: 'floor_plan:update', name: 'Editar Mapa do Salao' },
+      { key: 'floor_plan:read', name: 'Ver Mapa do Salão' },
+      { key: 'floor_plan:update', name: 'Editar Mapa do Salão' },
     ],
     waiter: [
-      { key: 'waiter:access', name: 'Acessar App Garcom' },
+      { key: 'waiter:access', name: 'Acessar App Garçom' },
     ],
     // ── Multi-Unidade ──
     multi_unit: [
@@ -248,7 +248,7 @@ async function seed() {
       { key: 'unit:delete', name: 'Remover Unidade' },
       { key: 'unit:manage', name: 'Gerenciar Unidades' },
     ],
-    // ── WhatsApp (sem modulo de plano — disponivel para todos) ──
+    // ── WhatsApp (sem módulo de plano — disponível para todos) ──
     whatsapp: [
       { key: 'whatsapp:manage', name: 'Gerenciar WhatsApp' },
       { key: 'whatsapp:chat', name: 'Chat WhatsApp' },
@@ -296,14 +296,14 @@ async function seed() {
   const zoneRepo = dataSource.getRepository('DeliveryZone');
 
   const demoRestaurants = [
-    // ── 1. BURGER HOUSE — Plano Basico ──
+    // ── 1. BURGER HOUSE — Plano Básico ──
     {
       tenant: {
         name: 'Burger House',
         slug: 'burger-house',
         primary_color: '#E63946',
         phone: '(11) 98888-1111',
-        address: 'Av. dos Hamburgueres, 456 - Sao Paulo, SP',
+        address: 'Av. dos Hambúrgueres, 456 - São Paulo, SP',
         description: 'Os melhores burgers artesanais da cidade',
         business_hours: {
           monday: { open: true, openTime: '11:00', closeTime: '23:00' },
@@ -318,27 +318,27 @@ async function seed() {
         is_active: true,
         order_modes: { delivery: true, pickup: true, dine_in: false },
       },
-      planName: 'Basico',
+      planName: 'Básico',
       admin: {
         name: 'Admin Burger House',
         email: 'admin@burgerhouse.com',
       },
       categories: [
-        { name: 'Burgers Classicos', description: 'Nossos hamburgueres tradicionais', sort_order: 1 },
-        { name: 'Burgers Especiais', description: 'Criacoes do chef', sort_order: 2 },
+        { name: 'Burgers Clássicos', description: 'Nossos hambúrgueres tradicionais', sort_order: 1 },
+        { name: 'Burgers Especiais', description: 'Criações do chef', sort_order: 2 },
         { name: 'Acompanhamentos', description: 'Batatas, onion rings e mais', sort_order: 3 },
         { name: 'Bebidas', description: 'Refrigerantes, sucos e shakes', sort_order: 4 },
       ],
       products: [
-        { name: 'Classic Burger', description: 'Pao brioche, blend 180g, queijo cheddar, alface, tomate, cebola roxa e molho especial', base_price: 32.90, category: 'Burgers Classicos', sort_order: 1 },
-        { name: 'Cheese Bacon', description: 'Pao brioche, blend 180g, queijo cheddar duplo, bacon crocante e molho barbecue', base_price: 38.90, category: 'Burgers Classicos', sort_order: 2 },
-        { name: 'Chicken Burger', description: 'Pao brioche, file de frango empanado, queijo prato, alface e maionese', base_price: 29.90, category: 'Burgers Classicos', sort_order: 3 },
-        { name: 'Smash Burger Duplo', description: 'Pao potato, dois smash patties 90g, cheddar derretido, cebola caramelizada e pickles', base_price: 42.90, category: 'Burgers Especiais', sort_order: 1 },
-        { name: 'Burger Trufado', description: 'Pao brioche, blend wagyu 200g, queijo brie, cogumelos, rucula e maionese trufada', base_price: 54.90, category: 'Burgers Especiais', sort_order: 2 },
-        { name: 'BBQ Pulled Pork', description: 'Pao australiano, pulled pork desfiado, coleslaw, cheddar e molho BBQ defumado', base_price: 46.90, category: 'Burgers Especiais', sort_order: 3 },
-        { name: 'Batata Frita P', description: 'Porcao individual de batata frita crocante', base_price: 14.90, category: 'Acompanhamentos', sort_order: 1 },
-        { name: 'Batata Frita G', description: 'Porcao grande para compartilhar com molho cheddar', base_price: 24.90, category: 'Acompanhamentos', sort_order: 2 },
-        { name: 'Onion Rings', description: 'Aneis de cebola empanados e crocantes (12 unidades)', base_price: 19.90, category: 'Acompanhamentos', sort_order: 3 },
+        { name: 'Classic Burger', description: 'Pão brioche, blend 180g, queijo cheddar, alface, tomate, cebola roxa e molho especial', base_price: 32.90, category: 'Burgers Classicos', sort_order: 1 },
+        { name: 'Cheese Bacon', description: 'Pão brioche, blend 180g, queijo cheddar duplo, bacon crocante e molho barbecue', base_price: 38.90, category: 'Burgers Classicos', sort_order: 2 },
+        { name: 'Chicken Burger', description: 'Pão brioche, file de frango empanado, queijo prato, alface e maionese', base_price: 29.90, category: 'Burgers Classicos', sort_order: 3 },
+        { name: 'Smash Burger Duplo', description: 'Pão potato, dois smash patties 90g, cheddar derretido, cebola caramelizada e pickles', base_price: 42.90, category: 'Burgers Especiais', sort_order: 1 },
+        { name: 'Burger Trufado', description: 'Pão brioche, blend wagyu 200g, queijo brie, cogumelos, rucula e maionese trufada', base_price: 54.90, category: 'Burgers Especiais', sort_order: 2 },
+        { name: 'BBQ Pulled Pork', description: 'Pão australiano, pulled pork desfiado, coleslaw, cheddar e molho BBQ defumado', base_price: 46.90, category: 'Burgers Especiais', sort_order: 3 },
+        { name: 'Batata Frita P', description: 'Porção individual de batata frita crocante', base_price: 14.90, category: 'Acompanhamentos', sort_order: 1 },
+        { name: 'Batata Frita G', description: 'Porção grande para compartilhar com molho cheddar', base_price: 24.90, category: 'Acompanhamentos', sort_order: 2 },
+        { name: 'Onion Rings', description: 'Anéis de cebola empanados e crocantes (12 unidades)', base_price: 19.90, category: 'Acompanhamentos', sort_order: 3 },
         { name: 'Coca-Cola 350ml', description: 'Coca-Cola lata gelada', base_price: 7.90, category: 'Bebidas', sort_order: 1 },
         { name: 'Milkshake Chocolate', description: 'Milkshake cremoso de chocolate belga 500ml', base_price: 22.90, category: 'Bebidas', sort_order: 2 },
         { name: 'Suco Natural Laranja', description: 'Suco de laranja natural 400ml', base_price: 12.90, category: 'Bebidas', sort_order: 3 },
@@ -352,7 +352,7 @@ async function seed() {
         slug: 'pizza-express',
         primary_color: '#FF6B35',
         phone: '(11) 99999-0000',
-        address: 'Rua das Pizzas, 123 - Sao Paulo, SP',
+        address: 'Rua das Pizzas, 123 - São Paulo, SP',
         description: 'Pizzas artesanais com ingredientes selecionados',
         business_hours: {
           monday: { open: true, openTime: '11:00', closeTime: '23:00' },
@@ -373,21 +373,21 @@ async function seed() {
         email: 'admin@pizzaexpress.com',
       },
       categories: [
-        { name: 'Pizzas Tradicionais', description: 'Nossas pizzas classicas', sort_order: 1 },
+        { name: 'Pizzas Tradicionais', description: 'Nossas pizzas clássicas', sort_order: 1 },
         { name: 'Pizzas Especiais', description: 'Sabores premium', sort_order: 2 },
         { name: 'Calzones', description: 'Calzones recheados assados no forno', sort_order: 3 },
         { name: 'Bebidas', description: 'Refrigerantes, sucos e cervejas', sort_order: 4 },
         { name: 'Sobremesas', description: 'Doces e sobremesas', sort_order: 5 },
       ],
       products: [
-        { name: 'Margherita', description: 'Molho de tomate, mussarela, manjericao fresco e azeite', base_price: 39.90, category: 'Pizzas Tradicionais', sort_order: 1, is_pizza: true },
+        { name: 'Margherita', description: 'Molho de tomate, mussarela, manjericão fresco e azeite', base_price: 39.90, category: 'Pizzas Tradicionais', sort_order: 1, is_pizza: true },
         { name: 'Calabresa', description: 'Molho de tomate, mussarela, calabresa fatiada e cebola', base_price: 42.90, category: 'Pizzas Tradicionais', sort_order: 2, is_pizza: true },
         { name: 'Portuguesa', description: 'Molho de tomate, mussarela, presunto, ovo, cebola, ervilha e azeitona', base_price: 45.90, category: 'Pizzas Tradicionais', sort_order: 3, is_pizza: true },
         { name: 'Frango com Catupiry', description: 'Molho de tomate, mussarela, frango desfiado e catupiry', base_price: 44.90, category: 'Pizzas Tradicionais', sort_order: 4, is_pizza: true },
-        { name: 'Quatro Queijos Premium', description: 'Mussarela, gorgonzola, provolone e parmesao', base_price: 55.90, category: 'Pizzas Especiais', sort_order: 1, is_pizza: true },
-        { name: 'Pepperoni Supreme', description: 'Molho de tomate, mussarela, pepperoni importado e pimentao', base_price: 52.90, category: 'Pizzas Especiais', sort_order: 2, is_pizza: true },
-        { name: 'Parma com Rucula', description: 'Mussarela, presunto parma, rucula, tomate cereja e parmesao', base_price: 58.90, category: 'Pizzas Especiais', sort_order: 3, is_pizza: true },
-        { name: 'Calzone Presunto e Queijo', description: 'Recheio de presunto, mussarela e oregano', base_price: 34.90, category: 'Calzones', sort_order: 1 },
+        { name: 'Quatro Queijos Premium', description: 'Mussarela, gorgonzola, provolone e parmesão', base_price: 55.90, category: 'Pizzas Especiais', sort_order: 1, is_pizza: true },
+        { name: 'Pepperoni Supreme', description: 'Molho de tomate, mussarela, pepperoni importado e pimentão', base_price: 52.90, category: 'Pizzas Especiais', sort_order: 2, is_pizza: true },
+        { name: 'Parma com Rucula', description: 'Mussarela, presunto parma, rucula, tomate cereja e parmesão', base_price: 58.90, category: 'Pizzas Especiais', sort_order: 3, is_pizza: true },
+        { name: 'Calzone Presunto e Queijo', description: 'Recheio de presunto, mussarela e orégano', base_price: 34.90, category: 'Calzones', sort_order: 1 },
         { name: 'Calzone Calabresa', description: 'Recheio de calabresa, mussarela e cebola', base_price: 36.90, category: 'Calzones', sort_order: 2 },
         { name: 'Coca-Cola 2L', description: 'Refrigerante Coca-Cola 2 litros', base_price: 12.90, category: 'Bebidas', sort_order: 1 },
         { name: 'Guarana Antarctica 2L', description: 'Refrigerante Guarana Antarctica 2 litros', base_price: 10.90, category: 'Bebidas', sort_order: 2 },
@@ -396,7 +396,7 @@ async function seed() {
         { name: 'Petit Gateau', description: 'Bolo quente de chocolate com sorvete de baunilha', base_price: 24.90, category: 'Sobremesas', sort_order: 2 },
       ],
       deliveryZones: [
-        { name: 'Centro e Regiao', fee: 5.0, neighborhoods: ['Centro', 'Boa Vista', 'Republica', 'Se', 'Liberdade', 'Bela Vista'], min_delivery_time: 20, max_delivery_time: 40 },
+        { name: 'Centro e Região', fee: 5.0, neighborhoods: ['Centro', 'Boa Vista', 'Republica', 'Se', 'Liberdade', 'Bela Vista'], min_delivery_time: 20, max_delivery_time: 40 },
         { name: 'Zona Sul', fee: 8.0, neighborhoods: ['Vila Mariana', 'Saude', 'Moema', 'Ipiranga', 'Jabaquara', 'Campo Belo'], min_delivery_time: 30, max_delivery_time: 50 },
         { name: 'Zona Oeste', fee: 10.0, neighborhoods: ['Pinheiros', 'Perdizes', 'Lapa', 'Alto de Pinheiros', 'Butanta', 'Vila Madalena'], min_delivery_time: 35, max_delivery_time: 60 },
       ],
@@ -409,7 +409,7 @@ async function seed() {
         slug: 'sushi-premium',
         primary_color: '#1B4332',
         phone: '(11) 97777-3333',
-        address: 'Rua da Liberdade, 789 - Sao Paulo, SP',
+        address: 'Rua da Liberdade, 789 - São Paulo, SP',
         description: 'Culinaria japonesa premium com ingredientes importados',
         business_hours: {
           monday: { open: true, openTime: '11:30', closeTime: '22:30' },
@@ -446,16 +446,16 @@ async function seed() {
         { name: 'Sashimi Salmao (10 fatias)', description: 'Fatias generosas de salmao fresco importado', base_price: 45.90, category: 'Sashimis', sort_order: 1 },
         { name: 'Sashimi Atum (10 fatias)', description: 'Fatias de atum bluefin', base_price: 59.90, category: 'Sashimis', sort_order: 2 },
         { name: 'Sashimi Peixe Branco (10 fatias)', description: 'Fatias de peixe branco (robalo) fresco', base_price: 42.90, category: 'Sashimis', sort_order: 3 },
-        { name: 'Dragon Roll (8 pecas)', description: 'Roll de camarao empanado coberto com abacate e molho unagi', base_price: 48.90, category: 'Rolls Especiais', sort_order: 1 },
+        { name: 'Dragon Roll (8 pecas)', description: 'Roll de camarão empanado coberto com abacate e molho unagi', base_price: 48.90, category: 'Rolls Especiais', sort_order: 1 },
         { name: 'Volcano Roll (8 pecas)', description: 'Roll com salmao, cream cheese, coberto com salmao macaricado', base_price: 52.90, category: 'Rolls Especiais', sort_order: 2 },
         { name: 'Rainbow Roll (8 pecas)', description: 'Roll coberto com fatias de salmao, atum, peixe branco e abacate', base_price: 56.90, category: 'Rolls Especiais', sort_order: 3 },
         { name: 'Hot Philadelphia (10 pecas)', description: 'Salmao e cream cheese empanado e frito', base_price: 36.90, category: 'Hot Rolls', sort_order: 1 },
         { name: 'Hot Skin (10 pecas)', description: 'Pele de salmao crocante com cream cheese', base_price: 32.90, category: 'Hot Rolls', sort_order: 2 },
         { name: 'Temaki Salmao', description: 'Cone de nori com salmao, arroz, cream cheese e cebolinha', base_price: 28.90, category: 'Temakis', sort_order: 1 },
-        { name: 'Temaki Camarao Empanado', description: 'Cone de nori com camarao empanado, alface e molho especial', base_price: 32.90, category: 'Temakis', sort_order: 2 },
-        { name: 'Yakisoba de Frango', description: 'Macarrao japones salteado com frango, legumes e molho shoyu', base_price: 38.90, category: 'Pratos Quentes', sort_order: 1 },
+        { name: 'Temaki Camarão Empanado', description: 'Cone de nori com camarão empanado, alface e molho especial', base_price: 32.90, category: 'Temakis', sort_order: 2 },
+        { name: 'Yakisoba de Frango', description: 'Macarrão japonês salteado com frango, legumes e molho shoyu', base_price: 38.90, category: 'Pratos Quentes', sort_order: 1 },
         { name: 'Gyoza (8 unidades)', description: 'Pasteis japoneses grelhados recheados com carne suina', base_price: 29.90, category: 'Pratos Quentes', sort_order: 2 },
-        { name: 'Tempura Misto', description: 'Camarao e legumes empanados em massa leve e crocante', base_price: 44.90, category: 'Pratos Quentes', sort_order: 3 },
+        { name: 'Tempura Misto', description: 'Camarão e legumes empanados em massa leve e crocante', base_price: 44.90, category: 'Pratos Quentes', sort_order: 3 },
         { name: 'Cerveja Asahi 600ml', description: 'Cerveja japonesa premium', base_price: 24.90, category: 'Bebidas', sort_order: 1 },
         { name: 'Sake Quente (180ml)', description: 'Sake japones servido quente', base_price: 18.90, category: 'Bebidas', sort_order: 2 },
         { name: 'Cha Verde Gelado', description: 'Cha verde japones com gelo 500ml', base_price: 12.90, category: 'Bebidas', sort_order: 3 },
@@ -508,7 +508,7 @@ async function seed() {
       },
       {
         name: 'Gerente',
-        description: 'Gerenciamento de pedidos, equipe, produtos e relatorios',
+        description: 'Gerenciamento de pedidos, equipe, produtos e relatórios',
         permissionKeys: [
           'dashboard:read',
           'order:create', 'order:read', 'order:update', 'order:cancel',
@@ -540,7 +540,7 @@ async function seed() {
       },
       {
         name: 'Cozinha',
-        description: 'Visualizacao e atualizacao de pedidos no KDS',
+        description: 'Visualização e atualização de pedidos no KDS',
         permissionKeys: [
           'order:read', 'order:update',
           'kds:read', 'kds:update',
@@ -548,8 +548,8 @@ async function seed() {
         ],
       },
       {
-        name: 'Garcom',
-        description: 'App do garcom para pedidos presenciais e gestao de mesas',
+        name: 'Garçom',
+        description: 'App do garçom para pedidos presenciais e gestão de mesas',
         permissionKeys: [
           'order:create', 'order:read', 'order:update',
           'table:read', 'table:update',
@@ -559,7 +559,7 @@ async function seed() {
       },
       {
         name: 'Entregador',
-        description: 'Visualizacao e atualizacao de entregas atribuidas',
+        description: 'Visualização e atualização de entregas atribuídas',
         permissionKeys: [
           'delivery_driver:read', 'delivery_driver:update',
           'order:read',

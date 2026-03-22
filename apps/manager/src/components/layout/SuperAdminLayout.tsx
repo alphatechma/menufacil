@@ -134,12 +134,10 @@ export default function SuperAdminLayout() {
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 h-16 shrink-0">
-        <div className="w-9 h-9 glass rounded-xl flex items-center justify-center shrink-0">
-          <span className="text-sm font-extrabold text-indigo-400">MF</span>
-        </div>
+        <img src="/logo-icon.png" alt="MenuFácil" className="w-9 h-9 rounded-xl shrink-0" />
         {(!collapsed || mobile) && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">MenuFacil</span>
+            <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">MenuFácil</span>
             <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
               Manager
             </span>

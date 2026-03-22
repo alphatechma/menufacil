@@ -24,7 +24,7 @@ export class CategoryService {
   async findById(id: string, tenantId: string): Promise<Category> {
     const category = await this.categoryRepository.findById(id, tenantId);
     if (!category) {
-      throw new NotFoundException('Categoria nao encontrada');
+      throw new NotFoundException('Categoria não encontrada');
     }
     return category;
   }

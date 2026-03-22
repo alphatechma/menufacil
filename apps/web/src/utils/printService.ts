@@ -53,8 +53,8 @@ const ORDER_TYPE_LABELS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credit_card: 'Cartao Credito',
-  debit_card: 'Cartao Debito',
+  credit_card: 'Cartão Crédito',
+  debit_card: 'Cartão Débito',
   cash: 'Dinheiro',
 };
 
@@ -99,15 +99,15 @@ export interface ReceiptSection {
 export const DEFAULT_RECEIPT_SECTIONS: ReceiptSection[] = [
   { id: 'header', label: 'Cabecalho (nome do estabelecimento)', enabled: true },
   { id: 'datetime', label: 'Data e hora', enabled: true },
-  { id: 'order_number', label: 'Numero do pedido', enabled: true },
+  { id: 'order_number', label: 'Número do pedido', enabled: true },
   { id: 'order_type', label: 'Tipo do pedido (delivery/retirada/mesa)', enabled: true },
-  { id: 'table', label: 'Numero da mesa', enabled: true },
+  { id: 'table', label: 'Número da mesa', enabled: true },
   { id: 'customer', label: 'Dados do cliente (nome/telefone)', enabled: true },
   { id: 'items', label: 'Itens do pedido', enabled: true },
   { id: 'totals', label: 'Subtotal / Taxa / Desconto / Total', enabled: true },
   { id: 'payment', label: 'Forma de pagamento', enabled: true },
   { id: 'change', label: 'Troco (quando dinheiro)', enabled: true },
-  { id: 'address', label: 'Endereco de entrega', enabled: true },
+  { id: 'address', label: 'Endereço de entrega', enabled: true },
   { id: 'notes', label: 'Observacoes do pedido', enabled: true },
   { id: 'footer', label: 'Mensagem de agradecimento', enabled: true },
 ];
@@ -231,7 +231,7 @@ async function ensureConnected(): Promise<boolean> {
       _connected = false;
       _connecting = null;
       console.error('[QZ Tray] Falha ao conectar:', err);
-      throw new Error('QZ Tray nao encontrado.');
+      throw new Error('QZ Tray não encontrado.');
     }
   })();
 

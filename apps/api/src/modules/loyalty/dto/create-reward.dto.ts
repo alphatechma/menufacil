@@ -7,7 +7,7 @@ export class CreateRewardDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: 'Desconto de 10% no proximo pedido' })
+  @ApiPropertyOptional({ example: 'Desconto de 10% no próximo pedido' })
   @IsOptional()
   @IsString()
   description?: string;

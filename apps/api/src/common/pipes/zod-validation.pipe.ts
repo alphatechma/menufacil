@@ -12,7 +12,7 @@ export class ZodValidationPipe implements PipeTransform {
         message: e.message,
       }));
       throw new BadRequestException({
-        message: 'Dados invalidos',
+        message: 'Dados inválidos',
         errors,
       });
     }

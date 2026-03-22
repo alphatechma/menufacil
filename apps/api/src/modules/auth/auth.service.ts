@@ -52,12 +52,12 @@ export class AuthService {
       .getOne();
 
     if (!user) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const tokens = this.generateTokens({
@@ -88,12 +88,12 @@ export class AuthService {
       .getOne();
 
     if (!user) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const tokens = this.generateTokens({
@@ -147,7 +147,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Este email ja esta em uso');
+      throw new ConflictException('Este email já está em uso');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -265,11 +265,11 @@ export class AuthService {
       .andWhere('user.is_active = :active', { active: true })
       .getOne();
     if (!user || !user.tenant_id) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
     const tokens = this.generateTokens({
       sub: user.id,
@@ -326,13 +326,13 @@ export class AuthService {
       where: { email: dto.email },
     });
     if (existingUser) {
-      throw new ConflictException('Este email ja esta em uso');
+      throw new ConflictException('Este email já está em uso');
     }
 
     // Get the plan (default to Basico if not specified)
     let planId: string | undefined = dto.plan_id;
     if (!planId) {
-      const basicPlan = await this.planRepository.findOne({ where: { name: 'Basico' } });
+      const basicPlan = await this.planRepository.findOne({ where: { name: 'Básico' } });
       planId = basicPlan?.id;
     }
 

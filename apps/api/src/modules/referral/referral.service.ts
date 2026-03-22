@@ -74,11 +74,11 @@ export class ReferralService {
     });
 
     if (!templateReferral) {
-      throw new NotFoundException('Codigo de indicacao nao encontrado');
+      throw new NotFoundException('Código de indicação não encontrado');
     }
 
     if (templateReferral.referrer_id === referredCustomerId) {
-      throw new BadRequestException('Voce nao pode usar seu proprio codigo de indicacao');
+      throw new BadRequestException('Você não pode usar seu próprio código de indicação');
     }
 
     // Check if this customer was already referred

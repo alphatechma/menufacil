@@ -23,7 +23,7 @@ export class ReservationPublicController {
     @Body() dto: CreateReservationDto,
   ) {
     const tenant = await this.tenantRepo.findOne({ where: { slug } });
-    if (!tenant) throw new NotFoundException('Restaurante nao encontrado');
+    if (!tenant) throw new NotFoundException('Restaurante não encontrado');
 
     return this.service.create(dto, tenant.id);
   }

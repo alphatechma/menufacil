@@ -5,10 +5,10 @@ export const createTenantSchema = z.object({
   slug: z
     .string()
     .min(2, 'Slug deve ter pelo menos 2 caracteres')
-    .regex(/^[a-z0-9-]+$/, 'Slug deve conter apenas letras minusculas, numeros e hifens'),
+    .regex(/^[a-z0-9-]+$/, 'Slug deve conter apenas letras minúsculas, números e hifens'),
   phone: z.string().optional(),
   address: z.string().optional(),
-  plan_id: z.string().uuid('ID do plano invalido').optional(),
+  plan_id: z.string().uuid('ID do plano inválido').optional(),
   logo_url: z.string().url().optional(),
   banner_url: z.string().url().optional(),
   primary_color: z.string().optional(),
@@ -27,7 +27,7 @@ export const createTenantSchema = z.object({
   payment_config: z.record(z.any()).optional(),
   cancel_time_limit: z.number().min(0).optional(),
   admin_name: z.string().min(2, 'Nome do admin deve ter pelo menos 2 caracteres').optional(),
-  admin_email: z.string().email('Email do admin invalido').optional(),
+  admin_email: z.string().email('Email do admin inválido').optional(),
   admin_password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
 });
 

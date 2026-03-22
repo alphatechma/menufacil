@@ -42,7 +42,7 @@ export class ReservationService {
     const reservation = await this.reservationRepo.findOne({
       where: { id, tenant_id: tenantId },
     });
-    if (!reservation) throw new NotFoundException('Reserva nao encontrada');
+    if (!reservation) throw new NotFoundException('Reserva não encontrada');
     return reservation;
   }
 

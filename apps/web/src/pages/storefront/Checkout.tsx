@@ -67,13 +67,13 @@ const PAYMENT_METHODS: {
   },
   {
     value: 'credit_card',
-    label: 'Cartao de Credito',
+    label: 'Cartão de Crédito',
     icon: CreditCard,
     description: 'Visa, Mastercard, Elo',
   },
   {
     value: 'debit_card',
-    label: 'Cartao de Debito',
+    label: 'Cartão de Débito',
     icon: CreditCard,
     description: 'Visa, Mastercard, Elo',
   },
@@ -522,7 +522,7 @@ export default function Checkout() {
       setCouponDiscount(result.discount);
       setAppliedCoupon(couponCode.trim().toUpperCase());
     } catch (err: any) {
-      const msg = err?.data?.message || 'Cupom invalido';
+      const msg = err?.data?.message || 'Cupom inválido';
       setCouponError(msg);
       setCouponDiscount(0);
       setAppliedCoupon(null);
@@ -557,7 +557,7 @@ export default function Checkout() {
 
   const handleRemoveSavedAddress = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm('Tem certeza que deseja remover este endereco?')) {
+    if (window.confirm('Tem certeza que deseja remover este endereço?')) {
       await removeCustomerAddress({ slug: slug!, addressId: id });
       if (selectedAddressId === id) {
         setSelectedAddressId(null);
@@ -597,7 +597,7 @@ export default function Checkout() {
     if (currentStep === 0) {
       if (isDelivery) {
         if (!address.street || !address.number || !address.neighborhood || !address.city) {
-          setError('Preencha todos os campos obrigatorios do endereco.');
+          setError('Preencha todos os campos obrigatórios do endereço.');
           return;
         }
         if (zoneNotFound) {
@@ -640,7 +640,7 @@ export default function Checkout() {
 
     if (isDelivery) {
       if (!address.street || !address.number || !address.neighborhood || !address.city) {
-        setError('Preencha todos os campos obrigatorios do endereco.');
+        setError('Preencha todos os campos obrigatórios do endereço.');
         return;
       }
 
@@ -661,7 +661,7 @@ export default function Checkout() {
         await addCustomerAddress({
           slug: slug!,
           address: {
-            label: address.label || 'Meu Endereco',
+            label: address.label || 'Meu Endereço',
             street: address.street,
             number: address.number,
             complement: address.complement || null,
@@ -809,7 +809,7 @@ export default function Checkout() {
             <h3 className="font-bold text-gray-900">Retirada no balcao</h3>
           </div>
           <p className="text-sm text-gray-600">
-            Retire seu pedido em: <span className="font-medium text-gray-900">{tenant?.address || 'Endereco do restaurante'}</span>
+            Retire seu pedido em: <span className="font-medium text-gray-900">{tenant?.address || 'Endereço do restaurante'}</span>
           </p>
         </section>
       )}
@@ -852,7 +852,7 @@ export default function Checkout() {
                 className="w-5 h-5"
                 style={{ color: 'var(--tenant-primary)' }}
               />
-              <h3 className="font-bold text-gray-900">Endereco de entrega</h3>
+              <h3 className="font-bold text-gray-900">Endereço de entrega</h3>
             </div>
             {customer?.addresses && customer.addresses.length > 0 && (
               <button
@@ -864,7 +864,7 @@ export default function Checkout() {
                 className="text-sm font-medium transition-colors"
                 style={{ color: 'var(--tenant-primary)' }}
               >
-                {isAddingNewAddress ? 'Usar salvo' : 'Novo endereco'}
+                {isAddingNewAddress ? 'Usar salvo' : 'Novo endereço'}
               </button>
             )}
           </div>
@@ -886,7 +886,7 @@ export default function Checkout() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm font-bold text-gray-900">
-                        {addr.label || 'Meu Endereco'}
+                        {addr.label || 'Meu Endereço'}
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
                         {addr.street}, {addr.number}
@@ -928,7 +928,7 @@ export default function Checkout() {
                 className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 hover:text-[var(--tenant-primary)] hover:border-[var(--tenant-primary)] transition-all"
               >
                 <Plus className="w-4 h-4" />
-                <span className="text-sm font-medium">Adicionar outro endereco</span>
+                <span className="text-sm font-medium">Adicionar outro endereço</span>
               </button>
             </div>
           )}
@@ -1163,7 +1163,7 @@ export default function Checkout() {
                     : 'border-gray-200 text-gray-500 hover:border-gray-300',
                 )}
               >
-                Nao preciso
+                Não preciso
               </button>
               <button
                 type="button"
@@ -1246,7 +1246,7 @@ export default function Checkout() {
                   setCouponCode(e.target.value.toUpperCase());
                   setCouponError(null);
                 }}
-                placeholder="Digite o codigo"
+                placeholder="Digite o código"
                 className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm uppercase"
               />
               <button
@@ -1368,7 +1368,7 @@ export default function Checkout() {
             <ShoppingBag className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tenant-primary)' }} />
             <div>
               <p className="text-sm font-medium text-gray-800">Retirada no balcao</p>
-              <p className="text-xs text-gray-500">{tenant?.address || 'Endereco do restaurante'}</p>
+              <p className="text-xs text-gray-500">{tenant?.address || 'Endereço do restaurante'}</p>
               <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--tenant-primary)' }}>
                 <Clock className="w-3 h-3" />
                 ~15 min

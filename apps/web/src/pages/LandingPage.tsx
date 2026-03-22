@@ -310,11 +310,9 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-[#FF6B35] rounded-xl flex items-center justify-center">
-              <UtensilsCrossed className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo-icon.png" alt="MenuFácil" className="w-9 h-9 rounded-xl" />
             <span className="text-xl font-bold text-gray-900">
-              Menu<span className="text-[#FF6B35]">Facil</span>
+              Menu<span className="text-[#FF6B35]">Fácil</span>
             </span>
           </div>
 
@@ -825,11 +823,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#FF6B35] rounded-xl flex items-center justify-center">
-                <UtensilsCrossed className="w-5 h-5 text-white" />
-              </div>
+              <img src="/logo-icon.png" alt="MenuFácil" className="w-10 h-10 rounded-xl" />
               <span className="text-xl font-bold text-white">
-                Menu<span className="text-[#FF6B35]">Facil</span>
+                Menu<span className="text-[#FF6B35]">Fácil</span>
               </span>
             </div>
 

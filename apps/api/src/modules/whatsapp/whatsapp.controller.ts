@@ -205,7 +205,7 @@ export class WhatsappController {
   ) {
     const phone = normalizePhone(body.phone || '');
     if (!phone) {
-      return { success: false, error: 'Numero de telefone obrigatorio' };
+      return { success: false, error: 'Número de telefone obrigatório' };
     }
     const flow = await this.flowService.findOne(tenantId, id);
     const errors = await this.flowService.validate(flow);

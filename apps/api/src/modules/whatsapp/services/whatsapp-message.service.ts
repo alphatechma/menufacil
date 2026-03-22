@@ -20,8 +20,8 @@ import { normalizePhone } from '../../../common/utils/normalize-phone';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   [PaymentMethod.CASH]: 'Dinheiro',
-  [PaymentMethod.CREDIT_CARD]: 'Cartao de Credito',
-  [PaymentMethod.DEBIT_CARD]: 'Cartao de Debito',
+  [PaymentMethod.CREDIT_CARD]: 'Cartão de Crédito',
+  [PaymentMethod.DEBIT_CARD]: 'Cartão de Débito',
   [PaymentMethod.PIX]: 'PIX',
 };
 

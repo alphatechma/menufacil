@@ -57,11 +57,9 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-sm mx-4">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-14 h-14 glass rounded-2xl flex items-center justify-center mb-4">
-            <span className="text-xl font-extrabold text-indigo-400">MF</span>
-          </div>
+          <img src="/logo-icon.png" alt="MenuFácil" className="w-14 h-14 rounded-2xl mb-4" />
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">MenuFacil</h1>
+            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">MenuFácil</h1>
             <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
               Manager
             </span>
@@ -156,7 +154,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-[11px] text-zinc-600 mt-8">
-          MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
+          MenuFácil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
         </p>
       </div>
     </div>

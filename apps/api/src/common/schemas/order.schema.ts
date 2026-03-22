@@ -2,17 +2,17 @@ import { z } from 'zod';
 
 export const createOrderSchema = z.object({
   order_type: z.enum(['delivery', 'pickup', 'dine_in'], {
-    message: 'Tipo de pedido invalido',
+    message: 'Tipo de pedido inválido',
   }),
   payment_method: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'wallet'], {
-    message: 'Metodo de pagamento invalido',
+    message: 'Método de pagamento inválido',
   }),
   items: z
     .array(
       z.object({
         product_id: z.string().uuid(),
         product_name: z.string().optional(),
-        quantity: z.number().int().min(1, 'Quantidade minima e 1'),
+        quantity: z.number().int().min(1, 'Quantidade mínima é 1'),
         unit_price: z.number().min(0).optional(),
         variation_id: z.string().uuid().optional().nullable(),
         variation_ids: z.array(z.string().uuid()).optional(),

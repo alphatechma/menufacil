@@ -110,7 +110,7 @@ export class ProductService {
 
       case BulkProductActionType.ADJUST_PRICE:
         if (dto.value === undefined || !dto.adjustment_type) {
-          throw new BadRequestException('Valor e tipo de ajuste sao obrigatorios para ajuste de preco');
+          throw new BadRequestException('Valor e tipo de ajuste são obrigatórios para ajuste de preço');
         }
         await this.productRepository.bulkAdjustPrice(dto.ids, tenantId, dto.value, dto.adjustment_type);
         return { affected: dto.ids.length };

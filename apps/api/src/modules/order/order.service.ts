@@ -336,7 +336,7 @@ export class OrderService {
     const allowedTransitions = ORDER_STATUS_TRANSITIONS[order.status] || [];
     if (!allowedTransitions.includes(status)) {
       throw new BadRequestException(
-        `Nao e possivel alterar o status de "${order.status}" para "${status}"`,
+        `Não é possível alterar o status de "${order.status}" para "${status}"`,
       );
     }
 

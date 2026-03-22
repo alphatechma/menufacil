@@ -52,7 +52,7 @@ export class ReferralController {
     @CurrentTenant('id') tenantId: string,
   ) {
     await this.service.applyReferral(customerId, body.code, tenantId);
-    return { success: true, message: 'Codigo de indicacao aplicado com sucesso!' };
+    return { success: true, message: 'Código de indicação aplicado com sucesso!' };
   }
 
   @Get('stats')

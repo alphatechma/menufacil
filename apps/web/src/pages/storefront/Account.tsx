@@ -220,7 +220,7 @@ export default function Account() {
       await addCustomerAddress({
         slug: slug!,
         address: {
-          label: newAddress.label || 'Meu Endereco',
+          label: newAddress.label || 'Meu Endereço',
           street: newAddress.street,
           number: newAddress.number,
           complement: newAddress.complement || null,
@@ -232,7 +232,7 @@ export default function Account() {
       }).unwrap();
 
       setShowAddressForm(false);
-      notify.success('Endereco adicionado com sucesso!');
+      notify.success('Endereço adicionado com sucesso!');
       setNewAddress({
         label: '',
         street: '',
@@ -244,13 +244,13 @@ export default function Account() {
         zip_code: '',
       });
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao adicionar endereco.');
+      notify.error(err?.data?.message || 'Erro ao adicionar endereço.');
     }
     setAddressLoading(false);
   };
 
   const handleRemoveAddress = async (id: string) => {
-    if (window.confirm('Deseja realmente remover este endereco?')) {
+    if (window.confirm('Deseja realmente remover este endereço?')) {
       await removeCustomerAddress({ slug: slug!, addressId: id });
     }
   };
@@ -646,7 +646,7 @@ export default function Account() {
 
             {loginMode === 'email' && (
               <p className="text-center text-sm text-gray-500">
-                Nao tem conta?{' '}
+                Não tem conta?{' '}
                 <button
                   type="button"
                   onClick={() => { setLoginMode('register'); setAuthError(null); }}
@@ -720,7 +720,7 @@ export default function Account() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab === 'profile' ? 'Perfil' : tab === 'rewards' ? 'Fidelidade' : tab === 'addresses' ? 'Enderecos' : 'Pedidos'}
+            {tab === 'profile' ? 'Perfil' : tab === 'rewards' ? 'Fidelidade' : tab === 'addresses' ? 'Endereços' : 'Pedidos'}
           </button>
         ))}
       </div>
@@ -754,7 +754,7 @@ export default function Account() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">E-mail</label>
-                  <p className="text-sm text-gray-900 font-medium">{customer?.email || <span className="text-gray-400 italic">Nao cadastrado</span>}</p>
+                  <p className="text-sm text-gray-900 font-medium">{customer?.email || <span className="text-gray-400 italic">Não cadastrado</span>}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -777,7 +777,7 @@ export default function Account() {
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Senha</label>
                   <p className="text-sm text-gray-900 font-medium">
-                    {customer?.password_hash ? '********' : <span className="text-gray-400 italic">Nao cadastrada</span>}
+                    {customer?.password_hash ? '********' : <span className="text-gray-400 italic">Não cadastrada</span>}
                   </p>
                 </div>
                 <div>
@@ -1182,7 +1182,7 @@ export default function Account() {
               <div className="p-4 border-b border-gray-100">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <History className="w-5 h-5 text-gray-400" />
-                  Historico de Resgates
+                  Histórico de Resgates
                 </h3>
               </div>
               <div className="divide-y divide-gray-100">
@@ -1226,7 +1226,7 @@ export default function Account() {
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <MapPin className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
-              Meus Enderecos
+              Meus Endereços
             </h3>
             <button
               onClick={() => setShowAddressForm(!showAddressForm)}
@@ -1341,7 +1341,7 @@ export default function Account() {
                 className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ background: 'var(--tenant-gradient)' }}
               >
-                {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar Endereco'}
+                {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar Endereço'}
               </button>
             </form>
           ) : (
@@ -1351,7 +1351,7 @@ export default function Account() {
                   <div key={addr.id} className="p-4 flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 text-sm">
-                        {addr.label || 'Meu Endereco'}
+                        {addr.label || 'Meu Endereço'}
                       </p>
                       <p className="text-xs text-gray-600 mt-0.5">
                         {addr.street}, {addr.number}
@@ -1653,9 +1653,9 @@ function NotificationToggle() {
     const success = await subscribe();
     setLoading(false);
     if (success) {
-      notify.success('Notificacoes ativadas!');
+      notify.success('Notificações ativadas!');
     } else {
-      notify.error('Nao foi possivel ativar notificacoes');
+      notify.error('Não foi possível ativar notificações');
     }
   };
 
@@ -1667,7 +1667,7 @@ function NotificationToggle() {
     >
       <Bell className="w-4 h-4 text-gray-500" />
       <span className="flex-1 text-left font-medium text-gray-700">
-        {permission === 'granted' ? 'Notificacoes ativadas' : 'Ativar notificacoes'}
+        {permission === 'granted' ? 'Notificações ativadas' : 'Ativar notificações'}
       </span>
       {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
       {permission === 'granted' && <Check className="w-4 h-4 text-green-500" />}

@@ -187,8 +187,8 @@ export class FlowEngineService {
 
         case 'send_menu': {
           const menuTitle = node.data.title || 'Menu';
-          const menuDescription = node.data.description || 'Selecione uma opcao:';
-          const menuButtonText = node.data.button_text || 'Ver opcoes';
+          const menuDescription = node.data.description || 'Selecione uma opção:';
+          const menuButtonText = node.data.button_text || 'Ver opções';
           const menuOptions = (node.data.options || []) as Array<{ title: string; description?: string; id: string }>;
 
           if (menuOptions.length > 0) {

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 export const loyaltySchema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
+  name: z.string().min(1, 'Nome obrigatório'),
   description: z.string().optional(),
-  points_required: z.coerce.number().int().min(1, 'Pontos obrigatorios'),
+  points_required: z.coerce.number().int().min(1, 'Pontos obrigatórios'),
   reward_type: z.enum(['discount_percent', 'discount_fixed', 'free_product']),
-  reward_value: z.coerce.number().min(0.01, 'Valor obrigatorio'),
+  reward_value: z.coerce.number().min(0.01, 'Valor obrigatório'),
   is_active: z.boolean().optional().default(true),
   max_redemptions_per_customer: z.coerce.number().int().min(0).optional().default(0),
   cooldown_hours: z.coerce.number().int().min(0).optional().default(24),

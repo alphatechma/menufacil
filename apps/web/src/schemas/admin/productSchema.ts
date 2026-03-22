@@ -2,16 +2,16 @@ import { z } from 'zod';
 
 const variationSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, 'Nome obrigatorio'),
+  name: z.string().min(1, 'Nome obrigatório'),
   description: z.string().optional().default(''),
-  price: z.coerce.number().min(0, 'Preco invalido'),
+  price: z.coerce.number().min(0, 'Preço inválido'),
 });
 
 export const productSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
+  name: z.string().min(1, 'Nome obrigatório'),
   description: z.string().optional().default(''),
-  base_price: z.coerce.number().min(0, 'Preco invalido'),
-  category_id: z.string().min(1, 'Categoria obrigatoria'),
+  base_price: z.coerce.number().min(0, 'Preço inválido'),
+  category_id: z.string().min(1, 'Categoria obrigatória'),
   image_url: z.string().nullable().optional().default(null),
   is_active: z.boolean().default(true),
   sort_order: z.coerce.number().int().min(0).default(0),

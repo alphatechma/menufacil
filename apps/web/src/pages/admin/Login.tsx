@@ -69,10 +69,8 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
-              <UtensilsCrossed className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-primary-foreground">MenuFacil</span>
+            <img src="/logo-icon.png" alt="MenuFácil" className="w-12 h-12 rounded-xl" />
+            <span className="text-2xl font-bold text-primary-foreground">MenuFácil</span>
           </div>
         </div>
 
@@ -113,7 +111,7 @@ export default function Login() {
         </div>
 
         <p className="relative z-10 text-primary-foreground/60 text-sm">
-          MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
+          MenuFácil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
         </p>
       </div>
 
@@ -123,10 +121,8 @@ export default function Login() {
           <div className="bg-card rounded-2xl shadow-xl border border-border p-8">
             {/* Logo */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4">
-                <UtensilsCrossed className="w-8 h-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold text-foreground">MenuFacil</h1>
+              <img src="/logo-icon.png" alt="MenuFácil" className="w-16 h-16 rounded-2xl mb-4 mx-auto" />
+              <h1 className="text-2xl font-bold text-foreground">MenuFácil</h1>
               <p className="text-muted-foreground mt-1">Painel Administrativo</p>
             </div>
 
@@ -175,7 +171,7 @@ export default function Login() {
 
           {/* Footer - visible only on mobile */}
           <p className="text-center text-sm text-muted-foreground mt-6 lg:hidden">
-            MenuFacil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
+            MenuFácil &copy; {new Date().getFullYear()}. Todos os direitos reservados.
           </p>
         </div>
       </div>

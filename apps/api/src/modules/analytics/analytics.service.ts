@@ -622,10 +622,10 @@ export class AnalyticsService {
     switch (type) {
       case 'overview': {
         const data = await this.getOverview(tenantId, from, to);
-        let csv = BOM + 'Metrica;Atual;Anterior;Variacao (%)\n';
+        let csv = BOM + 'Métrica;Atual;Anterior;Variação (%)\n';
         csv += `Receita;${data.revenue.current};${data.revenue.previous};${data.revenue.change}\n`;
         csv += `Pedidos;${data.orderCount.current};${data.orderCount.previous};${data.orderCount.change}\n`;
-        csv += `Ticket Medio;${data.avgTicket.current};${data.avgTicket.previous};${data.avgTicket.change}\n`;
+        csv += `Ticket Médio;${data.avgTicket.current};${data.avgTicket.previous};${data.avgTicket.change}\n`;
         csv += `Taxa Cancelamento (%);${data.cancelRate.current};${data.cancelRate.previous};${data.cancelRate.change}\n`;
         csv += `Novos Clientes;${data.newCustomers.current};${data.newCustomers.previous};${data.newCustomers.change}\n`;
         csv += `Clientes Recorrentes;${data.returningCustomers.current};${data.returningCustomers.previous};${data.returningCustomers.change}\n`;
@@ -654,7 +654,7 @@ export class AnalyticsService {
           csv += `${c.name};${c.orderCount};${c.totalSpent}\n`;
         });
         csv += `\nTotal Clientes;${data.totalCustomers}\n`;
-        csv += `Frequencia Media;${data.avgOrderFrequency}\n`;
+        csv += `Frequência Média;${data.avgOrderFrequency}\n`;
         csv += `\nSegmento;Quantidade\n`;
         Object.entries(data.segments).forEach(([seg, count]) => {
           csv += `${seg};${count}\n`;
@@ -663,19 +663,19 @@ export class AnalyticsService {
       }
       case 'delivery': {
         const data = await this.getDelivery(tenantId, from, to);
-        let csv = BOM + 'Entregador;Entregas;Tempo Medio (min);Taxa Conclusao (%);Comissao Total\n';
+        let csv = BOM + 'Entregador;Entregas;Tempo Médio (min);Taxa Conclusão (%);Comissão Total\n';
         data.deliveryPersons.forEach((dp) => {
           csv += `${dp.name};${dp.deliveries};${dp.avgTime ?? '-'};${dp.completionRate};${dp.totalCommission}\n`;
         });
-        csv += `\nTempo Medio Geral;${data.avgDeliveryTime ?? '-'}\n`;
-        csv += '\nZona;Entregas;Tempo Medio (min);Receita\n';
+        csv += `\nTempo Médio Geral;${data.avgDeliveryTime ?? '-'}\n`;
+        csv += '\nZona;Entregas;Tempo Médio (min);Receita\n';
         data.zoneStats.forEach((z: any) => {
           csv += `${z.zone};${z.deliveries};${z.avgTime ?? '-'};${z.revenue}\n`;
         });
         return csv;
       }
       default:
-        return BOM + 'Tipo invalido\n';
+        return BOM + 'Tipo inválido\n';
     }
   }
 }

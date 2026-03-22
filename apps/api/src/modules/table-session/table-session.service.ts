@@ -101,7 +101,7 @@ export class TableSessionService {
   ): Promise<TableSession> {
     const session = await this.findById(sessionId, tenantId);
     if (session.status === SessionStatus.CLOSED) {
-      throw new BadRequestException('Nao e possivel transferir sessao fechada');
+      throw new BadRequestException('Não é possível transferir sessão fechada');
     }
 
     const newTable = await this.tableRepo.findOne({

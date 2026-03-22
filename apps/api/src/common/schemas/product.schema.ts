@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const createProductSchema = z.object({
-  name: z.string().min(1, 'Nome do produto e obrigatorio'),
+  name: z.string().min(1, 'Nome do produto é obrigatório'),
   description: z.string().optional(),
-  base_price: z.number().min(0, 'Preco deve ser positivo'),
-  category_id: z.string().uuid('Categoria invalida').optional().nullable(),
+  base_price: z.number().min(0, 'Preço deve ser positivo'),
+  category_id: z.string().uuid('Categoria inválida').optional().nullable(),
   image_url: z.string().optional(),
   is_active: z.boolean().optional(),
   sort_order: z.number().optional(),
@@ -14,9 +14,9 @@ export const createProductSchema = z.object({
   variations: z
     .array(
       z.object({
-        name: z.string().min(1, 'Nome da variacao e obrigatorio'),
+        name: z.string().min(1, 'Nome da variação é obrigatório'),
         description: z.string().optional(),
-        price: z.number().min(0, 'Preco da variacao deve ser positivo'),
+        price: z.number().min(0, 'Preço da variação deve ser positivo'),
       }),
     )
     .optional(),

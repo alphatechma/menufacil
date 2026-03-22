@@ -81,7 +81,7 @@ export class WhatsappFlowService {
     }
     for (const node of nodes) {
       if (!connectedNodeIds.has(node.id) && nodes.length > 1) {
-        errors.push(`No "${node.data?.label || node.id}" nao esta conectado`);
+        errors.push(`No "${node.data?.label || node.id}" não está conectado`);
       }
     }
 

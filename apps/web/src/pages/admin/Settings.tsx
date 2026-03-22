@@ -51,11 +51,11 @@ const DEFAULT_BUSINESS_HOURS: BusinessHours = {
 
 const SETTINGS_TABS = [
   { key: 'geral', label: 'Dados Gerais' },
-  { key: 'horarios', label: 'Horario de Funcionamento' },
+  { key: 'horarios', label: 'Horário de Funcionamento' },
   { key: 'modos', label: 'Modos de Pedido' },
-  { key: 'parametros', label: 'Parametros' },
+  { key: 'parametros', label: 'Parâmetros' },
   { key: 'pagamento', label: 'Pagamento' },
-  { key: 'notificacoes', label: 'Notificacoes' },
+  { key: 'notificações', label: 'Notificações' },
   { key: 'plano', label: 'Plano' },
   { key: 'impressora', label: 'Impressora' },
   { key: 'whatsapp', label: 'WhatsApp' },
@@ -70,7 +70,7 @@ const MODULE_LABELS: Record<string, string> = {
   coupons: 'Cupons',
   loyalty: 'Fidelidade',
   kds: 'Cozinha (KDS)',
-  reports: 'Relatorios',
+  reports: 'Relatórios',
   delivery_driver: 'Entregadores',
   pickup: 'Retirada',
   dine_in: 'Consumo no Local',
@@ -118,7 +118,7 @@ function WhatsappSettingsTab() {
             />
             {connectData?.pairingCode && (
               <p className="text-sm text-muted-foreground">
-                Codigo de pareamento: <span className="font-mono font-bold text-foreground">{connectData.pairingCode}</span>
+                Código de pareamento: <span className="font-mono font-bold text-foreground">{connectData.pairingCode}</span>
               </p>
             )}
           </div>
@@ -308,7 +308,7 @@ export default function Settings() {
       }).unwrap();
       showSuccess('Configuracoes gerais salvas com sucesso!');
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao salvar configuracoes gerais.');
+      notify.error(err?.data?.message || 'Erro ao salvar configurações gerais.');
     }
   };
 
@@ -323,8 +323,8 @@ export default function Settings() {
       }).unwrap();
       showSuccess('Horarios de funcionamento salvos com sucesso!');
     } catch (err: any) {
-      setHoursError('Erro ao salvar horarios de funcionamento.');
-      notify.error(err?.data?.message || 'Erro ao salvar horarios de funcionamento.');
+      setHoursError('Erro ao salvar horários de funcionamento.');
+      notify.error(err?.data?.message || 'Erro ao salvar horários de funcionamento.');
     } finally {
       setSavingHours(false);
     }
@@ -369,7 +369,7 @@ export default function Settings() {
       }).unwrap();
       showSuccess('Configuracoes de pagamento salvas com sucesso!');
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao salvar configuracoes de pagamento.');
+      notify.error(err?.data?.message || 'Erro ao salvar configurações de pagamento.');
     } finally {
       setSavingPayment(false);
     }
@@ -400,7 +400,7 @@ export default function Settings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configuracoes</h1>
-        <p className="text-muted-foreground mt-1">Gerencie as configuracoes do seu restaurante</p>
+        <p className="text-muted-foreground mt-1">Gerencie as configurações do seu restaurante</p>
       </div>
 
       {successMessage && (
@@ -410,7 +410,7 @@ export default function Settings() {
       )}
 
       {!!updateError && (
-        <ErrorAlert message="Erro ao salvar configuracoes. Tente novamente." className="mb-2" />
+        <ErrorAlert message="Erro ao salvar configurações. Tente novamente." className="mb-2" />
       )}
 
       <div className="bg-card rounded-xl border border-border">
@@ -438,7 +438,7 @@ export default function Settings() {
                   )}
                 </FormField>
 
-                <FormField control={control} name="slug" label="Endereco (slug)">
+                <FormField control={control} name="slug" label="Endereço (slug)">
                   {(field) => (
                     <div className="flex items-stretch">
                       <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-border bg-muted text-muted-foreground text-sm font-medium">
@@ -464,7 +464,7 @@ export default function Settings() {
                   )}
                 </FormField>
 
-                <FormField control={control} name="address" label="Endereco">
+                <FormField control={control} name="address" label="Endereço">
                   {(field) => (
                     <Input
                       {...field}
@@ -474,7 +474,7 @@ export default function Settings() {
                   )}
                 </FormField>
 
-                <FormField control={control} name="min_order_value" label="Valor minimo do pedido (R$)">
+                <FormField control={control} name="min_order_value" label="Valor mínimo do pedido (R$)">
                   {(field) => (
                     <PriceInput
                       {...field}
@@ -491,10 +491,10 @@ export default function Settings() {
             </form>
           )}
 
-          {activeTab === 'notificacoes' && (
+          {activeTab === 'notificações' && (
             <div className="space-y-6 max-w-2xl">
               <p className="text-sm text-muted-foreground">
-                Configure como voce recebe notificacoes sobre novos pedidos e atualizacoes.
+                Configure como voce recebe notificações sobre novos pedidos e atualizações.
               </p>
 
               {/* Master Sound Toggle */}
@@ -592,14 +592,14 @@ export default function Settings() {
               <FormCard>
                 <div>
                   <h3 className="text-base font-bold text-foreground">Notificacoes Push</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Receba notificacoes mesmo quando o navegador esta em segundo plano</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receba notificações mesmo quando o navegador esta em segundo plano</p>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Bell className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Ativar notificacoes push</p>
-                      <p className="text-xs text-muted-foreground">O navegador pedira permissao na primeira vez</p>
+                      <p className="text-sm font-medium text-foreground">Ativar notificações push</p>
+                      <p className="text-xs text-muted-foreground">O navegador pedira permissão na primeira vez</p>
                     </div>
                   </div>
                   <Toggle
@@ -720,7 +720,7 @@ export default function Settings() {
                       onChange={(e) => setCancelTimeLimit(parseInt(e.target.value) || 0)}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Tempo maximo (em minutos) que o cliente pode cancelar o pedido apos a criacao.
+                      Tempo máximo (em minutos) que o cliente pode cancelar o pedido apos a criacao.
                       Apos esse tempo, apenas o restaurante pode cancelar. Defina 0 para desabilitar o cancelamento pelo cliente.
                     </p>
                   </div>
@@ -739,7 +739,7 @@ export default function Settings() {
           {activeTab === 'pagamento' && (
             <div className="space-y-6 max-w-2xl">
               <p className="text-sm text-muted-foreground">
-                Configure as informacoes de pagamento usadas no PDV e nas mensagens do WhatsApp.
+                Configure as informações de pagamento usadas no PDV e nas mensagens do WhatsApp.
               </p>
 
               <FormCard>
@@ -803,7 +803,7 @@ export default function Settings() {
           {activeTab === 'plano' && (
             <div className="space-y-6 max-w-2xl">
               <p className="text-sm text-muted-foreground">
-                Veja os detalhes do plano contratado e os modulos disponiveis.
+                Veja os detalhes do plano contratado e os módulos disponíveis.
               </p>
 
               <FormCard>
@@ -826,7 +826,7 @@ export default function Settings() {
 
               <FormCard>
                 <div>
-                  <h3 className="text-base font-bold text-foreground mb-1">Modulos Inclusos</h3>
+                  <h3 className="text-base font-bold text-foreground mb-1">Módulos Inclusos</h3>
                   <p className="text-xs text-muted-foreground">
                     Funcionalidades disponiveis no seu plano atual
                   </p>
@@ -846,7 +846,7 @@ export default function Settings() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum modulo disponivel.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum módulo disponível.</p>
                 )}
               </FormCard>
             </div>
@@ -888,7 +888,7 @@ export default function Settings() {
                           ? 'Verificando...'
                           : printerAvailable
                           ? 'Conectado'
-                          : 'Nao detectado — verifique se o QZ Tray esta rodando e se o certificado foi adicionado'}
+                          : 'Não detectado — verifique se o QZ Tray está rodando e se o certificado foi adicionado'}
                       </p>
                     </div>
                   </div>
@@ -1264,7 +1264,7 @@ export default function Settings() {
                   <div className="flex gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">2</span>
                     <div>
-                      <p>Execute o script de configuracao automatica:</p>
+                      <p>Execute o script de configuração automática:</p>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <a href="/api/qz-tray/setup-script?os=windows" download className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors">
                           <Download className="w-3.5 h-3.5" />Windows (.bat)
@@ -1311,7 +1311,7 @@ export default function Settings() {
           {activeTab === 'horarios' && (
             <div className="space-y-6 max-w-2xl">
               <p className="text-sm text-muted-foreground">
-                Configure os horarios de funcionamento do seu restaurante para cada dia da semana.
+                Configure os horários de funcionamento do seu restaurante para cada dia da semana.
               </p>
 
               {hoursError && <ErrorAlert message={hoursError} />}
@@ -1377,7 +1377,7 @@ export default function Settings() {
               <div className="pt-4 border-t border-border">
                 <Button onClick={handleSaveHorarios} loading={savingHours}>
                   <Save className="w-4 h-4" />
-                  Salvar Horarios
+                  Salvar Horários
                 </Button>
               </div>
             </div>

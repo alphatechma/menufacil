@@ -15,12 +15,12 @@ const DAY_NAMES_PT: Record<string, string> = {
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 const DEFAULT_TEMPLATES: { type: WhatsappTemplateType; name: string; content: string }[] = [
-  { type: WhatsappTemplateType.WELCOME, name: 'Boas-vindas', content: 'Ola {{customer_name}}! 👋 Bem-vindo ao *{{store_name}}*!\n\n{{store_status_message}}\n\n📋 Faca seu pedido: {{storefront_url}}' },
+  { type: WhatsappTemplateType.WELCOME, name: 'Boas-vindas', content: 'Olá {{customer_name}}! 👋 Bem-vindo ao *{{store_name}}*!\n\n{{store_status_message}}\n\n📋 Faça seu pedido: {{storefront_url}}' },
   { type: WhatsappTemplateType.ORDER_CONFIRMED, name: 'Pedido Confirmado', content: '✅ {{customer_name}}, seu pedido *#{{order_number}}* foi confirmado!\n\n{{items_list}}\n\n💰 *Total: R$ {{total}}*\n💳 Pagamento: {{payment_method}}' },
-  { type: WhatsappTemplateType.ORDER_PREPARING, name: 'Pedido em Preparo', content: '👨‍🍳 {{customer_name}}, seu pedido *#{{order_number}}* esta sendo preparado!' },
-  { type: WhatsappTemplateType.ORDER_READY, name: 'Pedido Pronto', content: '🎉 {{customer_name}}, seu pedido *#{{order_number}}* esta pronto!' },
+  { type: WhatsappTemplateType.ORDER_PREPARING, name: 'Pedido em Preparo', content: '👨‍🍳 {{customer_name}}, seu pedido *#{{order_number}}* está sendo preparado!' },
+  { type: WhatsappTemplateType.ORDER_READY, name: 'Pedido Pronto', content: '🎉 {{customer_name}}, seu pedido *#{{order_number}}* está pronto!' },
   { type: WhatsappTemplateType.ORDER_OUT_FOR_DELIVERY, name: 'Saiu para Entrega', content: '🛵 {{customer_name}}, seu pedido *#{{order_number}}* saiu para entrega!' },
-  { type: WhatsappTemplateType.ORDER_DELIVERED, name: 'Pedido Entregue', content: '📦 {{customer_name}}, seu pedido *#{{order_number}}* foi entregue!\n\nObrigado pela preferencia! ⭐' },
+  { type: WhatsappTemplateType.ORDER_DELIVERED, name: 'Pedido Entregue', content: '📦 {{customer_name}}, seu pedido *#{{order_number}}* foi entregue!\n\nObrigado pela preferência! ⭐' },
   { type: WhatsappTemplateType.ORDER_CANCELLED, name: 'Pedido Cancelado', content: '❌ {{customer_name}}, seu pedido *#{{order_number}}* foi cancelado.' },
 ];
 
@@ -141,7 +141,7 @@ export class WhatsappTemplateService {
   }
 
   private formatAllHours(hours: Record<string, any> | null): string {
-    if (!hours) return 'Horario nao definido';
+    if (!hours) return 'Horário não definido';
     return DAY_KEYS
       .map((day) => {
         const h = hours[day];

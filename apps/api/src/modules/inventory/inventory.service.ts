@@ -78,7 +78,7 @@ export class InventoryService {
 
     // Validate type
     if (!['entry', 'exit', 'adjustment', 'production'].includes(dto.type)) {
-      throw new BadRequestException('Tipo de movimentacao invalido');
+      throw new BadRequestException('Tipo de movimentação inválido');
     }
 
     // Update stock

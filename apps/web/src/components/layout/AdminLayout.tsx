@@ -285,9 +285,7 @@ export default function AdminLayout() {
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className={cn('flex items-center h-16 shrink-0', collapsed && !mobile ? 'justify-center' : 'gap-3 px-4')}>
-        <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-br from-primary to-primary-dark rounded-xl shrink-0 shadow-sm">
-          <UtensilsCrossed className="w-5 h-5 text-white" />
-        </div>
+        <img src="/logo-icon.png" alt="MenuFácil" className="w-9 h-9 rounded-xl shrink-0 shadow-sm" />
         {(!collapsed || mobile) && (
           <div className="flex flex-col">
             <span className="text-sm font-bold text-foreground whitespace-nowrap leading-tight">

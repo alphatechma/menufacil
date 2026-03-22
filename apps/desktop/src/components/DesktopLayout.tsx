@@ -135,12 +135,10 @@ export default function DesktopLayout() {
       <aside className={cn('flex shrink-0 flex-col bg-gray-900 z-50 transition-[width] duration-200', collapsed ? 'w-[68px]' : 'w-60')}>
         {/* Logo */}
         <div className={cn('flex items-center h-14 shrink-0', collapsed ? 'justify-center' : 'gap-3 px-4')}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shrink-0">
-            <UtensilsCrossed className="h-5 w-5 text-white" />
-          </div>
+          <img src="/logo-icon.png" alt="MenuFácil" className="h-9 w-9 rounded-xl shrink-0" />
           {!collapsed && (
             <div>
-              <p className="text-sm font-bold text-white leading-tight">MenuFacil</p>
+              <p className="text-sm font-bold text-white leading-tight">MenuFácil</p>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider">Desktop</p>
             </div>
           )}

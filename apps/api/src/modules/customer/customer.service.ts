@@ -40,7 +40,7 @@ export class CustomerService {
       relations: ['addresses', 'orders', 'orders.items'],
       order: { orders: { created_at: 'DESC' } },
     });
-    if (!customer) throw new NotFoundException('Cliente nao encontrado');
+    if (!customer) throw new NotFoundException('Cliente não encontrado');
     return customer;
   }
 
@@ -64,7 +64,7 @@ export class CustomerService {
         where: { email: data.email, tenant_id: tenantId },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException('Este email ja esta em uso');
+        throw new ConflictException('Este email já está em uso');
       }
       customer.email = data.email;
     }

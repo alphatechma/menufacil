@@ -86,7 +86,7 @@ export class LoyaltyService {
 
     const defaults = [
       { name: 'Bronze', min_points: 0, multiplier: 1.0, benefits: ['Acumule pontos a cada pedido'], icon: 'medal', color: '#CD7F32', sort_order: 0 },
-      { name: 'Prata', min_points: 500, multiplier: 1.5, benefits: ['1.5x pontos por pedido', 'Acesso antecipado a promocoes'], icon: 'award', color: '#C0C0C0', sort_order: 1 },
+      { name: 'Prata', min_points: 500, multiplier: 1.5, benefits: ['1.5x pontos por pedido', 'Acesso antecipado a promoções'], icon: 'award', color: '#C0C0C0', sort_order: 1 },
       { name: 'Ouro', min_points: 2000, multiplier: 2.0, benefits: ['2x pontos por pedido', 'Frete gratis', 'Descontos exclusivos'], icon: 'crown', color: '#FFD700', sort_order: 2 },
     ];
 
@@ -156,15 +156,15 @@ export class LoyaltyService {
     if (!customer) throw new NotFoundException('Cliente nao encontrado');
 
     const reward = await this.rewardRepo.findOne({ where: { id: rewardId, tenant_id: tenantId } });
-    if (!reward) throw new NotFoundException('Recompensa nao encontrada');
+    if (!reward) throw new NotFoundException('Recompensa não encontrada');
 
     if (!reward.is_active) {
-      throw new BadRequestException('Esta recompensa nao esta mais disponivel');
+      throw new BadRequestException('Esta recompensa não está mais disponível');
     }
 
     if (customer.loyalty_points < reward.points_required) {
       throw new BadRequestException(
-        `Pontos insuficientes. Voce tem ${customer.loyalty_points} pontos, precisa de ${reward.points_required}.`,
+        `Pontos insuficientes. Você tem ${customer.loyalty_points} pontos, precisa de ${reward.points_required}.`,
       );
     }
 
