@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { Save, User, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Save, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { login } from '@/store/slices/authSlice';
+import { useUpdateProfileMutation, useChangePasswordMutation } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +12,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 export default function Settings() {
+  const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const auth = useAppSelector((state) => state.auth);
+
+  const [updateProfile, { isLoading: savingProfile }] = useUpdateProfileMutation();
+  const [changePassword, { isLoading: savingPassword }] = useChangePasswordMutation();
 
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
@@ -22,22 +29,45 @@ export default function Settings() {
     confirm_password: '',
   });
 
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
 
-  const handleProfileSubmit = (e: FormEvent) => {
+  const handleProfileSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSavingProfile(true);
-    setTimeout(() => {
-      setSavingProfile(false);
-      toast.info('Funcionalidade em desenvolvimento.');
-    }, 500);
+
+    if (!profileForm.name.trim()) {
+      toast.error('O nome e obrigatorio.');
+      return;
+    }
+
+    try {
+      await updateProfile({ name: profileForm.name.trim() }).unwrap();
+
+      // Update user in Redux state
+      if (user) {
+        dispatch(
+          login({
+            user: { ...user, name: profileForm.name.trim() },
+            accessToken: auth.accessToken!,
+            refreshToken: auth.refreshToken!,
+          }),
+        );
+      }
+
+      toast.success('Perfil atualizado com sucesso.');
+    } catch (err: any) {
+      const message = err?.data?.message || 'Erro ao atualizar perfil.';
+      toast.error(message);
+    }
   };
 
-  const handlePasswordSubmit = (e: FormEvent) => {
+  const handlePasswordSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (!passwordForm.current_password) {
+      toast.error('A senha atual e obrigatoria.');
+      return;
+    }
 
     if (passwordForm.new_password.length < 6) {
       toast.error('A nova senha deve ter pelo menos 6 caracteres.');
@@ -49,11 +79,24 @@ export default function Settings() {
       return;
     }
 
-    setSavingPassword(true);
-    setTimeout(() => {
-      setSavingPassword(false);
-      toast.info('Funcionalidade em desenvolvimento.');
-    }, 500);
+    try {
+      await changePassword({
+        currentPassword: passwordForm.current_password,
+        newPassword: passwordForm.new_password,
+      }).unwrap();
+
+      toast.success('Senha alterada com sucesso.');
+      setPasswordForm({
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
+      });
+      setShowCurrentPw(false);
+      setShowNewPw(false);
+    } catch (err: any) {
+      const message = err?.data?.message || 'Erro ao alterar senha.';
+      toast.error(message);
+    }
   };
 
   return (

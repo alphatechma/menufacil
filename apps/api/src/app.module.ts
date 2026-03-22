@@ -38,6 +38,7 @@ import { AbandonedCartModule } from './modules/abandoned-cart/abandoned-cart.mod
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
     AnalyticsModule,
     PromotionModule,
     WalletModule,
+    AuditLogModule,
   ],
 })
 export class AppModule implements NestModule {

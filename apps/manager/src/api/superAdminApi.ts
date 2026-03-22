@@ -15,11 +15,19 @@ export const superAdminApi = baseApi.injectEndpoints({
       query: () => ({ url: '/super-admin/dashboard/stats' }),
       providesTags: ['Dashboard'],
     }),
+    getAdvancedStats: builder.query<any, { from: string; to: string }>({
+      query: (params) => ({ url: '/super-admin/dashboard/advanced-stats', params }),
+      providesTags: ['Dashboard'],
+    }),
 
     // Tenants
-    getTenants: builder.query<any, { search?: string; is_active?: string; deleted?: string } | void>({
+    getTenants: builder.query<any, { search?: string; is_active?: string; deleted?: string; plan_id?: string; from?: string; to?: string; sort?: string; page?: number; limit?: number } | void>({
       query: (params) => ({ url: '/super-admin/tenants', params: params || undefined }),
       providesTags: ['Tenants'],
+    }),
+    bulkUpdateTenants: builder.mutation<any, { action: string; ids: string[]; planId?: string }>({
+      query: (body) => ({ url: '/super-admin/dashboard/bulk-tenants', method: 'PUT', data: body }),
+      invalidatesTags: ['Tenants'],
     }),
     getTenant: builder.query<any, string>({
       query: (id) => ({ url: `/super-admin/tenants/${id}` }),
@@ -100,6 +108,25 @@ export const superAdminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/super-admin/tenants/${id}/whatsapp/disconnect`, method: 'POST' }),
     }),
 
+    // Audit Logs
+    getAuditLogs: builder.query<any, {
+      action?: string;
+      entity_type?: string;
+      user_id?: string;
+      user_email?: string;
+      from?: string;
+      to?: string;
+      page?: number;
+      limit?: number;
+    } | void>({
+      query: (params) => ({ url: '/super-admin/audit-logs', params: params || undefined }),
+      providesTags: ['AuditLogs'],
+    }),
+    getAuditLogStats: builder.query<any, void>({
+      query: () => ({ url: '/super-admin/audit-logs/stats' }),
+      providesTags: ['AuditLogs'],
+    }),
+
     // Plans
     getPlans: builder.query<any[], void>({
       query: () => ({ url: '/super-admin/plans' }),
@@ -152,6 +179,15 @@ export const superAdminApi = baseApi.injectEndpoints({
       invalidatesTags: ['SystemModules'],
     }),
 
+    // Profile
+    updateProfile: builder.mutation<any, { name: string }>({
+      query: (body) => ({ url: '/super-admin/profile', method: 'PUT', data: body }),
+      invalidatesTags: ['Profile'],
+    }),
+    changePassword: builder.mutation<any, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: '/super-admin/change-password', method: 'PUT', data: body }),
+    }),
+
     // Permissions
     getPermissions: builder.query<any[], { module_id?: string } | void>({
       query: (params) => ({ url: '/super-admin/permissions', params: params || undefined }),
@@ -183,7 +219,9 @@ export const superAdminApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useGetStatsQuery,
+  useGetAdvancedStatsQuery,
   useGetTenantsQuery,
+  useBulkUpdateTenantsMutation,
   useGetTenantQuery,
   useCreateTenantMutation,
   useUpdateTenantMutation,
@@ -210,9 +248,13 @@ export const {
   useCreateSystemModuleMutation,
   useUpdateSystemModuleMutation,
   useDeleteSystemModuleMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
   useGetPermissionsQuery,
   useGetPermissionQuery,
   useCreatePermissionMutation,
   useUpdatePermissionMutation,
   useDeletePermissionMutation,
+  useGetAuditLogsQuery,
+  useGetAuditLogStatsQuery,
 } = superAdminApi;

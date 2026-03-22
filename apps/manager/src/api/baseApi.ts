@@ -1,9 +1,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { axiosBaseQuery } from './axiosBaseQuery';
+import { baseQuery } from './axiosBaseQuery';
 
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: axiosBaseQuery,
+  baseQuery,
   refetchOnFocus: true,
   refetchOnReconnect: true,
   tagTypes: [
@@ -13,6 +13,7 @@ export const baseApi = createApi({
     'SystemModules',
     'Permissions',
     'Profile',
+    'AuditLogs',
   ],
   endpoints: () => ({}),
 });

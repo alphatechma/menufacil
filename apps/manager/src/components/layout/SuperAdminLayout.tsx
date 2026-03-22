@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   ShieldCheck,
+  ScrollText,
   ChevronRight as BreadcrumbSep,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { to: '/plans', icon: CreditCard, label: 'Planos' },
   { to: '/system-modules', icon: Puzzle, label: 'Modulos' },
   { to: '/permissions', icon: Shield, label: 'Permissoes' },
+  { to: '/audit-logs', icon: ScrollText, label: 'Audit Log' },
   { to: '/settings', icon: Settings, label: 'Configuracoes' },
 ];
 
@@ -47,6 +49,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   'plans': 'Planos',
   'system-modules': 'Modulos',
   'permissions': 'Permissoes',
+  'audit-logs': 'Audit Log',
   'settings': 'Configuracoes',
   'new': 'Novo',
   'edit': 'Editar',

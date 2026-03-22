@@ -316,9 +316,6 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.5.0
         version: 2.11.2(react-redux@9.2.0(@types/react@19.2.14)(react@19.2.4)(redux@5.0.1))(react@19.2.4)
-      axios:
-        specifier: ^1.7.9
-        version: 1.13.6
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

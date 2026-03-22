@@ -15,6 +15,7 @@ const SystemModuleForm = lazy(() => import('@/pages/system-modules/SystemModuleF
 const PermissionList = lazy(() => import('@/pages/permissions/PermissionList'));
 const PermissionForm = lazy(() => import('@/pages/permissions/PermissionForm'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const AuditLog = lazy(() => import('@/pages/AuditLog'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="permissions" element={<PermissionList />} />
             <Route path="permissions/new" element={<PermissionForm />} />
             <Route path="permissions/:id/edit" element={<PermissionForm />} />
+            <Route path="audit-logs" element={<AuditLog />} />
             <Route path="settings" element={<Settings />} />
           </Route>
 

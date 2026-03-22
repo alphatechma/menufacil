@@ -1,77 +1,94 @@
-import type { BaseQueryFn } from '@reduxjs/toolkit/query';
-import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
+import {
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+} from '@reduxjs/toolkit/query';
 import type { RootState } from '../store';
 import { logout, setTokens } from '../store/slices/authSlice';
+import { env } from '../config/env';
 
-export interface AxiosBaseQueryArgs {
-  url: string;
-  method?: AxiosRequestConfig['method'];
-  data?: unknown;
-  params?: Record<string, unknown>;
-  headers?: Record<string, string>;
-}
-
-const axiosInstance = axios.create({
-  baseURL: '/api',
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: env.apiUrl,
+  prepareHeaders: (headers, { getState }) => {
+    const { accessToken } = (getState() as RootState).auth;
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+    return headers;
+  },
 });
 
 let refreshPromise: Promise<any> | null = null;
 
-export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> = async (
-  args,
-  api,
-) => {
-  const { url, method = 'GET', data, params, headers = {} } = args;
-  const state = api.getState() as RootState;
-  const { accessToken } = state.auth;
-
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+export const baseQuery: BaseQueryFn<
+  string | (FetchArgs & { data?: unknown }),
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  // Normalize: the existing codebase uses `data` instead of `body`
+  let fetchArgs: string | FetchArgs;
+  if (typeof args === 'string') {
+    fetchArgs = args;
+  } else {
+    const { data, ...rest } = args as FetchArgs & { data?: unknown };
+    fetchArgs = { ...rest, body: data ?? (rest as FetchArgs).body };
   }
 
-  try {
-    const result = await axiosInstance({ url, method, data, params, headers });
-    return { data: result.data };
-  } catch (axiosError) {
-    const err = axiosError as AxiosError;
+  let result = await rawBaseQuery(fetchArgs, api, extraOptions);
 
-    if (err.response?.status === 401) {
-      const { refreshToken } = (api.getState() as RootState).auth;
+  if (result.error && result.error.status === 401) {
+    const { refreshToken } = (api.getState() as RootState).auth;
 
-      if (refreshToken) {
-        try {
-          if (!refreshPromise) {
-            refreshPromise = axiosInstance
-              .post('/auth/refresh', { refresh_token: refreshToken })
-              .then((res) => res.data)
-              .finally(() => {
-                refreshPromise = null;
-              });
-          }
+    if (refreshToken) {
+      try {
+        if (!refreshPromise) {
+          refreshPromise = (async () => {
+            const refreshResult = await rawBaseQuery(
+              {
+                url: '/auth/refresh',
+                method: 'POST',
+                body: { refresh_token: refreshToken },
+              },
+              api,
+              extraOptions,
+            );
 
-          const tokens = await refreshPromise;
-          api.dispatch(setTokens({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token }));
+            if (refreshResult.error) {
+              throw refreshResult.error;
+            }
 
-          headers['Authorization'] = `Bearer ${tokens.access_token}`;
-          const retryResult = await axiosInstance({ url, method, data, params, headers });
-          return { data: retryResult.data };
-        } catch {
-          refreshPromise = null;
-          api.dispatch(logout());
-          window.location.href = '/login';
-          return { error: { status: 401, data: 'Session expired' } };
+            return refreshResult.data;
+          })().finally(() => {
+            refreshPromise = null;
+          });
         }
-      }
 
+        const tokens = (await refreshPromise) as {
+          access_token: string;
+          refresh_token: string;
+        };
+
+        api.dispatch(
+          setTokens({
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+          }),
+        );
+
+        // Retry original request with new token
+        result = await rawBaseQuery(fetchArgs, api, extraOptions);
+      } catch {
+        refreshPromise = null;
+        api.dispatch(logout());
+        window.location.href = '/login';
+        return { error: { status: 401, data: 'Session expired' } as FetchBaseQueryError };
+      }
+    } else {
       api.dispatch(logout());
       window.location.href = '/login';
     }
-
-    return {
-      error: {
-        status: err.response?.status,
-        data: err.response?.data || err.message,
-      },
-    };
   }
+
+  return result;
 };
