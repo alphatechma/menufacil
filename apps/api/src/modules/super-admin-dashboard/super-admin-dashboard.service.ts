@@ -5,6 +5,51 @@ import { DataSource } from 'typeorm';
 export class SuperAdminDashboardService {
   constructor(private readonly dataSource: DataSource) {}
 
+  async getStats() {
+    const [tenantStats] = await this.dataSource.query(`
+      SELECT
+        COUNT(*)::int as total_tenants,
+        COUNT(*) FILTER (WHERE is_active = true)::int as active_tenants
+      FROM tenants
+    `);
+
+    const [userStats] = await this.dataSource.query(`
+      SELECT COUNT(*)::int as total_users FROM users WHERE system_role != 'super_admin'
+    `);
+
+    // MRR = sum of plan prices for all active tenants
+    const [mrrStats] = await this.dataSource.query(`
+      SELECT COALESCE(SUM(p.price), 0)::numeric as mrr
+      FROM tenants t
+      JOIN plans p ON t.plan_id = p.id
+      WHERE t.is_active = true
+    `);
+
+    const tenantsByPlan = await this.dataSource.query(`
+      SELECT
+        COALESCE(p.name, 'Sem Plano') as plan_name,
+        COALESCE(p.price, 0)::numeric as plan_price,
+        COUNT(t.id)::int as count
+      FROM tenants t
+      LEFT JOIN plans p ON t.plan_id = p.id
+      GROUP BY p.name, p.price
+      ORDER BY count DESC
+    `);
+
+    return {
+      total_tenants: tenantStats.total_tenants,
+      active_tenants: tenantStats.active_tenants,
+      total_users: userStats.total_users,
+      mrr: parseFloat(mrrStats.mrr) || 0,
+      tenants_by_plan: tenantsByPlan.map((r: any) => ({
+        plan_name: r.plan_name,
+        plan_price: parseFloat(r.plan_price) || 0,
+        count: r.count,
+        revenue: (parseFloat(r.plan_price) || 0) * r.count,
+      })),
+    };
+  }
+
   async getAdvancedStats(from: string, to: string) {
     const fromDate = new Date(from);
     const toDate = new Date(to);
@@ -12,7 +57,7 @@ export class SuperAdminDashboardService {
     const prevFrom = new Date(fromDate.getTime() - periodMs);
     const prevTo = new Date(fromDate);
 
-    // New tenants current period
+    // New tenants in current period
     const [newTenantsCurrent] = await this.dataSource.query(
       `SELECT COUNT(*)::int as count FROM tenants WHERE created_at >= $1 AND created_at <= $2`,
       [fromDate, toDate],
@@ -38,36 +83,38 @@ export class SuperAdminDashboardService {
       ? ((churnCurrent.count - churnPrevious.count) / churnPrevious.count) * 100
       : churnCurrent.count > 0 ? 100 : 0;
 
-    // Revenue by day
-    const revenueByDay = await this.dataSource.query(
+    // MRR trend by day (new tenants contributing to MRR)
+    const mrrByDay = await this.dataSource.query(
       `SELECT
-        TO_CHAR(created_at, 'YYYY-MM-DD') as date,
-        COALESCE(SUM(total), 0)::numeric as revenue
-      FROM orders
-      WHERE status != 'cancelled' AND created_at >= $1 AND created_at <= $2
-      GROUP BY TO_CHAR(created_at, 'YYYY-MM-DD')
+        TO_CHAR(t.created_at, 'YYYY-MM-DD') as date,
+        COUNT(t.id)::int as new_tenants,
+        COALESCE(SUM(p.price), 0)::numeric as new_mrr
+      FROM tenants t
+      LEFT JOIN plans p ON t.plan_id = p.id
+      WHERE t.created_at >= $1 AND t.created_at <= $2
+      GROUP BY TO_CHAR(t.created_at, 'YYYY-MM-DD')
       ORDER BY date ASC`,
       [fromDate, toDate],
     );
 
-    // Top 5 tenants by revenue
-    const topTenants = await this.dataSource.query(
+    // Tenants by plan with revenue contribution
+    const planDistribution = await this.dataSource.query(
       `SELECT
-        t.id, t.name,
-        COALESCE(SUM(o.total), 0)::numeric as revenue,
-        COUNT(o.id)::int as orders
+        COALESCE(p.name, 'Sem Plano') as plan_name,
+        COALESCE(p.price, 0)::numeric as plan_price,
+        COUNT(t.id)::int as tenant_count,
+        (COALESCE(p.price, 0) * COUNT(t.id))::numeric as monthly_revenue
       FROM tenants t
-      LEFT JOIN orders o ON o.tenant_id = t.id AND o.status != 'cancelled' AND o.created_at >= $1 AND o.created_at <= $2
-      GROUP BY t.id, t.name
-      HAVING COALESCE(SUM(o.total), 0) > 0
-      ORDER BY revenue DESC
-      LIMIT 5`,
-      [fromDate, toDate],
+      LEFT JOIN plans p ON t.plan_id = p.id
+      WHERE t.is_active = true
+      GROUP BY p.name, p.price
+      ORDER BY monthly_revenue DESC`,
     );
 
     // Recent signups (last 5)
     const recentSignups = await this.dataSource.query(
-      `SELECT t.id, t.name, COALESCE(p.name, 'Sem Plano') as plan, t.created_at as "createdAt"
+      `SELECT t.id, t.name, t.slug, COALESCE(p.name, 'Sem Plano') as plan,
+        COALESCE(p.price, 0)::numeric as plan_price, t.created_at as "createdAt"
       FROM tenants t
       LEFT JOIN plans p ON t.plan_id = p.id
       ORDER BY t.created_at DESC
@@ -85,17 +132,25 @@ export class SuperAdminDashboardService {
         previous: churnPrevious.count,
         change: Math.round(churnChange * 10) / 10,
       },
-      revenueByDay: revenueByDay.map((r: any) => ({
+      mrrByDay: mrrByDay.map((r: any) => ({
         date: r.date,
-        revenue: parseFloat(r.revenue) || 0,
+        newTenants: r.new_tenants,
+        newMrr: parseFloat(r.new_mrr) || 0,
       })),
-      topTenants: topTenants.map((t: any) => ({
-        id: t.id,
-        name: t.name,
-        revenue: parseFloat(t.revenue) || 0,
-        orders: t.orders,
+      planDistribution: planDistribution.map((r: any) => ({
+        planName: r.plan_name,
+        planPrice: parseFloat(r.plan_price) || 0,
+        tenantCount: r.tenant_count,
+        monthlyRevenue: parseFloat(r.monthly_revenue) || 0,
       })),
-      recentSignups,
+      recentSignups: recentSignups.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        plan: r.plan,
+        planPrice: parseFloat(r.plan_price) || 0,
+        createdAt: r.createdAt,
+      })),
     };
   }
 
@@ -117,45 +172,5 @@ export class SuperAdminDashboardService {
       );
     }
     return { success: true, affected: ids.length };
-  }
-
-  async getStats() {
-    const [tenantStats] = await this.dataSource.query(`
-      SELECT
-        COUNT(*)::int as total_tenants,
-        COUNT(*) FILTER (WHERE is_active = true)::int as active_tenants
-      FROM tenants
-    `);
-
-    const [userStats] = await this.dataSource.query(`
-      SELECT COUNT(*)::int as total_users FROM users WHERE system_role != 'super_admin'
-    `);
-
-    const [orderStats] = await this.dataSource.query(`
-      SELECT
-        COUNT(*)::int as total_orders,
-        COALESCE(SUM(total), 0)::numeric as total_revenue
-      FROM orders
-      WHERE status != 'cancelled'
-    `);
-
-    const tenantsByPlan = await this.dataSource.query(`
-      SELECT
-        COALESCE(p.name, 'Sem Plano') as plan_name,
-        COUNT(t.id)::int as count
-      FROM tenants t
-      LEFT JOIN plans p ON t.plan_id = p.id
-      GROUP BY p.name
-      ORDER BY count DESC
-    `);
-
-    return {
-      total_tenants: tenantStats.total_tenants,
-      active_tenants: tenantStats.active_tenants,
-      total_users: userStats.total_users,
-      total_orders: orderStats.total_orders,
-      total_revenue: parseFloat(orderStats.total_revenue) || 0,
-      tenants_by_plan: tenantsByPlan,
-    };
   }
 }
