@@ -1,4 +1,4 @@
-type Environment = 'dev' | 'prod';
+type Environment = 'dev' | 'homol' | 'prod';
 
 interface EnvConfig {
   apiUrl: string;
@@ -12,11 +12,23 @@ const configs: Record<Environment, EnvConfig> = {
     wsUrl: 'http://localhost:3000',
     env: 'dev',
   },
+  homol: {
+    apiUrl: 'https://menufacil-api-homol.mp1rvc.easypanel.host/api',
+    wsUrl: 'https://menufacil-api-homol.mp1rvc.easypanel.host',
+    env: 'homol',
+  },
   prod: {
-    apiUrl: localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host/api',
-    wsUrl: localStorage.getItem('desktop_api_url')?.replace('/api', '') || 'https://menufacil-api.mp1rvc.easypanel.host',
+    apiUrl: 'https://menufacil-api.mp1rvc.easypanel.host/api',
+    wsUrl: 'https://menufacil-api.mp1rvc.easypanel.host',
     env: 'prod',
   },
 };
 
-export const env: EnvConfig = import.meta.env.DEV ? configs.dev : configs.prod;
+function resolveEnv(): Environment {
+  const envVar = import.meta.env.VITE_ENV as Environment | undefined;
+  if (envVar && configs[envVar]) return envVar;
+  if (import.meta.env.DEV) return 'dev';
+  return 'prod';
+}
+
+export const env: EnvConfig = configs[resolveEnv()];

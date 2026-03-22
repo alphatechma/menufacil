@@ -12,6 +12,7 @@ import {
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { cn } from '@/utils/cn';
+import { env } from '@/config/env';
 import PrinterManager from './PrinterManager';
 
 const DAYS = [
@@ -112,7 +113,7 @@ export default function Settings() {
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('desktop_sound') !== 'false');
   const [minimizeToTray, setMinimizeToTray] = useState(() => localStorage.getItem('desktop_minimize_tray') === 'true');
   const [paperWidth, setPaperWidth] = useState(() => parseInt(localStorage.getItem('menufacil_paper_width') || '48'));
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem('desktop_api_url') || '');
+  // API URL is now configured via VITE_ENV environment variable
 
   useEffect(() => {
     if (!tenant) return;
@@ -252,7 +253,7 @@ export default function Settings() {
           {activeTab === 'desktop' && (<>
             <h3 className="text-base font-bold text-gray-900">Configuracoes do Desktop</h3>
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-              <div><label className="text-sm font-medium text-gray-700 mb-1 block">URL da API</label><div className="flex gap-2"><input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="Deixe vazio para padrao" className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /><SaveBtn onClick={() => ds('desktop_api_url', apiUrl)} label="Salvar" /></div></div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Ambiente</label><p className="text-sm text-gray-500">API: {env.apiUrl}</p></div>
               <div className="h-px bg-gray-100" />
               {[{ key: 'desktop_auto_confirm', label: 'Confirmar pedidos automaticamente', desc: 'Novos pedidos confirmados sem intervencao', value: autoConfirm, set: setAutoConfirm },
                 { key: 'desktop_auto_print', label: 'Imprimir ao receber pedido', desc: 'Imprime automaticamente quando chegar', value: autoPrint, set: setAutoPrint },

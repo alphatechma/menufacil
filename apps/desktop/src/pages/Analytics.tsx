@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { env } from '@/config/env';
 import {
   TrendingUp,
   TrendingDown,
@@ -101,7 +102,7 @@ export default function Analytics() {
   const [dateRange, setDateRange] = useState(getDefaultDateRange);
 
   const handleExport = (type: string) => {
-    const apiBase = localStorage.getItem('desktop_api_url') || 'https://menufacil-api.mp1rvc.easypanel.host/api';
+    const apiBase = env.apiUrl;
     const url = `${apiBase}/analytics/export/csv?type=${type}&from=${dateRange.from}&to=${dateRange.to}`;
     window.open(url, '_blank');
   };

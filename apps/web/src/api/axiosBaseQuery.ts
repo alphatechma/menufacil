@@ -1,106 +1,133 @@
-import type { BaseQueryFn } from '@reduxjs/toolkit/query';
-import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
+import { fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { RootState } from '../store/index';
 import { adminLogout } from '../store/slices/adminAuthSlice';
 import { env } from '@/config/env';
 
 export type AuthContext = 'admin' | 'customer' | 'public';
 
-interface AxiosBaseQueryArgs {
-  url: string;
-  method?: AxiosRequestConfig['method'];
-  data?: unknown;
-  params?: Record<string, unknown>;
-  headers?: Record<string, string>;
-  meta?: { authContext?: AuthContext; tenantSlug?: string };
+interface ExtraMeta {
+  authContext?: AuthContext;
+  tenantSlug?: string;
 }
 
-const axiosInstance = axios.create({
-  baseURL: env.apiUrl,
-  withCredentials: true,
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: env.apiUrl,
+  credentials: 'include',
+  prepareHeaders: (headers, { getState, endpoint }) => {
+    const state = getState() as RootState;
+
+    // Determine auth context from endpoint metadata
+    // This is set per-endpoint via extraOptions or meta
+    const meta = (endpoint as any)?._meta as ExtraMeta | undefined;
+    const authContext = meta?.authContext ?? 'public';
+
+    if (authContext === 'admin') {
+      const { tenantSlug } = state.adminAuth;
+      if (tenantSlug) headers.set('X-Tenant-Slug', tenantSlug);
+
+      const { selectedUnitId } = state.ui;
+      if (selectedUnitId) headers.set('X-Unit-Id', selectedUnitId);
+
+      const impersonateToken = localStorage.getItem('menufacil-impersonate-token');
+      if (impersonateToken) headers.set('Authorization', `Bearer ${impersonateToken}`);
+    } else if (authContext === 'customer') {
+      const slug = meta?.tenantSlug;
+      if (slug) headers.set('X-Tenant-Slug', slug);
+      headers.set('X-Auth-Context', 'customer');
+
+      const customerUnitId = state.tenant?.selectedUnitId;
+      if (customerUnitId) headers.set('X-Unit-Id', customerUnitId);
+    }
+
+    return headers;
+  },
 });
 
 let refreshPromise: Promise<any> | null = null;
 
-export const axiosBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, unknown> = async (
-  args,
-  api,
-) => {
-  const { url, method = 'GET', data, params, headers = {}, meta } = args;
+export const axiosBaseQuery: BaseQueryFn<
+  string | (FetchArgs & { meta?: ExtraMeta }),
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  // Normalize args and extract meta
+  let fetchArgs: FetchArgs;
+  let meta: ExtraMeta | undefined;
+
+  if (typeof args === 'string') {
+    fetchArgs = { url: args };
+  } else {
+    const { meta: argsMeta, ...rest } = args;
+    fetchArgs = rest;
+    meta = argsMeta;
+  }
+
+  // Attach meta to endpoint for prepareHeaders
+  if (meta) {
+    (api as any).endpoint = { ...(api as any).endpoint, _meta: meta };
+  }
+
+  // Build headers from meta (since prepareHeaders can't access per-call meta easily)
   const state = api.getState() as RootState;
   const authContext = meta?.authContext ?? 'public';
+  const headers: Record<string, string> = {};
 
-  // Set tenant slug header
   if (authContext === 'admin') {
     const { tenantSlug } = state.adminAuth;
-    if (tenantSlug) {
-      headers['X-Tenant-Slug'] = tenantSlug;
-    }
+    if (tenantSlug) headers['X-Tenant-Slug'] = tenantSlug;
     const { selectedUnitId } = state.ui;
-    if (selectedUnitId) {
-      headers['X-Unit-Id'] = selectedUnitId;
-    }
-    // Use Bearer token when impersonating (no cookies available)
+    if (selectedUnitId) headers['X-Unit-Id'] = selectedUnitId;
     const impersonateToken = localStorage.getItem('menufacil-impersonate-token');
-    if (impersonateToken) {
-      headers['Authorization'] = `Bearer ${impersonateToken}`;
-    }
+    if (impersonateToken) headers['Authorization'] = `Bearer ${impersonateToken}`;
   } else if (authContext === 'customer') {
     const slug = meta?.tenantSlug;
-    if (slug) {
-      headers['X-Tenant-Slug'] = slug;
-    }
+    if (slug) headers['X-Tenant-Slug'] = slug;
     headers['X-Auth-Context'] = 'customer';
     const customerUnitId = state.tenant?.selectedUnitId;
-    if (customerUnitId) {
-      headers['X-Unit-Id'] = customerUnitId;
-    }
+    if (customerUnitId) headers['X-Unit-Id'] = customerUnitId;
   }
 
-  try {
-    const result = await axiosInstance({ url, method, data, params, headers });
-    return { data: result.data };
-  } catch (axiosError) {
-    const err = axiosError as AxiosError;
+  // Merge headers
+  fetchArgs.headers = { ...headers, ...(fetchArgs.headers as Record<string, string>) };
 
-    // Handle admin 401 with token refresh via cookie
-    if (err.response?.status === 401 && authContext === 'admin') {
-      try {
-        // Deduplicate concurrent refresh attempts
-        if (!refreshPromise) {
-          refreshPromise = axiosInstance
-            .post('/auth/refresh', {})
-            .then((res) => res.data)
-            .finally(() => {
-              refreshPromise = null;
-            });
-        }
+  let result = await rawBaseQuery(fetchArgs, api, extraOptions);
 
-        await refreshPromise;
-
-        // Retry original request (new cookies are set automatically)
-        const retryResult = await axiosInstance({ url, method, data, params, headers });
-        return { data: retryResult.data };
-      } catch {
-        refreshPromise = null;
-        localStorage.removeItem('menufacil-impersonate-token');
-        api.dispatch(adminLogout());
-        window.location.href = '/login';
-        return { error: { status: 401, data: 'Session expired' } };
+  // Handle admin 401 with token refresh via cookie
+  if (result.error?.status === 401 && authContext === 'admin') {
+    try {
+      if (!refreshPromise) {
+        refreshPromise = rawBaseQuery(
+          { url: '/auth/refresh', method: 'POST', body: {} },
+          api,
+          extraOptions,
+        ).then((res) => {
+          if (res.error) throw res.error;
+          return res.data;
+        }).finally(() => {
+          refreshPromise = null;
+        });
       }
-    }
 
-    // Handle customer 401 — clear cookies via backend
-    if (err.response?.status === 401 && authContext === 'customer') {
-      try { await axiosInstance.post('/auth/logout'); } catch { /* ignore */ }
-      window.dispatchEvent(new CustomEvent('unauthorized'));
-    }
+      await refreshPromise;
 
-    return {
-      error: {
-        status: err.response?.status,
-        data: err.response?.data || err.message,
-      },
-    };
+      // Retry original request
+      result = await rawBaseQuery(fetchArgs, api, extraOptions);
+    } catch {
+      refreshPromise = null;
+      localStorage.removeItem('menufacil-impersonate-token');
+      api.dispatch(adminLogout());
+      window.location.href = '/login';
+      return { error: { status: 401 as const, data: 'Session expired' } };
+    }
   }
+
+  // Handle customer 401
+  if (result.error?.status === 401 && authContext === 'customer') {
+    try {
+      await rawBaseQuery({ url: '/auth/logout', method: 'POST' }, api, extraOptions);
+    } catch { /* ignore */ }
+    window.dispatchEvent(new CustomEvent('unauthorized'));
+  }
+
+  return result;
 };
