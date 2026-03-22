@@ -167,7 +167,7 @@ export class ReferralService {
       successful_referrals: successful,
       conversion_rate: Math.round(conversionRate * 10) / 10,
       total_points_awarded: totalPointsAwarded,
-      top_referrers,
+      top_referrers: topReferrers,
     };
   }
 

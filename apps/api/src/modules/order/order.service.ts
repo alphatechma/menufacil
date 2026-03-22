@@ -378,7 +378,7 @@ export class OrderService {
           this.logger.log(`Auto-assigned delivery person ${assigned.name} to order ${order.order_number}`);
         }
       } catch (err) {
-        this.logger.warn(`Auto-assign delivery failed: ${err.message}`);
+        this.logger.warn(`Auto-assign delivery failed: ${(err as Error).message}`);
       }
     }
 
@@ -393,7 +393,7 @@ export class OrderService {
       try {
         await this.referralService.awardReferralPoints(order.customer_id, tenantId);
       } catch (err) {
-        this.logger.warn(`Referral award failed: ${err.message}`);
+        this.logger.warn(`Referral award failed: ${(err as Error).message}`);
       }
     }
 

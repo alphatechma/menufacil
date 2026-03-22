@@ -32,7 +32,7 @@ export class WalletTransaction {
   description: string;
 
   @Column('uuid', { nullable: true })
-  order_id: string;
+  order_id: string | null;
 
   @Column('uuid')
   tenant_id: string;

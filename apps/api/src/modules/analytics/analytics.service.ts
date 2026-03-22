@@ -669,7 +669,7 @@ export class AnalyticsService {
         });
         csv += `\nTempo Medio Geral;${data.avgDeliveryTime ?? '-'}\n`;
         csv += '\nZona;Entregas;Tempo Medio (min);Receita\n';
-        data.zoneStats.forEach((z) => {
+        data.zoneStats.forEach((z: any) => {
           csv += `${z.zone};${z.deliveries};${z.avgTime ?? '-'};${z.revenue}\n`;
         });
         return csv;

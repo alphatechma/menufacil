@@ -57,7 +57,7 @@ export class ReviewService {
       customer_id: customerId,
       tenant_id: tenantId,
       rating: dto.rating,
-      comment: dto.comment || null,
+      comment: dto.comment || undefined,
     });
 
     return this.reviewRepo.save(review);

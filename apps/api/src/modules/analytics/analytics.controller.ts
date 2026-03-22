@@ -92,7 +92,7 @@ export class AnalyticsController {
   @Get('segments')
   @RequirePermissions('report:read')
   @ApiOperation({ summary: 'Get customer segments (RFM analysis)' })
-  getSegments(@CurrentTenant('id') tenantId: string) {
+  getSegments(@CurrentTenant('id') tenantId: string): Promise<any> {
     return this.segmentationService.getSegments(tenantId);
   }
 

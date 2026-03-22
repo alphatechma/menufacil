@@ -185,7 +185,7 @@ export class InventoryService {
       await this.deductStockForOrder(tenantId, items);
       this.logger.log(`Auto-deducted stock for order ${order.order_number}`);
     } catch (err) {
-      this.logger.warn(`Failed to auto-deduct stock for order ${orderId}: ${err.message}`);
+      this.logger.warn(`Failed to auto-deduct stock for order ${orderId}: ${(err as Error).message}`);
     }
   }
 

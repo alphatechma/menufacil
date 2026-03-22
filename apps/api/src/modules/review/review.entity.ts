@@ -25,10 +25,10 @@ export class Review {
   rating: number; // 1-5
 
   @Column({ type: 'text', nullable: true })
-  comment: string;
+  comment: string | null;
 
   @Column({ type: 'text', nullable: true })
-  reply: string; // admin reply
+  reply: string | null; // admin reply
 
   @Column({ type: 'timestamptz', nullable: true })
   replied_at: Date;
