@@ -4,11 +4,13 @@ import { UtensilsCrossed, Loader2, AlertCircle } from 'lucide-react';
 import { useGetPublicTableQuery, useJoinTableMutation } from '@/api/customerApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setTableContext } from '@/store/slices/cartSlice';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function TableLanding() {
   const { slug, tableNumber } = useParams<{ slug: string; tableNumber: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const notify = useNotify();
   const tenant = useAppSelector((state) => state.tenant.tenant);
 
   const { data: table, isLoading, error } = useGetPublicTableQuery(
@@ -29,7 +31,9 @@ export default function TableLanding() {
       }));
       navigate(`/${slug}/menu`);
     } catch (err: any) {
-      setJoinError(err?.data?.message || 'Erro ao acessar mesa');
+      const msg = err?.data?.message || 'Erro ao acessar mesa';
+      setJoinError(msg);
+      notify.error(msg);
     }
   };
 

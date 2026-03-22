@@ -38,6 +38,7 @@ import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
 import { maskCep } from '@/utils/masks';
 import { cn } from '@/utils/cn';
+import { useNotify } from '@/hooks/useNotify';
 
 type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash' | 'wallet';
 
@@ -308,6 +309,7 @@ export default function Checkout() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const notify = useNotify();
 
   const cartItems = useAppSelector((state) => state.cart.items);
   const customerAuth = useAppSelector((state) => state.customerAuth);
@@ -520,9 +522,11 @@ export default function Checkout() {
       setCouponDiscount(result.discount);
       setAppliedCoupon(couponCode.trim().toUpperCase());
     } catch (err: any) {
-      setCouponError(err?.data?.message || 'Cupom invalido');
+      const msg = err?.data?.message || 'Cupom invalido';
+      setCouponError(msg);
       setCouponDiscount(0);
       setAppliedCoupon(null);
+      notify.error(msg);
     }
     setCouponLoading(false);
   };
@@ -698,10 +702,9 @@ export default function Checkout() {
       dispatch(clearCart());
       navigate(`/${slug}/order/${result.id}`);
     } catch (err: any) {
-      setError(
-        err?.data?.message ||
-          'Erro ao criar pedido. Tente novamente.',
-      );
+      const msg = err?.data?.message || 'Erro ao criar pedido. Tente novamente.';
+      setError(msg);
+      notify.error(msg);
     }
   };
 

@@ -18,8 +18,10 @@ import {
 } from '@/api/api';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function Menu() {
+  const notify = useNotify();
   const [search, setSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [editingPrice, setEditingPrice] = useState<{ id: string; price: string } | null>(null);
@@ -77,7 +79,12 @@ export default function Menu() {
   };
 
   const handleToggleActive = async (product: any) => {
-    await updateProduct({ id: product.id, data: { is_active: !product.is_active } }).catch(() => {});
+    try {
+      await updateProduct({ id: product.id, data: { is_active: !product.is_active } }).unwrap();
+      notify.success(product.is_active ? 'Produto desativado' : 'Produto ativado');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao atualizar produto');
+    }
   };
 
   const handleStartEditPrice = (product: any) => {
@@ -89,7 +96,12 @@ export default function Menu() {
     if (!editingPrice) return;
     const price = parseFloat(editingPrice.price.replace(',', '.'));
     if (isNaN(price) || price < 0) return;
-    await updateProduct({ id: editingPrice.id, data: { price } }).catch(() => {});
+    try {
+      await updateProduct({ id: editingPrice.id, data: { price } }).unwrap();
+      notify.success('Preco atualizado');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao atualizar preco');
+    }
     setEditingPrice(null);
   };
 

@@ -4,10 +4,12 @@ import { ArrowLeft, CalendarCheck, Check, AlertCircle, Loader2 } from 'lucide-re
 import { useCreatePublicReservationMutation } from '@/api/customerApi';
 import { useAppSelector } from '@/store/hooks';
 import { maskPhone } from '@/utils/masks';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function ReservationRequest() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const tenant = useAppSelector((state) => state.tenant.tenant);
 
   const [createReservation, { isLoading }] = useCreatePublicReservationMutation();
@@ -44,7 +46,9 @@ export default function ReservationRequest() {
       }).unwrap();
       setSuccess(true);
     } catch (err: any) {
-      setError(err?.data?.message || 'Erro ao enviar reserva. Tente novamente.');
+      const msg = err?.data?.message || 'Erro ao enviar reserva. Tente novamente.';
+      setError(msg);
+      notify.error(msg);
     }
   };
 
