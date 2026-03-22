@@ -97,8 +97,8 @@ const ORDER_TYPE_LABELS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credit_card: 'Cartao de Credito',
-  debit_card: 'Cartao de Debito',
+  credit_card: 'Cartão de Crédito',
+  debit_card: 'Cartão de Débito',
   cash: 'Dinheiro',
 };
 
@@ -336,7 +336,7 @@ export default function OrderDetail() {
                   Nome
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {order.customer?.name || 'Nao informado'}
+                  {order.customer?.name || 'Não informado'}
                 </p>
               </div>
               {order.customer?.phone && (
@@ -405,7 +405,7 @@ export default function OrderDetail() {
               {order.payment_method && (
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                    Metodo
+                    Método
                   </p>
                   <p className="text-sm font-medium text-foreground">
                     {PAYMENT_LABELS[order.payment_method] || order.payment_method}
@@ -461,7 +461,7 @@ export default function OrderDetail() {
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="w-5 h-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold text-foreground">Endereco</h2>
+                <h2 className="text-lg font-semibold text-foreground">Endereço</h2>
               </div>
               <p className="text-sm text-foreground">
                 {order.address_snapshot.street}
@@ -492,7 +492,7 @@ export default function OrderDetail() {
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="w-5 h-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold text-foreground">Endereco</h2>
+                <h2 className="text-lg font-semibold text-foreground">Endereço</h2>
               </div>
               <p className="text-sm text-foreground">
                 {order.address.street}
@@ -579,7 +579,7 @@ export default function OrderDetail() {
           {/* Timeline */}
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              Historico
+              Histórico
             </h2>
             <div className="space-y-3">
               {[

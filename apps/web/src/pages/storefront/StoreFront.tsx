@@ -281,8 +281,8 @@ export default function StoreFront() {
             Em breve!
           </h3>
           <p className="text-gray-500 text-sm max-w-xs">
-            O cardapio esta sendo preparado. Volte em breve para conferir as
-            deliciosas opcoes!
+            O cardápio está sendo preparado. Volte em breve para conferir as
+            deliciosas opções!
           </p>
         </div>
       )}

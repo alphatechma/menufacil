@@ -167,8 +167,8 @@ export function TenantProvider() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center p-8">
           <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">Loja nao encontrada</h2>
-          <p className="text-gray-500">Verifique o endereco e tente novamente.</p>
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">Loja não encontrada</h2>
+          <p className="text-gray-500">Verifique o endereço e tente novamente.</p>
         </div>
       </div>
     );

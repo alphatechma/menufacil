@@ -50,9 +50,9 @@ export default function TableLanding() {
       <div className="px-4 pt-8">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Mesa nao encontrada</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Mesa não encontrada</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Esta mesa nao existe ou nao esta disponivel no momento.
+            Esta mesa não existe ou não está disponível no momento.
           </p>
           <button
             onClick={() => navigate(`/${slug}`)}

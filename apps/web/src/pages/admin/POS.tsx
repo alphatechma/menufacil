@@ -51,8 +51,8 @@ interface PaymentSplit {
 
 const PAYMENT_METHODS = [
   { value: 'pix' as const, label: 'PIX', icon: QrCode, color: 'text-teal-600 bg-teal-50 border-teal-200 dark:text-teal-400 dark:bg-teal-950 dark:border-teal-800' },
-  { value: 'credit_card' as const, label: 'Credito', icon: CreditCard, color: 'text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950 dark:border-blue-800' },
-  { value: 'debit_card' as const, label: 'Debito', icon: CreditCard, color: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-950 dark:border-indigo-800' },
+  { value: 'credit_card' as const, label: 'Crédito', icon: CreditCard, color: 'text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950 dark:border-blue-800' },
+  { value: 'debit_card' as const, label: 'Débito', icon: CreditCard, color: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-950 dark:border-indigo-800' },
   { value: 'cash' as const, label: 'Dinheiro', icon: Banknote, color: 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950 dark:border-green-800' },
 ];
 
@@ -164,7 +164,7 @@ function ProductModal({
   const validate = (): string[] => {
     const errs: string[] = [];
     if (hasVariations && isRequired) {
-      if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opcao');
+      if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opção');
       else if (isMultiSelect && totalSelectedParts < minVariations) errs.push(`Selecione pelo menos ${minVariations} ${minVariations === 1 ? 'parte' : 'partes'}`);
     }
     if (product.extra_groups) {
@@ -203,7 +203,7 @@ function ProductModal({
         {hasVariations && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <p className="text-sm font-semibold text-foreground">{isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}</p>
+              <p className="text-sm font-semibold text-foreground">{isMultiSelect ? 'Escolha suas opções' : 'Escolha uma opção'}</p>
               {isRequired && <span className="text-red-500 text-xs font-bold">*</span>}
             </div>
             {isMultiSelect && (
@@ -319,7 +319,7 @@ function ProductModal({
           <p className="text-center text-xs text-amber-600 font-medium mb-2">Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar</p>
         )}
         <Button onClick={handleAdd} className="w-full" size="lg" disabled={isSelectionIncomplete}>
-          {isSelectionIncomplete ? 'Complete a selecao' : `Adicionar ${formatPrice(totalPrice)}`}
+          {isSelectionIncomplete ? 'Complete a seleção' : `Adicionar ${formatPrice(totalPrice)}`}
         </Button>
       </div>
     </Modal>
@@ -581,18 +581,18 @@ export default function POS() {
                 <span className="font-bold">{closingSummary.orders_count}</span>
               </div>
               <div className="h-px bg-border" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase">Vendas por metodo</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Vendas por método</p>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm">
                   <span className="flex items-center gap-2"><Banknote className="w-3.5 h-3.5 text-green-600" /> Dinheiro</span>
                   <span className="font-medium">{formatPrice(closingSummary.total_cash)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-blue-600" /> Credito</span>
+                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-blue-600" /> Crédito</span>
                   <span className="font-medium">{formatPrice(closingSummary.total_credit)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Debito</span>
+                  <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Débito</span>
                   <span className="font-medium">{formatPrice(closingSummary.total_debit)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -631,8 +631,8 @@ export default function POS() {
               win.document.write('<div class="bold">VENDAS POR METODO</div>');
               win.document.write('<table>');
               win.document.write('<tr><td>Dinheiro</td><td class="right">R$ ' + Number(closingSummary.total_cash).toFixed(2) + '</td></tr>');
-              win.document.write('<tr><td>Credito</td><td class="right">R$ ' + Number(closingSummary.total_credit).toFixed(2) + '</td></tr>');
-              win.document.write('<tr><td>Debito</td><td class="right">R$ ' + Number(closingSummary.total_debit).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Crédito</td><td class="right">R$ ' + Number(closingSummary.total_credit).toFixed(2) + '</td></tr>');
+              win.document.write('<tr><td>Débito</td><td class="right">R$ ' + Number(closingSummary.total_debit).toFixed(2) + '</td></tr>');
               win.document.write('<tr><td>PIX</td><td class="right">R$ ' + Number(closingSummary.total_pix).toFixed(2) + '</td></tr>');
               win.document.write('</table>');
               win.document.write('<div class="line"></div>');
@@ -751,7 +751,7 @@ export default function POS() {
                 ))}
               </div>
               {orderType === 'delivery' && (
-                <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereco / referencia..." rows={2} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground resize-none focus:border-primary focus:outline-none" />
+                <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereço / referência..." rows={2} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground resize-none focus:border-primary focus:outline-none" />
               )}
               {orderType === 'dine_in' && (
                 <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-border bg-background text-xs text-foreground focus:border-primary focus:outline-none">
@@ -905,7 +905,7 @@ export default function POS() {
                           onClick={() => { navigator.clipboard.writeText(pixPayloadStr); }}
                           className="mt-2 text-[10px] text-teal-600 hover:text-teal-800 font-medium underline"
                         >
-                          Copiar codigo PIX
+                          Copiar código PIX
                         </button>
                       </>
                     ) : pixKey ? (

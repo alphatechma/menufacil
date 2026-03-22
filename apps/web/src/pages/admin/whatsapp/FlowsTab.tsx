@@ -163,7 +163,7 @@ export default function FlowsTab() {
         onClose={() => setDeleteConfirm(null)}
         onConfirm={handleDelete}
         title="Excluir Fluxo"
-        message="Tem certeza que deseja excluir este fluxo? Esta acao nao pode ser desfeita."
+        message="Tem certeza que deseja excluir este fluxo? Esta ação não pode ser desfeita."
         loading={isDeleting}
       />
     </div>

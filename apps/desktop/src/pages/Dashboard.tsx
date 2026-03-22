@@ -116,7 +116,7 @@ export default function Dashboard() {
       color: 'text-blue-600',
     },
     {
-      label: 'Ticket Medio',
+      label: 'Ticket Médio',
       value: formatPrice(avgTicket),
       comparison: data?.avgTicketComparison ?? 0,
       icon: TrendingUp,
@@ -243,7 +243,7 @@ export default function Dashboard() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+            <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
           )}
         </div>
       </div>
@@ -271,7 +271,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
           )}
         </div>
 
@@ -299,7 +299,7 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
             )}
           </div>
         </div>

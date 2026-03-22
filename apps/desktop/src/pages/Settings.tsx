@@ -25,11 +25,11 @@ const DAYS = [
 
 const TABS = [
   { key: 'geral', label: 'Dados Gerais', icon: Store },
-  { key: 'horarios', label: 'Horarios', icon: Clock },
+  { key: 'horarios', label: 'Horários', icon: Clock },
   { key: 'modos', label: 'Modos de Pedido', icon: Truck },
   { key: 'pagamento', label: 'Pagamento', icon: CreditCard },
-  { key: 'parametros', label: 'Parametros', icon: SettingsIcon },
-  { key: 'notificacoes', label: 'Notificacoes', icon: Bell },
+  { key: 'parametros', label: 'Parâmetros', icon: SettingsIcon },
+  { key: 'notificacoes', label: 'Notificações', icon: Bell },
   { key: 'impressora', label: 'Impressora', icon: Printer },
   { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { key: 'desktop', label: 'Desktop', icon: Globe },
@@ -159,9 +159,9 @@ export default function Settings() {
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Slug</label><div className="flex"><span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm">menufacil.com/</span><input value={slug} onChange={(e) => setSlug(e.target.value)} className="flex-1 px-4 py-2.5 rounded-r-xl border border-gray-200 text-sm font-mono" /></div></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm font-medium text-gray-700 mb-1 block">Telefone</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
-                <div><label className="text-sm font-medium text-gray-700 mb-1 block">Pedido minimo (R$)</label><input type="number" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+                <div><label className="text-sm font-medium text-gray-700 mb-1 block">Pedido mínimo (R$)</label><input type="number" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
               </div>
-              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Endereco</label><input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
+              <div><label className="text-sm font-medium text-gray-700 mb-1 block">Endereço</label><input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
               <div className="flex justify-end"><SaveBtn onClick={() => save({ name, slug, phone, address, min_order_value: parseFloat(minOrder) || 0 })} loading={saving} /></div>
             </div>
           </>)}
@@ -214,7 +214,7 @@ export default function Settings() {
           {activeTab === 'notificacoes' && (<>
             <h3 className="text-base font-bold text-gray-900">Notificacoes</h3>
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-              {[{ key: 'sound_enabled', label: 'Sons ativados', desc: 'Habilitar sons de notificacao' }, { key: 'sound_new_order', label: 'Novo pedido', desc: 'Tocar som ao receber pedido' }, { key: 'sound_out_for_delivery', label: 'Saiu para entrega', desc: 'Som ao sair para entrega' }, { key: 'sound_delivered', label: 'Entregue', desc: 'Som ao confirmar entrega' }, { key: 'push_enabled', label: 'Push notifications', desc: 'Notificacoes push' }].map((item) => (
+              {[{ key: 'sound_enabled', label: 'Sons ativados', desc: 'Habilitar sons de notificação' }, { key: 'sound_new_order', label: 'Novo pedido', desc: 'Tocar som ao receber pedido' }, { key: 'sound_out_for_delivery', label: 'Saiu para entrega', desc: 'Som ao sair para entrega' }, { key: 'sound_delivered', label: 'Entregue', desc: 'Som ao confirmar entrega' }, { key: 'push_enabled', label: 'Push notifications', desc: 'Notificações push' }].map((item) => (
                 <div key={item.key} className="flex items-center justify-between py-1"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={!!(notifSettings as any)[item.key]} onChange={(v) => setNotifSettings((prev) => ({ ...prev, [item.key]: v }))} /></div>
               ))}
               <div className="flex justify-end pt-2"><SaveBtn onClick={() => save({ notification_settings: notifSettings })} loading={saving} /></div>
@@ -251,9 +251,9 @@ export default function Settings() {
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Ambiente</label><p className="text-sm text-gray-500">API: {env.apiUrl}</p></div>
               <div className="h-px bg-gray-100" />
-              {[{ key: 'desktop_auto_confirm', label: 'Confirmar pedidos automaticamente', desc: 'Novos pedidos confirmados sem intervencao', value: autoConfirm, set: setAutoConfirm },
+              {[{ key: 'desktop_auto_confirm', label: 'Confirmar pedidos automaticamente', desc: 'Novos pedidos confirmados sem intervenção', value: autoConfirm, set: setAutoConfirm },
                 { key: 'desktop_auto_print', label: 'Imprimir ao receber pedido', desc: 'Imprime automaticamente quando chegar', value: autoPrint, set: setAutoPrint },
-                { key: 'desktop_sound', label: 'Sons de notificacao', desc: 'Tocar som quando pedidos chegarem', value: soundEnabled, set: setSoundEnabled },
+                { key: 'desktop_sound', label: 'Sons de notificação', desc: 'Tocar som quando pedidos chegarem', value: soundEnabled, set: setSoundEnabled },
                 { key: 'desktop_minimize_tray', label: 'Minimizar para bandeja', desc: 'App continua rodando ao fechar', value: minimizeToTray, set: setMinimizeToTray },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between py-2"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={item.value} onChange={(v) => item.set(v)} /></div>
@@ -287,7 +287,7 @@ export default function Settings() {
                   {updateStatus === 'checking' ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
                   ) : (
-                    <><RefreshCw className="w-4 h-4" /> Verificar atualizacoes</>
+                    <><RefreshCw className="w-4 h-4" /> Verificar atualizações</>
                   )}
                 </button>
               </div>
@@ -295,7 +295,7 @@ export default function Settings() {
               {updateStatus === 'up-to-date' && (
                 <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <p className="text-sm text-green-700">Voce esta usando a versao mais recente.</p>
+                  <p className="text-sm text-green-700">Você está usando a versão mais recente.</p>
                 </div>
               )}
 
@@ -304,7 +304,7 @@ export default function Settings() {
                   <div className="flex items-center gap-2">
                     <ArrowUpCircle className="w-5 h-5 text-blue-600" />
                     <div>
-                      <p className="text-sm font-medium text-blue-900">Nova versao disponivel: v{updateVersion}</p>
+                      <p className="text-sm font-medium text-blue-900">Nova versão disponível: v{updateVersion}</p>
                       <p className="text-xs text-blue-600">Atual: v{currentVersion}</p>
                     </div>
                   </div>
@@ -320,7 +320,7 @@ export default function Settings() {
               {updateStatus === 'downloading' && (
                 <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
                   <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                  <p className="text-sm text-blue-700">Baixando e instalando atualizacao...</p>
+                  <p className="text-sm text-blue-700">Baixando e instalando atualização...</p>
                 </div>
               )}
 
@@ -328,7 +328,7 @@ export default function Settings() {
                 <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                   <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-red-700">Erro ao verificar atualizacoes.</p>
+                    <p className="text-sm text-red-700">Erro ao verificar atualizações.</p>
                     {updateError && <p className="text-xs text-red-500 mt-1">{updateError}</p>}
                   </div>
                 </div>

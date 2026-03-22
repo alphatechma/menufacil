@@ -69,7 +69,7 @@ export default function PermissionList() {
     setDeleting(true);
     try {
       await deletePermission(deleteTarget.id).unwrap();
-      notify.success('Permissao removida!');
+      notify.success('Permissão removida!');
     } catch {
       notify.error('Erro ao remover permissao.');
     } finally {
@@ -92,15 +92,15 @@ export default function PermissionList() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Permissoes</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Permissões</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie as permissoes granulares do sistema.
+            Gerencie as permissões granulares do sistema.
           </p>
         </div>
         <Button asChild>
           <Link to="/permissions/new">
             <Plus className="h-4 w-4" />
-            Nova Permissao
+            Nova Permissão
           </Link>
         </Button>
       </div>
@@ -112,7 +112,7 @@ export default function PermissionList() {
             <SelectValue placeholder="Filtrar por modulo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os Modulos</SelectItem>
+            <SelectItem value="all">Todos os Módulos</SelectItem>
             {modules?.map((mod: any) => (
               <SelectItem key={mod.id} value={mod.id}>
                 {mod.name}
@@ -185,13 +185,13 @@ export default function PermissionList() {
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover Permissao</DialogTitle>
+            <DialogTitle>Remover Permissão</DialogTitle>
             <DialogDescription>
               Tem certeza que deseja remover a permissao{' '}
               <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono font-semibold text-foreground">
                 {deleteTarget?.key}
               </code>
-              ? Esta acao nao pode ser desfeita.
+              ? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -369,7 +369,7 @@ export default function OrderList() {
                     Data
                   </th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Acoes
+                    Ações
                   </th>
                 </tr>
               </thead>

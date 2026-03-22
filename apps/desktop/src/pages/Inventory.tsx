@@ -147,7 +147,7 @@ export default function Inventory() {
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Estoque Atual</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Estoque Min.</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Custo/Un.</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -249,7 +249,7 @@ export default function Inventory() {
                   <input type="number" value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" step="0.01" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimo</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mínimo</label>
                   <input type="number" value={form.min_stock} onChange={(e) => setForm({ ...form, min_stock: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" step="0.01" />
                 </div>
                 <div>

@@ -32,7 +32,7 @@ export default function DeliveryScoreboard() {
     <div className="space-y-6">
       <PageHeader
         title="Ranking de Entregadores"
-        subtitle="Performance dos entregadores no periodo selecionado"
+        subtitle="Performance dos entregadores no período selecionado"
       />
 
       {/* Date filter */}
@@ -87,7 +87,7 @@ export default function DeliveryScoreboard() {
                     <th className="pb-3 font-medium text-gray-500 w-12">#</th>
                     <th className="pb-3 font-medium text-gray-500">Entregador</th>
                     <th className="pb-3 font-medium text-gray-500 text-center">Entregas</th>
-                    <th className="pb-3 font-medium text-gray-500 text-center">Tempo Medio</th>
+                    <th className="pb-3 font-medium text-gray-500 text-center">Tempo Médio</th>
                     <th className="pb-3 font-medium text-gray-500 text-center">Taxa Conclusao</th>
                     <th className="pb-3 font-medium text-gray-500 text-right">Comissao</th>
                     <th className="pb-3 font-medium text-gray-500 text-center">Score</th>

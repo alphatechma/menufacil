@@ -212,7 +212,7 @@ export default function ProductForm() {
             )}
           </FormField>
 
-          <FormField control={control} name="base_price" label="Preco Base" required>
+          <FormField control={control} name="base_price" label="Preço Base" required>
             {(field) => (
               <PriceInput
                 {...field}
@@ -297,7 +297,7 @@ export default function ProductForm() {
 
           {fields.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <FormField control={control} name="min_variations" label="Minimo de selecoes">
+              <FormField control={control} name="min_variations" label="Mínimo de seleções">
                 {(field) => (
                   <Input
                     {...field}
@@ -307,7 +307,7 @@ export default function ProductForm() {
                   />
                 )}
               </FormField>
-              <FormField control={control} name="max_variations" label="Maximo de selecoes">
+              <FormField control={control} name="max_variations" label="Máximo de seleções">
                 {(field) => (
                   <Input
                     {...field}
@@ -321,7 +321,7 @@ export default function ProductForm() {
           )}
 
           <p className="text-xs text-muted-foreground">
-            Min=0, Max=0: opcional. Min=1, Max=1: obrigatorio (selecao unica). Min=1, Max=2: escolher de 1 a 2.
+            Min=0, Max=0: opcional. Min=1, Max=1: obrigatório (seleção única). Min=1, Max=2: escolher de 1 a 2.
           </p>
 
           {fields.length === 0 ? (
@@ -347,7 +347,7 @@ export default function ProductForm() {
 
           {extraGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nenhum grupo de extras disponivel.
+              Nenhum grupo de extras disponível.
             </p>
           ) : (
             <div className="space-y-3">
@@ -416,7 +416,7 @@ function SortableVariation({ id, index, register, onRemove }: { id: string; inde
           <Input {...register(`variations.${index}.name`)} placeholder="Ex: Pequena, Media, Grande..." />
         </div>
         <div className="flex-1">
-          <label className="block text-sm font-medium text-foreground mb-1.5">Preco</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Preço</label>
           <PriceInput {...register(`variations.${index}.price`, { valueAsNumber: true })} placeholder="0.00" />
         </div>
         <button

@@ -107,9 +107,9 @@ export default function Staff() {
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Nome</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Funcao</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Função</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Cargo</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -173,7 +173,7 @@ export default function Staff() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Funcao</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
                   <select value={form.system_role} onChange={(e) => setForm({ ...form, system_role: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     <option value="admin">Administrador</option>
                     <option value="manager">Gerente</option>

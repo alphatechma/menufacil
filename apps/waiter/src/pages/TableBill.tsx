@@ -173,7 +173,7 @@ export default function TableBill() {
         {splitResult && (
           <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm text-blue-900">Divisao Igual</h3>
+              <h3 className="font-semibold text-sm text-blue-900">Divisão Igual</h3>
               <button onClick={() => setSplitResult(null)}>
                 <X className="w-4 h-4 text-blue-400" />
               </button>
@@ -188,7 +188,7 @@ export default function TableBill() {
         {consumptionSplit && (
           <div className="bg-purple-50 rounded-2xl p-4 border border-purple-200">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm text-purple-900">Divisao por Consumo</h3>
+              <h3 className="font-semibold text-sm text-purple-900">Divisão por Consumo</h3>
               <button onClick={() => setConsumptionSplit(null)}>
                 <X className="w-4 h-4 text-purple-400" />
               </button>

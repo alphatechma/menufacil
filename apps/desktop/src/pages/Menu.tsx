@@ -98,9 +98,9 @@ export default function Menu() {
     if (isNaN(price) || price < 0) return;
     try {
       await updateProduct({ id: editingPrice.id, data: { price } }).unwrap();
-      notify.success('Preco atualizado');
+      notify.success('Preço atualizado');
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao atualizar preco');
+      notify.error(err?.data?.message || 'Erro ao atualizar preço');
     }
     setEditingPrice(null);
   };

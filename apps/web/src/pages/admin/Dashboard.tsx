@@ -158,7 +158,7 @@ export default function Dashboard() {
       iconColor: 'text-blue-600',
     },
     {
-      label: 'Ticket Medio',
+      label: 'Ticket Médio',
       value: formatPrice(avgTicket),
       comparison: data?.avgTicketComparison ?? 0,
       icon: TrendingUp,
@@ -192,7 +192,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Visao geral do seu restaurante</p>
+          <p className="text-muted-foreground mt-1">Visão geral do seu restaurante</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -318,7 +318,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                Sem dados no periodo
+                Sem dados no período
               </div>
             )}
           </div>
@@ -375,7 +375,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                Sem dados no periodo
+                Sem dados no período
               </div>
             )}
           </CardContent>
@@ -414,7 +414,7 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                  Sem dados no periodo
+                  Sem dados no período
                 </div>
               )}
             </div>

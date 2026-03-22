@@ -4,8 +4,8 @@ import { cn } from '@/utils/cn';
 
 const METHOD_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credit_card: 'Cartao Credito',
-  debit_card: 'Cartao Debito',
+  credit_card: 'Cartão Crédito',
+  debit_card: 'Cartão Débito',
   cash: 'Dinheiro',
 };
 

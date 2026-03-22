@@ -219,7 +219,7 @@ export default function OrderTracking() {
                   await cancelOrder({ slug: slug!, orderId: orderId! }).unwrap();
                   refetch();
                 } catch (err: any) {
-                  setCancelError(err?.data?.message || 'Nao foi possivel cancelar o pedido.');
+                  setCancelError(err?.data?.message || 'Não foi possível cancelar o pedido.');
                 }
               }}
               disabled={cancelling}
@@ -354,7 +354,7 @@ export default function OrderTracking() {
       {order.address_snapshot && (
         <section className="px-4 pt-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h4 className="font-bold text-gray-900 mb-2">Endereco de entrega</h4>
+            <h4 className="font-bold text-gray-900 mb-2">Endereço de entrega</h4>
             <p className="text-sm text-gray-600">
               {order.address_snapshot.street}, {order.address_snapshot.number}
               {order.address_snapshot.complement && ` - ${order.address_snapshot.complement}`}

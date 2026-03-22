@@ -98,34 +98,34 @@ const HOW_IT_WORKS = [
 ];
 
 const ALL_FEATURES = [
-  { icon: UtensilsCrossed, title: 'Cardapio Digital', desc: 'Cardapio completo com fotos, categorias e extras personalizaveis.' },
-  { icon: ClipboardList, title: 'Gestao de Pedidos', desc: 'Receba e acompanhe pedidos em tempo real do inicio ao fim.' },
-  { icon: Monitor, title: 'KDS - Tela da Cozinha', desc: 'Display de producao para cozinha com atualizacao automatica.' },
-  { icon: Truck, title: 'Delivery Completo', desc: 'Zonas de entrega, taxas dinamicas e rastreamento de pedidos.' },
+  { icon: UtensilsCrossed, title: 'Cardápio Digital', desc: 'Cardápio completo com fotos, categorias e extras personalizáveis.' },
+  { icon: ClipboardList, title: 'Gestão de Pedidos', desc: 'Receba e acompanhe pedidos em tempo real do início ao fim.' },
+  { icon: Monitor, title: 'KDS - Tela da Cozinha', desc: 'Display de produção para cozinha com atualização automática.' },
+  { icon: Truck, title: 'Delivery Completo', desc: 'Zonas de entrega, taxas dinâmicas e rastreamento de pedidos.' },
   { icon: QrCode, title: 'QR Code para Mesas', desc: 'Clientes escaneiam e pedem direto da mesa, sem fila.' },
-  { icon: CreditCard, title: 'Pagamento Online', desc: 'Aceite PIX, cartao e dinheiro com controle automatico.' },
-  { icon: Ticket, title: 'Cupons de Desconto', desc: 'Crie promocoes e cupons para atrair e fidelizar clientes.' },
-  { icon: Heart, title: 'Programa de Fidelidade', desc: 'Pontos e recompensas automaticas para clientes recorrentes.' },
-  { icon: Printer, title: 'Impressao Termica', desc: 'Imprima pedidos direto na impressora da cozinha.' },
-  { icon: BarChart3, title: 'Relatorios Detalhados', desc: 'Dashboard com metricas de vendas, produtos e desempenho.' },
-  { icon: MapPin, title: 'Areas de Entrega', desc: 'Defina zonas com taxas e tempos de entrega personalizados.' },
-  { icon: Tags, title: 'Grupos de Extras', desc: 'Adicionais, bordas, tamanhos e complementos flexiveis.' },
-  { icon: Users, title: 'Multi-usuario', desc: 'Equipe com diferentes niveis de acesso e permissoes.' },
-  { icon: Shield, title: 'Painel Seguro', desc: 'Acesso protegido com autenticacao JWT e controle de sessao.' },
-  { icon: Zap, title: 'Tempo Real', desc: 'Atualizacoes instantaneas via WebSocket para pedidos e KDS.' },
-  { icon: Menu, title: 'Horario de Funcionamento', desc: 'Configure dias e horarios de atendimento automaticamente.' },
-  { icon: ShoppingBag, title: 'Retirada no Balcao', desc: 'Clientes pedem online e retiram no local, sem taxa de entrega.' },
-  { icon: UtensilsCrossed, title: 'Atendimento Presencial', desc: 'Mesas com QR code, comanda digital e divisao de conta.' },
+  { icon: CreditCard, title: 'Pagamento Online', desc: 'Aceite PIX, cartão e dinheiro com controle automático.' },
+  { icon: Ticket, title: 'Cupons de Desconto', desc: 'Crie promoções e cupons para atrair e fidelizar clientes.' },
+  { icon: Heart, title: 'Programa de Fidelidade', desc: 'Pontos e recompensas automáticas para clientes recorrentes.' },
+  { icon: Printer, title: 'Impressão Térmica', desc: 'Imprima pedidos direto na impressora da cozinha.' },
+  { icon: BarChart3, title: 'Relatórios Detalhados', desc: 'Dashboard com métricas de vendas, produtos e desempenho.' },
+  { icon: MapPin, title: 'Áreas de Entrega', desc: 'Defina zonas com taxas e tempos de entrega personalizados.' },
+  { icon: Tags, title: 'Grupos de Extras', desc: 'Adicionais, bordas, tamanhos e complementos flexíveis.' },
+  { icon: Users, title: 'Multi-usuário', desc: 'Equipe com diferentes níveis de acesso e permissões.' },
+  { icon: Shield, title: 'Painel Seguro', desc: 'Acesso protegido com autenticação JWT e controle de sessão.' },
+  { icon: Zap, title: 'Tempo Real', desc: 'Atualizações instantâneas via WebSocket para pedidos e KDS.' },
+  { icon: Menu, title: 'Horário de Funcionamento', desc: 'Configure dias e horários de atendimento automaticamente.' },
+  { icon: ShoppingBag, title: 'Retirada no Balcão', desc: 'Clientes pedem online e retiram no local, sem taxa de entrega.' },
+  { icon: UtensilsCrossed, title: 'Atendimento Presencial', desc: 'Mesas com QR code, comanda digital e divisão de conta.' },
   { icon: CalendarCheck, title: 'Reserva de Mesa', desc: 'Clientes solicitam reserva online, restaurante aprova.' },
-  { icon: Map, title: 'Mapa do Salao', desc: 'Visualize suas mesas em tempo real com layout interativo.' },
+  { icon: Map, title: 'Mapa do Salão', desc: 'Visualize suas mesas em tempo real com layout interativo.' },
 ];
 
 const STATIC_PLANS = [
   {
     id: 'basico',
-    name: 'Basico',
+    name: 'Básico',
     badge: null,
-    description: 'Feito para voce que so trabalha com delivery e nao quer depender somente de marketplaces.',
+    description: 'Feito para você que só trabalha com delivery e não quer depender somente de marketplaces.',
     price: 249,
     cta: 'Quero assinar',
     inheritsFrom: null,
@@ -142,35 +142,35 @@ const STATIC_PLANS = [
     id: 'essencial',
     name: 'Essencial',
     badge: 'Popular',
-    description: 'Feito para voce que atende pelo presencial: seja em mesas, no balcao ou com delivery, e deseja mais gestao para o seu negocio.',
+    description: 'Feito para você que atende pelo presencial: seja em mesas, no balcão ou com delivery, e deseja mais gestão para o seu negócio.',
     price: 269,
     cta: 'Quero assinar',
-    inheritsFrom: 'Basico',
+    inheritsFrom: 'Básico',
     features: [
-      'PDV + Balcao e Mesas',
+      'PDV + Balcão e Mesas',
       'Controle de Estoque',
-      'Ficha tecnica',
+      'Ficha técnica',
       'Controle financeiro',
-      'App para garcom',
+      'App para garçom',
       'QR Code na mesa',
-      'Dashboard com relatorios',
+      'Dashboard com relatórios',
     ],
   },
   {
     id: 'completo',
     name: 'Completo',
     badge: 'Recomendado',
-    description: 'Feito para atender a operacao do seu restaurante de ponta a ponta.',
+    description: 'Feito para atender a operação do seu restaurante de ponta a ponta.',
     price: 349,
     cta: 'Quero assinar',
     inheritsFrom: 'Essencial',
     features: [
       'Fiscal',
-      'Integracao com contabilidade',
+      'Integração com contabilidade',
       'NFC-e/CF-e ilimitada',
-      'Conciliacao de pagamentos',
-      'Nota de devolucao',
-      'Inventario',
+      'Conciliação de pagamentos',
+      'Nota de devolução',
+      'Inventário',
     ],
   },
   {
@@ -398,7 +398,7 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
             <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-green-500" /> 7 dias gratis</span>
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-green-500" /> Sem cartao de credito</span>
+            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-green-500" /> Sem cartão de crédito</span>
             <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-green-500" /> Sem taxa por pedido</span>
             <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-green-500" /> Cancele quando quiser</span>
           </div>
@@ -620,7 +620,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Conta criada com sucesso!</h3>
               <p className="text-gray-600 mb-8">
-                Seu restaurante ja esta pronto. Acesse o painel administrativo para configurar tudo.
+                Seu restaurante já está pronto. Acesse o painel administrativo para configurar tudo.
               </p>
               <button
                 onClick={() => navigate('/login')}
@@ -658,7 +658,7 @@ export default function LandingPage() {
                 {/* Slug */}
                 <div>
                   <label htmlFor="slug" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Endereco do seu cardapio
+                    Endereço do seu cardápio
                   </label>
                   <div className="flex items-stretch">
                     <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium">
@@ -685,10 +685,10 @@ export default function LandingPage() {
                     </div>
                   </div>
                   {!slugChecking && slugAvailable === false && (
-                    <p className="mt-1.5 text-xs text-red-500 font-medium">Este endereco ja esta em uso.</p>
+                    <p className="mt-1.5 text-xs text-red-500 font-medium">Este endereço já está em uso.</p>
                   )}
                   {!slugChecking && slugAvailable === true && (
-                    <p className="mt-1.5 text-xs text-green-600 font-medium">Endereco disponivel!</p>
+                    <p className="mt-1.5 text-xs text-green-600 font-medium">Endereço disponível!</p>
                   )}
                 </div>
 
@@ -736,7 +736,7 @@ export default function LandingPage() {
                       minLength={6}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Minimo 6 caracteres"
+                      placeholder="Mínimo 6 caracteres"
                       className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/20 outline-none transition-all"
                     />
                     <button

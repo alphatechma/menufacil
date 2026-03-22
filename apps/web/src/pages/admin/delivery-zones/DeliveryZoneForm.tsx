@@ -147,7 +147,7 @@ export default function DeliveryZoneForm() {
           </FormField>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <FormField control={control} name="min_delivery_time" label="Tempo minimo (min)" required>
+            <FormField control={control} name="min_delivery_time" label="Tempo mínimo (min)" required>
               {(field) => (
                 <Input
                   {...field}
@@ -158,7 +158,7 @@ export default function DeliveryZoneForm() {
               )}
             </FormField>
 
-            <FormField control={control} name="max_delivery_time" label="Tempo maximo (min)" required>
+            <FormField control={control} name="max_delivery_time" label="Tempo máximo (min)" required>
               {(field) => (
                 <Input
                   {...field}

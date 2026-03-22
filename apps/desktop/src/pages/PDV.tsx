@@ -61,8 +61,8 @@ interface PaymentSplit {
 
 const PAYMENT_METHODS = [
   { value: 'pix' as const, label: 'PIX', icon: QrCode, color: 'text-teal-600 bg-teal-50 border-teal-200' },
-  { value: 'credit_card' as const, label: 'Credito', icon: CreditCard, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  { value: 'debit_card' as const, label: 'Debito', icon: CreditCard, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+  { value: 'credit_card' as const, label: 'Crédito', icon: CreditCard, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  { value: 'debit_card' as const, label: 'Débito', icon: CreditCard, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
   { value: 'cash' as const, label: 'Dinheiro', icon: Banknote, color: 'text-green-600 bg-green-50 border-green-200' },
 ];
 
@@ -206,7 +206,7 @@ function ProductModal({
   const validate = (): string[] => {
     const errs: string[] = [];
     if (hasVariations && isRequired) {
-      if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opcao');
+      if (!isMultiSelect && selectedVariations.size === 0) errs.push('Selecione uma opção');
       else if (isMultiSelect && totalSelectedParts < minVariations) errs.push(`Escolha ${minVariations} ${minVariations === 1 ? 'sabor' : 'sabores'} para completar. Falta${minVariations - totalSelectedParts === 1 ? '' : 'm'} ${minVariations - totalSelectedParts}.`);
     }
     if (product.extra_groups) {
@@ -245,7 +245,7 @@ function ProductModal({
         {hasVariations && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <p className="text-sm font-semibold text-gray-900">{isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}</p>
+              <p className="text-sm font-semibold text-gray-900">{isMultiSelect ? 'Escolha suas opções' : 'Escolha uma opção'}</p>
               {isRequired && <span className="text-red-500 text-xs font-bold">*</span>}
             </div>
             {isMultiSelect && (
@@ -361,7 +361,7 @@ function ProductModal({
           <p className="text-center text-xs text-amber-600 font-medium mb-2">Selecione {minVariations - totalSelectedParts} {minVariations - totalSelectedParts === 1 ? 'sabor' : 'sabores'} para adicionar</p>
         )}
         <button onClick={handleAdd} disabled={isSelectionIncomplete} className={`w-full font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95 ${isSelectionIncomplete ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark text-white'}`}>
-          {isSelectionIncomplete ? 'Complete a selecao' : `Adicionar ${formatPrice(totalPrice)}`}
+          {isSelectionIncomplete ? 'Complete a seleção' : `Adicionar ${formatPrice(totalPrice)}`}
         </button>
       </div>
     </ModalOverlay>
@@ -556,7 +556,7 @@ export default function PDV() {
               const { data: freshOrders } = await refetchOrders();
               const pending = (freshOrders || []).filter((o: any) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
               if (pending.length > 0) {
-                setPendingOrdersWarning(`Nao e possivel fechar o caixa com ${pending.length} pedido(s) pendente(s). Finalize ou cancele todos os pedidos antes de fechar.`);
+                setPendingOrdersWarning(`Não é possível fechar o caixa com ${pending.length} pedido(s) pendente(s). Finalize ou cancele todos os pedidos antes de fechar.`);
                 setTimeout(() => setPendingOrdersWarning(''), 5000);
                 return;
               }
@@ -638,18 +638,18 @@ export default function PDV() {
                   <span className="font-bold">{closingSummary.orders_count}</span>
                 </div>
                 <div className="h-px bg-gray-100" />
-                <p className="text-xs font-semibold text-gray-500 uppercase">Vendas por metodo</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase">Vendas por método</p>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm">
                     <span className="flex items-center gap-2"><Banknote className="w-3.5 h-3.5 text-green-600" /> Dinheiro</span>
                     <span className="font-medium">{formatPrice(closingSummary.total_cash)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-blue-600" /> Credito</span>
+                    <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-blue-600" /> Crédito</span>
                     <span className="font-medium">{formatPrice(closingSummary.total_credit)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Debito</span>
+                    <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Débito</span>
                     <span className="font-medium">{formatPrice(closingSummary.total_debit)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -686,8 +686,8 @@ export default function PDV() {
                 win.document.write('<div class="bold">VENDAS POR METODO</div>');
                 win.document.write('<table>');
                 win.document.write('<tr><td>Dinheiro</td><td class="right">R$ ' + Number(closingSummary.total_cash).toFixed(2) + '</td></tr>');
-                win.document.write('<tr><td>Credito</td><td class="right">R$ ' + Number(closingSummary.total_credit).toFixed(2) + '</td></tr>');
-                win.document.write('<tr><td>Debito</td><td class="right">R$ ' + Number(closingSummary.total_debit).toFixed(2) + '</td></tr>');
+                win.document.write('<tr><td>Crédito</td><td class="right">R$ ' + Number(closingSummary.total_credit).toFixed(2) + '</td></tr>');
+                win.document.write('<tr><td>Débito</td><td class="right">R$ ' + Number(closingSummary.total_debit).toFixed(2) + '</td></tr>');
                 win.document.write('<tr><td>PIX</td><td class="right">R$ ' + Number(closingSummary.total_pix).toFixed(2) + '</td></tr>');
                 win.document.write('</table>');
                 win.document.write('<div class="line"></div>');
@@ -817,7 +817,7 @@ export default function PDV() {
                 ))}
               </div>
               {orderType === 'delivery' && (
-                <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereco / referencia..." rows={2} className="w-full mt-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                <textarea value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} placeholder="Endereço / referência..." rows={2} className="w-full mt-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
               )}
               {orderType === 'dine_in' && (
                 <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
@@ -973,7 +973,7 @@ export default function PDV() {
                           onClick={() => { navigator.clipboard.writeText(pixPayloadStr); }}
                           className="mt-2 text-[10px] text-teal-600 hover:text-teal-800 font-medium underline"
                         >
-                          Copiar codigo PIX
+                          Copiar código PIX
                         </button>
                       </>
                     ) : pixKey ? (

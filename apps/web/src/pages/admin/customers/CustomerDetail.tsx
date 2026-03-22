@@ -57,9 +57,9 @@ export default function CustomerDetail() {
       setCreditAmount('');
       setCreditDescription('');
       setShowCreditForm(false);
-      notify.success('Credito adicionado com sucesso!');
+      notify.success('Crédito adicionado com sucesso!');
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao adicionar credito.');
+      notify.error(err?.data?.message || 'Erro ao adicionar crédito.');
     }
   };
 
@@ -139,7 +139,7 @@ export default function CustomerDetail() {
                 className="gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Adicionar Credito
+                Adicionar Crédito
               </Button>
             </div>
 
@@ -237,7 +237,7 @@ export default function CustomerDetail() {
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">Enderecos</h2>
+              <h2 className="text-lg font-semibold text-foreground">Endereços</h2>
             </div>
 
             {customer.addresses && customer.addresses.length > 0 ? (
@@ -271,7 +271,7 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum endereco cadastrado
+                Nenhum endereço cadastrado
               </p>
             )}
           </Card>

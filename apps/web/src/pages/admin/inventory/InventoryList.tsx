@@ -116,7 +116,7 @@ export default function InventoryList() {
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Estoque</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Min.</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Custo Unit.</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Acoes</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
             <tbody>

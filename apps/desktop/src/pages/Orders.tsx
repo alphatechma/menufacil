@@ -433,7 +433,7 @@ export default function Orders() {
                 {/* Address */}
                 {order.order_type === 'delivery' && order.address_snapshot && (
                   <div className="bg-blue-50 rounded-xl p-3">
-                    <p className="text-xs font-semibold text-blue-700 mb-1 flex items-center gap-1"><Truck className="w-3 h-3" /> Endereco de entrega</p>
+                    <p className="text-xs font-semibold text-blue-700 mb-1 flex items-center gap-1"><Truck className="w-3 h-3" /> Endereço de entrega</p>
                     <p className="text-sm text-blue-900">{order.address_snapshot.street}{order.address_snapshot.number ? `, ${order.address_snapshot.number}` : ''}</p>
                     {order.address_snapshot.complement && <p className="text-xs text-blue-700">{order.address_snapshot.complement}</p>}
                     {order.address_snapshot.neighborhood && <p className="text-xs text-blue-700">{order.address_snapshot.neighborhood}</p>}
@@ -481,7 +481,7 @@ export default function Orders() {
 
                 {/* Payment + timestamps */}
                 <div className="bg-gray-50 rounded-xl p-3 space-y-1 text-xs text-gray-600">
-                  <p>Pagamento: <span className="font-medium text-gray-900">{order.payment_method === 'cash' ? 'Dinheiro' : order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'credit_card' ? 'Credito' : order.payment_method === 'debit_card' ? 'Debito' : order.payment_method || '-'}</span></p>
+                  <p>Pagamento: <span className="font-medium text-gray-900">{order.payment_method === 'cash' ? 'Dinheiro' : order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'credit_card' ? 'Crédito' : order.payment_method === 'debit_card' ? 'Débito' : order.payment_method || '-'}</span></p>
                   {order.change_for > 0 && <p>Troco para: {formatPrice(order.change_for)}</p>}
                   <p>Criado: {new Date(order.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
                   {order.delivery_person && <p>Entregador: <span className="font-medium text-gray-900">{order.delivery_person.name}</span></p>}

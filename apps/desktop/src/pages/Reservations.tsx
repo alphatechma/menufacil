@@ -56,7 +56,7 @@ export default function Reservations() {
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Pessoas</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Mesa</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

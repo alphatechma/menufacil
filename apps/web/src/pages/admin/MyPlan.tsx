@@ -58,7 +58,7 @@ const MODULE_LABELS: Record<string, string> = {
   coupons: 'Cupons',
   loyalty: 'Fidelidade',
   kds: 'KDS',
-  reports: 'Relatorios',
+  reports: 'Relatórios',
 };
 
 const ALL_MODULE_KEYS = [
@@ -151,7 +151,7 @@ export default function MyPlan() {
         <div className="flex items-center gap-2 mb-6">
           <Star className="w-5 h-5 text-amber-500" />
           <h3 className="text-lg font-bold text-foreground">
-            {plans.length > 1 ? 'Compare os planos' : 'Plano disponivel'}
+            {plans.length > 1 ? 'Compare os planos' : 'Plano disponível'}
           </h3>
         </div>
 
@@ -194,7 +194,7 @@ export default function MyPlan() {
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Usuarios ilimitados · Produtos ilimitados
+                      Usuários ilimitados · Produtos ilimitados
                     </p>
                   )}
                 </div>

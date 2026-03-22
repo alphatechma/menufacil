@@ -72,7 +72,7 @@ export default function SyncIndicator({
           syncStatus === 'offline' && 'text-red-600 bg-red-50 hover:bg-red-100',
           syncStatus === 'error' && 'text-red-600 bg-red-50 hover:bg-red-100',
         )}
-        title={`Ultimo sync: ${formatSyncTime(lastSyncTime)}`}
+        title={`Último sync: ${formatSyncTime(lastSyncTime)}`}
       >
         <span className={cn('h-2 w-2 rounded-full', config.bgColor)} />
         <Icon className={cn('h-3 w-3', syncStatus === 'syncing' && 'animate-spin')} />

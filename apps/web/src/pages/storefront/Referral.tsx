@@ -42,7 +42,7 @@ export default function Referral() {
     try {
       await navigator.clipboard.writeText(referralCode);
       setCopied(true);
-      notify.success('Codigo copiado!');
+      notify.success('Código copiado!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       notify.error('Erro ao copiar');
@@ -50,22 +50,22 @@ export default function Referral() {
   };
 
   const shareWhatsApp = () => {
-    const text = `Ei! Use meu codigo ${referralCode} para se cadastrar e ganhar pontos! ${referralLink}`;
+    const text = `Ei! Use meu código ${referralCode} para se cadastrar e ganhar pontos! ${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleApplyCode = async () => {
     const code = referralInput.trim().toUpperCase();
     if (!code) {
-      notify.error('Digite um codigo de indicacao');
+      notify.error('Digite um código de indicação');
       return;
     }
     try {
       await applyCode({ slug: slug!, code }).unwrap();
-      notify.success('Codigo aplicado com sucesso!');
+      notify.success('Código aplicado com sucesso!');
       setReferralInput('');
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao aplicar codigo');
+      notify.error(err?.data?.message || 'Erro ao aplicar código');
     }
   };
 
@@ -89,7 +89,7 @@ export default function Referral() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Indique Amigos</h1>
-            <p className="text-white/80 text-sm">Ganhe pontos por cada indicacao</p>
+            <p className="text-white/80 text-sm">Ganhe pontos por cada indicação</p>
           </div>
         </div>
       </div>
@@ -104,11 +104,11 @@ export default function Referral() {
           <ol className="space-y-2 text-sm text-gray-600">
             <li className="flex gap-2">
               <span className="font-bold" style={{ color: 'var(--tenant-primary)' }}>1.</span>
-              Compartilhe seu codigo com amigos
+              Compartilhe seu código com amigos
             </li>
             <li className="flex gap-2">
               <span className="font-bold" style={{ color: 'var(--tenant-primary)' }}>2.</span>
-              Seu amigo se cadastra usando seu codigo
+              Seu amigo se cadastra usando seu código
             </li>
             <li className="flex gap-2">
               <span className="font-bold" style={{ color: 'var(--tenant-primary)' }}>3.</span>
@@ -119,7 +119,7 @@ export default function Referral() {
 
         {/* My Referral Code */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <h3 className="font-bold text-gray-900 mb-3">Seu codigo de indicacao</h3>
+          <h3 className="font-bold text-gray-900 mb-3">Seu código de indicação</h3>
           {loadingCode ? (
             <div className="flex justify-center py-4">
               <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -165,14 +165,14 @@ export default function Referral() {
 
         {/* Apply Referral Code */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <h3 className="font-bold text-gray-900 mb-3">Tem um codigo de indicacao?</h3>
+          <h3 className="font-bold text-gray-900 mb-3">Tem um código de indicação?</h3>
           <div className="flex gap-2">
             <input
               className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm uppercase focus:outline-none focus:ring-2 focus:border-transparent"
               style={{ '--tw-ring-color': 'var(--tenant-primary)' } as any}
               value={referralInput}
               onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-              placeholder="Digite o codigo"
+              placeholder="Digite o código"
               maxLength={8}
             />
             <button
@@ -213,7 +213,7 @@ export default function Referral() {
             <div className="py-8 text-center">
               <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm text-gray-500">Nenhum indicado ainda</p>
-              <p className="text-xs text-gray-400 mt-1">Compartilhe seu codigo para comecar</p>
+              <p className="text-xs text-gray-400 mt-1">Compartilhe seu código para comecar</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">

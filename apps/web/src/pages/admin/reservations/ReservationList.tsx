@@ -75,10 +75,10 @@ const STATUS_CONFIG: Record<
 
 const reservationSchema = z.object({
   customer_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  customer_phone: z.string().min(8, 'Telefone invalido'),
-  party_size: z.coerce.number().min(1, 'Minimo 1 pessoa').max(100, 'Maximo 100 pessoas'),
-  date: z.string().min(1, 'Data obrigatoria'),
-  time_start: z.string().min(1, 'Horario obrigatorio'),
+  customer_phone: z.string().min(8, 'Telefone inválido'),
+  party_size: z.coerce.number().min(1, 'Mínimo 1 pessoa').max(100, 'Máximo 100 pessoas'),
+  date: z.string().min(1, 'Data obrigatória'),
+  time_start: z.string().min(1, 'Horário obrigatório'),
   notes: z.string().optional(),
 });
 
@@ -225,7 +225,7 @@ export default function ReservationList() {
     },
     {
       key: 'actions',
-      header: 'Acoes',
+      header: 'Ações',
       className: 'text-right',
       render: (r: Reservation) => (
         <div className="flex items-center justify-end gap-1">

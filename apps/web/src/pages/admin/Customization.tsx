@@ -149,7 +149,7 @@ export default function Customization() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Personalizar Pagina"
+        title="Personalizar Página"
         actions={
           <Button onClick={handleSubmit(onSubmit)} loading={isSaving}>
             <Save className="w-4 h-4" />

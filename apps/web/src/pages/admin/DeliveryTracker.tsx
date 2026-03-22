@@ -131,7 +131,7 @@ export default function DeliveryTracker() {
             <Clock className="w-5 h-5" />
           </div>
           <p className="text-2xl font-bold text-foreground">{formatMinutes(avgDeliveryTime)}</p>
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tempo Medio</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tempo Médio</p>
         </Card>
         <Card className="p-4 text-center">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center mx-auto mb-2">

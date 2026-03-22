@@ -91,8 +91,8 @@ export default function PromotionList() {
       {promotions.length === 0 ? (
         <EmptyState
           icon={<Tag className="w-12 h-12 text-gray-300" />}
-          title="Nenhuma promocao"
-          description="Crie sua primeira promocao para atrair mais clientes."
+          title="Nenhuma promoção"
+          description="Crie sua primeira promoção para atrair mais clientes."
         />
       ) : (
         <div className="grid gap-4">
@@ -213,7 +213,7 @@ export default function PromotionList() {
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Excluir Promocao"
-        message="Tem certeza que deseja excluir esta promocao? Esta acao nao pode ser desfeita."
+        message="Tem certeza que deseja excluir esta promoção? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
       />
     </div>

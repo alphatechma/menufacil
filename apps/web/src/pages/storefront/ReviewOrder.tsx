@@ -47,9 +47,9 @@ export default function ReviewOrder() {
       }).unwrap();
 
       setSubmitted(true);
-      notify.success('Avaliacao enviada com sucesso!');
+      notify.success('Avaliação enviada com sucesso!');
     } catch (err: any) {
-      const msg = err?.data?.message || 'Erro ao enviar avaliacao';
+      const msg = err?.data?.message || 'Erro ao enviar avaliação';
       notify.error(msg);
     }
   };
@@ -57,7 +57,7 @@ export default function ReviewOrder() {
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
-        <p className="text-gray-500">Faca login para avaliar seu pedido.</p>
+        <p className="text-gray-500">Faça login para avaliar seu pedido.</p>
         <button
           onClick={() => navigate(`/${slug}/account`)}
           className="mt-4 btn-primary px-6 py-2 rounded-xl"
@@ -101,7 +101,7 @@ export default function ReviewOrder() {
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Obrigado pela avaliacao!</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Obrigado pela avaliação!</h2>
         <p className="text-gray-500 mb-6">Sua opiniao nos ajuda a melhorar.</p>
         <button
           onClick={() => navigate(`/${slug}/account`)}

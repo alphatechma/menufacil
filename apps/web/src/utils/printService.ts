@@ -621,7 +621,7 @@ export function printOrderBrowser(order: PrintableOrder, tenantName?: string) {
   if (order.order_type === 'delivery' && order.address_snapshot) {
     const a = order.address_snapshot;
     addressHtml = `<div style="margin:8px 0;padding:6px 0;border-top:1px dashed #000;">
-      <strong>Endereco:</strong><br/>
+      <strong>Endereço:</strong><br/>
       ${a.street || ''}${a.number ? `, ${a.number}` : ''}<br/>
       ${a.complement ? `${a.complement}<br/>` : ''}${a.neighborhood || ''}
     </div>`;

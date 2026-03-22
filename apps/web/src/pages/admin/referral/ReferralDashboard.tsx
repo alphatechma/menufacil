@@ -38,8 +38,8 @@ export default function ReferralDashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900">Programa de Indicacao</h2>
-        <p className="text-sm text-gray-500">Acompanhe as indicacoes dos clientes</p>
+        <h2 className="text-lg font-bold text-gray-900">Programa de Indicação</h2>
+        <p className="text-sm text-gray-500">Acompanhe as indicações dos clientes</p>
       </div>
 
       {/* Stats Cards */}
@@ -96,7 +96,7 @@ export default function ReferralDashboard() {
           <div className="p-8">
             <EmptyState
               icon={Users}
-              title="Nenhuma indicacao ainda"
+              title="Nenhuma indicação ainda"
               description="Quando seus clientes indicarem amigos, os dados aparecerão aqui"
             />
           </div>

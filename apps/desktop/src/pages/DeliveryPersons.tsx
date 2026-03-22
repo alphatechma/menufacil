@@ -98,9 +98,9 @@ export default function DeliveryPersons() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Nome</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Telefone</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Veiculo</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Comissao</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Comissão</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -155,7 +155,7 @@ export default function DeliveryPersons() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Comissao (%)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Comissão (%)</label>
                   <input type="number" value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" step="0.1" />
                 </div>
               </div>

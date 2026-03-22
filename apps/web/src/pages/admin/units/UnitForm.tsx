@@ -23,8 +23,8 @@ import { useNotify } from '@/hooks/useNotify';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 
 const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
-  slug: z.string().min(1, 'Slug obrigatorio').regex(/^[a-z0-9-]+$/, 'Apenas letras minusculas, numeros e hifens'),
+  name: z.string().min(1, 'Nome obrigatório'),
+  slug: z.string().min(1, 'Slug obrigatório').regex(/^[a-z0-9-]+$/, 'Apenas letras minúsculas, números e hifens'),
   address: z.string().optional(),
   phone: z.string().optional(),
   is_active: z.boolean(),
@@ -145,7 +145,7 @@ export default function UnitForm() {
             <FormField control={control} name="slug" label="Slug">
               {(field) => <Input {...field} placeholder="Ex: centro" />}
             </FormField>
-            <FormField control={control} name="address" label="Endereco">
+            <FormField control={control} name="address" label="Endereço">
               {(field) => <Input {...field} placeholder="Rua, numero - Cidade" />}
             </FormField>
             <FormField control={control} name="phone" label="Telefone">
@@ -160,7 +160,7 @@ export default function UnitForm() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Horario de Funcionamento</h3>
-                  <p className="text-xs text-muted-foreground">Defina horarios especificos para esta unidade</p>
+                  <p className="text-xs text-muted-foreground">Defina horários específicos para esta unidade</p>
                 </div>
                 <Toggle checked={useCustomHours} onChange={setUseCustomHours} />
               </div>

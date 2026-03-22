@@ -28,7 +28,7 @@ export default function ReservationRequest() {
     setError(null);
 
     if (!name.trim() || !phone.trim() || !date || !timeStart) {
-      setError('Preencha todos os campos obrigatorios.');
+      setError('Preencha todos os campos obrigatórios.');
       return;
     }
 

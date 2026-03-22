@@ -93,7 +93,7 @@ export default function CouponList() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Codigo
+                    Código
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Tipo
@@ -111,7 +111,7 @@ export default function CouponList() {
                     Validade
                   </th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Acoes
+                    Ações
                   </th>
                 </tr>
               </thead>

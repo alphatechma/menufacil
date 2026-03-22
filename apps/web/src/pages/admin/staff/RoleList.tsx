@@ -43,7 +43,7 @@ export default function RoleList() {
       />
 
       <p className="text-sm text-muted-foreground mb-6">
-        Crie perfis personalizados com permissoes especificas para cada funcao do seu restaurante.
+        Crie perfis personalizados com permissões específicas para cada função do seu restaurante.
       </p>
 
       {roles.length === 0 ? (
@@ -51,7 +51,7 @@ export default function RoleList() {
           <Shield className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-muted-foreground font-medium">Nenhum perfil personalizado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie perfis para definir permissoes especificas alem dos niveis predefinidos.
+            Crie perfis para definir permissões específicas além dos níveis predefinidos.
           </p>
           <Button className="mt-4" onClick={() => navigate('/admin/staff/roles/new')}>
             <Plus className="w-4 h-4" />
@@ -85,7 +85,7 @@ export default function RoleList() {
                       <p className="text-sm text-muted-foreground mt-0.5">{role.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {role.permissions?.length || 0} permissao(es)
+                      {role.permissions?.length || 0} permissão(ões)
                     </p>
                   </div>
                 </div>
@@ -115,7 +115,7 @@ export default function RoleList() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Excluir perfil"
-        message={`Tem certeza que deseja excluir o perfil "${deleteTarget?.name}"? Membros com esse perfil perderao as permissoes associadas.`}
+        message={`Tem certeza que deseja excluir o perfil "${deleteTarget?.name}"? Membros com esse perfil perderão as permissões associadas.`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
         onClose={() => setDeleteTarget(null)}

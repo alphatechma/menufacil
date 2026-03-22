@@ -31,7 +31,7 @@ const PLACEHOLDER_GROUPS = [
     label: 'Cliente & Pedido',
     items: [
       { key: '{{customer_name}}', desc: 'Nome do cliente' },
-      { key: '{{order_number}}', desc: 'Numero do pedido' },
+      { key: '{{order_number}}', desc: 'Número do pedido' },
       { key: '{{total}}', desc: 'Valor total' },
       { key: '{{subtotal}}', desc: 'Subtotal' },
       { key: '{{delivery_fee}}', desc: 'Taxa de entrega' },
@@ -40,7 +40,7 @@ const PLACEHOLDER_GROUPS = [
       { key: '{{payment_method}}', desc: 'Forma de pagamento' },
       { key: '{{items_list}}', desc: 'Lista de itens' },
       { key: '{{items_count}}', desc: 'Qtd de itens' },
-      { key: '{{notes}}', desc: 'Observacoes' },
+      { key: '{{notes}}', desc: 'Observações' },
     ],
   },
   {
@@ -48,20 +48,20 @@ const PLACEHOLDER_GROUPS = [
     items: [
       { key: '{{store_name}}', desc: 'Nome da loja' },
       { key: '{{store_phone}}', desc: 'Telefone' },
-      { key: '{{store_address}}', desc: 'Endereco' },
+      { key: '{{store_address}}', desc: 'Endereço' },
       { key: '{{store_status}}', desc: 'Aberto/Fechado' },
-      { key: '{{store_status_message}}', desc: 'Msg de status com horario' },
+      { key: '{{store_status_message}}', desc: 'Msg de status com horário' },
       { key: '{{store_hours_today}}', desc: 'Horario de hoje' },
-      { key: '{{store_hours}}', desc: 'Todos os horarios' },
-      { key: '{{storefront_url}}', desc: 'Link do cardapio' },
+      { key: '{{store_hours}}', desc: 'Todos os horários' },
+      { key: '{{storefront_url}}', desc: 'Link do cardápio' },
     ],
   },
 ];
 
 const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
-  type: z.string().min(1, 'Tipo obrigatorio'),
-  content: z.string().min(1, 'Conteudo obrigatorio'),
+  name: z.string().min(1, 'Nome obrigatório'),
+  type: z.string().min(1, 'Tipo obrigatório'),
+  content: z.string().min(1, 'Conteúdo obrigatório'),
   is_active: z.boolean(),
 });
 

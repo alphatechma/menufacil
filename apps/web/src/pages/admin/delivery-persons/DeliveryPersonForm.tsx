@@ -21,8 +21,8 @@ import { Toggle } from '@/components/ui/Toggle';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
 
 const COMMISSION_TYPES = [
-  { value: 'none', label: 'Sem comissao', desc: 'Entregador nao recebe comissao por entrega' },
-  { value: 'fixed', label: 'Valor fixo por entrega', desc: 'Valor fixo em R$ por cada entrega concluida' },
+  { value: 'none', label: 'Sem comissão', desc: 'Entregador não recebe comissão por entrega' },
+  { value: 'fixed', label: 'Valor fixo por entrega', desc: 'Valor fixo em R$ por cada entrega concluída' },
   { value: 'percent', label: 'Percentual do pedido', desc: 'Percentual sobre o valor total do pedido' },
 ];
 
@@ -148,7 +148,7 @@ export default function DeliveryPersonForm() {
             <h2 className="text-lg font-semibold text-foreground">Comissao por Entrega</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Configure quanto o entregador recebe por cada entrega concluida.
+            Configure quanto o entregador recebe por cada entrega concluída.
           </p>
 
           <div className="space-y-3">
@@ -204,7 +204,7 @@ export default function DeliveryPersonForm() {
               </div>
               {commissionType === 'fixed' && parseFloat(commissionValue) > 0 && (
                 <p className="text-xs text-green-600 font-medium mt-1.5">
-                  O entregador recebera {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(commissionValue))} por entrega concluida.
+                  O entregador recebera {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(commissionValue))} por entrega concluída.
                 </p>
               )}
               {commissionType === 'percent' && parseFloat(commissionValue) > 0 && (

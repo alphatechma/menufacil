@@ -40,7 +40,7 @@ export default function UnitsList() {
     },
     {
       key: 'address',
-      header: 'Endereco',
+      header: 'Endereço',
       render: (unit: any) => unit.address || '-',
     },
     {

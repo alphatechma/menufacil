@@ -43,7 +43,7 @@ import {
 } from '@/api/adminApi';
 
 const TABS = [
-  { key: 'overview', label: 'Visao Geral', icon: BarChart3 },
+  { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
   { key: 'products', label: 'Produtos', icon: Package },
   { key: 'customers', label: 'Clientes', icon: Users },
   { key: 'delivery', label: 'Entregas', icon: Truck },
@@ -240,7 +240,7 @@ function OverviewTab({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <KpiCard title="Receita" icon={DollarSign} format="currency" {...data.revenue} />
         <KpiCard title="Pedidos" icon={ShoppingCart} {...data.orderCount} />
-        <KpiCard title="Ticket Medio" icon={Receipt} format="currency" {...data.avgTicket} />
+        <KpiCard title="Ticket Médio" icon={Receipt} format="currency" {...data.avgTicket} />
         <KpiCard title="Cancelamento" icon={XCircle} format="percent" {...data.cancelRate} />
         <KpiCard title="Novos Clientes" icon={UserPlus} {...data.newCustomers} />
         <KpiCard title="Recorrentes" icon={UserCheck} {...data.returningCustomers} />
@@ -682,7 +682,7 @@ function DeliveryTab({
       {/* Export + Avg Time */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-500">Tempo Medio de Entrega</p>
+          <p className="text-xs text-gray-500">Tempo Médio de Entrega</p>
           <p className="text-xl font-bold text-gray-900">
             {data.avgDeliveryTime != null ? `${data.avgDeliveryTime} min` : '--'}
           </p>
@@ -710,7 +710,7 @@ function DeliveryTab({
                   Entregas
                 </th>
                 <th className="text-right py-3 px-2 text-xs font-semibold text-gray-500 uppercase">
-                  Tempo Medio
+                  Tempo Médio
                 </th>
                 <th className="text-right py-3 px-2 text-xs font-semibold text-gray-500 uppercase">
                   Conclusao
@@ -739,7 +739,7 @@ function DeliveryTab({
               {(!data.deliveryPersons || data.deliveryPersons.length === 0) && (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-gray-400 text-sm">
-                    Nenhuma entrega no periodo
+                    Nenhuma entrega no período
                   </td>
                 </tr>
               )}
@@ -764,7 +764,7 @@ function DeliveryTab({
                   Entregas
                 </th>
                 <th className="text-right py-3 px-2 text-xs font-semibold text-gray-500 uppercase">
-                  Tempo Medio
+                  Tempo Médio
                 </th>
                 <th className="text-right py-3 px-2 text-xs font-semibold text-gray-500 uppercase">
                   Receita
@@ -787,7 +787,7 @@ function DeliveryTab({
               {(!data.zoneStats || data.zoneStats.length === 0) && (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-gray-400 text-sm">
-                    Nenhuma entrega no periodo
+                    Nenhuma entrega no período
                   </td>
                 </tr>
               )}
@@ -812,7 +812,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
       <BarChart3 className="w-12 h-12 mb-3" />
-      <p className="text-sm">Sem dados para o periodo selecionado</p>
+      <p className="text-sm">Sem dados para o período selecionado</p>
     </div>
   );
 }
@@ -832,7 +832,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Dinheiro',
-  credit_card: 'Credito',
-  debit_card: 'Debito',
+  credit_card: 'Crédito',
+  debit_card: 'Débito',
   pix: 'PIX',
 };

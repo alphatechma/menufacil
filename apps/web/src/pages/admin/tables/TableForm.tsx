@@ -19,12 +19,12 @@ import { useNotify } from '@/hooks/useNotify';
 
 const tableSchema = z.object({
   number: z.coerce
-    .number({ invalid_type_error: 'Informe um numero valido' })
-    .min(1, 'O numero da mesa deve ser no minimo 1'),
+    .number({ invalid_type_error: 'Informe um número válido' })
+    .min(1, 'O número da mesa deve ser no mínimo 1'),
   label: z.string().optional().default(''),
   capacity: z.coerce
-    .number({ invalid_type_error: 'Informe um numero valido' })
-    .min(1, 'A capacidade deve ser no minimo 1')
+    .number({ invalid_type_error: 'Informe um número válido' })
+    .min(1, 'A capacidade deve ser no mínimo 1')
     .optional()
     .or(z.literal('')),
 });

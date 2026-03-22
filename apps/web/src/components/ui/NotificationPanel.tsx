@@ -69,7 +69,7 @@ export default function NotificationPanel({ open, onClose }: NotificationPanelPr
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             <Bell className="w-8 h-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-400">Nenhuma notificacao</p>
+            <p className="text-sm text-gray-400">Nenhuma notificação</p>
             <p className="text-xs text-gray-300 mt-0.5">Novos pedidos aparecerão aqui</p>
           </div>
         ) : (

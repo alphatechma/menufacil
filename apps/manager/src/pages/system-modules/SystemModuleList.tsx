@@ -64,15 +64,15 @@ export default function SystemModuleList() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Modulos do Sistema</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Módulos do Sistema</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os modulos disponiveis para os planos.
+            Gerencie os módulos disponíveis para os planos.
           </p>
         </div>
         <Button asChild>
           <Link to="/system-modules/new">
             <Plus className="h-4 w-4" />
-            Novo Modulo
+            Novo Módulo
           </Link>
         </Button>
       </div>
@@ -81,7 +81,7 @@ export default function SystemModuleList() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Boxes className="h-5 w-5 text-muted-foreground" />
-            Modulos
+            Módulos
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -94,7 +94,7 @@ export default function SystemModuleList() {
                   <TableHead>Key</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Descricao</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -148,7 +148,7 @@ export default function SystemModuleList() {
             <DialogDescription>
               Tem certeza que deseja remover o modulo{' '}
               <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
-              Esta acao nao pode ser desfeita.
+              Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

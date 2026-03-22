@@ -65,8 +65,8 @@ export default function ReviewList() {
   return (
     <div>
       <PageHeader
-        title="Avaliacoes"
-        description="Gerencie as avaliacoes dos seus clientes"
+        title="Avaliações"
+        description="Gerencie as avaliações dos seus clientes"
       />
 
       {/* Stats Bar */}
@@ -158,7 +158,7 @@ export default function ReviewList() {
       ) : reviews.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
           <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">Nenhuma avaliacao encontrada</p>
+          <p className="text-gray-500">Nenhuma avaliação encontrada</p>
         </div>
       ) : (
         <div className="space-y-3">

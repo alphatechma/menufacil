@@ -67,10 +67,10 @@ export default function SystemModuleForm() {
     try {
       if (isEditing) {
         await updateModule({ id: id!, data: form }).unwrap();
-        notify.success('Modulo atualizado!');
+        notify.success('Módulo atualizado!');
       } else {
         await createModule(form).unwrap();
-        notify.success('Modulo criado com sucesso!');
+        notify.success('Módulo criado com sucesso!');
       }
       navigate('/system-modules');
     } catch (err: any) {
@@ -88,12 +88,12 @@ export default function SystemModuleForm() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-            {isEditing ? 'Editar Modulo' : 'Novo Modulo'}
+            {isEditing ? 'Editar Módulo' : 'Novo Módulo'}
           </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {isEditing
-              ? 'Atualize as informacoes do modulo.'
-              : 'Preencha os dados para criar um novo modulo.'}
+              ? 'Atualize as informações do módulo.'
+              : 'Preencha os dados para criar um novo módulo.'}
           </p>
         </div>
       </div>
@@ -110,8 +110,8 @@ export default function SystemModuleForm() {
       ) : (
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Informacoes do Modulo</CardTitle>
-            <CardDescription>Defina a chave, nome e descricao do modulo.</CardDescription>
+            <CardTitle>Informacoes do Módulo</CardTitle>
+            <CardDescription>Defina a chave, nome e descrição do módulo.</CardDescription>
           </CardHeader>
           <Separator />
           <CardContent className="pt-6">
@@ -128,7 +128,7 @@ export default function SystemModuleForm() {
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    Identificador unico, sem espacos.
+                    Identificador único, sem espaços.
                   </p>
                 </div>
 

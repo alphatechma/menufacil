@@ -168,7 +168,7 @@ export default function ProductDetail() {
 
     if (hasVariations && isRequired) {
       if (isSingleSelect && selectedVariations.size === 0) {
-        errs.push('Selecione uma opcao');
+        errs.push('Selecione uma opção');
       } else if (isMultiSelect) {
         if (totalSelectedParts < minVariations) {
           const falta = minVariations - totalSelectedParts;
@@ -338,7 +338,7 @@ export default function ProductDetail() {
       {hasVariations && (
         <section className="px-4 pt-6">
           <h3 className="text-base font-bold text-gray-900 mb-1">
-            {isMultiSelect ? 'Escolha suas opcoes' : 'Escolha uma opcao'}
+            {isMultiSelect ? 'Escolha suas opções' : 'Escolha uma opção'}
             {isRequired && <span className="text-red-500 ml-1 text-sm">*</span>}
           </h3>
           {isMultiSelect && (
@@ -617,7 +617,7 @@ export default function ProductDetail() {
                     Adicionado!
                   </span>
                 ) : isSelectionIncomplete ? (
-                  <span className="mx-auto">Complete a selecao de sabores</span>
+                  <span className="mx-auto">Complete a seleção de sabores</span>
                 ) : (
                   <>
                     <span className="flex items-center gap-2">

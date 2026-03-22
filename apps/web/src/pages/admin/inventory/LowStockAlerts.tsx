@@ -25,7 +25,7 @@ export default function LowStockAlerts() {
     <div className="space-y-6">
       <PageHeader
         title="Alertas de Estoque Baixo"
-        subtitle={`${suggestions.length} item(ns) abaixo do estoque minimo`}
+        subtitle={`${suggestions.length} item(ns) abaixo do estoque mínimo`}
         onBack={() => navigate('/admin/inventory')}
       />
 
@@ -33,7 +33,7 @@ export default function LowStockAlerts() {
         <EmptyState
           icon={<Package className="w-12 h-12 text-gray-300" />}
           title="Estoque em dia!"
-          description="Nenhum item abaixo do estoque minimo."
+          description="Nenhum item abaixo do estoque mínimo."
         />
       ) : (
         <>
@@ -90,7 +90,7 @@ export default function LowStockAlerts() {
                     <tr className="border-b border-gray-100 text-left">
                       <th className="pb-3 font-medium text-gray-500">Item</th>
                       <th className="pb-3 font-medium text-gray-500 text-center">Qtd Atual</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Minimo</th>
+                      <th className="pb-3 font-medium text-gray-500 text-center">Mínimo</th>
                       <th className="pb-3 font-medium text-gray-500 text-center">Deficit</th>
                       <th className="pb-3 font-medium text-gray-500 text-center">Consumo/Dia</th>
                       <th className="pb-3 font-medium text-gray-500 text-center">Sugestao (7d)</th>

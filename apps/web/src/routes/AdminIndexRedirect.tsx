@@ -54,7 +54,7 @@ export default function AdminIndexRedirect() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
-        <p className="text-gray-500 font-medium">Sem permissoes configuradas</p>
+        <p className="text-gray-500 font-medium">Sem permissões configuradas</p>
         <p className="text-sm text-gray-400 mt-1">Contate o administrador para configurar seu acesso.</p>
       </div>
     </div>

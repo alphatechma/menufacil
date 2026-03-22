@@ -36,20 +36,20 @@ const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', group: 'Principal' },
   { to: '/tenants', icon: Building2, label: 'Estabelecimentos', group: 'Principal' },
   { to: '/plans', icon: CreditCard, label: 'Planos', group: 'Plataforma' },
-  { to: '/system-modules', icon: Puzzle, label: 'Modulos', group: 'Plataforma' },
-  { to: '/permissions', icon: Shield, label: 'Permissoes', group: 'Plataforma' },
+  { to: '/system-modules', icon: Puzzle, label: 'Módulos', group: 'Plataforma' },
+  { to: '/permissions', icon: Shield, label: 'Permissões', group: 'Plataforma' },
   { to: '/audit-logs', icon: ScrollText, label: 'Audit Log', group: 'Sistema' },
-  { to: '/settings', icon: Settings, label: 'Configuracoes', group: 'Sistema' },
+  { to: '/settings', icon: Settings, label: 'Configurações', group: 'Sistema' },
 ];
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '': 'Dashboard',
   'tenants': 'Estabelecimentos',
   'plans': 'Planos',
-  'system-modules': 'Modulos',
-  'permissions': 'Permissoes',
+  'system-modules': 'Módulos',
+  'permissions': 'Permissões',
   'audit-logs': 'Audit Log',
-  'settings': 'Configuracoes',
+  'settings': 'Configurações',
   'new': 'Novo',
   'edit': 'Editar',
 };
@@ -316,7 +316,7 @@ export default function SuperAdminLayout() {
                   className="text-zinc-700 dark:text-zinc-300 focus:text-zinc-900 dark:focus:text-zinc-100 focus:bg-zinc-100 dark:focus:bg-white/[0.04]"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  Configuracoes
+                  Configurações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
                 <DropdownMenuItem

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 
 const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
+  name: z.string().min(1, 'Nome obrigatório'),
   description: z.string().optional(),
   sku: z.string().optional(),
   unit: z.string().min(1),
@@ -70,7 +70,7 @@ export default function InventoryForm() {
             <FormField control={control} name="name" label="Nome" required>
               {(field) => <Input {...field} placeholder="Ex: Mussarela fatiada" />}
             </FormField>
-            <FormField control={control} name="sku" label="Codigo (SKU)">
+            <FormField control={control} name="sku" label="Código (SKU)">
               {(field) => <Input {...field} placeholder="Ex: MUS-001" />}
             </FormField>
           </div>
@@ -95,7 +95,7 @@ export default function InventoryForm() {
             <FormField control={control} name="current_stock" label="Estoque atual">
               {(field) => <Input {...field} type="number" step="0.1" min="0" />}
             </FormField>
-            <FormField control={control} name="min_stock" label="Estoque minimo">
+            <FormField control={control} name="min_stock" label="Estoque mínimo">
               {(field) => <Input {...field} type="number" step="0.1" min="0" />}
             </FormField>
           </div>

@@ -154,7 +154,7 @@ export default function PromotionFormModal({ open, onClose, promotion }: Props) 
       notify.success(isEditing ? 'Promocao atualizada com sucesso!' : 'Promocao criada com sucesso!');
       onClose();
     } catch (err: any) {
-      notify.error(err?.data?.message || 'Erro ao salvar promocao.');
+      notify.error(err?.data?.message || 'Erro ao salvar promoção.');
     }
   };
 
@@ -271,7 +271,7 @@ export default function PromotionFormModal({ open, onClose, promotion }: Props) 
         {/* Minimum order value */}
         <div>
           <label className="text-sm font-medium text-gray-700 dark:text-foreground mb-1 block">
-            Valor Minimo do Pedido (opcional)
+            Valor Mínimo do Pedido (opcional)
           </label>
           <Input
             type="number"

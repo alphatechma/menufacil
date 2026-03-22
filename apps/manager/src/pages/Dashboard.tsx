@@ -101,7 +101,7 @@ function KpiCard({ label, current, change, icon: Icon, iconBg, iconColor, format
         <div className="flex items-center gap-1 mt-1">
           {isPositive ? <ArrowUpRight className="w-3 h-3 text-emerald-500" /> : <ArrowDownRight className="w-3 h-3 text-red-500" />}
           <span className={`text-xs font-medium ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>{change > 0 ? '+' : ''}{change}%</span>
-          <span className="text-xs text-[hsl(var(--muted-foreground))]">vs periodo anterior</span>
+          <span className="text-xs text-[hsl(var(--muted-foreground))]">vs período anterior</span>
         </div>
       </CardContent>
     </Card>
@@ -126,7 +126,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">Dashboard</h1>
-          <p className="text-[hsl(var(--muted-foreground))] text-sm mt-1">Visao geral da plataforma MenuFacil.</p>
+          <p className="text-[hsl(var(--muted-foreground))] text-sm mt-1">Visão geral da plataforma MenuFacil.</p>
         </div>
         <div className="flex items-center gap-1 bg-[hsl(var(--muted))] rounded-lg p-1">
           {DATE_RANGE_OPTIONS.map((opt) => (
@@ -174,7 +174,7 @@ export default function Dashboard() {
         <Card className="group hover:shadow-md transition-all duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Usuarios na Plataforma</span>
+              <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Usuários na Plataforma</span>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-500/10 transition-transform group-hover:scale-110">
                 <Users className="w-5 h-5 text-violet-600" />
               </div>
@@ -189,7 +189,7 @@ export default function Dashboard() {
         <Card className="group hover:shadow-md transition-all duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Taxa de Ativacao</span>
+              <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Taxa de Ativação</span>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/10 transition-transform group-hover:scale-110">
                 <Activity className="w-5 h-5 text-amber-600" />
               </div>
@@ -217,7 +217,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-base">Novos Cadastros no Periodo</CardTitle>
+              <CardTitle className="text-base">Novos Cadastros no Período</CardTitle>
               <CardDescription>Estabelecimentos cadastrados e MRR adicionado</CardDescription>
             </CardHeader>
             <CardContent>
@@ -242,7 +242,7 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[300px] text-[hsl(var(--muted-foreground))]">
-                  <TrendingUp className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm">Nenhum cadastro no periodo</p>
+                  <TrendingUp className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm">Nenhum cadastro no período</p>
                 </div>
               )}
             </CardContent>
@@ -295,7 +295,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribuicao por Plano</CardTitle>
+            <CardTitle className="text-base">Distribuição por Plano</CardTitle>
             <CardDescription>Quantidade de estabelecimentos por plano</CardDescription>
           </CardHeader>
           <CardContent>
@@ -312,7 +312,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center h-[280px] text-[hsl(var(--muted-foreground))]">
-                <Building2 className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm">Nenhum dado disponivel</p>
+                <Building2 className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm">Nenhum dado disponível</p>
               </div>
             )}
           </CardContent>
@@ -323,7 +323,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div><CardTitle className="text-base">Cadastros Recentes</CardTitle><CardDescription>Ultimos estabelecimentos cadastrados</CardDescription></div>
+                <div><CardTitle className="text-base">Cadastros Recentes</CardTitle><CardDescription>Últimos estabelecimentos cadastrados</CardDescription></div>
                 <UserPlus className="w-5 h-5 text-indigo-500" />
               </div>
             </CardHeader>

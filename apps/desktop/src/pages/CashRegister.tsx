@@ -22,8 +22,8 @@ import { cn } from '@/utils/cn';
 
 const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: typeof Banknote }> = {
   cash: { label: 'Dinheiro', icon: Banknote },
-  credit_card: { label: 'Cartao Credito', icon: CreditCard },
-  debit_card: { label: 'Cartao Debito', icon: CreditCard },
+  credit_card: { label: 'Cartão Crédito', icon: CreditCard },
+  debit_card: { label: 'Cartão Débito', icon: CreditCard },
   pix: { label: 'PIX', icon: Smartphone },
 };
 
@@ -115,7 +115,7 @@ export default function CashRegister() {
             {/* Payment method breakdown */}
             {closeSummary.totals_by_method && Object.keys(closeSummary.totals_by_method).length > 0 && (
               <div className="pt-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Por metodo de pagamento</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Por método de pagamento</p>
                 {Object.entries(closeSummary.totals_by_method).map(([method, total]: [string, any]) => {
                   const config = PAYMENT_METHOD_LABELS[method] || { label: method, icon: DollarSign };
                   const Icon = config.icon;
@@ -239,7 +239,7 @@ export default function CashRegister() {
         {/* Payment breakdown if available */}
         {cashRegister.totals_by_method && Object.keys(cashRegister.totals_by_method).length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Vendas por metodo</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase mb-3">Vendas por método</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(cashRegister.totals_by_method).map(([method, total]: [string, any]) => {
                 const config = PAYMENT_METHOD_LABELS[method] || { label: method, icon: DollarSign };

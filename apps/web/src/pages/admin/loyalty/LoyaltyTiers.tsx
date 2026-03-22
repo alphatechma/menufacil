@@ -111,7 +111,7 @@ export default function LoyaltyTiers() {
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      notify.error('Nome e obrigatorio');
+      notify.error('Nome é obrigatório');
       return;
     }
     try {
@@ -261,7 +261,7 @@ export default function LoyaltyTiers() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pontos Minimos</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pontos Mínimos</label>
               <input
                 type="number"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"

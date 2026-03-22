@@ -253,7 +253,7 @@ export default function ExtraGroups() {
                         type="number"
                         value={ex.price}
                         onChange={(e) => updateExtra(idx, 'price', Number(e.target.value))}
-                        placeholder="Preco"
+                        placeholder="Preço"
                         step="0.01"
                         className="w-24 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />

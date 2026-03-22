@@ -145,10 +145,10 @@ const sidebarGroups: SidebarGroup[] = [
   },
   {
     key: 'reports',
-    label: 'Relatorios',
+    label: 'Relatórios',
     icon: BarChart3,
     items: [
-      { to: '/admin/reports', icon: BarChart3, label: 'Relatorios', module: 'reports', permission: 'report:read' },
+      { to: '/admin/reports', icon: BarChart3, label: 'Relatórios', module: 'reports', permission: 'report:read' },
       { to: '/admin/analytics', icon: PieChart, label: 'Analytics', module: 'reports', permission: 'report:read' },
     ],
   },

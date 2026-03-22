@@ -23,9 +23,9 @@ import { FormPageSkeleton } from '@/components/ui/Skeleton';
 import { useNotify } from '@/hooks/useNotify';
 
 const staffSchema = z.object({
-  name: z.string().min(2, 'Nome obrigatorio'),
-  email: z.string().email('Email invalido'),
-  password: z.string().min(6, 'Minimo 6 caracteres').optional().or(z.literal('')),
+  name: z.string().min(2, 'Nome obrigatório'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres').optional().or(z.literal('')),
   is_active: z.boolean().default(true),
 });
 
@@ -150,7 +150,7 @@ export default function StaffForm() {
               <Input
                 {...field}
                 type="password"
-                placeholder={isEditing ? 'Deixe vazio para manter' : 'Minimo 6 caracteres'}
+                placeholder={isEditing ? 'Deixe vazio para manter' : 'Mínimo 6 caracteres'}
               />
             )}
           </FormField>
@@ -173,7 +173,7 @@ export default function StaffForm() {
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Selecione o perfil que define as permissoes deste membro.
+            Selecione o perfil que define as permissões deste membro.
           </p>
 
           {customRoles.length === 0 ? (
@@ -227,7 +227,7 @@ export default function StaffForm() {
                         <p className="text-xs text-muted-foreground mt-0.5">{cr.description}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {cr.permissions?.length || 0} permissao(es)
+                        {cr.permissions?.length || 0} permissão(ões)
                       </p>
                     </div>
                     {isSelected && (

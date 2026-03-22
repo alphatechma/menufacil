@@ -145,7 +145,7 @@ export default function CustomerSegments() {
       {/* Distribution bar chart */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
         <h3 className="text-sm font-medium text-gray-700 mb-4">
-          Distribuicao de Segmentos
+          Distribuição de Segmentos
         </h3>
         <div className="space-y-3">
           {chartData.map(({ key, count, config }) => {
@@ -205,7 +205,7 @@ export default function CustomerSegments() {
                     Contato
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Ultimo Pedido
+                    Último Pedido
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                     Pedidos (90d)

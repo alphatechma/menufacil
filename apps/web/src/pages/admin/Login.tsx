@@ -105,7 +105,7 @@ export default function Login() {
             Gerencie seu restaurante com facilidade
           </h2>
           <p className="text-primary-foreground/80 text-lg max-w-md">
-            Pedidos, cardapio, entregas e muito mais em uma unica plataforma.
+            Pedidos, cardápio, entregas e muito mais em uma única plataforma.
           </p>
 
           <div className="space-y-4 pt-4">
@@ -122,7 +122,7 @@ export default function Login() {
                 <ShieldCheck className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-primary-foreground/90 text-sm font-medium">
-                Controle de equipe e permissoes
+                Controle de equipe e permissões
               </span>
             </div>
             <div className="flex items-center gap-4">
@@ -130,7 +130,7 @@ export default function Login() {
                 <BarChart3 className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-primary-foreground/90 text-sm font-medium">
-                Relatorios e insights em tempo real
+                Relatórios e insights em tempo real
               </span>
             </div>
           </div>

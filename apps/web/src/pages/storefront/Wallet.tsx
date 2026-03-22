@@ -72,14 +72,14 @@ export default function WalletPage() {
       >
         <div className="flex items-center gap-2 mb-2">
           <WalletIcon className="w-5 h-5 opacity-80" />
-          <span className="text-sm font-medium opacity-80">Saldo disponivel</span>
+          <span className="text-sm font-medium opacity-80">Saldo disponível</span>
         </div>
         <p className="text-3xl font-bold">{formatPrice(balance)}</p>
       </div>
 
       {/* Transactions */}
       <div>
-        <h2 className="text-base font-semibold text-gray-900 mb-3">Historico</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-3">Histórico</h2>
 
         {txLoading ? (
           <Spinner />

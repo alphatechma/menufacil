@@ -29,8 +29,8 @@ const CONDITION_OPERATORS = [
   { value: 'neq', label: 'Diferente de' },
   { value: 'gt', label: 'Maior que' },
   { value: 'lt', label: 'Menor que' },
-  { value: 'contains', label: 'Contem' },
-  { value: 'not_contains', label: 'Nao contem' },
+  { value: 'contains', label: 'Contém' },
+  { value: 'not_contains', label: 'Não contém' },
 ];
 
 const CHECK_TYPES = [
@@ -128,11 +128,11 @@ function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updat
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-1 block">Titulo do menu</label>
+        <label className="text-sm font-medium text-foreground mb-1 block">Título do menu</label>
         <Input
           value={(data.title as string) || ''}
           onChange={(e) => updateData('title', e.target.value)}
-          placeholder="Ex: Menu de opcoes"
+          placeholder="Ex: Menu de opções"
         />
       </div>
       <div>
@@ -141,15 +141,15 @@ function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updat
           rows={2}
           value={(data.description as string) || ''}
           onChange={(e) => updateData('description', e.target.value)}
-          placeholder="Selecione uma das opcoes abaixo:"
+          placeholder="Selecione uma das opções abaixo:"
         />
       </div>
       <div>
         <label className="text-sm font-medium text-foreground mb-1 block">Texto do botao</label>
         <Input
-          value={(data.button_text as string) || 'Ver opcoes'}
+          value={(data.button_text as string) || 'Ver opções'}
           onChange={(e) => updateData('button_text', e.target.value)}
-          placeholder="Ver opcoes"
+          placeholder="Ver opções"
         />
       </div>
       <div>
@@ -172,7 +172,7 @@ function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updat
           </button>
         </div>
         {options.length === 0 && (
-          <p className="text-xs text-muted-foreground">Nenhuma opcao adicionada.</p>
+          <p className="text-xs text-muted-foreground">Nenhuma opção adicionada.</p>
         )}
         <div className="space-y-3">
           {options.map((opt, index) => (
@@ -189,7 +189,7 @@ function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updat
               <Input
                 value={opt.title}
                 onChange={(e) => updateOption(index, 'title', e.target.value)}
-                placeholder="Titulo da opcao"
+                placeholder="Título da opção"
                 className="text-xs"
               />
               <Input
@@ -202,7 +202,7 @@ function SendMenuConfig({ data, updateData }: { data: Record<string, any>; updat
           ))}
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Apos o cliente selecionar, a resposta ficara disponivel em {'{{last_input}}'}.
+          Apos o cliente selecionar, a resposta ficara disponível em {'{{last_input}}'}.
         </p>
       </div>
     </div>
@@ -406,7 +406,7 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
             </div>
             {checkType === 'loyalty_points_gt' && (
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Valor minimo de pontos</label>
+                <label className="text-sm font-medium text-foreground mb-1 block">Valor mínimo de pontos</label>
                 <Input
                   type="number"
                   min={0}
@@ -491,20 +491,20 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
         return (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Metodo de pagamento</label>
+              <label className="text-sm font-medium text-foreground mb-1 block">Método de pagamento</label>
               <Select
                 value={(data.payment_method as string) || 'pix'}
                 onChange={(e) => updateData('payment_method', e.target.value)}
               >
                 <option value="pix">PIX</option>
-                <option value="credit_card">Cartao de Credito</option>
-                <option value="debit_card">Cartao de Debito</option>
+                <option value="credit_card">Cartão de Crédito</option>
+                <option value="debit_card">Cartão de Débito</option>
                 <option value="cash">Dinheiro</option>
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              Se o pagamento for o metodo selecionado, segue pela saida &quot;Sim&quot;. Caso contrario, pela saida &quot;Nao&quot;.
-              {'\n'}Para PIX, a chave configurada nas configuracoes do tenant sera injetada em {'{{pix_key}}'}.
+              Se o pagamento for o método selecionado, segue pela saida &quot;Sim&quot;. Caso contrário, pela saida &quot;Nao&quot;.
+              {'\n'}Para PIX, a chave configurada nas configurações do tenant sera injetada em {'{{pix_key}}'}.
             </p>
           </div>
         );
@@ -515,7 +515,7 @@ export function NodeConfigPanel({ selectedNode, onUpdateNode, onClose, className
       case 'transfer_human':
         return (
           <p className="text-sm text-muted-foreground">
-            Este componente nao possui configuracoes adicionais.
+            Este componente não possui configurações adicionais.
           </p>
         );
 

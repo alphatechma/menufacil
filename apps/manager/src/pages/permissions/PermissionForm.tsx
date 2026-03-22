@@ -88,14 +88,14 @@ export default function PermissionForm() {
 
       if (isEditing) {
         await updatePermission({ id: id!, data: payload }).unwrap();
-        notify.success('Permissao atualizada!');
+        notify.success('Permissão atualizada!');
       } else {
         await createPermission(payload).unwrap();
-        notify.success('Permissao criada!');
+        notify.success('Permissão criada!');
       }
       navigate('/permissions');
     } catch (err: any) {
-      const msg = err?.data?.message || 'Erro ao salvar permissao';
+      const msg = err?.data?.message || 'Erro ao salvar permissão';
       setError(msg);
       notify.error(msg);
     }
@@ -109,12 +109,12 @@ export default function PermissionForm() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {isEditing ? 'Editar Permissao' : 'Nova Permissao'}
+            {isEditing ? 'Editar Permissão' : 'Nova Permissão'}
           </h1>
           <p className="text-sm text-muted-foreground">
             {isEditing
-              ? 'Atualize as informacoes da permissao.'
-              : 'Preencha os dados para criar uma nova permissao.'}
+              ? 'Atualize as informações da permissão.'
+              : 'Preencha os dados para criar uma nova permissão.'}
           </p>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default function PermissionForm() {
       ) : (
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Informacoes da Permissao</CardTitle>
+            <CardTitle>Informacoes da Permissão</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -181,7 +181,7 @@ export default function PermissionForm() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Opcional. Associe a permissao a um modulo do sistema.
+                  Opcional. Associe a permissão a um módulo do sistema.
                 </p>
               </div>
 

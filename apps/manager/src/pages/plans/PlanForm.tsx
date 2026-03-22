@@ -126,8 +126,8 @@ export default function PlanForm() {
           </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {isEditing
-              ? 'Atualize as informacoes do plano.'
-              : 'Preencha as informacoes para criar um novo plano.'}
+              ? 'Atualize as informações do plano.'
+              : 'Preencha as informações para criar um novo plano.'}
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function PlanForm() {
         <Card>
           <CardHeader>
             <CardTitle>Informacoes Gerais</CardTitle>
-            <CardDescription>Nome, preco e limites do plano.</CardDescription>
+            <CardDescription>Nome, preço e limites do plano.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -151,14 +151,14 @@ export default function PlanForm() {
               <Input
                 id="name"
                 required
-                placeholder="Ex: Basico, Profissional, Enterprise"
+                placeholder="Ex: Básico, Profissional, Enterprise"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Preco (R$) *</Label>
+              <Label htmlFor="price">Preço (R$) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -173,7 +173,7 @@ export default function PlanForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="max_users">Max Usuarios</Label>
+                <Label htmlFor="max_users">Max Usuários</Label>
                 <Input
                   id="max_users"
                   type="number"
@@ -208,7 +208,7 @@ export default function PlanForm() {
               <div>
                 <Label htmlFor="is_active">Ativo</Label>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Planos inativos nao ficam disponiveis para novos estabelecimentos.
+                  Planos inativos não ficam disponíveis para novos estabelecimentos.
                 </p>
               </div>
               <Switch
@@ -224,9 +224,9 @@ export default function PlanForm() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Modulos do Sistema</CardTitle>
+                <CardTitle>Módulos do Sistema</CardTitle>
                 <CardDescription>
-                  Selecione quais modulos estarao disponiveis neste plano.
+                  Selecione quais módulos estarão disponíveis neste plano.
                 </CardDescription>
               </div>
               {modules && modules.length > 0 && (

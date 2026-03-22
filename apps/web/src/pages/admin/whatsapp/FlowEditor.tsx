@@ -320,16 +320,16 @@ export default function FlowEditor() {
       <Modal open={testModalOpen} onClose={() => setTestModalOpen(false)} title="Testar Fluxo">
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            O fluxo sera salvo e executado enviando as mensagens para o numero informado.
+            O fluxo será salvo e executado enviando as mensagens para o número informado.
           </p>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Numero do WhatsApp</label>
+            <label className="text-sm font-medium text-foreground mb-1 block">Número do WhatsApp</label>
             <Input
               value={testPhone}
               onChange={(e) => setTestPhone(e.target.value)}
               placeholder="5511999999999"
             />
-            <p className="text-xs text-muted-foreground mt-1">Com codigo do pais (ex: 5511999999999)</p>
+            <p className="text-xs text-muted-foreground mt-1">Com código do país (ex: 5511999999999)</p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setTestModalOpen(false)}>

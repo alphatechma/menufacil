@@ -600,7 +600,7 @@ export default function Account() {
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder="Mínimo 6 caracteres"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
                     required
                     minLength={6}
@@ -884,7 +884,7 @@ export default function Account() {
                     type="password"
                     value={profilePassword}
                     onChange={(e) => setProfilePassword(e.target.value)}
-                    placeholder={customer?.password_hash ? 'Deixe vazio para manter a atual' : 'Minimo 6 caracteres'}
+                    placeholder={customer?.password_hash ? 'Deixe vazio para manter a atual' : 'Mínimo 6 caracteres'}
                     minLength={6}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm"
                   />
@@ -1000,7 +1000,7 @@ export default function Account() {
               </div>
               <div className="text-left">
                 <p className="text-sm font-bold text-gray-900">Indique Amigos</p>
-                <p className="text-xs text-gray-500">Ganhe 100 pontos por indicacao</p>
+                <p className="text-xs text-gray-500">Ganhe 100 pontos por indicação</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -1017,7 +1017,7 @@ export default function Account() {
               </div>
               <div className="text-left">
                 <p className="text-sm font-bold text-gray-900">Carteira Digital</p>
-                <p className="text-xs text-gray-500">Veja seu saldo e historico</p>
+                <p className="text-xs text-gray-500">Veja seu saldo e histórico</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -1091,7 +1091,7 @@ export default function Account() {
             {loyaltyRewards.length === 0 ? (
               <div className="p-8 text-center">
                 <Gift className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Nenhuma recompensa disponivel</p>
+                <p className="text-gray-500 font-medium">Nenhuma recompensa disponível</p>
                 <p className="text-sm text-gray-400 mt-1">
                   Acumule pontos para resgatar recompensas futuras.
                 </p>
@@ -1375,7 +1375,7 @@ export default function Account() {
                 ))
               ) : (
                 <div className="p-8 text-center">
-                  <p className="text-sm text-gray-400">Nenhum endereco cadastrado</p>
+                  <p className="text-sm text-gray-400">Nenhum endereço cadastrado</p>
                   <button
                     onClick={() => setShowAddressForm(true)}
                     className="text-xs font-bold mt-2"
@@ -1556,7 +1556,7 @@ export default function Account() {
               </div>
 
               <p className="text-xs text-gray-400 mb-4">
-                Voce recebera um cupom para usar no proximo pedido. Esta acao nao pode ser desfeita.
+                Você receberá um cupom para usar no próximo pedido. Esta ação não pode ser desfeita.
               </p>
             </div>
 
@@ -1594,7 +1594,7 @@ export default function Account() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">Resgate Realizado!</h3>
               <p className="text-sm text-gray-500 mb-4">
-                Use o cupom abaixo no seu proximo pedido
+                Use o cupom abaixo no seu próximo pedido
               </p>
 
               <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 mb-4">

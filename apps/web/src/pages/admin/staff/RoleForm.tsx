@@ -24,7 +24,7 @@ const MODULE_LABELS: Record<string, { name: string; color: string }> = {
   coupons: { name: 'Cupons', color: 'bg-pink-500' },
   loyalty: { name: 'Fidelidade', color: 'bg-amber-500' },
   kds: { name: 'KDS', color: 'bg-indigo-500' },
-  reports: { name: 'Relatorios', color: 'bg-gray-500' },
+  reports: { name: 'Relatórios', color: 'bg-gray-500' },
   delivery_driver: { name: 'Painel Entregador', color: 'bg-cyan-500' },
 };
 
@@ -175,7 +175,7 @@ export default function RoleForm() {
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Breve descricao das responsabilidades"
+              placeholder="Breve descrição das responsabilidades"
               className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
@@ -186,7 +186,7 @@ export default function RoleForm() {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Permissoes</h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Selecione as permissoes que este perfil tera acesso.
+                Selecione as permissões que este perfil terá acesso.
                 <span className="ml-2 font-medium text-primary">
                   {selectedPermissions.size}/{permissions.length} selecionada(s)
                 </span>

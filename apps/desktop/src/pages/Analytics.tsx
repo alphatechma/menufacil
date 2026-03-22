@@ -41,7 +41,7 @@ import {
 } from '@/api/api';
 
 const TABS = [
-  { key: 'overview', label: 'Visao Geral', icon: BarChart3 },
+  { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
   { key: 'products', label: 'Produtos', icon: Package },
   { key: 'customers', label: 'Clientes', icon: Users },
   { key: 'delivery', label: 'Entregas', icon: Truck },
@@ -81,8 +81,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Dinheiro',
-  credit_card: 'Credito',
-  debit_card: 'Debito',
+  credit_card: 'Crédito',
+  debit_card: 'Débito',
   pix: 'PIX',
 };
 
@@ -202,7 +202,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
       <BarChart3 className="w-10 h-10 mb-2" />
-      <p className="text-sm">Sem dados para o periodo</p>
+      <p className="text-sm">Sem dados para o período</p>
     </div>
   );
 }
@@ -221,7 +221,7 @@ function OverviewTab({ dateRange, onExport }: { dateRange: { from: string; to: s
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         <KpiCard title="Receita" icon={DollarSign} format="currency" {...data.revenue} />
         <KpiCard title="Pedidos" icon={ShoppingCart} {...data.orderCount} />
-        <KpiCard title="Ticket Medio" icon={Receipt} format="currency" {...data.avgTicket} />
+        <KpiCard title="Ticket Médio" icon={Receipt} format="currency" {...data.avgTicket} />
         <KpiCard title="Cancelamento" icon={XCircle} format="percent" {...data.cancelRate} />
         <KpiCard title="Novos Clientes" icon={UserPlus} {...data.newCustomers} />
         <KpiCard title="Recorrentes" icon={UserCheck} {...data.returningCustomers} />
@@ -461,7 +461,7 @@ function DeliveryTab({ dateRange, onExport }: { dateRange: { from: string; to: s
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-500">Tempo Medio de Entrega</p>
+          <p className="text-xs text-gray-500">Tempo Médio de Entrega</p>
           <p className="text-xl font-bold text-gray-900">{data.avgDeliveryTime != null ? `${data.avgDeliveryTime} min` : '--'}</p>
         </div>
         <button onClick={onExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">

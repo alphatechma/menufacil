@@ -102,7 +102,7 @@ export default function PlanList() {
                 <div className="space-y-3">
                   <LimitRow
                     icon={Users}
-                    label="Usuarios"
+                    label="Usuários"
                     value={plan.max_users}
                   />
                   <LimitRow
@@ -112,7 +112,7 @@ export default function PlanList() {
                   />
                   <LimitRow
                     icon={Puzzle}
-                    label="Modulos"
+                    label="Módulos"
                     value={plan.modules?.length ?? 0}
                     showInfinity={false}
                   />

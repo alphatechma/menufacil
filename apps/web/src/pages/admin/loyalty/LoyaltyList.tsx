@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: 'warning' | 'succe
 
 const TABS = [
   { key: 'rewards', label: 'Recompensas' },
-  { key: 'history', label: 'Historico de Resgates' },
+  { key: 'history', label: 'Histórico de Resgates' },
 ];
 
 export default function LoyaltyList() {
@@ -160,7 +160,7 @@ export default function LoyaltyList() {
                       <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo</th>
                       <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor</th>
                       <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Regras</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acoes</th>
+                      <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -244,7 +244,7 @@ export default function LoyaltyList() {
                 <EmptyState
                   icon={<History className="w-12 h-12" />}
                   title="Nenhum resgate realizado"
-                  description="Quando os clientes resgatarem recompensas, o historico aparecera aqui."
+                  description="Quando os clientes resgatarem recompensas, o histórico aparecerá aqui."
                 />
               </div>
             ) : (

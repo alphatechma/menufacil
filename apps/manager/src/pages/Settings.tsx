@@ -37,7 +37,7 @@ export default function Settings() {
     e.preventDefault();
 
     if (!profileForm.name.trim()) {
-      notify.error('O nome e obrigatorio.');
+      notify.error('O nome é obrigatório.');
       return;
     }
 
@@ -66,7 +66,7 @@ export default function Settings() {
     e.preventDefault();
 
     if (!passwordForm.current_password) {
-      notify.error('A senha atual e obrigatoria.');
+      notify.error('A senha atual é obrigatória.');
       return;
     }
 
@@ -76,7 +76,7 @@ export default function Settings() {
     }
 
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      notify.error('As senhas nao coincidem.');
+      notify.error('As senhas não coincidem.');
       return;
     }
 
@@ -153,7 +153,7 @@ export default function Settings() {
                   className="bg-[hsl(var(--muted))]"
                 />
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  O e-mail nao pode ser alterado.
+                  O e-mail não pode ser alterado.
                 </p>
               </div>
             </div>

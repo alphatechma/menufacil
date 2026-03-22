@@ -63,15 +63,15 @@ const STATUS_LABELS: Record<string, string> = {
 const PAYMENT_OPTIONS = [
   { value: '', label: 'Todas as formas' },
   { value: 'pix', label: 'PIX' },
-  { value: 'credit_card', label: 'Cartao de Credito' },
-  { value: 'debit_card', label: 'Cartao de Debito' },
+  { value: 'credit_card', label: 'Cartão de Crédito' },
+  { value: 'debit_card', label: 'Cartão de Débito' },
   { value: 'cash', label: 'Dinheiro' },
 ];
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credit_card: 'Cartao de Credito',
-  debit_card: 'Cartao de Debito',
+  credit_card: 'Cartão de Crédito',
+  debit_card: 'Cartão de Débito',
   cash: 'Dinheiro',
 };
 
@@ -236,7 +236,7 @@ export default function Reports() {
   const stats = [
     { label: 'Receita Total', value: formatPrice(totalRevenue), icon: TrendingUp, bgColor: 'bg-green-50 dark:bg-green-900/20', iconColor: 'text-green-600' },
     { label: 'Total de Pedidos', value: String(totalOrders), sub: `${deliveredOrders} entregues`, icon: ShoppingBag, bgColor: 'bg-orange-50 dark:bg-orange-900/20', iconColor: 'text-primary' },
-    { label: 'Ticket Medio', value: formatPrice(avgTicket), icon: Receipt, bgColor: 'bg-blue-50 dark:bg-blue-900/20', iconColor: 'text-blue-600' },
+    { label: 'Ticket Médio', value: formatPrice(avgTicket), icon: Receipt, bgColor: 'bg-blue-50 dark:bg-blue-900/20', iconColor: 'text-blue-600' },
     { label: 'Cancelamentos', value: `${cancellationRate}%`, sub: `${cancelledOrders} pedido(s)`, icon: XCircle, bgColor: 'bg-red-50 dark:bg-red-900/20', iconColor: 'text-red-600' },
   ];
 
@@ -244,7 +244,7 @@ export default function Reports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatorios</h1>
+          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
           <p className="text-muted-foreground mt-1">Analise o desempenho do seu restaurante</p>
         </div>
         {isFetching && !isLoading && (
@@ -261,13 +261,13 @@ export default function Reports() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground shrink-0">
             <Calendar className="w-4 h-4" />
-            Periodo:
+            Período:
           </div>
           <div className="flex flex-wrap gap-2">
             {([
               { value: '7d' as RangePreset, label: '7 dias' },
               { value: '30d' as RangePreset, label: '30 dias' },
-              { value: 'month' as RangePreset, label: 'Este mes' },
+              { value: 'month' as RangePreset, label: 'Este mês' },
               { value: 'custom' as RangePreset, label: 'Personalizado' },
             ]).map((opt) => (
               <button
@@ -405,7 +405,7 @@ export default function Reports() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no período</div>
             )}
           </div>
         </div>
@@ -424,7 +424,7 @@ export default function Reports() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no periodo</div>
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no período</div>
             )}
           </div>
         </div>
@@ -459,7 +459,7 @@ export default function Reports() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem vendas no periodo</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Sem vendas no período</p>
           )}
         </div>
 
@@ -538,7 +538,7 @@ export default function Reports() {
             <Truck className="w-5 h-5 text-primary" />
             Entregas por Entregador
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Quantidade, valor, porcentagem e tempo medio de entrega no periodo</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Quantidade, valor, porcentagem e tempo médio de entrega no período</p>
         </div>
         {deliveryPersons.length > 0 ? (
           <div className="overflow-x-auto">
@@ -550,7 +550,7 @@ export default function Reports() {
                   <th className="text-center px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entregas</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">% do Total</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor Total</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tempo Medio</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tempo Médio</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -600,7 +600,7 @@ export default function Reports() {
             </table>
           </div>
         ) : (
-          <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma entrega no periodo selecionado</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma entrega no período selecionado</div>
         )}
       </Card>
 
@@ -608,7 +608,7 @@ export default function Reports() {
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-green-600" />
-          Fechamento do Periodo
+          Fechamento do Período
         </h3>
         <p className="text-sm text-muted-foreground mb-5">Detalhamento financeiro completo</p>
 
@@ -625,7 +625,7 @@ export default function Reports() {
                 { label: 'Pedidos Validos', value: `${validOrders} (${totalOrders > 0 ? ((validOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-foreground' },
                 { label: 'Entregues', value: `${deliveredOrders} (${totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : 0}%)`, color: 'text-green-700 dark:text-green-400' },
                 { label: 'Cancelados', value: `${cancelledOrders} (${cancellationRate}%)`, color: 'text-red-600' },
-                { label: 'Ticket Medio', value: formatPrice(avgTicket), color: 'text-foreground' },
+                { label: 'Ticket Médio', value: formatPrice(avgTicket), color: 'text-foreground' },
               ].map((row, i) => (
                 <div key={i} className="flex justify-between py-2 border-b border-border">
                   <span className="text-sm text-muted-foreground">{row.label}</span>
@@ -682,7 +682,7 @@ export default function Reports() {
         <Card className="p-6">
           <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
-            Historico de Caixas
+            Histórico de Caixas
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -694,8 +694,8 @@ export default function Reports() {
                   <th className="text-right py-2 text-muted-foreground font-medium">Abertura R$</th>
                   <th className="text-right py-2 text-muted-foreground font-medium">Fechamento R$</th>
                   <th className="text-right py-2 text-muted-foreground font-medium">Dinheiro</th>
-                  <th className="text-right py-2 text-muted-foreground font-medium">Credito</th>
-                  <th className="text-right py-2 text-muted-foreground font-medium">Debito</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Crédito</th>
+                  <th className="text-right py-2 text-muted-foreground font-medium">Débito</th>
                   <th className="text-right py-2 text-muted-foreground font-medium">PIX</th>
                   <th className="text-right py-2 text-muted-foreground font-medium">Pedidos</th>
                   <th className="text-right py-2 text-muted-foreground font-bold">Total</th>

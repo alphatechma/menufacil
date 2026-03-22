@@ -115,14 +115,14 @@ export default function Coupons() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Codigo</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Código</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Tipo</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Desconto</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Pedido Min.</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Usos</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Validade</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -184,7 +184,7 @@ export default function Coupons() {
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Código</label>
                 <input
                   type="text"
                   value={form.code}
@@ -219,7 +219,7 @@ export default function Coupons() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pedido Minimo (R$)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pedido Mínimo (R$)</label>
                   <input
                     type="number"
                     value={form.min_order_value}

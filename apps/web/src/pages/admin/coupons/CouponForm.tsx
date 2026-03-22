@@ -102,7 +102,7 @@ export default function CouponForm() {
             </>
           }
         >
-          <FormField control={control} name="code" label="Codigo" required>
+          <FormField control={control} name="code" label="Código" required>
             {(field) => (
               <Input
                 {...field}
@@ -129,7 +129,7 @@ export default function CouponForm() {
             )}
           </FormField>
 
-          <FormField control={control} name="min_order" label="Pedido minimo (opcional)">
+          <FormField control={control} name="min_order" label="Pedido mínimo (opcional)">
             {(field) => (
               <PriceInput
                 {...field}
@@ -139,7 +139,7 @@ export default function CouponForm() {
             )}
           </FormField>
 
-          <FormField control={control} name="max_uses" label="Maximo de usos (opcional)">
+          <FormField control={control} name="max_uses" label="Máximo de usos (opcional)">
             {(field) => (
               <Input
                 {...field}

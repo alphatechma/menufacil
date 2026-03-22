@@ -154,7 +154,7 @@ export default function Tables() {
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Numero</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
                 <input type="number" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
               </div>
               <div>

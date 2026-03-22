@@ -45,7 +45,7 @@ export default function Login() {
     } catch (err: any) {
       const message =
         err?.data?.message ||
-        'Credenciais invalidas. Verifique e tente novamente.';
+        'Credenciais inválidas. Verifique e tente novamente.';
       setError(typeof message === 'string' ? message : 'Dados inválidos');
 
       // Parse field-level errors from API response

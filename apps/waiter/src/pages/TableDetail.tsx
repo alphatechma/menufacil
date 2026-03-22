@@ -180,7 +180,7 @@ export default function TableDetail() {
             <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Package className="w-6 h-6 text-emerald-600" />
             </div>
-            <p className="text-gray-700 font-medium">Mesa disponivel</p>
+            <p className="text-gray-700 font-medium">Mesa disponível</p>
             <p className="text-xs text-gray-400 mt-1">Nenhuma comanda aberta</p>
             <button
               onClick={handleOpenSession}
@@ -291,7 +291,7 @@ export default function TableDetail() {
           <div className="bg-white w-full rounded-t-2xl p-4 max-h-[60vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Transferir para</h3>
             {availableTables.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Nenhuma mesa disponivel</p>
+              <p className="text-sm text-gray-400 text-center py-6">Nenhuma mesa disponível</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {availableTables.map((t) => (
@@ -323,7 +323,7 @@ export default function TableDetail() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
             <h3 className="text-lg font-bold text-gray-900">Fechar Mesa?</h3>
             <p className="text-sm text-gray-500 mt-2">
-              Tem certeza que deseja fechar esta mesa? A comanda sera encerrada.
+              Tem certeza que deseja fechar esta mesa? A comanda será encerrada.
             </p>
             <div className="flex gap-2 mt-6">
               <button

@@ -166,9 +166,9 @@ export default function Products() {
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Produto</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Categoria</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Preco</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Preço</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ativo</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Acoes</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -253,7 +253,7 @@ export default function Products() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Preco (R$)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
                   <input
                     type="text"
                     value={form.price}

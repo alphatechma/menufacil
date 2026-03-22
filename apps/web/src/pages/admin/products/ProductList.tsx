@@ -303,12 +303,12 @@ export default function ProductList() {
         value,
         adjustment_type: adjustmentType,
       }).unwrap();
-      notify.success(`Preco de ${selectedIds.length} produto(s) atualizado!`);
+      notify.success(`Preço de ${selectedIds.length} produto(s) atualizado!`);
       setSelectedIds([]);
       setPriceAdjustModal(false);
       setAdjustmentValue('');
     } catch {
-      notify.error('Erro ao reajustar precos.');
+      notify.error('Erro ao reajustar preços.');
     }
   };
 
@@ -423,13 +423,13 @@ export default function ProductList() {
                       Categoria
                     </th>
                     <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Preco
+                      Preço
                     </th>
                     <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
                     <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -495,7 +495,7 @@ export default function ProductList() {
             disabled={isBulkLoading}
           >
             <DollarSign className="w-4 h-4" />
-            <span className="ml-1">Reajustar Preco</span>
+            <span className="ml-1">Reajustar Preço</span>
           </Button>
           {hasPermission('product:delete') && (
             <Button
@@ -544,11 +544,11 @@ export default function ProductList() {
       <Modal
         open={priceAdjustModal}
         onClose={() => setPriceAdjustModal(false)}
-        title="Reajustar Precos"
+        title="Reajustar Preços"
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Ajuste o preco de {selectedIds.length} produto(s) selecionado(s).
+            Ajuste o preço de {selectedIds.length} produto(s) selecionado(s).
           </p>
 
           <div className="grid grid-cols-2 gap-3">

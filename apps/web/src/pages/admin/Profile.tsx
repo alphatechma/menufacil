@@ -31,7 +31,7 @@ const MODULE_LABELS: Record<string, string> = {
   coupons: 'Cupons',
   loyalty: 'Fidelidade',
   kds: 'KDS',
-  reports: 'Relatorios',
+  reports: 'Relatórios',
   delivery_driver: 'Painel Entregador',
 };
 
@@ -133,7 +133,7 @@ export default function Profile() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-        <p className="text-muted-foreground mt-1">Gerencie suas informacoes pessoais e senha</p>
+        <p className="text-muted-foreground mt-1">Gerencie suas informações pessoais e senha</p>
       </div>
 
       {/* Profile Info Card */}
@@ -309,7 +309,7 @@ export default function Profile() {
           </div>
         ) : Object.keys(permissionsByModule).length > 0 ? (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Suas permissoes no sistema:</p>
+            <p className="text-sm text-muted-foreground">Suas permissões no sistema:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.entries(permissionsByModule).map(([mod, actions]) => (
                 <div key={mod} className="bg-muted rounded-xl p-3 border border-border">
@@ -332,7 +332,7 @@ export default function Profile() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma permissao personalizada configurada.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma permissão personalizada configurada.</p>
         )}
       </div>
     </div>
