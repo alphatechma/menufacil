@@ -10,6 +10,15 @@ import { CustomerLoginDto, CustomerRegisterDto } from './dto/customer-login.dto'
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
 import { RegisterTenantDto } from './dto/register-tenant.dto';
 import { CurrentTenant, CurrentUser } from '../../common/decorators';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import {
+  superAdminLoginSchema,
+  loginSchema,
+  customerLoginSchema,
+  customerRegisterSchema,
+  registerSchema,
+  registerTenantSchema,
+} from '../../common/schemas/auth.schema';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -29,7 +38,7 @@ export class AuthController {
 
   @Post('super-admin/login')
   @ApiOperation({ summary: 'Super Admin login' })
-  async loginSuperAdmin(@Body() dto: SuperAdminLoginDto, @Res({ passthrough: true }) res: Response) {
+  async loginSuperAdmin(@Body(new ZodValidationPipe(superAdminLoginSchema)) dto: SuperAdminLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.loginSuperAdmin(dto);
     res.cookie('accessToken', result.access_token, COOKIE_OPTIONS);
     res.cookie('refreshToken', result.refresh_token, COOKIE_OPTIONS);
@@ -38,7 +47,7 @@ export class AuthController {
 
   @Post('admin/login')
   @ApiOperation({ summary: 'Admin login (no tenant slug required)' })
-  async loginAdmin(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async loginAdmin(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.loginAdmin(dto);
     res.cookie('accessToken', result.access_token, COOKIE_OPTIONS);
     res.cookie('refreshToken', result.refresh_token, COOKIE_OPTIONS);
@@ -47,7 +56,7 @@ export class AuthController {
 
   @Post('register-tenant')
   @ApiOperation({ summary: 'Register a new tenant with admin user (7-day trial)' })
-  async registerTenant(@Body() dto: RegisterTenantDto, @Res({ passthrough: true }) res: Response) {
+  async registerTenant(@Body(new ZodValidationPipe(registerTenantSchema)) dto: RegisterTenantDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.registerTenant(dto);
     res.cookie('accessToken', result.access_token, COOKIE_OPTIONS);
     res.cookie('refreshToken', result.refresh_token, COOKIE_OPTIONS);
@@ -56,7 +65,7 @@ export class AuthController {
 
   @Post('staff/login')
   @ApiOperation({ summary: 'Staff login' })
-  async loginStaff(@Body() dto: LoginDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
+  async loginStaff(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.loginStaff(dto, tenantId);
     res.cookie('accessToken', result.access_token, COOKIE_OPTIONS);
     res.cookie('refreshToken', result.refresh_token, COOKIE_OPTIONS);
@@ -65,7 +74,7 @@ export class AuthController {
 
   @Post('staff/register')
   @ApiOperation({ summary: 'Register new staff member' })
-  async registerStaff(@Body() dto: RegisterDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
+  async registerStaff(@Body(new ZodValidationPipe(registerSchema)) dto: RegisterDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.registerStaff(dto, tenantId);
     res.cookie('accessToken', result.access_token, COOKIE_OPTIONS);
     res.cookie('refreshToken', result.refresh_token, COOKIE_OPTIONS);
@@ -74,7 +83,7 @@ export class AuthController {
 
   @Post('customer/login')
   @ApiOperation({ summary: 'Customer login' })
-  async loginCustomer(@Body() dto: CustomerLoginDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
+  async loginCustomer(@Body(new ZodValidationPipe(customerLoginSchema)) dto: CustomerLoginDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.loginCustomer(dto, tenantId);
     res.cookie('customer_token', result.access_token, COOKIE_OPTIONS);
     res.cookie('customer_refresh_token', result.refresh_token, COOKIE_OPTIONS);
@@ -83,7 +92,7 @@ export class AuthController {
 
   @Post('customer/register')
   @ApiOperation({ summary: 'Register new customer' })
-  async registerCustomer(@Body() dto: CustomerRegisterDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
+  async registerCustomer(@Body(new ZodValidationPipe(customerRegisterSchema)) dto: CustomerRegisterDto, @CurrentTenant('id') tenantId: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.registerCustomer(dto, tenantId);
     res.cookie('customer_token', result.access_token, COOKIE_OPTIONS);
     res.cookie('customer_refresh_token', result.refresh_token, COOKIE_OPTIONS);

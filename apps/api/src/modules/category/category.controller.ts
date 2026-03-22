@@ -16,6 +16,8 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CurrentTenant, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { createCategorySchema, updateCategorySchema } from '../../common/schemas/category.schema';
 
 @ApiTags('Categories')
 @ApiSecurity('tenant-slug')
@@ -49,7 +51,7 @@ export class CategoryController {
   @ApiBearerAuth()
   @RequirePermissions('category:create')
   @ApiOperation({ summary: 'Create a category' })
-  create(@Body() dto: CreateCategoryDto, @CurrentTenant('id') tenantId: string) {
+  create(@Body(new ZodValidationPipe(createCategorySchema)) dto: CreateCategoryDto, @CurrentTenant('id') tenantId: string) {
     return this.categoryService.create(dto, tenantId);
   }
 
@@ -60,7 +62,7 @@ export class CategoryController {
   @ApiOperation({ summary: 'Update a category' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateCategoryDto,
+    @Body(new ZodValidationPipe(updateCategorySchema)) dto: UpdateCategoryDto,
     @CurrentTenant('id') tenantId: string,
   ) {
     return this.categoryService.update(id, dto, tenantId);

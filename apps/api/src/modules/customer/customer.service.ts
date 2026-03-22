@@ -40,7 +40,7 @@ export class CustomerService {
       relations: ['addresses', 'orders', 'orders.items'],
       order: { orders: { created_at: 'DESC' } },
     });
-    if (!customer) throw new NotFoundException('Customer not found');
+    if (!customer) throw new NotFoundException('Cliente nao encontrado');
     return customer;
   }
 

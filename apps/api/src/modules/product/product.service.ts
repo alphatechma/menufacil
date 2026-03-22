@@ -48,7 +48,7 @@ export class ProductService {
   async findById(id: string, tenantId: string): Promise<Product> {
     const product = await this.productRepository.findById(id, tenantId);
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Produto nao encontrado');
     }
     return product;
   }
@@ -92,7 +92,7 @@ export class ProductService {
 
   async bulkAction(tenantId: string, dto: BulkProductActionDto): Promise<{ affected: number }> {
     if (!dto.ids.length) {
-      throw new BadRequestException('No product IDs provided');
+      throw new BadRequestException('Nenhum ID de produto informado');
     }
 
     switch (dto.action) {
@@ -110,13 +110,13 @@ export class ProductService {
 
       case BulkProductActionType.ADJUST_PRICE:
         if (dto.value === undefined || !dto.adjustment_type) {
-          throw new BadRequestException('Value and adjustment_type are required for price adjustment');
+          throw new BadRequestException('Valor e tipo de ajuste sao obrigatorios para ajuste de preco');
         }
         await this.productRepository.bulkAdjustPrice(dto.ids, tenantId, dto.value, dto.adjustment_type);
         return { affected: dto.ids.length };
 
       default:
-        throw new BadRequestException(`Unknown bulk action: ${dto.action}`);
+        throw new BadRequestException(`Acao em lote desconhecida: ${dto.action}`);
     }
   }
 
@@ -137,7 +137,7 @@ export class ProductService {
   async updateExtraGroup(id: string, dto: CreateExtraGroupDto, tenantId: string): Promise<ExtraGroup> {
     const existing = await this.productRepository.findExtraGroupById(id, tenantId);
     if (!existing) {
-      throw new NotFoundException('Extra group not found');
+      throw new NotFoundException('Grupo de extras nao encontrado');
     }
 
     // Update group fields
@@ -162,7 +162,7 @@ export class ProductService {
   async removeExtraGroup(id: string, tenantId: string): Promise<void> {
     const group = await this.productRepository.findExtraGroupById(id, tenantId);
     if (!group) {
-      throw new NotFoundException('Extra group not found');
+      throw new NotFoundException('Grupo de extras nao encontrado');
     }
     await this.productRepository.removeExtraGroup(id, tenantId);
   }

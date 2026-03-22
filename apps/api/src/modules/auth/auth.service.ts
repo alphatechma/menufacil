@@ -52,12 +52,12 @@ export class AuthService {
       .getOne();
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
 
     const tokens = this.generateTokens({
@@ -88,12 +88,12 @@ export class AuthService {
       .getOne();
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
 
     const tokens = this.generateTokens({
@@ -147,7 +147,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('Este email ja esta em uso');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -234,7 +234,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Phone already registered');
+      throw new ConflictException('Este telefone ja esta cadastrado');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -265,11 +265,11 @@ export class AuthService {
       .andWhere('user.is_active = :active', { active: true })
       .getOne();
     if (!user || !user.tenant_id) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais invalidas');
     }
     const tokens = this.generateTokens({
       sub: user.id,
@@ -426,7 +426,7 @@ export class AuthService {
         type: payload.type,
       });
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('Sessao expirada. Faca login novamente.');
     }
   }
 

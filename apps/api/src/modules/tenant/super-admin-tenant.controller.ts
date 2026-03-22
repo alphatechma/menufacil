@@ -4,6 +4,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SuperAdminGuard } from '../../common/guards';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { createTenantSchema, updateTenantSchema } from '../../common/schemas/tenant.schema';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -60,13 +62,13 @@ export class SuperAdminTenantController {
 
   @Post()
   @ApiOperation({ summary: 'Create a tenant with admin user (super-admin)' })
-  create(@Body() dto: CreateTenantDto) {
+  create(@Body(new ZodValidationPipe(createTenantSchema)) dto: CreateTenantDto) {
     return this.tenantService.create(dto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a tenant (super-admin)' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTenantDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(updateTenantSchema)) dto: UpdateTenantDto) {
     return this.tenantService.update(id, dto);
   }
 

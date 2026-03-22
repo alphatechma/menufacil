@@ -18,6 +18,8 @@ import { ReorderProductsDto } from './dto/reorder-products.dto';
 import { BulkProductActionDto } from './dto/bulk-product-action.dto';
 import { CurrentTenant, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { createProductSchema, updateProductSchema } from '../../common/schemas/product.schema';
 
 @ApiTags('Products')
 @ApiSecurity('tenant-slug')
@@ -60,7 +62,7 @@ export class ProductController {
   @ApiBearerAuth()
   @RequirePermissions('product:create')
   @ApiOperation({ summary: 'Create a product' })
-  create(@Body() dto: CreateProductDto, @CurrentTenant('id') tenantId: string) {
+  create(@Body(new ZodValidationPipe(createProductSchema)) dto: CreateProductDto, @CurrentTenant('id') tenantId: string) {
     return this.productService.create(dto, tenantId);
   }
 
@@ -89,7 +91,7 @@ export class ProductController {
   @ApiOperation({ summary: 'Update a product' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateProductDto,
+    @Body(new ZodValidationPipe(updateProductSchema)) dto: UpdateProductDto,
     @CurrentTenant('id') tenantId: string,
   ) {
     return this.productService.update(id, dto, tenantId);

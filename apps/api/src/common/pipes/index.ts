@@ -1,1 +1,1 @@
-// Custom pipes will be added as needed
+export * from './zod-validation.pipe';

@@ -35,14 +35,14 @@ export class TenantService {
   async create(dto: CreateTenantDto): Promise<Tenant> {
     const existing = await this.tenantRepository.findBySlug(dto.slug);
     if (existing) {
-      throw new ConflictException(`Slug "${dto.slug}" already in use`);
+      throw new ConflictException(`Slug "${dto.slug}" ja esta em uso`);
     }
 
     // Validate admin email uniqueness if provided
     if (dto.admin_email) {
       const existingUser = await this.userRepo.findOne({ where: { email: dto.admin_email } });
       if (existingUser) {
-        throw new ConflictException(`Email "${dto.admin_email}" already in use`);
+        throw new ConflictException(`Email "${dto.admin_email}" ja esta em uso`);
       }
     }
 
@@ -112,7 +112,7 @@ export class TenantService {
   async findById(id: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findById(id);
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Estabelecimento nao encontrado');
     }
     return tenant;
   }
@@ -120,7 +120,7 @@ export class TenantService {
   async findBySlug(slug: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findBySlug(slug);
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Estabelecimento nao encontrado');
     }
     return tenant;
   }
@@ -133,13 +133,13 @@ export class TenantService {
     if (dto.slug) {
       const existing = await this.tenantRepository.findBySlug(dto.slug);
       if (existing && existing.id !== id) {
-        throw new ConflictException(`Slug "${dto.slug}" already in use`);
+        throw new ConflictException(`Slug "${dto.slug}" ja esta em uso`);
       }
     }
 
     const tenant = await this.tenantRepository.update(id, dto);
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Estabelecimento nao encontrado');
     }
     return tenant;
   }
@@ -185,7 +185,7 @@ export class TenantService {
       relations: ['plan', 'plan.modules'],
     });
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Estabelecimento nao encontrado');
     }
     // Attach admin email for super-admin detail view
     const admin = await this.userRepo.findOne({
@@ -214,7 +214,7 @@ export class TenantService {
       where: { tenant_id: tenantId, system_role: UserRole.ADMIN },
     });
     if (!admin) {
-      throw new NotFoundException('Admin user not found for this tenant');
+      throw new NotFoundException('Usuario administrador nao encontrado para este estabelecimento');
     }
     admin.password_hash = await bcrypt.hash(newPassword, 10);
     await this.userRepo.save(admin);
@@ -228,12 +228,12 @@ export class TenantService {
       where: { tenant_id: tenantId, system_role: UserRole.ADMIN },
     });
     if (!admin) {
-      throw new NotFoundException('Admin user not found for this tenant');
+      throw new NotFoundException('Usuario administrador nao encontrado para este estabelecimento');
     }
     // Check email uniqueness
     const existing = await this.userRepo.findOne({ where: { email: newEmail } });
     if (existing && existing.id !== admin.id) {
-      throw new ConflictException(`Email "${newEmail}" already in use`);
+      throw new ConflictException(`Email "${newEmail}" ja esta em uso`);
     }
     admin.email = newEmail;
     await this.userRepo.save(admin);
@@ -256,7 +256,7 @@ export class TenantService {
       where: { id: userId, tenant_id: tenantId },
     });
     if (!user) {
-      throw new NotFoundException('User not found for this tenant');
+      throw new NotFoundException('Usuario nao encontrado para este estabelecimento');
     }
     user.token_revoked_at = new Date();
     await this.userRepo.save(user);
@@ -280,7 +280,7 @@ export class TenantService {
       where: { tenant_id: tenantId, system_role: UserRole.ADMIN },
     });
     if (!admin) {
-      throw new NotFoundException('Admin user not found for this tenant');
+      throw new NotFoundException('Usuario administrador nao encontrado para este estabelecimento');
     }
     return admin;
   }
@@ -346,10 +346,10 @@ export class TenantService {
       withDeleted: true,
     });
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Estabelecimento nao encontrado');
     }
     if (!tenant.deleted_at) {
-      throw new BadRequestException('Tenant is not deleted');
+      throw new BadRequestException('Este estabelecimento nao esta excluido');
     }
     await this.repo.recover(tenant);
     this.logger.log(`Restored tenant ${id}`);

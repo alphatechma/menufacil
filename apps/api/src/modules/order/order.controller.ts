@@ -14,6 +14,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { createOrderSchema } from '../../common/schemas/order.schema';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AssignDeliveryPersonDto } from './dto/assign-delivery-person.dto';
 import { BulkOrderStatusDto } from './dto/bulk-order-status.dto';
@@ -33,7 +35,7 @@ export class OrderController {
   @RequirePermissions('order:create')
   @ApiOperation({ summary: 'Create a new order (customer)' })
   create(
-    @Body() dto: CreateOrderDto,
+    @Body(new ZodValidationPipe(createOrderSchema)) dto: CreateOrderDto,
     @CurrentUser('id') userId: string,
     @CurrentTenant('id') tenantId: string,
     @CurrentUnit() unitId: string | null,
@@ -46,7 +48,7 @@ export class OrderController {
   @RequirePermissions('order:create')
   @ApiOperation({ summary: 'Create order from admin POS (customer optional)' })
   createFromAdmin(
-    @Body() dto: CreateOrderDto,
+    @Body(new ZodValidationPipe(createOrderSchema)) dto: CreateOrderDto,
     @CurrentTenant('id') tenantId: string,
     @CurrentUnit() unitId: string | null,
   ) {

@@ -281,7 +281,7 @@ export class OrderService {
   async findById(id: string, tenantId: string): Promise<Order> {
     const order = await this.orderRepository.findById(id, tenantId);
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('Pedido nao encontrado');
     }
     return order;
   }
@@ -336,7 +336,7 @@ export class OrderService {
     const allowedTransitions = ORDER_STATUS_TRANSITIONS[order.status] || [];
     if (!allowedTransitions.includes(status)) {
       throw new BadRequestException(
-        `Cannot transition from "${order.status}" to "${status}"`,
+        `Nao e possivel alterar o status de "${order.status}" para "${status}"`,
       );
     }
 
@@ -607,7 +607,7 @@ export class OrderService {
 
   async bulkStatusUpdate(tenantId: string, dto: BulkOrderStatusDto): Promise<{ affected: number; errors: string[] }> {
     if (!dto.ids.length) {
-      throw new BadRequestException('No order IDs provided');
+      throw new BadRequestException('Nenhum ID de pedido informado');
     }
 
     const errors: string[] = [];
