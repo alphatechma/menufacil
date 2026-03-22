@@ -211,19 +211,15 @@ export default function TenantForm() {
 
     try {
       if (isEditing) {
-        const { admin_name, admin_email, admin_password, admin_password_confirm, ...tenantData } = form;
-        const cleanData = {
-          ...tenantData,
-          plan_id: tenantData.plan_id || null,
-        };
+        const { admin_name, admin_email, admin_password, admin_password_confirm, plan_id, ...tenantData } = form;
+        const cleanData: Record<string, any> = { ...tenantData };
+        if (plan_id) cleanData.plan_id = plan_id;
         await updateTenant({ id: id!, data: cleanData }).unwrap();
         notify.success('Estabelecimento atualizado com sucesso!');
       } else {
-        const { admin_password_confirm, ...submitData } = form;
-        const cleanData = {
-          ...submitData,
-          plan_id: submitData.plan_id || null,
-        };
+        const { admin_password_confirm, plan_id, ...submitData } = form;
+        const cleanData: Record<string, any> = { ...submitData };
+        if (plan_id) cleanData.plan_id = plan_id;
         await createTenant(cleanData).unwrap();
         notify.success('Estabelecimento criado com sucesso!');
       }
