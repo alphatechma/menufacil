@@ -42,6 +42,7 @@ function AppContent() {
   useApiErrorHandler();
 
   return (
+    <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
