@@ -16,6 +16,7 @@ import {
   useGetTenantUsersQuery,
   useImpersonateTenantMutation,
   useDeleteTenantMutation,
+  useHardDeleteTenantMutation,
   useUpdateTenantEmailMutation,
   useGetTenantWhatsappStatusQuery,
   useReconnectTenantWhatsappMutation,
@@ -55,12 +56,14 @@ export default function TenantDetail() {
 
   const [showToggleDialog, setShowToggleDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showHardDeleteDialog, setShowHardDeleteDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showRevokeAllDialog, setShowRevokeAllDialog] = useState(false);
   const [showUpdateEmailDialog, setShowUpdateEmailDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [deleteConfirmSlug, setDeleteConfirmSlug] = useState('');
+  const [hardDeleteConfirmSlug, setHardDeleteConfirmSlug] = useState('');
 
   const { data: tenant, isLoading } = useGetTenantQuery(id!);
   const { data: plans } = useGetPlansQuery();
@@ -74,6 +77,7 @@ export default function TenantDetail() {
   const [revokeUserSession] = useRevokeUserSessionMutation();
   const [impersonateTenant, { isLoading: isImpersonating }] = useImpersonateTenantMutation();
   const [deleteTenant, { isLoading: isDeleting }] = useDeleteTenantMutation();
+  const [hardDeleteTenant, { isLoading: isHardDeleting }] = useHardDeleteTenantMutation();
   const [updateTenantEmail, { isLoading: isUpdatingEmail }] = useUpdateTenantEmailMutation();
   const [reconnectWhatsapp, { isLoading: isReconnecting }] = useReconnectTenantWhatsappMutation();
   const [disconnectWhatsapp, { isLoading: isDisconnecting }] = useDisconnectTenantWhatsappMutation();
@@ -102,7 +106,7 @@ export default function TenantDetail() {
 
   const handleResetPassword = async () => {
     if (newPassword.length < 6) {
-      notify.error('A senha deve ter no minimo 6 caracteres.');
+      notify.error('A senha deve ter no mínimo 6 caracteres.');
       return;
     }
     try {
@@ -145,7 +149,7 @@ export default function TenantDetail() {
       await revokeUserSession({ tenantId: id!, userId }).unwrap();
       notify.success('Sessao do usuario revogada.');
     } catch {
-      notify.error('Erro ao revogar sessao.');
+      notify.error('Erro ao revogar sessão.');
     }
   };
 
@@ -171,7 +175,7 @@ export default function TenantDetail() {
 
   const handleDelete = async () => {
     if (deleteConfirmSlug !== tenant?.slug) {
-      notify.error('Slug nao confere. Digite o slug corretamente.');
+      notify.error('Slug não confere. Digite o slug corretamente.');
       return;
     }
     try {
@@ -180,6 +184,20 @@ export default function TenantDetail() {
       navigate('/tenants');
     } catch {
       notify.error('Erro ao excluir estabelecimento.');
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (hardDeleteConfirmSlug !== tenant?.slug) {
+      notify.error('Slug não confere. Digite o slug corretamente.');
+      return;
+    }
+    try {
+      await hardDeleteTenant(id!).unwrap();
+      notify.success('Estabelecimento excluido permanentemente.');
+      navigate('/tenants');
+    } catch {
+      notify.error('Erro ao excluir permanentemente.');
     }
   };
 
@@ -280,8 +298,8 @@ export default function TenantDetail() {
       {/* Tabs */}
       <Tabs defaultValue="info">
         <TabsList>
-          <TabsTrigger value="info">Informacoes</TabsTrigger>
-          <TabsTrigger value="users">Usuarios ({users.length})</TabsTrigger>
+          <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="users">Usuários ({users.length})</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         </TabsList>
 
@@ -291,15 +309,15 @@ export default function TenantDetail() {
             {/* Info Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Informacoes</CardTitle>
+                <CardTitle>Informações</CardTitle>
                 <CardDescription>Dados do estabelecimento</CardDescription>
               </CardHeader>
               <Separator />
               <CardContent className="pt-6 space-y-4">
                 <InfoRow icon={Building2} label="Nome" value={tenant.name} />
-                <InfoRow icon={Mail} label="Email do Admin" value={tenant.admin_email || 'Nao informado'} />
-                <InfoRow icon={Phone} label="Telefone" value={tenant.phone || 'Nao informado'} />
-                <InfoRow icon={MapPin} label="Endereco" value={tenant.address || 'Nao informado'} />
+                <InfoRow icon={Mail} label="Email do Admin" value={tenant.admin_email || 'Não informado'} />
+                <InfoRow icon={Phone} label="Telefone" value={tenant.phone || 'Não informado'} />
+                <InfoRow icon={MapPin} label="Endereço" value={tenant.address || 'Não informado'} />
                 <InfoRow
                   icon={Calendar}
                   label="Criado em"
@@ -316,7 +334,7 @@ export default function TenantDetail() {
             <Card>
               <CardHeader>
                 <CardTitle>Plano</CardTitle>
-                <CardDescription>Plano e modulos do estabelecimento</CardDescription>
+                <CardDescription>Plano e módulos do estabelecimento</CardDescription>
               </CardHeader>
               <Separator />
               <CardContent className="pt-6 space-y-5">
@@ -340,7 +358,7 @@ export default function TenantDetail() {
 
                 {tenant.plan?.modules && tenant.plan.modules.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">Modulos inclusos</p>
+                    <p className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">Módulos inclusos</p>
                     <div className="flex flex-wrap gap-1.5">
                       {tenant.plan.modules.map((mod: any) => (
                         <Badge key={mod.id} variant="outline">{mod.name}</Badge>
@@ -374,7 +392,7 @@ export default function TenantDetail() {
           {/* Actions Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Acoes</CardTitle>
+              <CardTitle>Ações</CardTitle>
               <CardDescription>Gerenciamento do estabelecimento</CardDescription>
             </CardHeader>
             <Separator />
@@ -396,6 +414,14 @@ export default function TenantDetail() {
                   <Trash2 className="h-4 w-4" />
                   Excluir Estabelecimento
                 </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => { setHardDeleteConfirmSlug(''); setShowHardDeleteDialog(true); }}
+                  className="bg-red-700 hover:bg-red-800"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Permanentemente
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -407,7 +433,7 @@ export default function TenantDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Usuarios do Estabelecimento</CardTitle>
+                  <CardTitle>Usuários do Estabelecimento</CardTitle>
                   <CardDescription>{users.length} usuario(s) cadastrado(s)</CardDescription>
                 </div>
                 <Button variant="outline" onClick={() => setShowRevokeAllDialog(true)}>
@@ -458,7 +484,7 @@ export default function TenantDetail() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRevokeUser(u.id)}
-                          title="Derrubar sessao deste usuario"
+                          title="Derrubar sessão deste usuario"
                         >
                           <Ban className="h-4 w-4 text-destructive" />
                         </Button>
@@ -493,7 +519,7 @@ export default function TenantDetail() {
                   </p>
                   {whatsappStatus?.phone_number && (
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                      Numero: {whatsappStatus.phone_number}
+                      Número: {whatsappStatus.phone_number}
                     </p>
                   )}
                 </div>
@@ -533,8 +559,8 @@ export default function TenantDetail() {
             <DialogTitle>{tenant.is_active ? 'Desativar' : 'Ativar'} estabelecimento</DialogTitle>
             <DialogDescription>
               {tenant.is_active
-                ? `Tem certeza que deseja desativar "${tenant.name}"? Os usuarios nao poderao acessar o sistema.`
-                : `Tem certeza que deseja ativar "${tenant.name}"? Os usuarios voltarao a ter acesso.`}
+                ? `Tem certeza que deseja desativar "${tenant.name}"? Os usuários não poderão acessar o sistema.`
+                : `Tem certeza que deseja ativar "${tenant.name}"? Os usuários voltarão a ter acesso.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -589,7 +615,7 @@ export default function TenantDetail() {
           <DialogHeader>
             <DialogTitle>Derrubar Todas as Sessoes</DialogTitle>
             <DialogDescription>
-              Todos os usuarios de "{tenant.name}" serao deslogados imediatamente. Eles precisarao fazer login novamente.
+              Todos os usuários de "{tenant.name}" serao deslogados imediatamente. Eles precisarao fazer login novamente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -662,6 +688,41 @@ export default function TenantDetail() {
               disabled={isDeleting || deleteConfirmSlug !== tenant.slug}
             >
               {isDeleting ? 'Excluindo...' : 'Confirmar Exclusao'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard Delete Tenant */}
+      <Dialog open={showHardDeleteDialog} onOpenChange={setShowHardDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Excluir Permanentemente</DialogTitle>
+            <DialogDescription>
+              <span className="font-semibold text-red-500">ATENCAO: Esta acao e irreversivel!</span> Todos os dados do estabelecimento serao apagados permanentemente, incluindo usuarios, pedidos, produtos, categorias e clientes. Para confirmar, digite o slug "<span className="font-mono font-bold">{tenant.slug}</span>" abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="hardDeleteConfirmSlug">Confirmar Slug</Label>
+            <Input
+              id="hardDeleteConfirmSlug"
+              value={hardDeleteConfirmSlug}
+              onChange={(e) => setHardDeleteConfirmSlug(e.target.value)}
+              placeholder={tenant.slug}
+              className="font-mono border-red-300 focus:ring-red-500"
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleHardDelete}
+              disabled={isHardDeleting || hardDeleteConfirmSlug !== tenant.slug}
+              className="bg-red-700 hover:bg-red-800"
+            >
+              {isHardDeleting ? 'Excluindo permanentemente...' : 'Excluir Permanentemente'}
             </Button>
           </DialogFooter>
         </DialogContent>

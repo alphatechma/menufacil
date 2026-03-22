@@ -15,6 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Force dark mode
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function Login() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
     try {
       const { user, access_token, refresh_token } = await loginMutation({
@@ -44,7 +46,30 @@ export default function Login() {
       const message =
         err?.data?.message ||
         'Credenciais invalidas. Verifique e tente novamente.';
-      setError(message);
+      setError(typeof message === 'string' ? message : 'Dados inválidos');
+
+      // Parse field-level errors from API response
+      if (err?.data?.errors && Array.isArray(err.data.errors)) {
+        const errors: Record<string, string> = {};
+        for (const e of err.data.errors) {
+          if (e.field && e.message) {
+            errors[e.field] = e.message;
+          }
+        }
+        setFieldErrors(errors);
+      } else if (err?.data?.message && Array.isArray(err.data.message)) {
+        const errors: Record<string, string> = {};
+        for (const msg of err.data.message) {
+          if (typeof msg === 'string') {
+            if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('e-mail')) {
+              errors.email = msg;
+            } else if (msg.toLowerCase().includes('senha') || msg.toLowerCase().includes('password')) {
+              errors.password = msg;
+            }
+          }
+        }
+        setFieldErrors(errors);
+      }
     }
   };
 
@@ -99,6 +124,9 @@ export default function Login() {
                 placeholder="admin@menufacil.com"
                 className="w-full h-11 px-4 bg-zinc-900/50 border border-zinc-800 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-red-400 mt-1">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -130,6 +158,9 @@ export default function Login() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-xs text-red-400 mt-1">{fieldErrors.password}</p>
+              )}
             </div>
 
             <Button

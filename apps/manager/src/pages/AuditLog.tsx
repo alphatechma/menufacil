@@ -41,20 +41,20 @@ const ACTION_OPTIONS = [
   { value: 'plan.create', label: 'Criar plano' },
   { value: 'plan.update', label: 'Atualizar plano' },
   { value: 'plan.delete', label: 'Excluir plano' },
-  { value: 'module.create', label: 'Criar modulo' },
-  { value: 'module.update', label: 'Atualizar modulo' },
-  { value: 'module.delete', label: 'Excluir modulo' },
-  { value: 'permission.create', label: 'Criar permissao' },
-  { value: 'permission.update', label: 'Atualizar permissao' },
-  { value: 'permission.delete', label: 'Excluir permissao' },
+  { value: 'module.create', label: 'Criar módulo' },
+  { value: 'module.update', label: 'Atualizar módulo' },
+  { value: 'module.delete', label: 'Excluir módulo' },
+  { value: 'permission.create', label: 'Criar permissão' },
+  { value: 'permission.update', label: 'Atualizar permissão' },
+  { value: 'permission.delete', label: 'Excluir permissão' },
 ];
 
 const ENTITY_OPTIONS = [
   { value: 'all', label: 'Todos os tipos' },
   { value: 'tenant', label: 'Estabelecimento' },
   { value: 'plan', label: 'Plano' },
-  { value: 'module', label: 'Modulo' },
-  { value: 'permission', label: 'Permissao' },
+  { value: 'module', label: 'Módulo' },
+  { value: 'permission', label: 'Permissão' },
 ];
 
 function getActionBadge(action: string) {
@@ -130,7 +130,7 @@ export default function AuditLog() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">Audit Log</h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))] mt-0.5">
-              Historico de acoes realizadas no sistema.
+              Histórico de ações realizadas no sistema.
             </p>
           </div>
         </div>
@@ -325,11 +325,11 @@ export default function AuditLog() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {/* Págination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Pagina {page} de {totalPages} ({total} registros)
+            Página {page} de {totalPages} ({total} registros)
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -347,7 +347,7 @@ export default function AuditLog() {
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
             >
-              Proximo
+              Próximo
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

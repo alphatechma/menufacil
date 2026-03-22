@@ -62,7 +62,7 @@ const ITEMS_PER_PAGE = 20;
 
 function exportTenantsCSV(tenants: any[]) {
   const BOM = '\uFEFF';
-  const headers = ['Nome', 'Slug', 'Telefone', 'Endereco', 'Plano', 'Status', 'Data de Criacao'];
+  const headers = ['Nome', 'Slug', 'Telefone', 'Endereço', 'Plano', 'Status', 'Data de Criação'];
   const rows = tenants.map((t) => [
     t.name || '',
     t.slug || '',
@@ -461,7 +461,7 @@ export default function TenantList() {
                   <TableHead>Contato</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right pr-6">Acoes</TableHead>
+                  <TableHead className="text-right pr-6">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -580,11 +580,11 @@ export default function TenantList() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {/* Págination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Pagina {page} de {totalPages} ({totalItems} estabelecimentos)
+            Página {page} de {totalPages} ({totalItems} estabelecimentos)
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -602,7 +602,7 @@ export default function TenantList() {
               disabled={page >= totalPages}
               onClick={() => { setPage((p) => p + 1); setSelectedIds(new Set()); }}
             >
-              Proximo
+              Próximo
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

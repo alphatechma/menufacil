@@ -157,6 +157,13 @@ export class SuperAdminTenantController {
     return { success: true };
   }
 
+  @Delete(':id/permanent')
+  @ApiOperation({ summary: 'Permanently delete a tenant (hard delete)' })
+  async hardDelete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.tenantService.hardDelete(id);
+    return { success: true };
+  }
+
   @Patch(':id/restore')
   @ApiOperation({ summary: 'Restore a soft-deleted tenant' })
   restore(@Param('id', ParseUUIDPipe) id: string) {

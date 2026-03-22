@@ -6,6 +6,6 @@ import { CreateDeliveryPersonDto } from './create-delivery-person.dto';
 export class UpdateDeliveryPersonDto extends PartialType(CreateDeliveryPersonDto) {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo ativo deve ser verdadeiro ou falso' })
   is_active?: boolean;
 }

@@ -4,19 +4,19 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ReorderItemDto {
   @ApiProperty()
-  @IsUUID()
+  @IsUUID('all', { message: 'ID do produto inválido' })
   id: string;
 
   @ApiProperty()
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'Ordem deve ser um número' })
+  @Min(0, { message: 'Ordem deve ser maior ou igual a 0' })
   sort_order: number;
 }
 
 export class ReorderProductsDto {
   @ApiProperty({ type: [ReorderItemDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsArray({ message: 'Itens deve ser uma lista' })
+  @ValidateNested({ each: true, message: 'Item inválido' })
   @Type(() => ReorderItemDto)
   items: ReorderItemDto[];
 }

@@ -1,9 +1,9 @@
 import { IsString } from 'class-validator';
 
 export class SendMessageDto {
-  @IsString()
+  @IsString({ message: 'Telefone é obrigatório' })
   phone: string;
 
-  @IsString()
+  @IsString({ message: 'Conteúdo da mensagem é obrigatório' })
   content: string;
 }

@@ -4,51 +4,51 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateAddressDto {
   @ApiPropertyOptional({ example: 'Casa' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Rótulo deve ser um texto' })
   label?: string;
 
   @ApiProperty({ example: 'Rua das Flores' })
-  @IsString()
+  @IsString({ message: 'Rua é obrigatória' })
   street: string;
 
   @ApiProperty({ example: '123' })
-  @IsString()
+  @IsString({ message: 'Número é obrigatório' })
   number: string;
 
   @ApiPropertyOptional({ example: 'Apt 4' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Complemento deve ser um texto' })
   complement?: string;
 
   @ApiProperty({ example: 'Centro' })
-  @IsString()
+  @IsString({ message: 'Bairro é obrigatório' })
   neighborhood: string;
 
   @ApiProperty({ example: 'São Paulo' })
-  @IsString()
+  @IsString({ message: 'Cidade é obrigatória' })
   city: string;
 
   @ApiProperty({ example: 'SP' })
-  @IsString()
-  @Length(2, 2)
+  @IsString({ message: 'Estado é obrigatório' })
+  @Length(2, 2, { message: 'Estado deve ter exatamente 2 caracteres' })
   state: string;
 
   @ApiProperty({ example: '01234-567' })
-  @IsString()
+  @IsString({ message: 'CEP é obrigatório' })
   zipcode: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'Latitude deve ser um número' })
   lat?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'Longitude deve ser um número' })
   lng?: number;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo padrão deve ser verdadeiro ou falso' })
   is_default?: boolean;
 }

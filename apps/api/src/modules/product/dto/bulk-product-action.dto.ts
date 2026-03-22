@@ -15,21 +15,21 @@ export enum PriceAdjustmentType {
 
 export class BulkProductActionDto {
   @ApiProperty({ enum: BulkProductActionType })
-  @IsEnum(BulkProductActionType)
+  @IsEnum(BulkProductActionType, { message: 'Ação inválida' })
   action: BulkProductActionType;
 
   @ApiProperty({ type: [String] })
-  @IsArray()
-  @IsUUID('4', { each: true })
+  @IsArray({ message: 'IDs deve ser uma lista' })
+  @IsUUID('4', { each: true, message: 'ID de produto inválido' })
   ids: string[];
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'Valor deve ser um número' })
   value?: number;
 
   @ApiProperty({ enum: PriceAdjustmentType, required: false })
   @IsOptional()
-  @IsEnum(PriceAdjustmentType)
+  @IsEnum(PriceAdjustmentType, { message: 'Tipo de ajuste inválido' })
   adjustment_type?: PriceAdjustmentType;
 }

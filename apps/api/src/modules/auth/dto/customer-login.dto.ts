@@ -4,43 +4,43 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CustomerLoginDto {
   @ApiPropertyOptional({ example: '11999990000' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Telefone deve ser um texto' })
   phone?: string;
 
   @ApiPropertyOptional({ example: 'joao@email.com' })
   @IsOptional()
-  @IsEmail()
+  @IsEmail({}, { message: 'E-mail inválido' })
   email?: string;
 
   @ApiPropertyOptional({ example: 'password123' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Senha deve ser um texto' })
   password?: string;
 
   @ApiPropertyOptional({ example: 'Joao' })
   @IsOptional()
-  @IsString()
-  @MinLength(2)
+  @IsString({ message: 'Nome deve ser um texto' })
+  @MinLength(2, { message: 'Nome deve ter pelo menos 2 caracteres' })
   name?: string;
 }
 
 export class CustomerRegisterDto {
   @ApiProperty({ example: 'Maria Santos' })
-  @IsString()
-  @MinLength(2)
+  @IsString({ message: 'Nome é obrigatório' })
+  @MinLength(2, { message: 'Nome deve ter pelo menos 2 caracteres' })
   name: string;
 
   @ApiProperty({ example: '11999990000' })
-  @IsString()
+  @IsString({ message: 'Telefone é obrigatório' })
   phone: string;
 
   @ApiPropertyOptional({ example: 'maria@email.com' })
   @IsOptional()
-  @IsEmail()
+  @IsEmail({}, { message: 'E-mail inválido' })
   email?: string;
 
   @ApiProperty({ example: 'password123' })
-  @IsString()
-  @MinLength(6)
+  @IsString({ message: 'Senha é obrigatória' })
+  @MinLength(6, { message: 'Senha deve ter pelo menos 6 caracteres' })
   password: string;
 }

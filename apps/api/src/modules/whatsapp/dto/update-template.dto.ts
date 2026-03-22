@@ -2,19 +2,19 @@ import { IsString, IsEnum, IsBoolean, IsOptional } from 'class-validator';
 import { WhatsappTemplateType } from '@menufacil/shared';
 
 export class UpdateTemplateDto {
-  @IsString()
+  @IsString({ message: 'Nome deve ser um texto' })
   @IsOptional()
   name?: string;
 
-  @IsEnum(WhatsappTemplateType)
+  @IsEnum(WhatsappTemplateType, { message: 'Tipo de template inválido' })
   @IsOptional()
   type?: WhatsappTemplateType;
 
-  @IsString()
+  @IsString({ message: 'Conteúdo deve ser um texto' })
   @IsOptional()
   content?: string;
 
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo ativo deve ser verdadeiro ou falso' })
   @IsOptional()
   is_active?: boolean;
 }

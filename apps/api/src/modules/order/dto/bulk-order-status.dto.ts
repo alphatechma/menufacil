@@ -8,16 +8,16 @@ export enum BulkOrderActionType {
 
 export class BulkOrderStatusDto {
   @ApiProperty({ enum: BulkOrderActionType })
-  @IsEnum(BulkOrderActionType)
+  @IsEnum(BulkOrderActionType, { message: 'Ação inválida' })
   action: BulkOrderActionType;
 
   @ApiProperty({ type: [String] })
-  @IsArray()
-  @IsUUID('4', { each: true })
+  @IsArray({ message: 'IDs deve ser uma lista' })
+  @IsUUID('4', { each: true, message: 'ID do pedido inválido' })
   ids: string[];
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Status deve ser um texto' })
   status?: string;
 }

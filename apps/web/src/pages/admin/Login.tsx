@@ -19,6 +19,7 @@ export default function Login() {
   const [login, { isLoading }] = useAdminLoginMutation();
   const notify = useNotify();
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { control, handleSubmit } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -30,6 +31,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormData) => {
     setError('');
+    setFieldErrors({});
 
     try {
       const result = await login(data).unwrap();
@@ -53,6 +55,30 @@ export default function Login() {
         err?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
       setError(message);
       notify.error(message);
+
+      // Parse field-level errors from API response
+      if (err?.data?.errors && Array.isArray(err.data.errors)) {
+        const errors: Record<string, string> = {};
+        for (const e of err.data.errors) {
+          if (e.field && e.message) {
+            errors[e.field] = e.message;
+          }
+        }
+        setFieldErrors(errors);
+      } else if (err?.data?.message && Array.isArray(err.data.message)) {
+        // class-validator returns array of messages
+        const errors: Record<string, string> = {};
+        for (const msg of err.data.message) {
+          if (typeof msg === 'string') {
+            if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('e-mail')) {
+              errors.email = msg;
+            } else if (msg.toLowerCase().includes('senha') || msg.toLowerCase().includes('password')) {
+              errors.password = msg;
+            }
+          }
+        }
+        setFieldErrors(errors);
+      }
     }
   };
 
@@ -138,21 +164,31 @@ export default function Login() {
               {/* Email */}
               <FormField control={control} name="email" label="E-mail" required>
                 {(field) => (
-                  <Input
-                    {...field}
-                    type="email"
-                    placeholder="admin@exemplo.com"
-                  />
+                  <>
+                    <Input
+                      {...field}
+                      type="email"
+                      placeholder="admin@exemplo.com"
+                    />
+                    {fieldErrors.email && (
+                      <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>
+                    )}
+                  </>
                 )}
               </FormField>
 
               {/* Password */}
               <FormField control={control} name="password" label="Senha" required>
                 {(field) => (
-                  <PasswordInput
-                    {...field}
-                    placeholder="Sua senha"
-                  />
+                  <>
+                    <PasswordInput
+                      {...field}
+                      placeholder="Sua senha"
+                    />
+                    {fieldErrors.password && (
+                      <p className="text-xs text-destructive mt-1">{fieldErrors.password}</p>
+                    )}
+                  </>
                 )}
               </FormField>
 

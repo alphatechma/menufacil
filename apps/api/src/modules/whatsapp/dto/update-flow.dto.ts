@@ -3,11 +3,11 @@ import { FlowTriggerType } from '@menufacil/shared';
 
 export class UpdateFlowDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Nome deve ser um texto' })
   name?: string;
 
   @IsOptional()
-  @IsEnum(FlowTriggerType)
+  @IsEnum(FlowTriggerType, { message: 'Tipo de gatilho inválido' })
   trigger_type?: FlowTriggerType;
 
   @IsOptional()
@@ -20,10 +20,10 @@ export class UpdateFlowDto {
   edges?: any[];
 
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo ativo deve ser verdadeiro ou falso' })
   is_active?: boolean;
 
   @IsOptional()
-  @IsInt()
+  @IsInt({ message: 'Prioridade deve ser um número inteiro' })
   priority?: number;
 }

@@ -5,6 +5,6 @@ import { TableStatus } from '../entities/table.entity';
 
 export class UpdateTableDto extends PartialType(CreateTableDto) {
   @IsOptional()
-  @IsEnum(TableStatus)
+  @IsEnum(TableStatus, { message: 'Status da mesa inválido' })
   status?: TableStatus;
 }

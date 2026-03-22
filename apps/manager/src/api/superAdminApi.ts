@@ -101,6 +101,10 @@ export const superAdminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/super-admin/tenants/${id}/restore`, method: 'PATCH' }),
       invalidatesTags: ['Tenants'],
     }),
+    hardDeleteTenant: builder.mutation<any, string>({
+      query: (id) => ({ url: `/super-admin/tenants/${id}/permanent`, method: 'DELETE' }),
+      invalidatesTags: ['Tenants'],
+    }),
     getTenantWhatsappStatus: builder.query<any, string>({
       query: (id) => ({ url: `/super-admin/tenants/${id}/whatsapp/status` }),
     }),
@@ -240,6 +244,7 @@ export const {
   useImpersonateTenantMutation,
   useDeleteTenantMutation,
   useRestoreTenantMutation,
+  useHardDeleteTenantMutation,
   useGetTenantWhatsappStatusQuery,
   useReconnectTenantWhatsappMutation,
   useDisconnectTenantWhatsappMutation,

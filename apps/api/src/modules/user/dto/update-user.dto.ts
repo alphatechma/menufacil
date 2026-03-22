@@ -5,27 +5,27 @@ import { UserRole } from '@menufacil/shared';
 export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  @MinLength(2)
+  @IsString({ message: 'Nome deve ser um texto' })
+  @MinLength(2, { message: 'Nome deve ter pelo menos 2 caracteres' })
   name?: string;
 
   @ApiPropertyOptional({ enum: UserRole })
   @IsOptional()
-  @IsEnum(UserRole)
+  @IsEnum(UserRole, { message: 'Cargo inválido' })
   role?: UserRole;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsUUID('all', { message: 'ID do cargo inválido' })
   role_id?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo ativo deve ser verdadeiro ou falso' })
   is_active?: boolean;
 
   @ApiPropertyOptional({ description: 'Unit ID the user is assigned to (null = all units)' })
   @IsOptional()
-  @IsUUID()
+  @IsUUID('all', { message: 'ID da unidade inválido' })
   unit_id?: string | null;
 }

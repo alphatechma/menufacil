@@ -340,6 +340,29 @@ export class TenantService {
     this.logger.log(`Soft-deleted tenant ${id}`);
   }
 
+  async hardDelete(id: string): Promise<void> {
+    // First try to find with soft-deleted
+    const tenant = await this.repo.findOne({ where: { id }, withDeleted: true });
+    if (!tenant) throw new NotFoundException('Estabelecimento não encontrado');
+
+    // Delete all related data first (users, orders, etc.)
+    await this.repo.query('DELETE FROM users WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM orders WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM products WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM categories WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM customers WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM delivery_zones WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM delivery_persons WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM coupons WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM restaurant_tables WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM reservations WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM tenant_units WHERE tenant_id = $1', [id]);
+
+    // Finally delete the tenant
+    await this.repo.query('DELETE FROM tenants WHERE id = $1', [id]);
+    this.logger.warn(`PERMANENTLY deleted tenant ${id} (${tenant.name})`);
+  }
+
   async restore(id: string): Promise<Tenant> {
     const tenant = await this.repo.findOne({
       where: { id },

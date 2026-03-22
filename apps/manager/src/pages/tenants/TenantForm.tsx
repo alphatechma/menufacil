@@ -48,7 +48,7 @@ const STEPS = [
   { id: 1, label: 'Estabelecimento', icon: Building2 },
   { id: 2, label: 'Plano', icon: CreditCard },
   { id: 3, label: 'Administrador', icon: User },
-  { id: 4, label: 'Revisao', icon: ClipboardCheck },
+  { id: 4, label: 'Revisão', icon: ClipboardCheck },
 ];
 
 function getPasswordStrength(password: string): { level: number; label: string; color: string } {
@@ -61,7 +61,7 @@ function getPasswordStrength(password: string): { level: number; label: string; 
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
   if (score <= 1) return { level: 1, label: 'Fraca', color: 'bg-red-500' };
-  if (score <= 2) return { level: 2, label: 'Razoavel', color: 'bg-amber-500' };
+  if (score <= 2) return { level: 2, label: 'Razoável', color: 'bg-amber-500' };
   if (score <= 3) return { level: 3, label: 'Boa', color: 'bg-blue-500' };
   return { level: 4, label: 'Forte', color: 'bg-emerald-500' };
 }
@@ -87,6 +87,7 @@ export default function TenantForm() {
     admin_password_confirm: '',
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const slugCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,20 +160,20 @@ export default function TenantForm() {
   const validateStep = (step: number): string | null => {
     switch (step) {
       case 1:
-        if (!form.name.trim()) return 'O nome do estabelecimento e obrigatorio.';
-        if (!form.slug.trim()) return 'O slug e obrigatorio.';
-        if (slugStatus === 'taken') return 'Este slug ja esta em uso. Escolha outro.';
+        if (!form.name.trim()) return 'O nome do estabelecimento é obrigatório.';
+        if (!form.slug.trim()) return 'O slug é obrigatório.';
+        if (slugStatus === 'taken') return 'Este slug já está em uso. Escolha outro.';
         return null;
       case 2:
         if (!form.plan_id) return 'Selecione um plano.';
         return null;
       case 3:
-        if (!form.admin_name.trim()) return 'O nome do administrador e obrigatorio.';
-        if (!form.admin_email.trim()) return 'O email do administrador e obrigatorio.';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.admin_email)) return 'Email invalido.';
-        if (!form.admin_password) return 'A senha e obrigatoria.';
-        if (form.admin_password.length < 6) return 'A senha deve ter no minimo 6 caracteres.';
-        if (form.admin_password !== form.admin_password_confirm) return 'As senhas nao coincidem.';
+        if (!form.admin_name.trim()) return 'O nome do administrador é obrigatório.';
+        if (!form.admin_email.trim()) return 'O email do administrador é obrigatório.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.admin_email)) return 'Email inválido.';
+        if (!form.admin_password) return 'A senha é obrigatória.';
+        if (form.admin_password.length < 6) return 'A senha deve ter no mínimo 6 caracteres.';
+        if (form.admin_password !== form.admin_password_confirm) return 'As senhas não coincidem.';
         return null;
       default:
         return null;
@@ -197,6 +198,7 @@ export default function TenantForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
     if (!isEditing) {
       for (let step = 1; step <= 3; step++) {
@@ -226,8 +228,32 @@ export default function TenantForm() {
       navigate('/tenants');
     } catch (err: any) {
       const msg = err?.data?.message || err?.message || 'Erro ao salvar estabelecimento';
-      setError(msg);
-      notify.error(msg);
+      setError(typeof msg === 'string' ? msg : 'Dados inválidos');
+      notify.error(typeof msg === 'string' ? msg : 'Dados inválidos');
+
+      // Parse field-level errors from API response
+      if (err?.data?.errors && Array.isArray(err.data.errors)) {
+        const errors: Record<string, string> = {};
+        for (const e of err.data.errors) {
+          if (e.field && e.message) {
+            errors[e.field] = e.message;
+          }
+        }
+        setFieldErrors(errors);
+      } else if (err?.data?.message && Array.isArray(err.data.message)) {
+        const errors: Record<string, string> = {};
+        for (const m of err.data.message) {
+          if (typeof m === 'string') {
+            const lower = m.toLowerCase();
+            if (lower.includes('nome') || lower.includes('name')) errors.name = m;
+            else if (lower.includes('slug')) errors.slug = m;
+            else if (lower.includes('email') || lower.includes('e-mail')) errors.admin_email = m;
+            else if (lower.includes('senha') || lower.includes('password')) errors.admin_password = m;
+            else if (lower.includes('telefone') || lower.includes('phone')) errors.phone = m;
+          }
+        }
+        setFieldErrors(errors);
+      }
     }
   };
 
@@ -244,7 +270,7 @@ export default function TenantForm() {
               Editar Estabelecimento
             </h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Atualize as informacoes do estabelecimento.
+              Atualize as informações do estabelecimento.
             </p>
           </div>
         </div>
@@ -263,7 +289,7 @@ export default function TenantForm() {
                 <Building2 className="h-5 w-5 text-primary" />
                 <CardTitle>Dados do Estabelecimento</CardTitle>
               </div>
-              <CardDescription>Informacoes basicas do estabelecimento.</CardDescription>
+              <CardDescription>Informações básicas do estabelecimento.</CardDescription>
             </CardHeader>
             <Separator />
             <CardContent className="pt-6 space-y-5">
@@ -277,6 +303,9 @@ export default function TenantForm() {
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Nome do restaurante"
                   />
+                  {fieldErrors.name && (
+                    <p className="text-xs text-destructive mt-1">{fieldErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
@@ -317,7 +346,10 @@ export default function TenantForm() {
                     )}
                   </div>
                   {slugStatus === 'taken' && (
-                    <p className="text-xs text-destructive">Este slug ja esta em uso.</p>
+                    <p className="text-xs text-destructive">Este slug já está em uso.</p>
+                  )}
+                  {fieldErrors.slug && (
+                    <p className="text-xs text-destructive mt-1">{fieldErrors.slug}</p>
                   )}
                 </div>
               </div>
@@ -330,6 +362,9 @@ export default function TenantForm() {
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     placeholder="(99) 99999-9999"
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-xs text-destructive mt-1">{fieldErrors.phone}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Plano</Label>
@@ -354,7 +389,7 @@ export default function TenantForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Endereco</Label>
+                <Label htmlFor="address">Endereço</Label>
                 <Input
                   id="address"
                   value={form.address}
@@ -477,7 +512,7 @@ export default function TenantForm() {
                 <Building2 className="h-5 w-5 text-primary" />
                 <CardTitle>Info do Estabelecimento</CardTitle>
               </div>
-              <CardDescription>Informacoes basicas do restaurante ou estabelecimento.</CardDescription>
+              <CardDescription>Informações básicas do restaurante ou estabelecimento.</CardDescription>
             </CardHeader>
             <Separator />
             <CardContent className="pt-6 space-y-5">
@@ -530,11 +565,11 @@ export default function TenantForm() {
                   </div>
                   {slugStatus === 'taken' && (
                     <p className="text-xs text-destructive">
-                      Este slug ja esta em uso. Escolha outro.
+                      Este slug já está em uso. Escolha outro.
                     </p>
                   )}
                   {slugStatus === 'available' && (
-                    <p className="text-xs text-emerald-600">Slug disponivel!</p>
+                    <p className="text-xs text-emerald-600">Slug disponível!</p>
                   )}
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
                     URL: menufacil.com/<strong>{form.slug || 'slug'}</strong>
@@ -551,7 +586,7 @@ export default function TenantForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Endereco</Label>
+                <Label htmlFor="address">Endereço</Label>
                 <Input
                   id="address"
                   value={form.address}
@@ -617,7 +652,7 @@ export default function TenantForm() {
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-[hsl(var(--muted-foreground))]">
                             <Users className="w-4 h-4 shrink-0" />
-                            <span>{plan.max_users || 'Ilimitados'} usuarios</span>
+                            <span>{plan.max_users || 'Ilimitados'} usuários</span>
                           </div>
                           <div className="flex items-center gap-2 text-[hsl(var(--muted-foreground))]">
                             <Package className="w-4 h-4 shrink-0" />
@@ -679,7 +714,7 @@ export default function TenantForm() {
                       type={showPassword ? 'text' : 'password'}
                       value={form.admin_password}
                       onChange={(e) => setForm({ ...form, admin_password: e.target.value })}
-                      placeholder="Minimo 6 caracteres"
+                      placeholder="Mínimo 6 caracteres"
                       className="pr-10"
                     />
                     <button
@@ -731,7 +766,7 @@ export default function TenantForm() {
                     </button>
                   </div>
                   {form.admin_password_confirm && form.admin_password !== form.admin_password_confirm && (
-                    <p className="text-xs text-destructive">As senhas nao coincidem.</p>
+                    <p className="text-xs text-destructive">As senhas não coincidem.</p>
                   )}
                   {form.admin_password_confirm && form.admin_password === form.admin_password_confirm && form.admin_password_confirm.length > 0 && (
                     <p className="text-xs text-emerald-600 flex items-center gap-1">
@@ -744,7 +779,7 @@ export default function TenantForm() {
           </Card>
         )}
 
-        {/* Step 4 - Revisao */}
+        {/* Step 4 - Revisão */}
         {currentStep === 4 && (
           <div className="space-y-4 animate-fade-in">
             {/* Estabelecimento */}
@@ -781,7 +816,7 @@ export default function TenantForm() {
                     <p className="font-medium text-[hsl(var(--foreground))]">{form.phone || '\u2014'}</p>
                   </div>
                   <div>
-                    <p className="text-[hsl(var(--muted-foreground))] text-xs">Endereco</p>
+                    <p className="text-[hsl(var(--muted-foreground))] text-xs">Endereço</p>
                     <p className="font-medium text-[hsl(var(--foreground))]">{form.address || '\u2014'}</p>
                   </div>
                 </div>
@@ -876,7 +911,7 @@ export default function TenantForm() {
             </Button>
             {currentStep < 4 ? (
               <Button type="button" onClick={handleNext}>
-                Proximo
+                Próximo
                 <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (

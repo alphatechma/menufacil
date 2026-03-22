@@ -3,6 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class TransferSessionDto {
   @ApiProperty({ description: 'ID da nova mesa' })
-  @IsUUID()
+  @IsUUID('all', { message: 'ID da mesa inválido' })
   table_id: string;
 }

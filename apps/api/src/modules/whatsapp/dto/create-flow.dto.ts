@@ -2,10 +2,10 @@ import { IsString, IsEnum, IsOptional, IsBoolean, IsInt } from 'class-validator'
 import { FlowTriggerType } from '@menufacil/shared';
 
 export class CreateFlowDto {
-  @IsString()
+  @IsString({ message: 'Nome do fluxo é obrigatório' })
   name: string;
 
-  @IsEnum(FlowTriggerType)
+  @IsEnum(FlowTriggerType, { message: 'Tipo de gatilho inválido' })
   trigger_type: FlowTriggerType;
 
   @IsOptional()
@@ -18,10 +18,10 @@ export class CreateFlowDto {
   edges?: any[];
 
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Campo ativo deve ser verdadeiro ou falso' })
   is_active?: boolean;
 
   @IsOptional()
-  @IsInt()
+  @IsInt({ message: 'Prioridade deve ser um número inteiro' })
   priority?: number;
 }

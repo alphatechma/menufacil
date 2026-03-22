@@ -3,11 +3,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class OpenSessionDto {
   @ApiProperty()
-  @IsUUID()
+  @IsUUID('all', { message: 'ID da mesa inválido' })
   table_id: string;
 
   @ApiPropertyOptional({ description: 'ID do usuario que abriu a sessao (staff)' })
   @IsOptional()
-  @IsUUID()
+  @IsUUID('all', { message: 'ID do usuário inválido' })
   opened_by?: string;
 }
