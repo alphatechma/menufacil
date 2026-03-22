@@ -8,6 +8,6 @@ export class SuperAdminLoginDto {
 
   @ApiProperty({ example: 'super123' })
   @IsString({ message: 'Senha é obrigatória' })
-  @MinLength(6, { message: 'Senha deve ter pelo menos 6 caracteres' })
+  @MinLength(1, { message: 'Senha é obrigatória' })
   password: string;
 }
