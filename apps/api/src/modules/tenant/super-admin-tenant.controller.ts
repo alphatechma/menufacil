@@ -45,6 +45,13 @@ export class SuperAdminTenantController {
     });
   }
 
+  @Get('check-slug/:slug')
+  @ApiOperation({ summary: 'Check if slug is available' })
+  async checkSlug(@Param('slug') slug: string) {
+    const tenant = await this.tenantService.findBySlugOptional(slug);
+    return { available: !tenant, slug };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get tenant details (super-admin)' })
   findById(@Param('id', ParseUUIDPipe) id: string) {

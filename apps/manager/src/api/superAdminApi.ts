@@ -39,7 +39,10 @@ export const superAdminApi = baseApi.injectEndpoints({
     }),
     updateTenant: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({ url: `/super-admin/tenants/${id}`, method: 'PUT', data }),
-      invalidatesTags: ['Tenants'],
+      invalidatesTags: (_r, _e, { id }) => ['Tenants', { type: 'Tenants', id }],
+    }),
+    checkSlug: builder.query<{ available: boolean; slug: string }, string>({
+      query: (slug) => ({ url: `/super-admin/tenants/check-slug/${slug}` }),
     }),
     toggleTenantActive: builder.mutation<any, string>({
       query: (id) => ({ url: `/super-admin/tenants/${id}/toggle-active`, method: 'PATCH' }),
@@ -225,6 +228,8 @@ export const {
   useGetTenantQuery,
   useCreateTenantMutation,
   useUpdateTenantMutation,
+  useCheckSlugQuery,
+  useLazyCheckSlugQuery,
   useToggleTenantActiveMutation,
   useChangeTenantPlanMutation,
   useResetTenantPasswordMutation,

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -18,6 +18,8 @@ import {
   Users,
   Package,
   Puzzle,
+  X,
+  CheckCircle2,
 } from 'lucide-react';
 import { useNotify } from '@/hooks/useNotify';
 import {
@@ -25,6 +27,7 @@ import {
   useGetPlansQuery,
   useCreateTenantMutation,
   useUpdateTenantMutation,
+  useLazyCheckSlugQuery,
 } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,16 +88,41 @@ export default function TenantForm() {
   });
   const [error, setError] = useState('');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const slugCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: tenant } = useGetTenantQuery(id!, { skip: !isEditing });
   const { data: plans } = useGetPlansQuery();
   const [createTenant, { isLoading: isCreating }] = useCreateTenantMutation();
   const [updateTenant, { isLoading: isUpdating }] = useUpdateTenantMutation();
+  const [checkSlug] = useLazyCheckSlugQuery();
 
   const isSaving = isCreating || isUpdating;
   const plansList = Array.isArray(plans) ? plans : [];
   const selectedPlan = plansList.find((p: any) => p.id === form.plan_id);
   const passwordStrength = getPasswordStrength(form.admin_password);
+
+  const debouncedCheckSlug = useCallback((slug: string) => {
+    if (slugCheckTimer.current) clearTimeout(slugCheckTimer.current);
+    if (!slug || slug.length < 2) {
+      setSlugStatus('idle');
+      return;
+    }
+    // Skip check if editing and slug hasn't changed from original
+    if (isEditing && tenant && slug === tenant.slug) {
+      setSlugStatus('idle');
+      return;
+    }
+    setSlugStatus('checking');
+    slugCheckTimer.current = setTimeout(async () => {
+      try {
+        const result = await checkSlug(slug).unwrap();
+        setSlugStatus(result.available ? 'available' : 'taken');
+      } catch {
+        setSlugStatus('idle');
+      }
+    }, 500);
+  }, [checkSlug, isEditing, tenant]);
 
   useEffect(() => {
     if (tenant) {
@@ -116,12 +144,14 @@ export default function TenantForm() {
   const handleNameChange = (name: string) => {
     const updates: Record<string, string> = { name };
     if (!isEditing && !slugManuallyEdited) {
-      updates.slug = name
+      const slug = name
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
+      updates.slug = slug;
+      debouncedCheckSlug(slug);
     }
     setForm((prev) => ({ ...prev, ...updates }));
   };
@@ -131,6 +161,7 @@ export default function TenantForm() {
       case 1:
         if (!form.name.trim()) return 'O nome do estabelecimento e obrigatorio.';
         if (!form.slug.trim()) return 'O slug e obrigatorio.';
+        if (slugStatus === 'taken') return 'Este slug ja esta em uso. Escolha outro.';
         return null;
       case 2:
         if (!form.plan_id) return 'Selecione um plano.';
@@ -181,11 +212,19 @@ export default function TenantForm() {
     try {
       if (isEditing) {
         const { admin_name, admin_email, admin_password, admin_password_confirm, ...tenantData } = form;
-        await updateTenant({ id: id!, data: tenantData }).unwrap();
+        const cleanData = {
+          ...tenantData,
+          plan_id: tenantData.plan_id || null,
+        };
+        await updateTenant({ id: id!, data: cleanData }).unwrap();
         notify.success('Estabelecimento atualizado com sucesso!');
       } else {
         const { admin_password_confirm, ...submitData } = form;
-        await createTenant(submitData).unwrap();
+        const cleanData = {
+          ...submitData,
+          plan_id: submitData.plan_id || null,
+        };
+        await createTenant(cleanData).unwrap();
         notify.success('Estabelecimento criado com sucesso!');
       }
       navigate('/tenants');
@@ -245,17 +284,45 @@ export default function TenantForm() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    required
-                    value={form.slug}
-                    onChange={(e) => {
-                      setSlugManuallyEdited(true);
-                      setForm({ ...form, slug: e.target.value });
-                    }}
-                    placeholder="meu-restaurante"
-                    className="font-mono text-sm"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="slug"
+                      required
+                      value={form.slug}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, '');
+                        setSlugManuallyEdited(true);
+                        setForm({ ...form, slug: value });
+                        debouncedCheckSlug(value);
+                      }}
+                      placeholder="meu-restaurante"
+                      className={cn(
+                        'font-mono text-sm pr-10',
+                        slugStatus === 'taken' && 'border-destructive focus-visible:ring-destructive',
+                        slugStatus === 'available' && 'border-emerald-500 focus-visible:ring-emerald-500',
+                      )}
+                    />
+                    {slugStatus === 'checking' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--muted-foreground))]" />
+                      </div>
+                    )}
+                    {slugStatus === 'available' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      </div>
+                    )}
+                    {slugStatus === 'taken' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <X className="w-4 h-4 text-destructive" />
+                      </div>
+                    )}
+                  </div>
+                  {slugStatus === 'taken' && (
+                    <p className="text-xs text-destructive">Este slug ja esta em uso.</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -430,16 +497,49 @@ export default function TenantForm() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    value={form.slug}
-                    onChange={(e) => {
-                      setSlugManuallyEdited(true);
-                      setForm({ ...form, slug: e.target.value });
-                    }}
-                    placeholder="meu-restaurante"
-                    className="font-mono text-sm"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="slug"
+                      value={form.slug}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, '');
+                        setSlugManuallyEdited(true);
+                        setForm({ ...form, slug: value });
+                        debouncedCheckSlug(value);
+                      }}
+                      placeholder="meu-restaurante"
+                      className={cn(
+                        'font-mono text-sm pr-10',
+                        slugStatus === 'taken' && 'border-destructive focus-visible:ring-destructive',
+                        slugStatus === 'available' && 'border-emerald-500 focus-visible:ring-emerald-500',
+                      )}
+                    />
+                    {slugStatus === 'checking' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--muted-foreground))]" />
+                      </div>
+                    )}
+                    {slugStatus === 'available' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      </div>
+                    )}
+                    {slugStatus === 'taken' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <X className="w-4 h-4 text-destructive" />
+                      </div>
+                    )}
+                  </div>
+                  {slugStatus === 'taken' && (
+                    <p className="text-xs text-destructive">
+                      Este slug ja esta em uso. Escolha outro.
+                    </p>
+                  )}
+                  {slugStatus === 'available' && (
+                    <p className="text-xs text-emerald-600">Slug disponivel!</p>
+                  )}
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
                     URL: menufacil.com/<strong>{form.slug || 'slug'}</strong>
                   </p>
