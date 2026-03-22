@@ -526,7 +526,7 @@ export default function POS() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Valor de abertura (R$)</label>
-              <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} placeholder="0.00" autoFocus />
+              <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !openingRegister) { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); } }} placeholder="0.00" autoFocus />
             </div>
             <Button className="w-full" loading={openingRegister} onClick={async () => { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); }}>
               Abrir Caixa
@@ -544,7 +544,7 @@ export default function POS() {
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Valor em caixa (R$)</label>
-              <Input type="number" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} placeholder="0.00" autoFocus />
+              <Input type="number" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !closingRegister) { const result = await closeRegister({ closing_balance: parseFloat(closingBalance) || 0, notes: closingNotes || undefined }).unwrap(); setShowCloseRegister(false); setClosingBalance(''); setClosingNotes(''); setClosingSummary(result); } }} placeholder="0.00" autoFocus />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Observacoes</label>

@@ -248,7 +248,7 @@ export default function LoyaltyTiers() {
 
       {/* Create/Edit Modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'Editar Tier' : 'Novo Tier'}>
-        <div className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
             <input
@@ -368,14 +368,14 @@ export default function LoyaltyTiers() {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => setShowModal(false)}>
+            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} loading={creating || updating}>
+            <Button type="submit" loading={creating || updating}>
               {editId ? 'Salvar' : 'Criar'}
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ConfirmDialog

@@ -142,7 +142,7 @@ export default function SystemModuleList() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !deleting) { e.preventDefault(); handleDelete(); } }}>
           <DialogHeader>
             <DialogTitle>Remover Modulo</DialogTitle>
             <DialogDescription>

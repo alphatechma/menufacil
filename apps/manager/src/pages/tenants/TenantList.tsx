@@ -611,7 +611,7 @@ export default function TenantList() {
 
       {/* Bulk Action Confirmation Dialog */}
       <Dialog open={bulkDialog.open} onOpenChange={(open) => setBulkDialog((prev) => ({ ...prev, open }))}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isBulkLoading && !(bulkDialog.action === 'change_plan' && !selectedPlanId)) { e.preventDefault(); handleBulkAction(); } }}>
           <DialogHeader>
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>{dialogDescription}</DialogDescription>
@@ -654,7 +654,7 @@ export default function TenantList() {
 
       {/* Hard Delete Confirmation Dialog */}
       <Dialog open={hardDeleteDialog.open} onOpenChange={(open) => setHardDeleteDialog((prev) => ({ ...prev, open }))}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && hardDeleteConfirmSlug === hardDeleteDialog.slug) { e.preventDefault(); handleHardDelete(); } }}>
           <DialogHeader>
             <DialogTitle className="text-red-600">Excluir Permanentemente</DialogTitle>
             <DialogDescription>

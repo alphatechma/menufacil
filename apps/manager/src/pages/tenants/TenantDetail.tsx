@@ -554,7 +554,7 @@ export default function TenantDetail() {
 
       {/* Toggle Active */}
       <Dialog open={showToggleDialog} onOpenChange={setShowToggleDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isToggling) { e.preventDefault(); handleToggleActive(); } }}>
           <DialogHeader>
             <DialogTitle>{tenant.is_active ? 'Desativar' : 'Ativar'} estabelecimento</DialogTitle>
             <DialogDescription>
@@ -580,7 +580,7 @@ export default function TenantDetail() {
 
       {/* Reset Password */}
       <Dialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isResetting && newPassword.length >= 6) { e.preventDefault(); handleResetPassword(); } }}>
           <DialogHeader>
             <DialogTitle>Resetar Senha do Admin</DialogTitle>
             <DialogDescription>
@@ -611,7 +611,7 @@ export default function TenantDetail() {
 
       {/* Revoke All Sessions */}
       <Dialog open={showRevokeAllDialog} onOpenChange={setShowRevokeAllDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isRevokingAll) { e.preventDefault(); handleRevokeAll(); } }}>
           <DialogHeader>
             <DialogTitle>Derrubar Todas as Sessoes</DialogTitle>
             <DialogDescription>
@@ -631,7 +631,7 @@ export default function TenantDetail() {
 
       {/* Update Email */}
       <Dialog open={showUpdateEmailDialog} onOpenChange={setShowUpdateEmailDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isUpdatingEmail && newEmail.includes('@')) { e.preventDefault(); handleUpdateEmail(); } }}>
           <DialogHeader>
             <DialogTitle>Alterar Email do Admin</DialogTitle>
             <DialogDescription>
@@ -661,7 +661,7 @@ export default function TenantDetail() {
 
       {/* Delete Tenant */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isDeleting && deleteConfirmSlug === tenant.slug) { e.preventDefault(); handleDelete(); } }}>
           <DialogHeader>
             <DialogTitle>Excluir Estabelecimento</DialogTitle>
             <DialogDescription>
@@ -695,7 +695,7 @@ export default function TenantDetail() {
 
       {/* Hard Delete Tenant */}
       <Dialog open={showHardDeleteDialog} onOpenChange={setShowHardDeleteDialog}>
-        <DialogContent>
+        <DialogContent onKeyDown={(e) => { if (e.key === 'Enter' && !isHardDeleting && hardDeleteConfirmSlug === tenant.slug) { e.preventDefault(); handleHardDelete(); } }}>
           <DialogHeader>
             <DialogTitle className="text-red-600">Excluir Permanentemente</DialogTitle>
             <DialogDescription>

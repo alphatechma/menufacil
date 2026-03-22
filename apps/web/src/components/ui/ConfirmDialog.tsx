@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
@@ -24,6 +25,23 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({ open, onClose, onConfirm, title = 'Confirmar', message, confirmLabel = 'Confirmar', loading }: ConfirmDialogProps) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !loading) {
+        e.preventDefault();
+        onConfirm();
+      }
+    },
+    [onConfirm, loading],
+  );
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
+
   return (
     <AlertDialog open={open} onOpenChange={(v) => !v && onClose()}>
       <AlertDialogContent className="max-w-md">

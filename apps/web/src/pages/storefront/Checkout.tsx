@@ -1246,6 +1246,12 @@ export default function Checkout() {
                   setCouponCode(e.target.value.toUpperCase());
                   setCouponError(null);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && couponCode.trim() && !couponLoading) {
+                    e.preventDefault();
+                    handleApplyCoupon();
+                  }
+                }}
                 placeholder="Digite o código"
                 className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/20 outline-none transition-all text-sm uppercase"
               />

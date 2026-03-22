@@ -546,7 +546,7 @@ export default function ProductList() {
         onClose={() => setPriceAdjustModal(false)}
         title="Reajustar Preços"
       >
-        <div className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleBulkPriceAdjust(); }} className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Ajuste o preço de {selectedIds.length} produto(s) selecionado(s).
           </p>
@@ -620,11 +620,11 @@ export default function ProductList() {
           )}
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setPriceAdjustModal(false)}>
+            <Button type="button" variant="outline" onClick={() => setPriceAdjustModal(false)}>
               Cancelar
             </Button>
             <Button
-              onClick={handleBulkPriceAdjust}
+              type="submit"
               disabled={!adjustmentValue || isBulkLoading}
               loading={isBulkLoading}
             >
@@ -632,7 +632,7 @@ export default function ProductList() {
               <span className="ml-1">Aplicar Reajuste</span>
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
     </div>
   );

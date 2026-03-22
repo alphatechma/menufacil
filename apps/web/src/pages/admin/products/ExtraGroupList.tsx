@@ -204,7 +204,7 @@ export default function ExtraGroupList() {
         onClose={() => setShowModal(false)}
         title={editingId ? 'Editar Grupo de Extras' : 'Novo Grupo de Extras'}
       >
-        <div className="space-y-5">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Nome do Grupo *</label>
             <Input
@@ -271,14 +271,14 @@ export default function ExtraGroupList() {
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
+            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} loading={isSaving}>
+            <Button type="submit" loading={isSaving}>
               {editingId ? 'Salvar' : 'Criar Grupo'}
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ConfirmDialog

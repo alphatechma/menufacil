@@ -172,7 +172,7 @@ export default function InventoryList() {
       {/* Movement Modal */}
       {movementModal && (
         <Modal open onClose={() => setMovementModal(null)} title={`${movementModal.type === 'entry' ? 'Entrada' : movementModal.type === 'exit' ? 'Saida' : 'Ajuste'} — ${movementModal.item.name}`} className="md:max-w-sm">
-          <div className="space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); handleMovement(); }} className="space-y-3">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Quantidade ({movementModal.item.unit})</label>
               <Input type="number" value={movQty} onChange={(e) => setMovQty(e.target.value)} placeholder="0" autoFocus />
@@ -188,10 +188,10 @@ export default function InventoryList() {
               <label className="text-sm font-medium text-foreground mb-1 block">Motivo</label>
               <Input value={movReason} onChange={(e) => setMovReason(e.target.value)} placeholder="Ex: Compra fornecedor, perda..." />
             </div>
-            <Button className="w-full" onClick={handleMovement} disabled={!movQty}>
+            <Button type="submit" className="w-full" disabled={!movQty}>
               Confirmar {movementModal.type === 'entry' ? 'Entrada' : 'Saida'}
             </Button>
-          </div>
+          </form>
         </Modal>
       )}
 
