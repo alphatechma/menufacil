@@ -341,24 +341,69 @@ export class TenantService {
   }
 
   async hardDelete(id: string): Promise<void> {
-    // First try to find with soft-deleted
     const tenant = await this.repo.findOne({ where: { id }, withDeleted: true });
     if (!tenant) throw new NotFoundException('Estabelecimento não encontrado');
 
-    // Delete all related data first (users, orders, etc.)
-    await this.repo.query('DELETE FROM users WHERE tenant_id = $1', [id]);
+    // Delete in dependency order (children before parents)
+    // Level 4: deepest children
+    await this.repo.query('DELETE FROM order_item_extras WHERE order_item_id IN (SELECT id FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE tenant_id = $1))', [id]);
+    await this.repo.query('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE tenant_id = $1)', [id]);
+    await this.repo.query('DELETE FROM payment_transactions WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM loyalty_redemptions WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM reviews WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM abandoned_carts WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM referrals WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM wallet_transactions WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM wallets WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM notifications WHERE tenant_id = $1', [id]);
+
+    // Level 3: order-related
     await this.repo.query('DELETE FROM orders WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM cash_registers WHERE tenant_id = $1', [id]);
+
+    // Level 2: product-related
+    await this.repo.query('DELETE FROM product_recipes WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM stock_movements WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM inventory_items WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM extras WHERE extra_group_id IN (SELECT id FROM extra_groups WHERE tenant_id = $1)', [id]);
+    await this.repo.query('DELETE FROM extra_groups WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM product_variations WHERE product_id IN (SELECT id FROM products WHERE tenant_id = $1)', [id]);
+    await this.repo.query('DELETE FROM promotions WHERE tenant_id = $1', [id]);
     await this.repo.query('DELETE FROM products WHERE tenant_id = $1', [id]);
     await this.repo.query('DELETE FROM categories WHERE tenant_id = $1', [id]);
+
+    // Level 2: customer-related
+    await this.repo.query('DELETE FROM customer_addresses WHERE customer_id IN (SELECT id FROM customers WHERE tenant_id = $1)', [id]);
     await this.repo.query('DELETE FROM customers WHERE tenant_id = $1', [id]);
-    await this.repo.query('DELETE FROM delivery_zones WHERE tenant_id = $1', [id]);
-    await this.repo.query('DELETE FROM delivery_persons WHERE tenant_id = $1', [id]);
-    await this.repo.query('DELETE FROM coupons WHERE tenant_id = $1', [id]);
+
+    // Level 2: table/reservation
+    await this.repo.query('DELETE FROM table_sessions WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM floor_plans WHERE tenant_id = $1', [id]);
     await this.repo.query('DELETE FROM restaurant_tables WHERE tenant_id = $1', [id]);
     await this.repo.query('DELETE FROM reservations WHERE tenant_id = $1', [id]);
+
+    // Level 2: delivery
+    await this.repo.query('DELETE FROM delivery_zones WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM delivery_persons WHERE tenant_id = $1', [id]);
+
+    // Level 2: loyalty/coupons
+    await this.repo.query('DELETE FROM loyalty_rewards WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM loyalty_tiers WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM coupons WHERE tenant_id = $1', [id]);
+
+    // Level 2: whatsapp
+    await this.repo.query('DELETE FROM whatsapp_messages WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM whatsapp_flow_executions WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM whatsapp_flows WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM whatsapp_message_templates WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM whatsapp_instances WHERE tenant_id = $1', [id]);
+
+    // Level 1: users, roles, units
+    await this.repo.query('DELETE FROM users WHERE tenant_id = $1', [id]);
+    await this.repo.query('DELETE FROM roles WHERE tenant_id = $1', [id]);
     await this.repo.query('DELETE FROM tenant_units WHERE tenant_id = $1', [id]);
 
-    // Finally delete the tenant
+    // Level 0: tenant itself
     await this.repo.query('DELETE FROM tenants WHERE id = $1', [id]);
     this.logger.warn(`PERMANENTLY deleted tenant ${id} (${tenant.name})`);
   }

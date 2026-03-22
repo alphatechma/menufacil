@@ -148,19 +148,19 @@ export class SuperAdminTenantController {
     return this.tenantService.impersonate(id, body.super_admin_id, this.jwtService);
   }
 
-  // --- Soft Delete / Restore ---
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete a tenant' })
-  async softDelete(@Param('id', ParseUUIDPipe) id: string) {
-    await this.tenantService.softDelete(id);
-    return { success: true };
-  }
+  // --- Delete / Restore ---
 
   @Delete(':id/permanent')
   @ApiOperation({ summary: 'Permanently delete a tenant (hard delete)' })
   async hardDelete(@Param('id', ParseUUIDPipe) id: string) {
     await this.tenantService.hardDelete(id);
+    return { success: true };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Soft delete a tenant' })
+  async softDelete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.tenantService.softDelete(id);
     return { success: true };
   }
 
