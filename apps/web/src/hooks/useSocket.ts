@@ -7,7 +7,8 @@ export function useSocket(tenantSlug: string | null, handlers?: Record<string, (
   useEffect(() => {
     if (!tenantSlug) return;
 
-    const socket = io('/', {
+    const wsUrl = import.meta.env.VITE_API_URL || '/';
+    const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },
     });

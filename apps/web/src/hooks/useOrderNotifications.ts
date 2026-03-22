@@ -122,7 +122,8 @@ export function useOrderNotifications() {
     const tenantId = user.tenant_id;
     if (!tenantId) return;
 
-    const socket = io('/', {
+    const wsUrl = import.meta.env.VITE_API_URL || '/';
+    const socket = io(wsUrl, {
       path: '/socket.io',
       query: { tenantSlug },
     });

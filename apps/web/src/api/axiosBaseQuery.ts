@@ -14,8 +14,12 @@ interface AxiosBaseQueryArgs {
   meta?: { authContext?: AuthContext; tenantSlug?: string };
 }
 
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const axiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   withCredentials: true,
 });
 

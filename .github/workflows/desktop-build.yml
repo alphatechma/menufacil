@@ -97,22 +97,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#desktop-v}"
 
           # Find all .sig files
-          find apps/desktop/src-tauri/target -name "*.sig" -type f 2>/dev/null | while read sigfile; do
+          for sigfile in $(find apps/desktop/src-tauri/target -name "*.sig" -type f 2>/dev/null); do
             filename=$(basename "$sigfile")
             echo "Uploading signature: $filename"
             gh release upload "$TAG" "$sigfile" --clobber || true
           done
 
-          # Find and upload .tar.gz and .zip updater bundles (if not already uploaded)
-          find apps/desktop/src-tauri/target -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" -o -name "*.app.tar.gz" 2>/dev/null | grep -v "/deps/" | while read bundle; do
+          # Find and upload .tar.gz and .zip updater bundles
+          for bundle in $(find apps/desktop/src-tauri/target \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" -o -name "*.app.tar.gz" \) -not -path "*/deps/*" 2>/dev/null); do
             filename=$(basename "$bundle")
             echo "Uploading bundle: $filename"
             gh release upload "$TAG" "$bundle" --clobber || true
           done
+
+          echo "Upload step completed"
 
   updater-json:
     needs: [create-release, build]
