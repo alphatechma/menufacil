@@ -52,7 +52,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 interface SortableRowProps {
   product: any;
@@ -177,6 +177,7 @@ export default function ProductList() {
   const [adjustmentType, setAdjustmentType] = useState<'percent' | 'fixed'>('percent');
   const [adjustmentValue, setAdjustmentValue] = useState('');
 
+  const notify = useNotify();
   const { hasPermission } = usePermission();
   const { data: products = [], isLoading } = useGetProductsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
@@ -234,9 +235,9 @@ export default function ProductList() {
     if (!deleteTarget) return;
     try {
       await deleteProduct(deleteTarget.id).unwrap();
-      toast.success('Produto excluido com sucesso!');
+      notify.success('Produto excluido com sucesso!');
     } catch {
-      toast.error('Erro ao excluir produto.');
+      notify.error('Erro ao excluir produto.');
     } finally {
       setDeleteTarget(null);
     }
@@ -260,30 +261,30 @@ export default function ProductList() {
   const handleBulkActivate = async () => {
     try {
       await bulkAction({ action: 'activate', ids: selectedIds }).unwrap();
-      toast.success(`${selectedIds.length} produto(s) ativado(s)!`);
+      notify.success(`${selectedIds.length} produto(s) ativado(s)!`);
       setSelectedIds([]);
     } catch {
-      toast.error('Erro ao ativar produtos.');
+      notify.error('Erro ao ativar produtos.');
     }
   };
 
   const handleBulkDeactivate = async () => {
     try {
       await bulkAction({ action: 'deactivate', ids: selectedIds }).unwrap();
-      toast.success(`${selectedIds.length} produto(s) desativado(s)!`);
+      notify.success(`${selectedIds.length} produto(s) desativado(s)!`);
       setSelectedIds([]);
     } catch {
-      toast.error('Erro ao desativar produtos.');
+      notify.error('Erro ao desativar produtos.');
     }
   };
 
   const handleBulkDelete = async () => {
     try {
       await bulkAction({ action: 'delete', ids: selectedIds }).unwrap();
-      toast.success(`${selectedIds.length} produto(s) excluido(s)!`);
+      notify.success(`${selectedIds.length} produto(s) excluido(s)!`);
       setSelectedIds([]);
     } catch {
-      toast.error('Erro ao excluir produtos.');
+      notify.error('Erro ao excluir produtos.');
     } finally {
       setBulkDeleteConfirm(false);
     }
@@ -292,7 +293,7 @@ export default function ProductList() {
   const handleBulkPriceAdjust = async () => {
     const value = parseFloat(adjustmentValue);
     if (isNaN(value)) {
-      toast.error('Informe um valor valido.');
+      notify.error('Informe um valor valido.');
       return;
     }
     try {
@@ -302,12 +303,12 @@ export default function ProductList() {
         value,
         adjustment_type: adjustmentType,
       }).unwrap();
-      toast.success(`Preco de ${selectedIds.length} produto(s) atualizado!`);
+      notify.success(`Preco de ${selectedIds.length} produto(s) atualizado!`);
       setSelectedIds([]);
       setPriceAdjustModal(false);
       setAdjustmentValue('');
     } catch {
-      toast.error('Erro ao reajustar precos.');
+      notify.error('Erro ao reajustar precos.');
     }
   };
 

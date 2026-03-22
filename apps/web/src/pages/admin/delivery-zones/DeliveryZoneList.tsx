@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { useGetDeliveryZonesQuery, useDeleteDeliveryZoneMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -14,6 +14,7 @@ export default function DeliveryZoneList() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
+  const notify = useNotify();
   const { data: zones = [], isLoading } = useGetDeliveryZonesQuery();
   const [deleteZone, { isLoading: isDeleting }] = useDeleteDeliveryZoneMutation();
 
@@ -29,9 +30,9 @@ export default function DeliveryZoneList() {
     if (!deleteTarget) return;
     try {
       await deleteZone(deleteTarget.id).unwrap();
-      toast.success('Zona de entrega excluida com sucesso!');
+      notify.success('Zona de entrega excluida com sucesso!');
     } catch {
-      toast.error('Erro ao excluir zona de entrega. Tente novamente.');
+      notify.error('Erro ao excluir zona de entrega. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }

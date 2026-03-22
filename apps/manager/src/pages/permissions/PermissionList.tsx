@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Shield } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetPermissionsQuery,
   useGetSystemModulesQuery,
@@ -53,6 +53,7 @@ function ListSkeleton() {
 }
 
 export default function PermissionList() {
+  const notify = useNotify();
   const [moduleFilter, setModuleFilter] = useState<string>('all');
   const { data: modules } = useGetSystemModulesQuery();
   const { data: permissions, isLoading } = useGetPermissionsQuery(
@@ -68,9 +69,9 @@ export default function PermissionList() {
     setDeleting(true);
     try {
       await deletePermission(deleteTarget.id).unwrap();
-      toast.success('Permissao removida!');
+      notify.success('Permissao removida!');
     } catch {
-      toast.error('Erro ao remover permissao.');
+      notify.error('Erro ao remover permissao.');
     } finally {
       setDeleting(false);
       setDeleteTarget(null);

@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetPermissionQuery,
   useGetSystemModulesQuery,
@@ -51,6 +51,7 @@ const NO_MODULE = '__none__';
 export default function PermissionForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: permission, isLoading: loadingPermission } = useGetPermissionQuery(id!, {
@@ -87,16 +88,16 @@ export default function PermissionForm() {
 
       if (isEditing) {
         await updatePermission({ id: id!, data: payload }).unwrap();
-        toast.success('Permissao atualizada!');
+        notify.success('Permissao atualizada!');
       } else {
         await createPermission(payload).unwrap();
-        toast.success('Permissao criada!');
+        notify.success('Permissao criada!');
       }
       navigate('/permissions');
     } catch (err: any) {
       const msg = err?.data?.message || 'Erro ao salvar permissao';
       setError(msg);
-      toast.error(msg);
+      notify.error(msg);
     }
   };
 

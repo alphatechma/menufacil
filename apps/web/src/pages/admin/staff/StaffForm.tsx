@@ -20,7 +20,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 const staffSchema = z.object({
   name: z.string().min(2, 'Nome obrigatorio'),
@@ -34,6 +34,7 @@ type StaffFormData = z.infer<typeof staffSchema>;
 export default function StaffForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: member, isLoading: isLoadingMember } = useGetStaffMemberQuery(id!, { skip: !isEditing });
@@ -87,7 +88,7 @@ export default function StaffForm() {
           updateData.password = data.password;
         }
         await updateStaff({ id: id!, data: updateData }).unwrap();
-        toast.success('Membro atualizado com sucesso');
+        notify.success('Membro atualizado com sucesso');
       } else {
         await createStaff({
           name: data.name,
@@ -96,11 +97,11 @@ export default function StaffForm() {
           role_id: selectedRoleId,
           unit_id: selectedUnitId || undefined,
         }).unwrap();
-        toast.success('Membro criado com sucesso');
+        notify.success('Membro criado com sucesso');
       }
       navigate('/admin/staff');
     } catch {
-      toast.error('Erro ao salvar o membro');
+      notify.error('Erro ao salvar o membro');
     }
   };
 

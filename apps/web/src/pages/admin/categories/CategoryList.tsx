@@ -25,12 +25,13 @@ import { Button } from '@/components/ui/Button';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function CategoryList() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
+  const notify = useNotify();
   const { data: categories = [], isLoading } = useGetCategoriesQuery();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
@@ -66,9 +67,9 @@ export default function CategoryList() {
           updateCategory({ id: cat.id, data: { sort_order: index } }).unwrap(),
         ),
       );
-      toast.success('Ordem atualizada!');
+      notify.success('Ordem atualizada!');
     } catch {
-      toast.error('Erro ao atualizar ordem.');
+      notify.error('Erro ao atualizar ordem.');
     }
   };
 
@@ -76,9 +77,9 @@ export default function CategoryList() {
     if (!deleteTarget) return;
     try {
       await deleteCategory(deleteTarget.id).unwrap();
-      toast.success('Categoria excluida com sucesso!');
+      notify.success('Categoria excluida com sucesso!');
     } catch {
-      toast.error('Erro ao excluir categoria.');
+      notify.error('Erro ao excluir categoria.');
     } finally {
       setDeleteTarget(null);
     }

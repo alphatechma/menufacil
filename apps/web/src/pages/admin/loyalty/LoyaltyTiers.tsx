@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Crown, Medal, Award, Plus, Pencil, Trash2, Sparkles, Star } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetLoyaltyTiersQuery,
   useCreateLoyaltyTierMutation,
@@ -62,6 +62,7 @@ const defaultForm: TierForm = {
 };
 
 export default function LoyaltyTiers() {
+  const notify = useNotify();
   const { data: tiers = [], isLoading } = useGetLoyaltyTiersQuery();
   const [createTier, { isLoading: creating }] = useCreateLoyaltyTierMutation();
   const [updateTier, { isLoading: updating }] = useUpdateLoyaltyTierMutation();
@@ -110,20 +111,20 @@ export default function LoyaltyTiers() {
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      toast.error('Nome e obrigatorio');
+      notify.error('Nome e obrigatorio');
       return;
     }
     try {
       if (editId) {
         await updateTier({ id: editId, data: form }).unwrap();
-        toast.success('Tier atualizado!');
+        notify.success('Tier atualizado!');
       } else {
         await createTier(form).unwrap();
-        toast.success('Tier criado!');
+        notify.success('Tier criado!');
       }
       setShowModal(false);
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Erro ao salvar tier');
+      notify.error(err?.data?.message || 'Erro ao salvar tier');
     }
   };
 
@@ -131,9 +132,9 @@ export default function LoyaltyTiers() {
     if (!deleteId) return;
     try {
       await deleteTier(deleteId).unwrap();
-      toast.success('Tier excluido!');
+      notify.success('Tier excluido!');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Erro ao excluir tier');
+      notify.error(err?.data?.message || 'Erro ao excluir tier');
     } finally {
       setDeleteId(null);
     }
@@ -142,9 +143,9 @@ export default function LoyaltyTiers() {
   const handleSeed = async () => {
     try {
       await seedTiers().unwrap();
-      toast.success('Tiers padrao criados!');
+      notify.success('Tiers padrao criados!');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Erro ao criar tiers padrao');
+      notify.error(err?.data?.message || 'Erro ao criar tiers padrao');
     }
   };
 

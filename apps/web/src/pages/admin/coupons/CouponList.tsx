@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Ticket } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { useGetCouponsQuery, useDeleteCouponMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -20,6 +20,7 @@ export default function CouponList() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; code: string } | null>(null);
 
+  const notify = useNotify();
   const { data: coupons = [], isLoading } = useGetCouponsQuery();
   const [deleteCoupon, { isLoading: isDeleting }] = useDeleteCouponMutation();
 
@@ -35,9 +36,9 @@ export default function CouponList() {
     if (!deleteTarget) return;
     try {
       await deleteCoupon(deleteTarget.id).unwrap();
-      toast.success('Cupom excluido com sucesso!');
+      notify.success('Cupom excluido com sucesso!');
     } catch {
-      toast.error('Erro ao excluir cupom. Tente novamente.');
+      notify.error('Erro ao excluir cupom. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }

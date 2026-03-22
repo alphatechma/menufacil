@@ -31,7 +31,7 @@ import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 import { printOrderReceipt } from '@/utils/printOrderReceipt';
 import { formatPhone } from '@/utils/formatPhone';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 const STATUS_CONFIG: Record<
   string,
@@ -116,6 +116,7 @@ export default function OrderDetail() {
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
   const [assignDeliveryPerson] = useAssignDeliveryPersonMutation();
 
+  const notify = useNotify();
   const [deliveryModal, setDeliveryModal] = useState(false);
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState('');
 
@@ -135,7 +136,7 @@ export default function OrderDetail() {
     }
 
     await updateStatus({ id: order.id, status: nextStatus }).unwrap();
-    toast.success(`Status atualizado para ${STATUS_CONFIG[nextStatus]?.label || nextStatus}`);
+    notify.success(`Status atualizado para ${STATUS_CONFIG[nextStatus]?.label || nextStatus}`);
 
     // Auto-print receipt when confirming order (pending -> confirmed)
     if (order.status === 'pending' && nextStatus === 'confirmed') {
@@ -150,7 +151,7 @@ export default function OrderDetail() {
       status: 'out_for_delivery',
       delivery_person_id: selectedDeliveryPerson,
     }).unwrap();
-    toast.success('Pedido enviado para entrega');
+    notify.success('Pedido enviado para entrega');
     setDeliveryModal(false);
     setSelectedDeliveryPerson('');
   };
@@ -158,7 +159,7 @@ export default function OrderDetail() {
   const handleCancel = async () => {
     if (!order) return;
     await updateStatus({ id: order.id, status: 'cancelled' }).unwrap();
-    toast.success('Pedido cancelado');
+    notify.success('Pedido cancelado');
   };
 
   if (isLoading || !order) return <DetailPageSkeleton />;

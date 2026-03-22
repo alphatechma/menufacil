@@ -16,7 +16,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowLeft, Save, CheckCircle, ChevronLeft, ChevronRight, Play } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Toggle } from '@/components/ui/Toggle';
@@ -117,6 +117,7 @@ export default function FlowEditor() {
   const [ready, setReady] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [testPhone, setTestPhone] = useState('');
+  const notify = useNotify();
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
@@ -226,13 +227,13 @@ export default function FlowEditor() {
           edges: serializeEdges(edges),
         },
       }).unwrap();
-      toast.success('Fluxo salvo com sucesso');
+      notify.success('Fluxo salvo com sucesso');
     } catch (err: any) {
       const message = err?.data?.message;
       if (Array.isArray(message)) {
-        message.forEach((m: string) => toast.error(m));
+        message.forEach((m: string) => notify.error(m));
       } else {
-        toast.error(message || 'Erro ao salvar fluxo');
+        notify.error(message || 'Erro ao salvar fluxo');
       }
     }
   };
@@ -242,12 +243,12 @@ export default function FlowEditor() {
     try {
       const result = await validateFlow(id).unwrap();
       if (result.valid) {
-        toast.success('Fluxo valido!');
+        notify.success('Fluxo valido!');
       } else {
-        result.errors.forEach((err) => toast.error(err));
+        result.errors.forEach((err) => notify.error(err));
       }
     } catch {
-      toast.error('Erro ao validar fluxo');
+      notify.error('Erro ao validar fluxo');
     }
   };
 
@@ -257,15 +258,15 @@ export default function FlowEditor() {
       await handleSave();
       const result = await testFlow({ id, phone: testPhone }).unwrap();
       if (result.success) {
-        toast.success('Fluxo enviado para teste!');
+        notify.success('Fluxo enviado para teste!');
         setTestModalOpen(false);
         setTestPhone('');
       } else {
         const msgs = result.errors || [result.error || 'Erro ao testar'];
-        msgs.forEach((m) => toast.error(m));
+        msgs.forEach((m) => notify.error(m));
       }
     } catch {
-      toast.error('Erro ao testar fluxo');
+      notify.error('Erro ao testar fluxo');
     }
   };
 

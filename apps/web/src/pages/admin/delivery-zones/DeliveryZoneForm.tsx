@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useGetDeliveryZoneQuery, useCreateDeliveryZoneMutation, useUpdateDeliveryZoneMutation } from '@/api/adminApi';
 import { deliveryZoneSchema, type DeliveryZoneFormData } from '@/schemas/admin/deliveryZoneSchema';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { PriceInput } from '@/components/ui/PriceInput';
@@ -18,6 +18,7 @@ import { FormPageSkeleton } from '@/components/ui/Skeleton';
 export default function DeliveryZoneForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: zone, isLoading: isLoadingZone } = useGetDeliveryZoneQuery(id!, { skip: !isEditing });
@@ -87,10 +88,10 @@ export default function DeliveryZoneForm() {
       } else {
         await createZone(data).unwrap();
       }
-      toast.success(isEditing ? 'Zona de entrega atualizada com sucesso!' : 'Zona de entrega criada com sucesso!');
+      notify.success(isEditing ? 'Zona de entrega atualizada com sucesso!' : 'Zona de entrega criada com sucesso!');
       navigate('/admin/delivery-zones');
     } catch {
-      toast.error('Erro ao salvar a zona de entrega. Tente novamente.');
+      notify.error('Erro ao salvar a zona de entrega. Tente novamente.');
     }
   };
 

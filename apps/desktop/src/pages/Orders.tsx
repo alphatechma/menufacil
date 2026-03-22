@@ -18,6 +18,7 @@ import {
   useAssignDeliveryPersonMutation,
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
 
@@ -86,6 +87,7 @@ function getTimeColor(order: any): string {
 }
 
 export default function Orders() {
+  const notify = useNotify();
   const [statusFilter, setStatusFilter] = useState('pending');
   const [, setTick] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export default function Orders() {
     setUpdatingId(orderId);
     try {
       await updateStatus({ id: orderId, status: nextStatus }).unwrap();
-    } catch { /* */ }
+    } catch { notify.error('Erro ao atualizar status do pedido.'); }
     setUpdatingId(null);
   };
 
@@ -145,7 +147,7 @@ export default function Orders() {
       await assignDeliveryPerson({ id: orderId, delivery_person_id: deliveryPersonId }).unwrap();
       await updateStatus({ id: orderId, status: 'out_for_delivery' }).unwrap();
       setDeliveryModalOrderId(null);
-    } catch { /* */ }
+    } catch { notify.error('Erro ao atribuir entregador.'); }
     setUpdatingId(null);
   };
 
@@ -153,7 +155,7 @@ export default function Orders() {
     setUpdatingId(orderId);
     try {
       await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
-    } catch { /* */ }
+    } catch { notify.error('Erro ao cancelar pedido.'); }
     setUpdatingId(null);
   };
 

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Pencil, Power, Building2, Phone, MapPin, Calendar, CreditCard,
   KeyRound, Trash2, LogIn, Users, Wifi, WifiOff, Ban, Loader2, RotateCcw, Mail,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetTenantQuery,
   useGetPlansQuery,
@@ -50,6 +50,7 @@ import {
 export default function TenantDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const user = useAppSelector((s) => s.auth.user);
 
   const [showToggleDialog, setShowToggleDialog] = useState(false);
@@ -83,9 +84,9 @@ export default function TenantDetail() {
   const handleToggleActive = async () => {
     try {
       await toggleTenantActive(id!).unwrap();
-      toast.success(tenant?.is_active ? 'Tenant desativado.' : 'Tenant ativado!');
+      notify.success(tenant?.is_active ? 'Estabelecimento desativado.' : 'Estabelecimento ativado!');
     } catch {
-      toast.error('Erro ao alterar status do tenant.');
+      notify.error('Erro ao alterar status do estabelecimento.');
     }
     setShowToggleDialog(false);
   };
@@ -93,48 +94,48 @@ export default function TenantDetail() {
   const handleChangePlan = async (planId: string) => {
     try {
       await changeTenantPlan({ id: id!, plan_id: planId === 'none' ? '' : planId }).unwrap();
-      toast.success('Plano alterado com sucesso!');
+      notify.success('Plano alterado com sucesso!');
     } catch {
-      toast.error('Erro ao alterar plano.');
+      notify.error('Erro ao alterar plano.');
     }
   };
 
   const handleResetPassword = async () => {
     if (newPassword.length < 6) {
-      toast.error('A senha deve ter no minimo 6 caracteres.');
+      notify.error('A senha deve ter no minimo 6 caracteres.');
       return;
     }
     try {
       await resetPassword({ id: id!, new_password: newPassword }).unwrap();
-      toast.success('Senha resetada com sucesso!');
+      notify.success('Senha resetada com sucesso!');
       setShowResetPasswordDialog(false);
       setNewPassword('');
     } catch {
-      toast.error('Erro ao resetar senha.');
+      notify.error('Erro ao resetar senha.');
     }
   };
 
   const handleUpdateEmail = async () => {
     if (!newEmail || !newEmail.includes('@')) {
-      toast.error('Informe um email valido.');
+      notify.error('Informe um email valido.');
       return;
     }
     try {
       await updateTenantEmail({ id: id!, new_email: newEmail }).unwrap();
-      toast.success('Email do admin atualizado!');
+      notify.success('Email do admin atualizado!');
       setShowUpdateEmailDialog(false);
       setNewEmail('');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Erro ao atualizar email.');
+      notify.error(err?.data?.message || 'Erro ao atualizar email.');
     }
   };
 
   const handleRevokeAll = async () => {
     try {
       const result = await revokeAllSessions(id!).unwrap();
-      toast.success(`${result.count} sessoes revogadas.`);
+      notify.success(`${result.count} sessoes revogadas.`);
     } catch {
-      toast.error('Erro ao revogar sessoes.');
+      notify.error('Erro ao revogar sessoes.');
     }
     setShowRevokeAllDialog(false);
   };
@@ -142,9 +143,9 @@ export default function TenantDetail() {
   const handleRevokeUser = async (userId: string) => {
     try {
       await revokeUserSession({ tenantId: id!, userId }).unwrap();
-      toast.success('Sessao do usuario revogada.');
+      notify.success('Sessao do usuario revogada.');
     } catch {
-      toast.error('Erro ao revogar sessao.');
+      notify.error('Erro ao revogar sessao.');
     }
   };
 
@@ -162,41 +163,41 @@ export default function TenantDetail() {
       }));
       const url = `https://menufacil.maistechtecnologia.com.br/admin?impersonate=${impersonateData}`;
       window.open(url, '_blank');
-      toast.success('Abrindo painel do tenant...');
+      notify.success('Abrindo painel do estabelecimento...');
     } catch {
-      toast.error('Erro ao impersonar tenant.');
+      notify.error('Erro ao impersonar estabelecimento.');
     }
   };
 
   const handleDelete = async () => {
     if (deleteConfirmSlug !== tenant?.slug) {
-      toast.error('Slug nao confere. Digite o slug corretamente.');
+      notify.error('Slug nao confere. Digite o slug corretamente.');
       return;
     }
     try {
       await deleteTenant(id!).unwrap();
-      toast.success('Tenant excluido com sucesso.');
+      notify.success('Estabelecimento excluido com sucesso.');
       navigate('/tenants');
     } catch {
-      toast.error('Erro ao excluir tenant.');
+      notify.error('Erro ao excluir estabelecimento.');
     }
   };
 
   const handleReconnectWhatsapp = async () => {
     try {
       await reconnectWhatsapp(id!).unwrap();
-      toast.success('WhatsApp reconectado!');
+      notify.success('WhatsApp reconectado!');
     } catch {
-      toast.error('Erro ao reconectar WhatsApp.');
+      notify.error('Erro ao reconectar WhatsApp.');
     }
   };
 
   const handleDisconnectWhatsapp = async () => {
     try {
       await disconnectWhatsapp(id!).unwrap();
-      toast.success('WhatsApp desconectado.');
+      notify.success('WhatsApp desconectado.');
     } catch {
-      toast.error('Erro ao desconectar WhatsApp.');
+      notify.error('Erro ao desconectar WhatsApp.');
     }
   };
 
@@ -315,7 +316,7 @@ export default function TenantDetail() {
             <Card>
               <CardHeader>
                 <CardTitle>Plano</CardTitle>
-                <CardDescription>Plano e modulos do tenant</CardDescription>
+                <CardDescription>Plano e modulos do estabelecimento</CardDescription>
               </CardHeader>
               <Separator />
               <CardContent className="pt-6 space-y-5">
@@ -374,7 +375,7 @@ export default function TenantDetail() {
           <Card>
             <CardHeader>
               <CardTitle>Acoes</CardTitle>
-              <CardDescription>Gerenciamento do tenant</CardDescription>
+              <CardDescription>Gerenciamento do estabelecimento</CardDescription>
             </CardHeader>
             <Separator />
             <CardContent className="pt-6">
@@ -393,7 +394,7 @@ export default function TenantDetail() {
                 </Button>
                 <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
                   <Trash2 className="h-4 w-4" />
-                  Excluir Tenant
+                  Excluir Estabelecimento
                 </Button>
               </div>
             </CardContent>
@@ -406,7 +407,7 @@ export default function TenantDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Usuarios do Tenant</CardTitle>
+                  <CardTitle>Usuarios do Estabelecimento</CardTitle>
                   <CardDescription>{users.length} usuario(s) cadastrado(s)</CardDescription>
                 </div>
                 <Button variant="outline" onClick={() => setShowRevokeAllDialog(true)}>
@@ -475,7 +476,7 @@ export default function TenantDetail() {
           <Card>
             <CardHeader>
               <CardTitle>WhatsApp</CardTitle>
-              <CardDescription>Status da conexao do WhatsApp do tenant</CardDescription>
+              <CardDescription>Status da conexao do WhatsApp do estabelecimento</CardDescription>
             </CardHeader>
             <Separator />
             <CardContent className="pt-6 space-y-5">
@@ -529,7 +530,7 @@ export default function TenantDetail() {
       <Dialog open={showToggleDialog} onOpenChange={setShowToggleDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{tenant.is_active ? 'Desativar' : 'Ativar'} tenant</DialogTitle>
+            <DialogTitle>{tenant.is_active ? 'Desativar' : 'Ativar'} estabelecimento</DialogTitle>
             <DialogDescription>
               {tenant.is_active
                 ? `Tem certeza que deseja desativar "${tenant.name}"? Os usuarios nao poderao acessar o sistema.`
@@ -636,9 +637,9 @@ export default function TenantDetail() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir Tenant</DialogTitle>
+            <DialogTitle>Excluir Estabelecimento</DialogTitle>
             <DialogDescription>
-              Esta acao ira desativar o tenant. Para confirmar, digite o slug "{tenant.slug}" abaixo.
+              Esta acao ira desativar o estabelecimento. Para confirmar, digite o slug "{tenant.slug}" abaixo.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

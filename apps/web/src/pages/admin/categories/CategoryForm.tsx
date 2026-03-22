@@ -14,11 +14,12 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function CategoryForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: category, isLoading: isLoadingCategory } = useGetCategoryQuery(id!, { skip: !isEditing });
@@ -55,14 +56,14 @@ export default function CategoryForm() {
     try {
       if (isEditing) {
         await updateCategory({ id: id!, data }).unwrap();
-        toast.success('Categoria atualizada com sucesso');
+        notify.success('Categoria atualizada com sucesso');
       } else {
         await createCategory(data).unwrap();
-        toast.success('Categoria criada com sucesso');
+        notify.success('Categoria criada com sucesso');
       }
       navigate('/admin/categories');
     } catch {
-      toast.error('Erro ao salvar a categoria');
+      notify.error('Erro ao salvar a categoria');
     }
   };
 

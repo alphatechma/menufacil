@@ -33,7 +33,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone } from '@/utils/formatPhone';
 import { cn } from '@/utils/cn';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 const STATUS_CONFIG: Record<
   string,
@@ -147,6 +147,7 @@ export default function OrderList() {
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkCancelConfirm, setBulkCancelConfirm] = useState(false);
+  const notify = useNotify();
 
   const navigate = useNavigate();
   const tenantSlug = useAppSelector((state) => state.adminAuth.tenantSlug);
@@ -214,9 +215,9 @@ export default function OrderList() {
 
     try {
       await updateStatus({ id: orderId, status: nextStatus }).unwrap();
-      toast.success('Status do pedido atualizado!');
+      notify.success('Status do pedido atualizado!');
     } catch {
-      toast.error('Erro ao atualizar status do pedido.');
+      notify.error('Erro ao atualizar status do pedido.');
     }
   };
 
@@ -228,9 +229,9 @@ export default function OrderList() {
         status: 'out_for_delivery',
         delivery_person_id: selectedDeliveryPerson,
       }).unwrap();
-      toast.success('Pedido enviado para entrega!');
+      notify.success('Pedido enviado para entrega!');
     } catch {
-      toast.error('Erro ao enviar pedido para entrega.');
+      notify.error('Erro ao enviar pedido para entrega.');
     }
     setDeliveryModal(null);
     setSelectedDeliveryPerson('');
@@ -239,9 +240,9 @@ export default function OrderList() {
   const handleCancel = async (orderId: string) => {
     try {
       await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
-      toast.success('Pedido cancelado.');
+      notify.success('Pedido cancelado.');
     } catch {
-      toast.error('Erro ao cancelar pedido.');
+      notify.error('Erro ao cancelar pedido.');
     }
   };
 
@@ -264,13 +265,13 @@ export default function OrderList() {
     try {
       const result = await bulkOrderStatus({ action: 'cancel', ids: selectedIds }).unwrap();
       if (result.errors?.length) {
-        toast.warning(`${result.affected} pedido(s) cancelado(s), ${result.errors.length} erro(s).`);
+        notify.warning(`${result.affected} pedido(s) cancelado(s), ${result.errors.length} erro(s).`);
       } else {
-        toast.success(`${result.affected} pedido(s) cancelado(s)!`);
+        notify.success(`${result.affected} pedido(s) cancelado(s)!`);
       }
       setSelectedIds([]);
     } catch {
-      toast.error('Erro ao cancelar pedidos.');
+      notify.error('Erro ao cancelar pedidos.');
     } finally {
       setBulkCancelConfirm(false);
     }
@@ -280,13 +281,13 @@ export default function OrderList() {
     try {
       const result = await bulkOrderStatus({ action: 'update_status', ids: selectedIds, status }).unwrap();
       if (result.errors?.length) {
-        toast.warning(`${result.affected} pedido(s) atualizado(s), ${result.errors.length} erro(s).`);
+        notify.warning(`${result.affected} pedido(s) atualizado(s), ${result.errors.length} erro(s).`);
       } else {
-        toast.success(`${result.affected} pedido(s) atualizado(s)!`);
+        notify.success(`${result.affected} pedido(s) atualizado(s)!`);
       }
       setSelectedIds([]);
     } catch {
-      toast.error('Erro ao atualizar pedidos.');
+      notify.error('Erro ao atualizar pedidos.');
     }
   };
 

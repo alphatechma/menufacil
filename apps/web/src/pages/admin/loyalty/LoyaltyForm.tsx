@@ -7,7 +7,7 @@ import {
   useGetLoyaltyRewardsQuery,
 } from '@/api/adminApi';
 import { loyaltySchema, type LoyaltyFormData } from '@/schemas/admin/loyaltySchema';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -22,6 +22,7 @@ import { FormPageSkeleton } from '@/components/ui/Skeleton';
 export default function LoyaltyForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: rewards = [], isLoading: loadingRewards } = useGetLoyaltyRewardsQuery();
@@ -58,10 +59,10 @@ export default function LoyaltyForm() {
       } else {
         await createLoyaltyReward(data).unwrap();
       }
-      toast.success(isEditing ? 'Recompensa atualizada com sucesso!' : 'Recompensa criada com sucesso!');
+      notify.success(isEditing ? 'Recompensa atualizada com sucesso!' : 'Recompensa criada com sucesso!');
       navigate('/admin/loyalty');
     } catch {
-      toast.error('Erro ao salvar a recompensa. Tente novamente.');
+      notify.error('Erro ao salvar a recompensa. Tente novamente.');
     }
   };
 

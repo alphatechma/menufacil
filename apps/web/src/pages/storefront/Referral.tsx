@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Share2, Copy, Check, Users, Gift, ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetMyReferralCodeQuery,
   useGetMyReferralsQuery,
@@ -13,6 +13,7 @@ import { cn } from '@/utils/cn';
 export default function Referral() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const customerAuth = useAppSelector((state) => state.customerAuth);
 
   const { data: codeData, isLoading: loadingCode } = useGetMyReferralCodeQuery(
@@ -41,10 +42,10 @@ export default function Referral() {
     try {
       await navigator.clipboard.writeText(referralCode);
       setCopied(true);
-      toast.success('Codigo copiado!');
+      notify.success('Codigo copiado!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Erro ao copiar');
+      notify.error('Erro ao copiar');
     }
   };
 
@@ -56,15 +57,15 @@ export default function Referral() {
   const handleApplyCode = async () => {
     const code = referralInput.trim().toUpperCase();
     if (!code) {
-      toast.error('Digite um codigo de indicacao');
+      notify.error('Digite um codigo de indicacao');
       return;
     }
     try {
       await applyCode({ slug: slug!, code }).unwrap();
-      toast.success('Codigo aplicado com sucesso!');
+      notify.success('Codigo aplicado com sucesso!');
       setReferralInput('');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Erro ao aplicar codigo');
+      notify.error(err?.data?.message || 'Erro ao aplicar codigo');
     }
   };
 

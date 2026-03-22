@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function RoleList() {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { data: roles = [], isLoading } = useGetRolesQuery();
   const [deleteRole] = useDeleteRoleMutation();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -19,9 +20,9 @@ export default function RoleList() {
     if (!deleteTarget) return;
     try {
       await deleteRole(deleteTarget.id).unwrap();
-      toast.success('Perfil excluido com sucesso!');
+      notify.success('Perfil excluido com sucesso!');
     } catch {
-      toast.error('Erro ao excluir perfil.');
+      notify.error('Erro ao excluir perfil.');
     }
     setDeleteTarget(null);
   };

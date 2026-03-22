@@ -19,7 +19,7 @@ import {
   CalendarDays,
   CreditCard,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetTenantsQuery,
   useRestoreTenantMutation,
@@ -88,6 +88,7 @@ function exportTenantsCSV(tenants: any[]) {
 }
 
 export default function TenantList() {
+  const notify = useNotify();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
@@ -133,9 +134,9 @@ export default function TenantList() {
   const handleRestore = async (id: string, name: string) => {
     try {
       await restoreTenant(id).unwrap();
-      toast.success(`"${name}" restaurado com sucesso!`);
+      notify.success(`"${name}" restaurado com sucesso!`);
     } catch {
-      toast.error('Erro ao restaurar tenant.');
+      notify.error('Erro ao restaurar estabelecimento.');
     }
   };
 
@@ -168,12 +169,12 @@ export default function TenantList() {
         bulkDialog.action === 'activate' ? 'ativados' :
         bulkDialog.action === 'deactivate' ? 'desativados' :
         'plano alterado';
-      toast.success(`${selectedIds.size} tenant(s) ${actionLabel} com sucesso!`);
+      notify.success(`${selectedIds.size} estabelecimento(s) ${actionLabel} com sucesso!`);
       setSelectedIds(new Set());
       setBulkDialog({ open: false, action: 'activate' });
       setSelectedPlanId('');
     } catch {
-      toast.error('Erro ao executar acao em lote.');
+      notify.error('Erro ao executar acao em lote.');
     }
   };
 
@@ -232,23 +233,23 @@ export default function TenantList() {
   const plansList = Array.isArray(plans) ? plans : [];
 
   const dialogTitle =
-    bulkDialog.action === 'activate' ? 'Ativar Tenants' :
-    bulkDialog.action === 'deactivate' ? 'Desativar Tenants' :
+    bulkDialog.action === 'activate' ? 'Ativar Estabelecimentos' :
+    bulkDialog.action === 'deactivate' ? 'Desativar Estabelecimentos' :
     'Alterar Plano';
 
   const dialogDescription =
     bulkDialog.action === 'activate'
-      ? `Tem certeza que deseja ativar ${selectedIds.size} tenant(s)?`
+      ? `Tem certeza que deseja ativar ${selectedIds.size} estabelecimento(s)?`
       : bulkDialog.action === 'deactivate'
-      ? `Tem certeza que deseja desativar ${selectedIds.size} tenant(s)?`
-      : `Selecione o plano para aplicar a ${selectedIds.size} tenant(s):`;
+      ? `Tem certeza que deseja desativar ${selectedIds.size} estabelecimento(s)?`
+      : `Selecione o plano para aplicar a ${selectedIds.size} estabelecimento(s):`;
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">Tenants</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">Estabelecimentos</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
             Gerencie os estabelecimentos da plataforma.
           </p>
@@ -266,7 +267,7 @@ export default function TenantList() {
           <Button asChild>
             <Link to="/tenants/new">
               <Plus className="h-4 w-4" />
-              Novo Tenant
+              Novo Estabelecimento
             </Link>
           </Button>
         </div>
@@ -386,7 +387,7 @@ export default function TenantList() {
       {selectedIds.size > 0 && !isDeleted && (
         <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg animate-fade-in">
           <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-            {selectedIds.size} tenant(s) selecionado(s)
+            {selectedIds.size} estabelecimento(s) selecionado(s)
           </span>
           <div className="flex items-center gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={() => openBulkDialog('activate')}>
@@ -435,7 +436,7 @@ export default function TenantList() {
                       />
                     </TableHead>
                   )}
-                  <TableHead className={isDeleted ? 'pl-6' : ''}>Tenant</TableHead>
+                  <TableHead className={isDeleted ? 'pl-6' : ''}>Estabelecimento</TableHead>
                   <TableHead>Contato</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
@@ -537,8 +538,8 @@ export default function TenantList() {
               <div className="w-16 h-16 rounded-2xl bg-[hsl(var(--muted))] flex items-center justify-center mb-4">
                 <Building2 className="w-8 h-8 opacity-50" />
               </div>
-              <p className="text-sm font-medium mb-1">Nenhum tenant encontrado</p>
-              <p className="text-xs">Tente ajustar os filtros ou crie um novo tenant.</p>
+              <p className="text-sm font-medium mb-1">Nenhum estabelecimento encontrado</p>
+              <p className="text-xs">Tente ajustar os filtros ou crie um novo estabelecimento.</p>
             </div>
           )}
         </CardContent>
@@ -548,7 +549,7 @@ export default function TenantList() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Pagina {page} de {totalPages} ({totalItems} tenants)
+            Pagina {page} de {totalPages} ({totalItems} estabelecimentos)
           </p>
           <div className="flex items-center gap-2">
             <Button

@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetExtraGroupsQuery,
   useCreateExtraGroupMutation,
@@ -53,6 +53,7 @@ const emptyForm: ExtraFormData = {
 };
 
 export default function ExtraGroupList() {
+  const notify = useNotify();
   const { data: groups, isLoading } = useGetExtraGroupsQuery();
   const [createGroup, { isLoading: isCreating }] = useCreateExtraGroupMutation();
   const [updateGroup, { isLoading: isUpdating }] = useUpdateExtraGroupMutation();
@@ -92,12 +93,12 @@ export default function ExtraGroupList() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      toast.error('Informe o nome do grupo.');
+      notify.error('Informe o nome do grupo.');
       return;
     }
     const validExtras = form.extras.filter((e) => e.name.trim());
     if (validExtras.length === 0) {
-      toast.error('Adicione ao menos um extra.');
+      notify.error('Adicione ao menos um extra.');
       return;
     }
 
@@ -105,14 +106,14 @@ export default function ExtraGroupList() {
       const payload = { ...form, extras: validExtras };
       if (editingId) {
         await updateGroup({ id: editingId, data: payload }).unwrap();
-        toast.success('Grupo atualizado!');
+        notify.success('Grupo atualizado!');
       } else {
         await createGroup(payload).unwrap();
-        toast.success('Grupo criado!');
+        notify.success('Grupo criado!');
       }
       setShowModal(false);
     } catch {
-      toast.error('Erro ao salvar grupo.');
+      notify.error('Erro ao salvar grupo.');
     }
   };
 
@@ -287,9 +288,9 @@ export default function ExtraGroupList() {
           if (deleteId) {
             try {
               await deleteGroup(deleteId).unwrap();
-              toast.success('Grupo excluido!');
+              notify.success('Grupo excluido!');
             } catch {
-              toast.error('Erro ao excluir grupo.');
+              notify.error('Erro ao excluir grupo.');
             }
           }
           setDeleteId(null);

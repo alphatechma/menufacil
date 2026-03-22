@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 const MODULE_LABELS: Record<string, { name: string; color: string }> = {
   dashboard: { name: 'Dashboard', color: 'bg-slate-500' },
@@ -39,6 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
 export default function RoleForm() {
   const { roleId } = useParams<{ roleId: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!roleId;
 
   const { data: role, isLoading: isLoadingRole } = useGetRoleQuery(roleId!, { skip: !isEditing });
@@ -118,14 +119,14 @@ export default function RoleForm() {
 
       if (isEditing) {
         await updateRole({ id: roleId!, data: payload }).unwrap();
-        toast.success('Perfil atualizado com sucesso');
+        notify.success('Perfil atualizado com sucesso');
       } else {
         await createRole(payload).unwrap();
-        toast.success('Perfil criado com sucesso');
+        notify.success('Perfil criado com sucesso');
       }
       navigate('/admin/staff/roles');
     } catch {
-      toast.error('Erro ao salvar o perfil');
+      notify.error('Erro ao salvar o perfil');
     }
   };
 

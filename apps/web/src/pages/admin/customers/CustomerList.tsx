@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatPhone } from '@/utils/formatPhone';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function CustomerList() {
   const [search, setSearch] = useState('');
@@ -21,6 +21,7 @@ export default function CustomerList() {
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
 
+  const notify = useNotify();
   const { data: customers = [], isLoading } = useGetCustomersQuery();
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
 
@@ -46,13 +47,13 @@ export default function CustomerList() {
         ...(newEmail.trim() ? { email: newEmail.trim() } : {}),
       }).unwrap();
 
-      toast.success('Cliente cadastrado com sucesso!');
+      notify.success('Cliente cadastrado com sucesso!');
       setShowModal(false);
       setNewName('');
       setNewPhone('');
       setNewEmail('');
     } catch {
-      toast.error('Erro ao cadastrar cliente.');
+      notify.error('Erro ao cadastrar cliente.');
     }
   };
 

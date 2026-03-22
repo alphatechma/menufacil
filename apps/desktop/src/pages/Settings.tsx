@@ -11,6 +11,7 @@ import {
   useGetWhatsappStatusQuery, useConnectWhatsappMutation, useDisconnectWhatsappMutation,
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 import { env } from '@/config/env';
 import PrinterManager from './PrinterManager';
@@ -60,8 +61,9 @@ export default function Settings() {
   const [connectWa, { isLoading: connecting, data: connectData }] = useConnectWhatsappMutation();
   const [disconnectWa, { isLoading: disconnecting }] = useDisconnectWhatsappMutation();
 
+  const notify = useNotify();
+
   const [activeTab, setActiveTab] = useState('geral');
-  const [toast, setToast] = useState('');
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [phone, setPhone] = useState('');
@@ -126,23 +128,17 @@ export default function Settings() {
     if (tenant.notification_settings) setNotifSettings(tenant.notification_settings);
   }, [tenant]);
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2000); };
   const ds = (key: string, value: string) => localStorage.setItem(key, value);
 
   const save = async (data: any) => {
     if (!tenant) return;
     await updateTenant({ id: tenant.id, data }).unwrap();
     refetchTenant();
-    showToast('Salvo com sucesso!');
+    notify.success('Salvo com sucesso!');
   };
 
   return (
     <div className="h-full flex relative">
-      {toast && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-sm font-medium animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4" /> {toast}
-        </div>
-      )}
 
       <div className="w-52 shrink-0 border-r border-gray-200 bg-white p-3 space-y-0.5 overflow-y-auto">
         <h2 className="text-lg font-bold text-gray-900 px-3 py-2 mb-2">Configuracoes</h2>
@@ -270,7 +266,7 @@ export default function Settings() {
                   ds('desktop_auto_print', String(autoPrint));
                   ds('desktop_sound', String(soundEnabled));
                   ds('desktop_minimize_tray', String(minimizeToTray));
-                  showToast('Configuracoes salvas!');
+                  notify.success('Configuracoes salvas!');
                 }} label="Salvar Configuracoes" />
               </div>
             </div>

@@ -33,11 +33,11 @@ import {
 
 const ACTION_OPTIONS = [
   { value: 'all', label: 'Todas as acoes' },
-  { value: 'tenant.create', label: 'Criar tenant' },
-  { value: 'tenant.update', label: 'Atualizar tenant' },
-  { value: 'tenant.deactivate', label: 'Desativar tenant' },
-  { value: 'tenant.activate', label: 'Ativar tenant' },
-  { value: 'tenant.delete', label: 'Excluir tenant' },
+  { value: 'tenant.create', label: 'Criar estabelecimento' },
+  { value: 'tenant.update', label: 'Atualizar estabelecimento' },
+  { value: 'tenant.deactivate', label: 'Desativar estabelecimento' },
+  { value: 'tenant.activate', label: 'Ativar estabelecimento' },
+  { value: 'tenant.delete', label: 'Excluir estabelecimento' },
   { value: 'plan.create', label: 'Criar plano' },
   { value: 'plan.update', label: 'Atualizar plano' },
   { value: 'plan.delete', label: 'Excluir plano' },
@@ -51,7 +51,7 @@ const ACTION_OPTIONS = [
 
 const ENTITY_OPTIONS = [
   { value: 'all', label: 'Todos os tipos' },
-  { value: 'tenant', label: 'Tenant' },
+  { value: 'tenant', label: 'Estabelecimento' },
   { value: 'plan', label: 'Plano' },
   { value: 'module', label: 'Modulo' },
   { value: 'permission', label: 'Permissao' },

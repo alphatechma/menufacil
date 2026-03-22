@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetSystemModuleQuery,
   useCreateSystemModuleMutation,
@@ -38,6 +38,7 @@ function FormSkeleton() {
 export default function SystemModuleForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: mod, isLoading: loadingModule } = useGetSystemModuleQuery(id!, { skip: !isEditing });
@@ -66,16 +67,16 @@ export default function SystemModuleForm() {
     try {
       if (isEditing) {
         await updateModule({ id: id!, data: form }).unwrap();
-        toast.success('Modulo atualizado!');
+        notify.success('Modulo atualizado!');
       } else {
         await createModule(form).unwrap();
-        toast.success('Modulo criado com sucesso!');
+        notify.success('Modulo criado com sucesso!');
       }
       navigate('/system-modules');
     } catch (err: any) {
       const msg = err?.data?.message || 'Erro ao salvar modulo';
       setError(msg);
-      toast.error(msg);
+      notify.error(msg);
     }
   };
 

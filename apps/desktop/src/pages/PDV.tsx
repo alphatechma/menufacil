@@ -35,6 +35,7 @@ import {
   useGetOrdersQuery,
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 import { generatePixPayload, generatePixQrCodeDataUrl } from '@/utils/pixQrCode';
@@ -369,6 +370,7 @@ function ProductModal({
 
 // ── Main POS Component ──
 export default function PDV() {
+  const notify = useNotify();
   const { data: products = [] } = useGetProductsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: customers = [] } = useGetCustomersQuery();
@@ -519,7 +521,7 @@ export default function PDV() {
       setCart([]); setSelectedCustomer(null); setNotes(''); setDeliveryNotes(''); setChangeFor(''); setSelectedTableId('');
       setPaymentSplits([{ method: 'cash', amount: 0 }]);
       setTimeout(() => setOrderSuccess(null), 4000);
-    } catch (err) { console.error('Erro ao criar pedido:', err); }
+    } catch (err: any) { notify.error(err?.data?.message || 'Erro ao criar pedido.'); }
   };
 
   return (
@@ -605,7 +607,7 @@ export default function PDV() {
               setShowCloseRegister(false); setClosingBalance(''); setClosingNotes('');
               setClosingSummary(result);
             } catch (err: any) {
-              alert(err?.data?.message || 'Erro ao fechar caixa');
+              notify.error(err?.data?.message || 'Erro ao fechar caixa');
             }
           }} className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors active:scale-95">
             {closingRegister ? 'Fechando...' : 'Fechar Caixa'}
@@ -863,7 +865,7 @@ export default function PDV() {
                   <div className="flex gap-1.5">
                     <button onClick={() => { setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); }} className="flex-1 text-xs font-medium text-gray-500 hover:text-gray-700 py-2 rounded-xl transition-colors">Cancelar</button>
                     <button disabled={creatingCustomer || !newCustomerName.trim() || !newCustomerPhone.trim()} onClick={async () => {
-                      try { const c = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap(); setSelectedCustomer(c); setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); } catch { /* */ }
+                      try { const c = await createCustomer({ name: newCustomerName.trim(), phone: newCustomerPhone.trim() }).unwrap(); setSelectedCustomer(c); setShowNewCustomer(false); setNewCustomerName(''); setNewCustomerPhone(''); } catch { notify.error('Erro ao cadastrar cliente.'); }
                     }} className="flex-1 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white text-xs font-medium py-2 rounded-xl transition-colors active:scale-95">
                       {creatingCustomer ? 'Salvando...' : 'Salvar'}
                     </button>

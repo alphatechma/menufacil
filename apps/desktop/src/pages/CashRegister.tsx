@@ -6,7 +6,6 @@ import {
   X,
   Lock,
   Unlock,
-  AlertCircle,
   Banknote,
   CreditCard,
   Smartphone,
@@ -17,6 +16,7 @@ import {
   useOpenCashRegisterMutation,
   useCloseCashRegisterMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
 
@@ -28,12 +28,12 @@ const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: typeof Bankno
 };
 
 export default function CashRegister() {
+  const notify = useNotify();
   const [openingBalance, setOpeningBalance] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
   const [closeNotes, setCloseNotes] = useState('');
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [closeSummary, setCloseSummary] = useState<any>(null);
-  const [error, setError] = useState('');
 
   const { data: cashRegister, isLoading, refetch } = useGetCashRegisterQuery();
   const [openCashRegister, { isLoading: isOpening }] = useOpenCashRegisterMutation();
@@ -42,25 +42,23 @@ export default function CashRegister() {
   const isOpen = cashRegister && cashRegister.status === 'open';
 
   const handleOpen = async () => {
-    setError('');
     const balance = parseFloat(openingBalance.replace(',', '.'));
     if (isNaN(balance) || balance < 0) {
-      setError('Informe um valor valido para o saldo inicial.');
+      notify.warning('Informe um valor valido para o saldo inicial.');
       return;
     }
     try {
       await openCashRegister({ opening_balance: balance }).unwrap();
       setOpeningBalance('');
     } catch (err: any) {
-      setError(err?.data?.message || 'Erro ao abrir o caixa.');
+      notify.error(err?.data?.message || 'Erro ao abrir o caixa.');
     }
   };
 
   const handleClose = async () => {
-    setError('');
     const balance = parseFloat(closingBalance.replace(',', '.'));
     if (isNaN(balance) || balance < 0) {
-      setError('Informe um valor valido para o saldo de fechamento.');
+      notify.warning('Informe um valor valido para o saldo de fechamento.');
       return;
     }
     try {
@@ -73,7 +71,7 @@ export default function CashRegister() {
       setCloseNotes('');
       setCloseSummary(result);
     } catch (err: any) {
-      setError(err?.data?.message || 'Erro ao fechar o caixa.');
+      notify.error(err?.data?.message || 'Erro ao fechar o caixa.');
     }
   };
 
@@ -158,13 +156,6 @@ export default function CashRegister() {
             <h2 className="text-xl font-bold text-gray-900">Abrir Caixa</h2>
             <p className="text-sm text-gray-500 mt-1">Informe o saldo inicial para abrir o caixa</p>
           </div>
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Saldo inicial (R$)</label>
@@ -270,7 +261,7 @@ export default function CashRegister() {
 
       {/* Close Button */}
       <button
-        onClick={() => { setShowCloseModal(true); setError(''); }}
+        onClick={() => setShowCloseModal(true)}
         className="w-full py-3 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 transition-colors active:scale-95"
       >
         <span className="flex items-center justify-center gap-2">
@@ -295,13 +286,6 @@ export default function CashRegister() {
             </div>
 
             <div className="p-6">
-              {error && (
-                <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {error}
-                </div>
-              )}
-
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Saldo de fechamento (R$)</label>
                 <div className="relative">

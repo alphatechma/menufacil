@@ -44,7 +44,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { customerLoginSuccess, customerLogout } from '@/store/slices/customerAuthSlice';
 import { addItem } from '@/store/slices/cartSlice';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone, formatCpf } from '@/utils/formatPhone';
@@ -89,6 +89,7 @@ export default function Account() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect');
   const dispatch = useAppDispatch();
+  const notify = useNotify();
   const customerAuth = useAppSelector((state) => state.customerAuth);
 
   const [customerLogin, { isLoading: authLoading }] = useCustomerLoginMutation();
@@ -1472,7 +1473,7 @@ export default function Account() {
                               }),
                             );
                           });
-                          toast.success('Itens adicionados ao carrinho!');
+                          notify.success('Itens adicionados ao carrinho!');
                         }}
                         className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
                         style={{ color: 'var(--tenant-primary)' }}
@@ -1640,6 +1641,7 @@ export default function Account() {
 
 function NotificationToggle() {
   const { isSupported, permission, subscribe } = usePushNotifications();
+  const notify = useNotify();
   const [loading, setLoading] = useState(false);
 
   if (!isSupported) return null;
@@ -1650,9 +1652,9 @@ function NotificationToggle() {
     const success = await subscribe();
     setLoading(false);
     if (success) {
-      toast.success('Notificacoes ativadas!');
+      notify.success('Notificacoes ativadas!');
     } else {
-      toast.error('Nao foi possivel ativar notificacoes');
+      notify.error('Nao foi possivel ativar notificacoes');
     }
   };
 

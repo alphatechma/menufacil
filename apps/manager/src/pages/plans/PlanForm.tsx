@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetPlanQuery,
   useCreatePlanMutation,
@@ -26,6 +26,7 @@ import {
 export default function PlanForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: plan } = useGetPlanQuery(id!, { skip: !isEditing });
@@ -104,12 +105,12 @@ export default function PlanForm() {
         module_ids: selectedModules,
       }).unwrap();
 
-      toast.success(isEditing ? 'Plano atualizado!' : 'Plano criado com sucesso!');
+      notify.success(isEditing ? 'Plano atualizado!' : 'Plano criado com sucesso!');
       navigate('/plans');
     } catch (err: any) {
       const msg = err?.data?.message || err?.message || 'Erro ao salvar plano';
       setError(msg);
-      toast.error(msg);
+      notify.error(msg);
     }
   };
 

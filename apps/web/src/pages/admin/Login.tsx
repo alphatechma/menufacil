@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LogIn, UtensilsCrossed, ChefHat, ShieldCheck, BarChart3 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { loginSchema, type LoginFormData } from '@/schemas/admin/loginSchema';
 import { useAdminLoginMutation } from '@/api/adminApi';
 import { adminLogin } from '@/store/slices/adminAuthSlice';
@@ -17,6 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [login, { isLoading }] = useAdminLoginMutation();
+  const notify = useNotify();
   const [error, setError] = useState('');
 
   const { control, handleSubmit } = useForm<LoginFormData>({
@@ -45,13 +46,13 @@ export default function Login() {
         }),
       );
 
-      toast.success('Login realizado com sucesso!');
+      notify.success('Login realizado com sucesso!');
       navigate('/admin');
     } catch (err: any) {
       const message =
         err?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
       setError(message);
-      toast.error(message);
+      notify.error(message);
     }
   };
 

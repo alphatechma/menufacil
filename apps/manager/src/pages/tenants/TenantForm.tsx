@@ -19,7 +19,7 @@ import {
   Package,
   Puzzle,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetTenantQuery,
   useGetPlansQuery,
@@ -66,6 +66,7 @@ function getPasswordStrength(password: string): { level: number; label: string; 
 export default function TenantForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -181,17 +182,17 @@ export default function TenantForm() {
       if (isEditing) {
         const { admin_name, admin_email, admin_password, admin_password_confirm, ...tenantData } = form;
         await updateTenant({ id: id!, data: tenantData }).unwrap();
-        toast.success('Tenant atualizado com sucesso!');
+        notify.success('Estabelecimento atualizado com sucesso!');
       } else {
         const { admin_password_confirm, ...submitData } = form;
         await createTenant(submitData).unwrap();
-        toast.success('Tenant criado com sucesso!');
+        notify.success('Estabelecimento criado com sucesso!');
       }
       navigate('/tenants');
     } catch (err: any) {
-      const msg = err?.data?.message || err?.message || 'Erro ao salvar tenant';
+      const msg = err?.data?.message || err?.message || 'Erro ao salvar estabelecimento';
       setError(msg);
-      toast.error(msg);
+      notify.error(msg);
     }
   };
 
@@ -205,10 +206,10 @@ export default function TenantForm() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-              Editar Tenant
+              Editar Estabelecimento
             </h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Atualize as informacoes do tenant.
+              Atualize as informacoes do estabelecimento.
             </p>
           </div>
         </div>
@@ -225,7 +226,7 @@ export default function TenantForm() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
-                <CardTitle>Dados do Tenant</CardTitle>
+                <CardTitle>Dados do Estabelecimento</CardTitle>
               </div>
               <CardDescription>Informacoes basicas do estabelecimento.</CardDescription>
             </CardHeader>
@@ -329,10 +330,10 @@ export default function TenantForm() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-            Novo Tenant
+            Novo Estabelecimento
           </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Configure o tenant e o administrador passo a passo.
+            Configure o estabelecimento e o administrador passo a passo.
           </p>
         </div>
       </div>
@@ -550,7 +551,7 @@ export default function TenantForm() {
                 <User className="h-5 w-5 text-primary" />
                 <CardTitle>Administrador</CardTitle>
               </div>
-              <CardDescription>Dados do usuario administrador do tenant.</CardDescription>
+              <CardDescription>Dados do usuario administrador do estabelecimento.</CardDescription>
             </CardHeader>
             <Separator />
             <CardContent className="pt-6 space-y-5">

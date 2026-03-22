@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Copy, Workflow } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -33,6 +33,7 @@ const TRIGGER_VARIANTS: Record<string, 'default' | 'success' | 'warning' | 'info
 
 export default function FlowsTab() {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { data: flows, isLoading } = useGetWhatsappFlowsQuery();
   const [createFlow, { isLoading: isCreating }] = useCreateWhatsappFlowMutation();
   const [updateFlow] = useUpdateWhatsappFlowMutation();
@@ -62,16 +63,16 @@ export default function FlowsTab() {
       }).unwrap();
       navigate(`/admin/whatsapp/flows/${result.id}`);
     } catch {
-      toast.error('Erro ao criar fluxo');
+      notify.error('Erro ao criar fluxo');
     }
   };
 
   const handleDuplicate = async (id: string) => {
     try {
       await duplicateFlow(id).unwrap();
-      toast.success('Fluxo duplicado com sucesso');
+      notify.success('Fluxo duplicado com sucesso');
     } catch {
-      toast.error('Erro ao duplicar fluxo');
+      notify.error('Erro ao duplicar fluxo');
     }
   };
 
@@ -79,10 +80,10 @@ export default function FlowsTab() {
     if (!deleteConfirm) return;
     try {
       await deleteFlow(deleteConfirm).unwrap();
-      toast.success('Fluxo excluido');
+      notify.success('Fluxo excluido');
       setDeleteConfirm(null);
     } catch {
-      toast.error('Erro ao excluir fluxo');
+      notify.error('Erro ao excluir fluxo');
     }
   };
 

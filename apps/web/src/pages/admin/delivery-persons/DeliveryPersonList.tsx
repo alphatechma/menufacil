@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Truck, Eye } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { useGetDeliveryPersonsQuery, useDeleteDeliveryPersonMutation } from '@/api/adminApi';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -15,6 +15,7 @@ export default function DeliveryPersonList() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
+  const notify = useNotify();
   const { data: persons = [], isLoading } = useGetDeliveryPersonsQuery();
   const [deletePerson, { isLoading: isDeleting }] = useDeleteDeliveryPersonMutation();
 
@@ -32,9 +33,9 @@ export default function DeliveryPersonList() {
     if (!deleteTarget) return;
     try {
       await deletePerson(deleteTarget.id).unwrap();
-      toast.success('Entregador excluido com sucesso!');
+      notify.success('Entregador excluido com sucesso!');
     } catch {
-      toast.error('Erro ao excluir entregador. Tente novamente.');
+      notify.error('Erro ao excluir entregador. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }

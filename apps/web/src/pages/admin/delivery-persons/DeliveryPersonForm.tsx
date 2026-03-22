@@ -10,7 +10,7 @@ import {
   useGetStaffQuery,
 } from '@/api/adminApi';
 import { deliveryPersonSchema, type DeliveryPersonFormData } from '@/schemas/admin/deliveryPersonSchema';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +29,7 @@ const COMMISSION_TYPES = [
 export default function DeliveryPersonForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: person, isLoading: isLoadingPerson } = useGetDeliveryPersonQuery(id!, { skip: !isEditing });
@@ -81,10 +82,10 @@ export default function DeliveryPersonForm() {
       } else {
         await createPerson(payload).unwrap();
       }
-      toast.success(isEditing ? 'Entregador atualizado com sucesso!' : 'Entregador cadastrado com sucesso!');
+      notify.success(isEditing ? 'Entregador atualizado com sucesso!' : 'Entregador cadastrado com sucesso!');
       navigate('/admin/delivery-persons');
     } catch {
-      toast.error('Erro ao salvar o entregador. Tente novamente.');
+      notify.error('Erro ao salvar o entregador. Tente novamente.');
     }
   };
 

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useGetCouponQuery, useCreateCouponMutation, useUpdateCouponMutation } from '@/api/adminApi';
 import { couponSchema, type CouponFormData } from '@/schemas/admin/couponSchema';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -18,6 +18,7 @@ import { FormPageSkeleton } from '@/components/ui/Skeleton';
 export default function CouponForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: coupon, isLoading: isLoadingCoupon } = useGetCouponQuery(id!, { skip: !isEditing });
@@ -61,10 +62,10 @@ export default function CouponForm() {
       } else {
         await createCoupon(data).unwrap();
       }
-      toast.success(isEditing ? 'Cupom atualizado com sucesso!' : 'Cupom criado com sucesso!');
+      notify.success(isEditing ? 'Cupom atualizado com sucesso!' : 'Cupom criado com sucesso!');
       navigate('/admin/coupons');
     } catch {
-      toast.error('Erro ao salvar o cupom. Tente novamente.');
+      notify.error('Erro ao salvar o cupom. Tente novamente.');
     }
   };
 

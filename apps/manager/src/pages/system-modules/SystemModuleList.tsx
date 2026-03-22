@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Boxes } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { useGetSystemModulesQuery, useDeleteSystemModuleMutation } from '@/api/superAdminApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,7 @@ function TableSkeleton() {
 }
 
 export default function SystemModuleList() {
+  const notify = useNotify();
   const { data: modules, isLoading } = useGetSystemModulesQuery();
   const [deleteModule] = useDeleteSystemModuleMutation();
 
@@ -50,9 +51,9 @@ export default function SystemModuleList() {
     setDeleting(true);
     try {
       await deleteModule(deleteTarget.id).unwrap();
-      toast.success('Modulo removido!');
+      notify.success('Modulo removido!');
     } catch {
-      toast.error('Erro ao remover modulo.');
+      notify.error('Erro ao remover modulo.');
     } finally {
       setDeleting(false);
       setDeleteTarget(null);

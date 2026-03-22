@@ -306,8 +306,8 @@ export default function Dashboard() {
                   <XAxis dataKey="plan_name" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '0.75rem', color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number, _: any, props: any) => [`${value} estabelecimentos (${formatCurrency(props.payload.revenue)}/mes)`, 'Tenants']} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Tenants" />
+                    formatter={(value: number, _: any, props: any) => [`${value} estabelecimentos (${formatCurrency(props.payload.revenue)}/mes)`, 'Estabelecimentos']} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Estabelecimentos" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Save, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { login } from '@/store/slices/authSlice';
 import { useUpdateProfileMutation, useChangePasswordMutation } from '@/api/superAdminApi';
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 export default function Settings() {
+  const notify = useNotify();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const auth = useAppSelector((state) => state.auth);
@@ -36,7 +37,7 @@ export default function Settings() {
     e.preventDefault();
 
     if (!profileForm.name.trim()) {
-      toast.error('O nome e obrigatorio.');
+      notify.error('O nome e obrigatorio.');
       return;
     }
 
@@ -54,10 +55,10 @@ export default function Settings() {
         );
       }
 
-      toast.success('Perfil atualizado com sucesso.');
+      notify.success('Perfil atualizado com sucesso.');
     } catch (err: any) {
       const message = err?.data?.message || 'Erro ao atualizar perfil.';
-      toast.error(message);
+      notify.error(message);
     }
   };
 
@@ -65,17 +66,17 @@ export default function Settings() {
     e.preventDefault();
 
     if (!passwordForm.current_password) {
-      toast.error('A senha atual e obrigatoria.');
+      notify.error('A senha atual e obrigatoria.');
       return;
     }
 
     if (passwordForm.new_password.length < 6) {
-      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      notify.error('A nova senha deve ter pelo menos 6 caracteres.');
       return;
     }
 
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      toast.error('As senhas nao coincidem.');
+      notify.error('As senhas nao coincidem.');
       return;
     }
 
@@ -85,7 +86,7 @@ export default function Settings() {
         newPassword: passwordForm.new_password,
       }).unwrap();
 
-      toast.success('Senha alterada com sucesso.');
+      notify.success('Senha alterada com sucesso.');
       setPasswordForm({
         current_password: '',
         new_password: '',
@@ -95,7 +96,7 @@ export default function Settings() {
       setShowNewPw(false);
     } catch (err: any) {
       const message = err?.data?.message || 'Erro ao alterar senha.';
-      toast.error(message);
+      notify.error(message);
     }
   };
 

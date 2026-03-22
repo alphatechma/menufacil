@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -227,6 +228,7 @@ function KDSCard({
 // ─── Main KDS ───────────────────────────────────────────────────────────────
 
 export default function KDS() {
+  const notify = useNotify();
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'finished' | 'cancelled'>('active');
   const [checkedItems, setCheckedItems] = useState<Record<string, Set<number>>>({});
@@ -278,18 +280,18 @@ export default function KDS() {
         await updateStatus({ id: orderId, status: 'confirmed' }).unwrap();
       }
       await updateStatus({ id: orderId, status: 'preparing' }).unwrap();
-    } catch { /* */ }
+    } catch { notify.error('Erro ao iniciar preparo.'); }
     setUpdatingOrderId(null);
-  }, [orders, updateStatus]);
+  }, [orders, updateStatus, notify]);
 
   const handleFinish = useCallback(async (orderId: string) => {
     setUpdatingOrderId(orderId);
     try {
       await updateStatus({ id: orderId, status: 'ready' }).unwrap();
       setCheckedItems((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
-    } catch { /* */ }
+    } catch { notify.error('Erro ao finalizar pedido.'); }
     setUpdatingOrderId(null);
-  }, [updateStatus]);
+  }, [updateStatus, notify]);
 
   const toggleItem = useCallback((orderId: string, itemIndex: number) => {
     setCheckedItems((prev) => {

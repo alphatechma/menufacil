@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function StaffList() {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { data: staff = [], isLoading } = useGetStaffQuery();
   const [deleteStaff] = useDeleteStaffMutation();
   const [search, setSearch] = useState('');
@@ -25,9 +26,9 @@ export default function StaffList() {
     if (!deleteTarget) return;
     try {
       await deleteStaff(deleteTarget.id).unwrap();
-      toast.success('Membro desativado com sucesso!');
+      notify.success('Membro desativado com sucesso!');
     } catch {
-      toast.error('Erro ao desativar membro.');
+      notify.error('Erro ao desativar membro.');
     }
     setDeleteTarget(null);
   };

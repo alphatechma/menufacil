@@ -5,11 +5,12 @@ import { useGetOrderTrackingQuery, useCreateReviewMutation, useCanReviewOrderQue
 import { useAppSelector } from '@/store/hooks';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function ReviewOrder() {
   const { slug, orderId } = useParams<{ slug: string; orderId: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isAuthenticated = useAppSelector((s) => s.customerAuth.isAuthenticated);
 
   const { data: order, isLoading: loadingOrder } = useGetOrderTrackingQuery(
@@ -31,7 +32,7 @@ export default function ReviewOrder() {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error('Selecione uma nota');
+      notify.error('Selecione uma nota');
       return;
     }
 
@@ -46,10 +47,10 @@ export default function ReviewOrder() {
       }).unwrap();
 
       setSubmitted(true);
-      toast.success('Avaliacao enviada com sucesso!');
+      notify.success('Avaliacao enviada com sucesso!');
     } catch (err: any) {
       const msg = err?.data?.message || 'Erro ao enviar avaliacao';
-      toast.error(msg);
+      notify.error(msg);
     }
   };
 

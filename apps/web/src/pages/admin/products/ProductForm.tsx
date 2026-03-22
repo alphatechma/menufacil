@@ -39,11 +39,12 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FormCard } from '@/components/ui/FormCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { FormPageSkeleton } from '@/components/ui/Skeleton';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 export default function ProductForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const notify = useNotify();
   const isEditing = !!id;
 
   const { data: product, isLoading: isLoadingProduct } = useGetProductQuery(id!, { skip: !isEditing });
@@ -134,14 +135,14 @@ export default function ProductForm() {
     try {
       if (isEditing) {
         await updateProduct({ id: id!, data }).unwrap();
-        toast.success('Produto atualizado com sucesso');
+        notify.success('Produto atualizado com sucesso');
       } else {
         await createProduct(data).unwrap();
-        toast.success('Produto criado com sucesso');
+        notify.success('Produto criado com sucesso');
       }
       navigate('/admin/products');
     } catch {
-      toast.error('Erro ao salvar o produto');
+      notify.error('Erro ao salvar o produto');
     }
   };
 

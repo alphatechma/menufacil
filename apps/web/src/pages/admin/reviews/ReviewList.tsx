@@ -16,7 +16,7 @@ import {
   useReplyToReviewMutation,
 } from '@/api/adminApi';
 import { cn } from '@/utils/cn';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 
 function StarDisplay({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }) {
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
@@ -39,6 +39,7 @@ export default function ReviewList() {
   const [filterRating, setFilterRating] = useState<number | undefined>();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const notify = useNotify();
 
   const { data: reviewsData, isLoading } = useGetAdminReviewsQuery({
     rating: filterRating,
@@ -53,11 +54,11 @@ export default function ReviewList() {
 
     try {
       await replyToReview({ id: reviewId, reply: replyText.trim() }).unwrap();
-      toast.success('Resposta enviada!');
+      notify.success('Resposta enviada!');
       setReplyText('');
       setExpandedId(null);
     } catch {
-      toast.error('Erro ao enviar resposta');
+      notify.error('Erro ao enviar resposta');
     }
   };
 

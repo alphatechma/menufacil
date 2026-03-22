@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Heart, Pencil, History, Clock, User, Gift } from 'lucide-react';
-import { toast } from 'sonner';
+import { useNotify } from '@/hooks/useNotify';
 import {
   useGetLoyaltyRewardsQuery,
   useDeleteLoyaltyRewardMutation,
@@ -43,6 +43,7 @@ export default function LoyaltyList() {
   const [activeTab, setActiveTab] = useState('rewards');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
+  const notify = useNotify();
   const { data: rewards = [], isLoading } = useGetLoyaltyRewardsQuery();
   const { data: redemptions = [], isLoading: loadingRedemptions } = useGetLoyaltyRedemptionsQuery();
   const [deleteLoyaltyReward, { isLoading: isDeleting }] = useDeleteLoyaltyRewardMutation();
@@ -52,9 +53,9 @@ export default function LoyaltyList() {
     if (!deleteTarget) return;
     try {
       await deleteLoyaltyReward(deleteTarget.id).unwrap();
-      toast.success('Recompensa excluida com sucesso!');
+      notify.success('Recompensa excluida com sucesso!');
     } catch {
-      toast.error('Erro ao excluir recompensa. Tente novamente.');
+      notify.error('Erro ao excluir recompensa. Tente novamente.');
     } finally {
       setDeleteTarget(null);
     }
