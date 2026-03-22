@@ -40,6 +40,9 @@ import {
   Star,
   ShoppingBag,
   PieChart,
+  AlertTriangle,
+  Trophy,
+  Megaphone,
   type LucideIcon,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -88,6 +91,7 @@ const sidebarGroups: SidebarGroup[] = [
       { to: '/admin/products', icon: Package, label: 'Produtos', module: 'products', permission: 'product:read' },
       { to: '/admin/extras', icon: LayoutGrid, label: 'Extras', module: 'products', permission: 'product:read' },
       { to: '/admin/inventory', icon: Warehouse, label: 'Estoque', module: 'products', permission: 'product:read' },
+      { to: '/admin/inventory/low-stock', icon: AlertTriangle, label: 'Alertas Estoque', module: 'products', permission: 'product:read' },
     ],
   },
   {
@@ -101,6 +105,7 @@ const sidebarGroups: SidebarGroup[] = [
       { to: '/admin/deliveries', icon: Navigation, label: 'Entregas', module: 'delivery', permission: 'delivery:read' },
       { to: '/admin/delivery-zones', icon: MapPin, label: 'Zonas de Entrega', module: 'delivery', permission: 'delivery:read' },
       { to: '/admin/delivery-persons', icon: Truck, label: 'Entregadores', module: 'delivery', permission: 'delivery:read' },
+      { to: '/admin/delivery-scoreboard', icon: Trophy, label: 'Ranking Entregas', module: 'delivery', permission: 'delivery:read' },
       { to: '/admin/my-deliveries', icon: Bike, label: 'Minhas Entregas', module: 'delivery_driver', permission: 'delivery_driver:read' },
     ],
   },
@@ -132,6 +137,7 @@ const sidebarGroups: SidebarGroup[] = [
     icon: Ticket,
     items: [
       { to: '/admin/coupons', icon: Ticket, label: 'Cupons', module: 'coupons', permission: 'coupon:read' },
+      { to: '/admin/promotions', icon: Megaphone, label: 'Promocoes', module: 'coupons', permission: 'coupon:read' },
       { to: '/admin/reviews', icon: Star, label: 'Avaliacoes', module: 'customers', permission: 'customer:read' },
       { to: '/admin/abandoned-carts', icon: ShoppingBag, label: 'Carrinhos Aband.', module: 'customers', permission: 'customer:read' },
       { to: '/admin/whatsapp', icon: MessageCircle, label: 'WhatsApp', module: null, permission: 'whatsapp:chat' },

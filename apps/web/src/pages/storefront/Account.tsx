@@ -24,6 +24,8 @@ import {
   Crown,
   Medal,
   Award,
+  Bell,
+  Wallet,
 } from 'lucide-react';
 import {
   useCustomerLoginMutation,
@@ -43,6 +45,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { customerLoginSuccess, customerLogout } from '@/store/slices/customerAuthSlice';
 import { addItem } from '@/store/slices/cartSlice';
 import { toast } from 'sonner';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone, formatCpf } from '@/utils/formatPhone';
 import { maskPhone, maskCep, unmaskDigits } from '@/utils/masks';
@@ -1001,6 +1004,23 @@ export default function Account() {
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
 
+          {/* Wallet Link */}
+          <button
+            onClick={() => navigate(`/${slug}/wallet`)}
+            className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 15%, transparent)' }}>
+                <Wallet className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-gray-900">Carteira Digital</p>
+                <p className="text-xs text-gray-500">Veja seu saldo e historico</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+
           {/* Error message */}
           {redeemError && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
@@ -1482,6 +1502,9 @@ export default function Account() {
         </div>
       )}
 
+      {/* Notifications */}
+      <NotificationToggle />
+
       {/* Logout */}
       <button
         onClick={handleLogout}
@@ -1612,5 +1635,39 @@ export default function Account() {
         </div>
       )}
     </div>
+  );
+}
+
+function NotificationToggle() {
+  const { isSupported, permission, subscribe } = usePushNotifications();
+  const [loading, setLoading] = useState(false);
+
+  if (!isSupported) return null;
+
+  const handleToggle = async () => {
+    if (permission === 'granted') return;
+    setLoading(true);
+    const success = await subscribe();
+    setLoading(false);
+    if (success) {
+      toast.success('Notificacoes ativadas!');
+    } else {
+      toast.error('Nao foi possivel ativar notificacoes');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={permission === 'granted' || loading}
+      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-sm disabled:opacity-60"
+    >
+      <Bell className="w-4 h-4 text-gray-500" />
+      <span className="flex-1 text-left font-medium text-gray-700">
+        {permission === 'granted' ? 'Notificacoes ativadas' : 'Ativar notificacoes'}
+      </span>
+      {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+      {permission === 'granted' && <Check className="w-4 h-4 text-green-500" />}
+    </button>
   );
 }

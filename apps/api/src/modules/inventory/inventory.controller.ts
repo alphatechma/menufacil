@@ -32,6 +32,14 @@ export class InventoryController {
     return this.inventoryService.getLowStockItems(tenantId);
   }
 
+  @Get('items/reorder-suggestions')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('product:read')
+  @ApiOperation({ summary: 'Get reorder suggestions for low stock items' })
+  getReorderSuggestions(@CurrentTenant('id') tenantId: string) {
+    return this.inventoryService.getReorderSuggestions(tenantId);
+  }
+
   @Get('items/:id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('product:read')

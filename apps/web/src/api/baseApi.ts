@@ -49,6 +49,9 @@ export const baseApi = createApi({
     'Referrals',
     'ReferralStats',
     'Analytics',
+    'Promotions',
+    'Wallet',
+    'WalletTransactions',
   ],
   endpoints: () => ({}),
 });

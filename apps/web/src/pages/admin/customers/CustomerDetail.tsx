@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   User,
@@ -7,14 +8,21 @@ import {
   Calendar,
   MapPin,
   ShoppingCart,
+  Wallet,
+  ArrowDownRight,
+  ArrowUpRight,
+  Plus,
 } from 'lucide-react';
-import { useGetCustomerQuery } from '@/api/adminApi';
+import { useGetCustomerQuery, useGetCustomerWalletQuery, useAddWalletCreditMutation } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { DetailPageSkeleton } from '@/components/ui/Skeleton';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatPhone } from '@/utils/formatPhone';
+import { cn } from '@/utils/cn';
 
 const ORDER_STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'danger' | 'info' }> = {
   pending: { label: 'Pendente', variant: 'warning' },
@@ -29,6 +37,28 @@ const ORDER_STATUS_LABELS: Record<string, { label: string; variant: 'default' | 
 export default function CustomerDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: customer, isLoading } = useGetCustomerQuery(id!);
+  const { data: walletInfo } = useGetCustomerWalletQuery(id!, { skip: !id });
+  const [addCredit, { isLoading: isAddingCredit }] = useAddWalletCreditMutation();
+
+  const [creditAmount, setCreditAmount] = useState('');
+  const [creditDescription, setCreditDescription] = useState('');
+  const [showCreditForm, setShowCreditForm] = useState(false);
+
+  const handleAddCredit = async () => {
+    if (!creditAmount || !creditDescription || !id) return;
+    try {
+      await addCredit({
+        customerId: id,
+        amount: Number(creditAmount),
+        description: creditDescription,
+      }).unwrap();
+      setCreditAmount('');
+      setCreditDescription('');
+      setShowCreditForm(false);
+    } catch {
+      // error handled by RTK Query
+    }
+  };
 
   if (isLoading || !customer) return <DetailPageSkeleton />;
 
@@ -90,6 +120,114 @@ export default function CustomerDetail() {
                 </span>
               </div>
             </div>
+          </Card>
+
+          {/* Wallet */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Carteira Digital</h2>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowCreditForm(!showCreditForm)}
+                className="gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Adicionar Credito
+              </Button>
+            </div>
+
+            <div className="bg-primary/5 rounded-xl p-4 mb-4">
+              <p className="text-xs text-muted-foreground mb-1">Saldo</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatPrice(walletInfo?.balance ?? 0)}
+              </p>
+            </div>
+
+            {showCreditForm && (
+              <div className="space-y-3 mb-4 p-4 bg-muted/50 rounded-xl">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="Valor (R$)"
+                  value={creditAmount}
+                  onChange={(e) => setCreditAmount(e.target.value)}
+                />
+                <Input
+                  placeholder="Descricao (ex: Bonificacao)"
+                  value={creditDescription}
+                  onChange={(e) => setCreditDescription(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleAddCredit}
+                    loading={isAddingCredit}
+                    disabled={!creditAmount || !creditDescription}
+                  >
+                    Adicionar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowCreditForm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {walletInfo?.transactions && walletInfo.transactions.length > 0 ? (
+              <div className="space-y-2">
+                {walletInfo.transactions.slice(0, 5).map((tx: any) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          'w-7 h-7 rounded-full flex items-center justify-center',
+                          tx.type === 'credit'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-red-100 text-red-600',
+                        )}
+                      >
+                        {tx.type === 'credit' ? (
+                          <ArrowDownRight className="w-3.5 h-3.5" />
+                        ) : (
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-foreground">{tx.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(tx.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        'text-sm font-semibold',
+                        tx.type === 'credit' ? 'text-green-600' : 'text-red-600',
+                      )}
+                    >
+                      {tx.type === 'credit' ? '+' : '-'}
+                      {formatPrice(tx.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma transacao
+              </p>
+            )}
           </Card>
 
           {/* Addresses */}

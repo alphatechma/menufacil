@@ -6,12 +6,14 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { DeliveryPersonService } from './delivery-person.service';
+import { AutoAssignService } from './auto-assign.service';
 import { CreateDeliveryPersonDto } from './dto/create-delivery-person.dto';
 import { UpdateDeliveryPersonDto } from './dto/update-delivery-person.dto';
 import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
@@ -22,7 +24,33 @@ import { PermissionsGuard } from '../../common/guards';
 @ApiBearerAuth()
 @Controller('delivery-persons')
 export class DeliveryPersonController {
-  constructor(private readonly service: DeliveryPersonService) {}
+  constructor(
+    private readonly service: DeliveryPersonService,
+    private readonly autoAssignService: AutoAssignService,
+  ) {}
+
+  @Get('scoreboard')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('delivery:read')
+  @ApiOperation({ summary: 'Get delivery persons scoreboard' })
+  getScoreboard(
+    @CurrentTenant('id') tenantId: string,
+    @Query('from') dateFrom?: string,
+    @Query('to') dateTo?: string,
+  ) {
+    return this.autoAssignService.getDeliveryScoreboard(tenantId, dateFrom, dateTo);
+  }
+
+  @Post('auto-assign/:orderId')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('delivery:update')
+  @ApiOperation({ summary: 'Auto-assign delivery person to an order' })
+  autoAssign(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.autoAssignService.autoAssign(orderId, tenantId);
+  }
 
   @Get()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)

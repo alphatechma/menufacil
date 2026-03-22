@@ -36,6 +36,8 @@ import { ReferralModule } from './modules/referral/referral.module';
 import { ReviewModule } from './modules/review/review.module';
 import { AbandonedCartModule } from './modules/abandoned-cart/abandoned-cart.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PromotionModule } from './modules/promotion/promotion.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 
 @Module({
   imports: [
@@ -85,6 +87,8 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     ReviewModule,
     AbandonedCartModule,
     AnalyticsModule,
+    PromotionModule,
+    WalletModule,
   ],
 })
 export class AppModule implements NestModule {

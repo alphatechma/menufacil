@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock, Flame, Heart } from 'lucide-react';
-import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery } from '@/api/customerApi';
+import { Lock, Flame, Heart, Tag, Percent, Clock, Gift } from 'lucide-react';
+import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery, useGetActivePromotionsQuery } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleFavorite, selectFavoriteIds } from '@/store/slices/favoritesSlice';
 import { formatPrice } from '@/utils/formatPrice';
@@ -26,6 +26,11 @@ export default function Menu() {
     { skip: !slug },
   );
   const { data: products = [] } = useGetStorefrontProductsQuery(
+    { slug: slug! },
+    { skip: !slug },
+  );
+
+  const { data: activePromotions = [] } = useGetActivePromotionsQuery(
     { slug: slug! },
     { skip: !slug },
   );
@@ -124,6 +129,36 @@ export default function Menu() {
     return matchesCategory && matchesSearch && matchesDietary;
   });
 
+  // Build a map of productId -> promotion labels for badges on products
+  const productPromoBadges = useMemo(() => {
+    const badges: Record<string, string> = {};
+    for (const promo of activePromotions) {
+      const productIds = promo.rules?.products || [];
+      const categoryIds = promo.rules?.categories || [];
+      const label =
+        promo.type === 'happy_hour'
+          ? `Happy Hour -${promo.discount_type === 'percent' ? `${promo.discount_value}%` : `R$${Number(promo.discount_value).toFixed(2)}`}`
+          : promo.type === 'combo'
+            ? `Combo: ${promo.name}`
+            : promo.type === 'buy_x_get_y'
+              ? `Compre ${promo.rules?.buy_quantity || ''} Leve ${(promo.rules?.buy_quantity || 0) + (promo.rules?.get_quantity || 0)}`
+              : `-${promo.discount_type === 'percent' ? `${promo.discount_value}%` : `R$${Number(promo.discount_value).toFixed(2)}`}`;
+
+      for (const pid of productIds) {
+        badges[pid] = label;
+      }
+      // Also match by category
+      for (const cid of categoryIds) {
+        for (const p of products) {
+          if ((p as any).category_id === cid && !badges[(p as any).id]) {
+            badges[(p as any).id] = label;
+          }
+        }
+      }
+    }
+    return badges;
+  }, [activePromotions, products]);
+
   // Group products by category for display when no category filter is active
   const groupedProducts = !activeCategory
     ? categories
@@ -213,6 +248,49 @@ export default function Menu() {
         ))}
       </div>
 
+      {/* Active Promotions */}
+      {activePromotions.length > 0 && (
+        <div className="px-4 pt-4">
+          <h3 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <Tag className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+            Promocoes
+          </h3>
+          <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
+            {activePromotions.map((promo: any) => (
+              <div
+                key={promo.id}
+                className="flex-shrink-0 w-56 rounded-xl p-3 border border-gray-100 shadow-sm bg-white"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  {promo.type === 'happy_hour' && <Clock className="w-3.5 h-3.5 text-amber-500" />}
+                  {promo.type === 'combo' && <Gift className="w-3.5 h-3.5 text-blue-500" />}
+                  {promo.type === 'buy_x_get_y' && <Gift className="w-3.5 h-3.5 text-red-500" />}
+                  {(promo.type === 'discount' || promo.type === 'weekday') && <Percent className="w-3.5 h-3.5 text-green-500" />}
+                  <span className="text-xs font-semibold text-gray-500 uppercase">
+                    {promo.type === 'happy_hour' ? 'Happy Hour' :
+                     promo.type === 'combo' ? 'Combo' :
+                     promo.type === 'buy_x_get_y' ? 'Compre e Leve' :
+                     promo.type === 'weekday' ? 'Promo do Dia' : 'Desconto'}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">{promo.name}</p>
+                <p
+                  className="text-xs font-bold mt-1"
+                  style={{ color: 'var(--tenant-primary)' }}
+                >
+                  {promo.discount_type === 'percent'
+                    ? `-${promo.discount_value}%`
+                    : `-R$ ${Number(promo.discount_value).toFixed(2)}`}
+                </p>
+                {promo.description && (
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{promo.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Products */}
       <div className="px-4 pt-4">
         {activeCategory || searchQuery ? (
@@ -225,6 +303,7 @@ export default function Menu() {
                 slug={slug!}
                 isClosed={isClosed}
                 isTopProduct={topProductIds.has(product.id)}
+                promoBadge={productPromoBadges[product.id]}
               />
             ))}
           </div>
@@ -243,6 +322,7 @@ export default function Menu() {
                       product={product}
                       slug={slug!}
                       isClosed={isClosed}
+                      promoBadge={productPromoBadges[product.id]}
                     />
                   ))}
                 </div>
@@ -271,11 +351,13 @@ function ProductCard({
   slug,
   isClosed,
   isTopProduct,
+  promoBadge,
 }: {
   product: any;
   slug: string;
   isClosed: boolean;
-  isTopProduct: boolean;
+  isTopProduct?: boolean;
+  promoBadge?: string;
 }) {
   const dispatch = useAppDispatch();
   const favoriteIds = useAppSelector(selectFavoriteIds);
@@ -336,6 +418,15 @@ function ProductCard({
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-600 mb-1">
               <Flame className="w-3 h-3" />
               Mais Pedido
+            </span>
+          )}
+          {promoBadge && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1"
+              style={{ backgroundColor: 'var(--tenant-primary)', color: 'white', opacity: 0.9 }}
+            >
+              <Tag className="w-3 h-3" />
+              {promoBadge}
             </span>
           )}
           {product.description && (

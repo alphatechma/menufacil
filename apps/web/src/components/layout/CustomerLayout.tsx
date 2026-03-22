@@ -1,16 +1,28 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Outlet, useParams, useLocation } from 'react-router-dom';
-import { ShoppingBag, Home, UtensilsCrossed, User, MapPin } from 'lucide-react';
+import { ShoppingBag, Home, UtensilsCrossed, User, MapPin, Download, X } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectTotalItems, openDrawer } from '@/store/slices/cartSlice';
 import { selectTenant, setSelectedUnitId } from '@/store/slices/tenantSlice';
 import { useGetPublicUnitsQuery } from '@/api/customerApi';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useAbandonedCartSync } from '@/hooks/useAbandonedCartSync';
+import { usePWA } from '@/hooks/usePWA';
 
 export function CustomerLayout({ children }: { children?: ReactNode }) {
   // Sync cart to API for abandoned cart tracking
   useAbandonedCartSync();
+  const { canInstall, install } = usePWA();
+  const [installDismissed, setInstallDismissed] = useState(() => {
+    return localStorage.getItem('menufacil-pwa-dismissed') === 'true';
+  });
+  const showInstallBanner = canInstall && !installDismissed;
+
+  const dismissInstall = () => {
+    setInstallDismissed(true);
+    localStorage.setItem('menufacil-pwa-dismissed', 'true');
+  };
+
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -127,6 +139,38 @@ export function CustomerLayout({ children }: { children?: ReactNode }) {
           <NavItem to={`/${slug}/account`} icon={<User className="w-5 h-5" />} label="Conta" active={isActive('account')} />
         </div>
       </nav>
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div className="fixed bottom-[72px] inset-x-0 z-50 px-4 pb-2">
+          <div
+            className="max-w-3xl mx-auto rounded-2xl shadow-lg border border-gray-100 p-4 flex items-center gap-3"
+            style={{ background: 'white' }}
+          >
+            <div className="p-2 rounded-xl shrink-0 bg-orange-50">
+              <Download className="w-5 h-5" style={{ color: 'var(--tenant-primary)' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900">Instale o MenuFacil</p>
+              <p className="text-xs text-gray-500 truncate">Acesso rapido no seu celular</p>
+            </div>
+            <button
+              onClick={install}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors active:scale-95 shrink-0"
+              style={{ background: 'var(--tenant-primary)' }}
+            >
+              Instalar
+            </button>
+            <button
+              onClick={dismissInstall}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0"
+              aria-label="Fechar"
+            >
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <CartDrawer />
     </div>

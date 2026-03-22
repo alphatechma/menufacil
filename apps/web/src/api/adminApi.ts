@@ -354,6 +354,28 @@ export const adminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/inventory/recipes/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Inventory'],
     }),
+    getReorderSuggestions: builder.query<any[], void>({
+      query: () => ({ url: '/inventory/items/reorder-suggestions', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Inventory'],
+    }),
+
+    // Delivery Scoreboard & Auto-assign
+    getDeliveryScoreboard: builder.query<any[], { from?: string; to?: string }>({
+      query: (params) => ({
+        url: '/delivery-persons/scoreboard',
+        params,
+        meta: { authContext: 'admin' as const },
+      }),
+      providesTags: ['DeliveryPersons'],
+    }),
+    autoAssignDeliveryPerson: builder.mutation<any, string>({
+      query: (orderId) => ({
+        url: `/delivery-persons/auto-assign/${orderId}`,
+        method: 'POST',
+        meta: { authContext: 'admin' as const },
+      }),
+      invalidatesTags: ['Orders', 'DeliveryPersons'],
+    }),
 
     // Roles & Permissions
     getRoles: builder.query<any[], void>({
@@ -655,6 +677,34 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: ['Analytics'],
     }),
 
+    // Promotions
+    getPromotions: builder.query<any[], void>({
+      query: () => ({ url: '/promotions', meta: { authContext: 'admin' as const } }),
+      providesTags: ['Promotions'],
+    }),
+    createPromotion: builder.mutation<any, any>({
+      query: (body) => ({ url: '/promotions', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Promotions'],
+    }),
+    updatePromotion: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({ url: `/promotions/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Promotions'],
+    }),
+    deletePromotion: builder.mutation<void, string>({
+      query: (id) => ({ url: `/promotions/${id}`, method: 'DELETE', meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Promotions'],
+    }),
+
+    // Wallet (admin)
+    addWalletCredit: builder.mutation<any, { customerId: string; amount: number; description: string }>({
+      query: (body) => ({ url: '/wallet/admin/credit', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Wallet'],
+    }),
+    getCustomerWallet: builder.query<any, string>({
+      query: (customerId) => ({ url: `/wallet/admin/${customerId}`, meta: { authContext: 'admin' as const } }),
+      providesTags: ['Wallet'],
+    }),
+
     // Upload
     uploadImage: builder.mutation<{ url: string }, FormData>({
       query: (formData) => ({
@@ -747,6 +797,9 @@ export const {
   useGetProductRecipesQuery,
   useSetProductRecipeMutation,
   useRemoveProductRecipeMutation,
+  useGetReorderSuggestionsQuery,
+  useGetDeliveryScoreboardQuery,
+  useAutoAssignDeliveryPersonMutation,
   useGetStaffQuery,
   useGetStaffMemberQuery,
   useCreateStaffMutation,
@@ -813,4 +866,10 @@ export const {
   useGetAnalyticsProductsQuery,
   useGetAnalyticsCustomersQuery,
   useGetAnalyticsDeliveryQuery,
+  useGetPromotionsQuery,
+  useCreatePromotionMutation,
+  useUpdatePromotionMutation,
+  useDeletePromotionMutation,
+  useAddWalletCreditMutation,
+  useGetCustomerWalletQuery,
 } = adminApi;

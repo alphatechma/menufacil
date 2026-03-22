@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   UtensilsCrossed,
   ShoppingCart,
+  Wallet,
 } from 'lucide-react';
 import {
   useGetCustomerProfileQuery,
@@ -29,6 +30,7 @@ import {
   useGetPublicDeliveryZonesQuery,
   useLazyValidateCouponQuery,
   useGetCustomerOrdersQuery,
+  useGetWalletBalanceQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
@@ -37,7 +39,7 @@ import { formatPrice } from '@/utils/formatPrice';
 import { maskCep } from '@/utils/masks';
 import { cn } from '@/utils/cn';
 
-type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash';
+type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash' | 'wallet';
 
 interface Address {
   label?: string;
@@ -339,6 +341,13 @@ export default function Checkout() {
     { skip: !slug },
   );
   const [validateCoupon] = useLazyValidateCouponQuery();
+
+  // Wallet balance
+  const { data: walletData } = useGetWalletBalanceQuery(
+    { slug: slug! },
+    { skip: !slug || !customerAuth.isAuthenticated },
+  );
+  const walletBalance = walletData?.balance ?? 0;
 
   // Previous orders
   const { data: previousOrders } = useGetCustomerOrdersQuery(
@@ -1090,7 +1099,12 @@ export default function Checkout() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {PAYMENT_METHODS.map((method) => {
+          {[
+            ...PAYMENT_METHODS,
+            ...(walletBalance > 0
+              ? [{ value: 'wallet' as PaymentMethod, label: 'Carteira Digital', icon: Wallet, description: `Saldo: R$ ${Number(walletBalance).toFixed(2)}` }]
+              : []),
+          ].map((method) => {
             const Icon = method.icon;
             const isSelected = paymentMethod === method.value;
             return (

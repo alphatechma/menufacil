@@ -17,6 +17,8 @@ import { LoyaltyService } from '../loyalty/loyalty.service';
 import { ReferralService } from '../referral/referral.service';
 import { EventsGateway } from '../../websocket/events.gateway';
 import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.service';
+import { InventoryService } from '../inventory/inventory.service';
+import { AutoAssignService } from '../delivery-person/auto-assign.service';
 
 @Injectable()
 export class OrderService {
@@ -42,6 +44,8 @@ export class OrderService {
     private readonly referralService: ReferralService,
     private readonly eventsGateway: EventsGateway,
     private readonly whatsappMessageService: WhatsappMessageService,
+    private readonly inventoryService: InventoryService,
+    private readonly autoAssignService: AutoAssignService,
   ) {}
 
   async create(dto: CreateOrderDto, customerId: string, tenantId: string, unitId?: string | null): Promise<Order> {
@@ -358,6 +362,25 @@ export class OrderService {
     }
 
     await this.orderRepository.updateStatus(id, tenantId, updateData);
+
+    // Auto-deduct stock when order is confirmed
+    if (status === OrderStatus.CONFIRMED) {
+      this.inventoryService
+        .autoDeductStock(id, tenantId)
+        .catch((err) => this.logger.warn(`Auto-deduct stock failed: ${err.message}`));
+    }
+
+    // Auto-assign delivery person when order is ready and is delivery type with no person assigned
+    if (status === OrderStatus.READY && order.order_type === OrderType.DELIVERY && !order.delivery_person_id) {
+      try {
+        const assigned = await this.autoAssignService.autoAssign(id, tenantId);
+        if (assigned) {
+          this.logger.log(`Auto-assigned delivery person ${assigned.name} to order ${order.order_number}`);
+        }
+      } catch (err) {
+        this.logger.warn(`Auto-assign delivery failed: ${err.message}`);
+      }
+    }
 
     // Award loyalty points when order is delivered (1 point per R$1)
     if (status === OrderStatus.DELIVERED) {

@@ -8,6 +8,8 @@ import {
   ArrowUp,
   ArrowDown,
   Calendar,
+  AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -20,7 +22,8 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { useGetAdvancedStatsQuery } from '@/api/adminApi';
+import { useNavigate } from 'react-router-dom';
+import { useGetAdvancedStatsQuery, useGetLowStockItemsQuery } from '@/api/adminApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/utils/cn';
@@ -82,9 +85,11 @@ function ComparisonBadge({ value }: { value: number }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [preset, setPreset] = useState<DatePreset>('7days');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  const { data: lowStockItems = [] } = useGetLowStockItemsQuery();
 
   const range = useMemo(
     () => getDateRange(preset, customFrom, customTo),
@@ -416,6 +421,35 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Low Stock Alert Widget */}
+      {lowStockItems.length > 0 && (
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/admin/inventory/low-stock')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-50">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {lowStockItems.length} {lowStockItems.length === 1 ? 'item' : 'itens'} com estoque baixo
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {lowStockItems.filter((i: any) => Number(i.current_stock) === 0).length > 0
+                      ? `${lowStockItems.filter((i: any) => Number(i.current_stock) === 0).length} em falta`
+                      : 'Clique para ver detalhes'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

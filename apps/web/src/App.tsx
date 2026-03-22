@@ -23,6 +23,8 @@ const InventoryList = lazy(() => import('@/pages/admin/inventory/InventoryList')
 const InventoryForm = lazy(() => import('@/pages/admin/inventory/InventoryForm'));
 const StockMovements = lazy(() => import('@/pages/admin/inventory/StockMovements'));
 const DeliveryTracker = lazy(() => import('@/pages/admin/DeliveryTracker'));
+const LowStockAlerts = lazy(() => import('@/pages/admin/inventory/LowStockAlerts'));
+const DeliveryScoreboard = lazy(() => import('@/pages/admin/delivery/DeliveryScoreboard'));
 const MyDeliveries = lazy(() => import('@/pages/admin/MyDeliveries'));
 const CustomerList = lazy(() => import('@/pages/admin/customers/CustomerList'));
 const CustomerDetail = lazy(() => import('@/pages/admin/customers/CustomerDetail'));
@@ -58,6 +60,7 @@ const ReviewList = lazy(() => import('@/pages/admin/reviews/ReviewList'));
 const AbandonedCarts = lazy(() => import('@/pages/admin/marketing/AbandonedCarts'));
 const CustomerSegments = lazy(() => import('@/pages/admin/customers/CustomerSegments'));
 const AnalyticsDashboard = lazy(() => import('@/pages/admin/analytics/AnalyticsDashboard'));
+const PromotionList = lazy(() => import('@/pages/admin/promotions/PromotionList'));
 
 // Customer / storefront pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -72,6 +75,7 @@ const ReservationRequest = lazy(() => import('@/pages/storefront/ReservationRequ
 const Favorites = lazy(() => import('@/pages/storefront/Favorites'));
 const Referral = lazy(() => import('@/pages/storefront/Referral'));
 const ReviewOrder = lazy(() => import('@/pages/storefront/ReviewOrder'));
+const WalletPage = lazy(() => import('@/pages/storefront/Wallet'));
 
 export default function App() {
   return (
@@ -123,6 +127,7 @@ export default function App() {
           <Route path="inventory/new" element={<InventoryForm />} />
           <Route path="inventory/:id" element={<InventoryForm />} />
           <Route path="inventory/movements" element={<StockMovements />} />
+          <Route path="inventory/low-stock" element={<LowStockAlerts />} />
           <Route path="pos" element={<POS />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/:id" element={<OrderDetail />} />
@@ -139,6 +144,7 @@ export default function App() {
           <Route path="delivery-persons/new" element={<DeliveryPersonForm />} />
           <Route path="delivery-persons/:id" element={<DeliveryPersonDetail />} />
           <Route path="delivery-persons/:id/edit" element={<DeliveryPersonForm />} />
+          <Route path="delivery-scoreboard" element={<DeliveryScoreboard />} />
           <Route path="staff" element={<StaffList />} />
           <Route path="staff/new" element={<StaffForm />} />
           <Route path="staff/:id/edit" element={<StaffForm />} />
@@ -170,6 +176,7 @@ export default function App() {
           <Route path="units/:id" element={<UnitForm />} />
           <Route path="reviews" element={<ReviewList />} />
           <Route path="abandoned-carts" element={<AbandonedCarts />} />
+          <Route path="promotions" element={<PromotionList />} />
         </Route>
 
         {/* Tenant storefront routes — /:slug AFTER static routes */}
@@ -186,6 +193,7 @@ export default function App() {
             <Route path="review/:orderId" element={<ReviewOrder />} />
             <Route path="mesa/:tableNumber" element={<TableLanding />} />
             <Route path="reservar" element={<ReservationRequest />} />
+            <Route path="wallet" element={<WalletPage />} />
           </Route>
         </Route>
 

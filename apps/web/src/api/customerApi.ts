@@ -269,6 +269,39 @@ export const customerApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Active Promotions (storefront)
+    getActivePromotions: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/promotions/active',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['Promotions'],
+    }),
+    evaluateCartPromotions: builder.mutation<any[], { slug: string; items: any[] }>({
+      query: ({ slug, items }) => ({
+        url: '/promotions/evaluate',
+        method: 'POST',
+        data: { items },
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+    }),
+
+    // Wallet (customer)
+    getWalletBalance: builder.query<{ balance: number }, { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/wallet/balance',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['Wallet'],
+    }),
+    getWalletTransactions: builder.query<any[], { slug: string }>({
+      query: ({ slug }) => ({
+        url: '/wallet/transactions',
+        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      providesTags: ['WalletTransactions'],
+    }),
+
     // Public Reservation
     createPublicReservation: builder.mutation<any, { slug: string; data: any }>({
       query: ({ slug, data }) => ({
@@ -319,4 +352,8 @@ export const {
   useGetMyReferralCodeQuery,
   useGetMyReferralsQuery,
   useApplyReferralCodeMutation,
+  useGetActivePromotionsQuery,
+  useEvaluateCartPromotionsMutation,
+  useGetWalletBalanceQuery,
+  useGetWalletTransactionsQuery,
 } = customerApi;

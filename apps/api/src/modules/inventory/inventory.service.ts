@@ -1,17 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { InventoryItem } from './entities/inventory-item.entity';
 import { StockMovement } from './entities/stock-movement.entity';
 import { ProductRecipe } from './entities/product-recipe.entity';
 import { CreateInventoryItemDto, UpdateInventoryItemDto, CreateStockMovementDto, CreateProductRecipeDto } from './dto/inventory.dto';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   constructor(
     @InjectRepository(InventoryItem) private readonly itemRepo: Repository<InventoryItem>,
     @InjectRepository(StockMovement) private readonly movementRepo: Repository<StockMovement>,
     @InjectRepository(ProductRecipe) private readonly recipeRepo: Repository<ProductRecipe>,
+    @InjectRepository(Order) private readonly orderRepo: Repository<Order>,
   ) {}
 
   // ── Items ──
@@ -161,5 +165,77 @@ export class InventoryService {
   async getProductCost(tenantId: string, productId: string): Promise<number> {
     const recipes = await this.findRecipesByProduct(tenantId, productId);
     return recipes.reduce((sum, r) => sum + Number(r.quantity) * Number(r.item?.cost_price || 0), 0);
+  }
+
+  // ── Auto-deduct stock when order is confirmed ──
+
+  async autoDeductStock(orderId: string, tenantId: string): Promise<void> {
+    try {
+      const order = await this.orderRepo.findOne({
+        where: { id: orderId, tenant_id: tenantId },
+        relations: ['items'],
+      });
+      if (!order || !order.items?.length) return;
+
+      const items = order.items.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+      }));
+
+      await this.deductStockForOrder(tenantId, items);
+      this.logger.log(`Auto-deducted stock for order ${order.order_number}`);
+    } catch (err) {
+      this.logger.warn(`Failed to auto-deduct stock for order ${orderId}: ${err.message}`);
+    }
+  }
+
+  // ── Reorder Suggestions ──
+
+  async getReorderSuggestions(tenantId: string): Promise<any[]> {
+    // Get items below min_stock
+    const lowStockItems = await this.getLowStockItems(tenantId);
+    if (!lowStockItems.length) return [];
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const suggestions = [];
+
+    for (const item of lowStockItems) {
+      // Calculate avg daily consumption from last 30 days of exit/production movements
+      const movements = await this.movementRepo.find({
+        where: {
+          tenant_id: tenantId,
+          item_id: item.id,
+          created_at: MoreThanOrEqual(thirtyDaysAgo),
+        },
+      });
+
+      const totalConsumed = movements
+        .filter((m) => m.type === 'exit' || m.type === 'production')
+        .reduce((sum, m) => sum + Number(m.quantity), 0);
+
+      const avgDailyConsumption = totalConsumed / 30;
+      const deficit = Math.max(0, Number(item.min_stock) - Number(item.current_stock));
+      const suggestedReorder = Math.ceil(avgDailyConsumption * 7); // 7-day supply
+
+      suggestions.push({
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        unit: item.unit,
+        category: item.category,
+        supplier: item.supplier,
+        current_stock: Number(item.current_stock),
+        min_stock: Number(item.min_stock),
+        deficit,
+        avg_daily_consumption: Math.round(avgDailyConsumption * 100) / 100,
+        suggested_reorder: Math.max(suggestedReorder, deficit),
+        cost_price: Number(item.cost_price),
+        estimated_cost: Math.round(Math.max(suggestedReorder, deficit) * Number(item.cost_price) * 100) / 100,
+      });
+    }
+
+    return suggestions.sort((a, b) => b.deficit - a.deficit);
   }
 }
