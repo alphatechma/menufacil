@@ -72,6 +72,48 @@ fn test_print(printer_key: String) -> Result<(), String> {
 }
 
 #[derive(Debug, Clone, Serialize)]
+struct NetworkPrinterResponse {
+    name: String,
+    key: String,
+    address: String,
+    ip: String,
+    port: u16,
+}
+
+#[tauri::command]
+fn scan_network_printers(subnet: String) -> Vec<NetworkPrinterResponse> {
+    printer::scan_network_printers(&subnet)
+        .into_iter()
+        .map(|p| NetworkPrinterResponse {
+            name: p.name.clone(),
+            key: format!("net:{}", p.address),
+            address: p.address,
+            ip: p.ip,
+            port: p.port,
+        })
+        .collect()
+}
+
+#[tauri::command]
+fn add_network_printer(ip: String, port: u16) -> Result<NetworkPrinterResponse, String> {
+    let address = format!("{}:{}", ip, port);
+    // Test connection
+    let addr: std::net::SocketAddr = address
+        .parse()
+        .map_err(|_| format!("Endereço inválido: {}", address))?;
+    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(3))
+        .map_err(|e| format!("Não foi possível conectar em {}: {}", address, e))?;
+
+    Ok(NetworkPrinterResponse {
+        name: format!("Impressora de Rede ({})", ip),
+        key: format!("net:{}", address),
+        address,
+        ip,
+        port,
+    })
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct QueueJobResponse {
     id: String,
     label: String,
@@ -126,6 +168,8 @@ fn main() {
             test_print,
             get_print_queue,
             clear_print_queue,
+            scan_network_printers,
+            add_network_printer,
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

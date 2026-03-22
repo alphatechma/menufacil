@@ -87,7 +87,7 @@ impl PrintQueue {
         let mut success = false;
 
         for attempt in 0..MAX_RETRIES {
-            match crate::printer::print_raw(printer_key, data) {
+            match crate::printer::print_to(printer_key, data) {
                 Ok(()) => {
                     success = true;
                     break;

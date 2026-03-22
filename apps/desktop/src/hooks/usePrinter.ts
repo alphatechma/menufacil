@@ -8,6 +8,15 @@ export interface PrinterInfo {
   product_id: number;
   manufacturer: string;
   serial: string;
+  type: 'usb' | 'network';
+}
+
+export interface NetworkPrinterInfo {
+  name: string;
+  key: string;
+  address: string;
+  ip: string;
+  port: number;
 }
 
 export interface QueueJob {
@@ -31,8 +40,30 @@ export function usePrinter() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<PrinterInfo[]>('list_printers');
-      setPrinters(result);
+      const usbPrinters = await invoke<PrinterInfo[]>('list_printers');
+      const usb = usbPrinters.map((p) => ({ ...p, type: 'usb' as const }));
+
+      // Load saved network printers from localStorage
+      const savedNetwork: PrinterInfo[] = JSON.parse(
+        localStorage.getItem('menufacil_network_printers') || '[]',
+      );
+
+      setPrinters([...usb, ...savedNetwork]);
+      return [...usb, ...savedNetwork];
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const scanNetworkPrinters = useCallback(async (subnet: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await invoke<NetworkPrinterInfo[]>('scan_network_printers', { subnet });
       return result;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -41,6 +72,50 @@ export function usePrinter() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const addNetworkPrinter = useCallback(async (ip: string, port: number = 9100) => {
+    try {
+      const result = await invoke<NetworkPrinterInfo>('add_network_printer', { ip, port });
+      const networkPrinter: PrinterInfo = {
+        name: result.name,
+        key: result.key,
+        vendor_id: 0,
+        product_id: 0,
+        manufacturer: 'Rede',
+        serial: result.address,
+        type: 'network',
+      };
+
+      // Save to localStorage
+      const saved: PrinterInfo[] = JSON.parse(
+        localStorage.getItem('menufacil_network_printers') || '[]',
+      );
+      const exists = saved.some((p) => p.key === networkPrinter.key);
+      if (!exists) {
+        saved.push(networkPrinter);
+        localStorage.setItem('menufacil_network_printers', JSON.stringify(saved));
+      }
+
+      setPrinters((prev) => {
+        const filtered = prev.filter((p) => p.key !== networkPrinter.key);
+        return [...filtered, networkPrinter];
+      });
+
+      return networkPrinter;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(msg);
+    }
+  }, []);
+
+  const removeNetworkPrinter = useCallback((key: string) => {
+    const saved: PrinterInfo[] = JSON.parse(
+      localStorage.getItem('menufacil_network_printers') || '[]',
+    );
+    const filtered = saved.filter((p) => p.key !== key);
+    localStorage.setItem('menufacil_network_printers', JSON.stringify(filtered));
+    setPrinters((prev) => prev.filter((p) => p.key !== key));
   }, []);
 
   const printReceipt = useCallback(
@@ -125,5 +200,8 @@ export function usePrinter() {
     testPrint,
     getPrintQueue,
     clearPrintQueue,
+    scanNetworkPrinters,
+    addNetworkPrinter,
+    removeNetworkPrinter,
   };
 }

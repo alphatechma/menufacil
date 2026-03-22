@@ -1,5 +1,7 @@
 use rusb::GlobalContext;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
+use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
 
 /// Known thermal printer vendor IDs
@@ -213,42 +215,104 @@ pub fn print_raw(printer_key: &str, data: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-/// Print a test page on the specified printer
+/// Send raw bytes to a network printer via TCP (port 9100)
+pub fn print_raw_network(address: &str, data: &[u8]) -> Result<(), String> {
+    let addr: SocketAddr = address
+        .parse()
+        .map_err(|_| format!("Endereço inválido: {}. Use o formato IP:PORTA (ex: 192.168.0.100:9100)", address))?;
+
+    let stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5))
+        .map_err(|e| format!("Não foi possível conectar à impressora em {}: {}", address, e))?;
+
+    stream
+        .set_write_timeout(Some(Duration::from_secs(10)))
+        .map_err(|e| format!("Erro ao configurar timeout: {}", e))?;
+
+    let mut writer = std::io::BufWriter::new(stream);
+    writer
+        .write_all(data)
+        .map_err(|e| format!("Erro ao enviar dados para a impressora: {}", e))?;
+    writer
+        .flush()
+        .map_err(|e| format!("Erro ao finalizar impressão: {}", e))?;
+
+    Ok(())
+}
+
+/// Scan the local network for printers on port 9100 (common ESC/POS port)
+pub fn scan_network_printers(subnet: &str) -> Vec<NetworkPrinterInfo> {
+    let mut found: Vec<NetworkPrinterInfo> = Vec::new();
+    let timeout = Duration::from_millis(200);
+
+    // Parse subnet base (e.g., "192.168.0" from "192.168.0.1" or "192.168.0")
+    let base = if subnet.matches('.').count() == 3 {
+        subnet.rsplitn(2, '.').last().unwrap_or(subnet)
+    } else {
+        subnet
+    };
+
+    for i in 1..=254 {
+        let addr_str = format!("{}.{}:9100", base, i);
+        if let Ok(addr) = addr_str.parse::<SocketAddr>() {
+            if TcpStream::connect_timeout(&addr, timeout).is_ok() {
+                found.push(NetworkPrinterInfo {
+                    name: format!("Impressora de Rede ({}.{})", base, i),
+                    address: format!("{}.{}:9100", base, i),
+                    ip: format!("{}.{}", base, i),
+                    port: 9100,
+                });
+            }
+        }
+    }
+
+    found
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkPrinterInfo {
+    pub name: String,
+    pub address: String,
+    pub ip: String,
+    pub port: u16,
+}
+
+/// Send data to a printer (USB or network, based on key format)
+pub fn print_to(printer_key: &str, data: &[u8]) -> Result<(), String> {
+    if printer_key.starts_with("net:") {
+        let address = &printer_key[4..];
+        print_raw_network(address, data)
+    } else {
+        print_raw(printer_key, data)
+    }
+}
+
+/// Print a test page on the specified printer (USB or network)
 pub fn test_print(printer_key: &str) -> Result<(), String> {
     use crate::escpos;
 
     let mut data: Vec<u8> = Vec::new();
 
-    // Initialize
     data.extend_from_slice(escpos::INIT);
-
-    // Center align
     data.extend_from_slice(escpos::ALIGN_CENTER);
-
-    // Bold on
     data.extend_from_slice(escpos::BOLD_ON);
-    data.extend_from_slice(b"TESTE DE IMPRESSORA\n");
+    data.extend_from_slice("TESTE DE IMPRESSORA\n".as_bytes());
     data.extend_from_slice(escpos::BOLD_OFF);
-
     data.extend_from_slice(b"================================\n");
-
-    // Left align
     data.extend_from_slice(escpos::ALIGN_LEFT);
-
-    data.extend_from_slice(b"MenuFacil Desktop\n");
-    data.extend_from_slice(b"Impressora configurada!\n\n");
-
-    data.extend_from_slice(b"Caracteres especiais:\n");
+    data.extend_from_slice("MenuFácil Desktop\n".as_bytes());
+    data.extend_from_slice("Impressora configurada!\n\n".as_bytes());
+    data.extend_from_slice("Caracteres especiais:\n".as_bytes());
     data.extend_from_slice("  R$ 10,50 | 100% OK\n".as_bytes());
-
     data.extend_from_slice(b"\n");
     data.extend_from_slice(escpos::ALIGN_CENTER);
     data.extend_from_slice(b"================================\n");
-    data.extend_from_slice(b"Impressao de teste concluida\n");
 
-    // Feed and cut
+    let conn_type = if printer_key.starts_with("net:") { "Rede" } else { "USB" };
+    data.extend_from_slice(format!("Conexão: {}\n", conn_type).as_bytes());
+    data.extend_from_slice("Impressão de teste concluída\n".as_bytes());
+
     data.extend_from_slice(b"\n\n\n");
     data.extend_from_slice(escpos::CUT);
 
-    print_raw(printer_key, &data)
+    print_to(printer_key, &data)
 }
