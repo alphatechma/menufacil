@@ -90,43 +90,15 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
-          includeUpdaterJson: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
 
-      - name: Upload .sig files and updater artifacts
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set +e
-          TAG="${{ github.ref_name }}"
-          VERSION="${TAG#desktop-v}"
-
-          echo "=== Searching for .sig files ==="
-          find . -name "*.sig" -type f 2>/dev/null | head -20
-          echo "=== Searching for updater bundles ==="
-          find . \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" -o -name "*.app.tar.gz" \) -not -path "*/deps/*" -not -path "*/node_modules/*" 2>/dev/null | head -20
-
-          # Upload .sig files
-          for sigfile in $(find . -name "*.sig" -type f -not -path "*/node_modules/*" -not -path "*/deps/*" 2>/dev/null); do
-            filename=$(basename "$sigfile")
-            echo "Uploading signature: $filename"
-            gh release upload "$TAG" "$sigfile" --clobber || true
-          done
-
-          # Upload updater bundles (.tar.gz, .nsis.zip, .msi.zip)
-          for bundle in $(find . \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" \) -not -path "*/deps/*" -not -path "*/node_modules/*" 2>/dev/null); do
-            filename=$(basename "$bundle")
-            echo "Uploading bundle: $filename"
-            gh release upload "$TAG" "$bundle" --clobber || true
-          done
-
-          echo "Upload step completed"
-
+  # Fallback: if tauri-action didn't generate latest.json, create it manually
   updater-json:
     needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Generate and upload latest.json
+      - name: Check and generate latest.json if missing
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -136,7 +108,21 @@ jobs:
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
           DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Download all .sig files from the release
+          # Check if latest.json already has platforms
+          mkdir -p /tmp/check
+          gh release download "$TAG" --repo "$REPO" --pattern "latest.json" --dir /tmp/check 2>/dev/null || true
+
+          if [ -f /tmp/check/latest.json ]; then
+            PLATFORMS=$(python3 -c "import json; d=json.load(open('/tmp/check/latest.json')); print(len(d.get('platforms',{})))" 2>/dev/null || echo "0")
+            if [ "$PLATFORMS" != "0" ]; then
+              echo "latest.json already has $PLATFORMS platforms, skipping"
+              exit 0
+            fi
+          fi
+
+          echo "latest.json missing or empty platforms, generating..."
+
+          # Download all .sig files
           mkdir -p /tmp/sigs
           gh release download "$TAG" --repo "$REPO" --pattern "*.sig" --dir /tmp/sigs 2>/dev/null || true
 
@@ -144,88 +130,66 @@ jobs:
           LINUX_SIG=""
           MACOS_SIG=""
           WIN_NSIS_SIG=""
-          WIN_MSI_SIG=""
 
           for f in /tmp/sigs/*.sig; do
             [ -f "$f" ] || continue
             name=$(basename "$f")
             content=$(cat "$f")
             echo "Found sig: $name"
-
             case "$name" in
               *AppImage.tar.gz.sig) LINUX_SIG="$content" ;;
               *app.tar.gz.sig) MACOS_SIG="$content" ;;
               *nsis.zip.sig) WIN_NSIS_SIG="$content" ;;
               *setup.exe.sig) [ -z "$WIN_NSIS_SIG" ] && WIN_NSIS_SIG="$content" ;;
-              *msi.zip.sig) WIN_MSI_SIG="$content" ;;
             esac
           done
 
-          # Build latest.json
-          cat > /tmp/latest.json << ENDJSON
-          {
-            "version": "${VERSION}",
-            "notes": "MenuFacil Desktop ${TAG}",
-            "pub_date": "${DATE}",
-            "platforms": {
-          ENDJSON
+          # If no sigs found, create a minimal latest.json with just version
+          # (updater will report "up to date" instead of error)
 
-          FIRST=true
+          # Build JSON with python for reliability
+          python3 << PYEOF
+          import json
 
-          # Linux
-          if [ -n "$LINUX_SIG" ]; then
-            LINUX_URL="${BASE_URL}/MenuFacil_${VERSION}_amd64.AppImage.tar.gz"
-            [ "$FIRST" = true ] && FIRST=false || echo "," >> /tmp/latest.json
-            cat >> /tmp/latest.json << ENDJSON
-              "linux-x86_64": {
-                "signature": "${LINUX_SIG}",
-                "url": "${LINUX_URL}"
+          platforms = {}
+
+          linux_sig = """${LINUX_SIG}"""
+          macos_sig = """${MACOS_SIG}"""
+          win_sig = """${WIN_NSIS_SIG}"""
+
+          if linux_sig.strip():
+              platforms["linux-x86_64"] = {
+                  "signature": linux_sig.strip(),
+                  "url": "${BASE_URL}/MenuFacil_${VERSION}_amd64.AppImage.tar.gz"
               }
-          ENDJSON
-          fi
-
-          # macOS
-          if [ -n "$MACOS_SIG" ]; then
-            MACOS_URL="${BASE_URL}/MenuFacil_universal.app.tar.gz"
-            [ "$FIRST" = true ] && FIRST=false || echo "," >> /tmp/latest.json
-            cat >> /tmp/latest.json << ENDJSON
-              "darwin-aarch64": {
-                "signature": "${MACOS_SIG}",
-                "url": "${MACOS_URL}"
-              },
-              "darwin-x86_64": {
-                "signature": "${MACOS_SIG}",
-                "url": "${MACOS_URL}"
+          if macos_sig.strip():
+              platforms["darwin-aarch64"] = {
+                  "signature": macos_sig.strip(),
+                  "url": "${BASE_URL}/MenuFacil_universal.app.tar.gz"
               }
-          ENDJSON
-          fi
-
-          # Windows
-          if [ -n "$WIN_NSIS_SIG" ]; then
-            WIN_URL="${BASE_URL}/MenuFacil_${VERSION}_x64-setup.nsis.zip"
-            [ "$FIRST" = true ] && FIRST=false || echo "," >> /tmp/latest.json
-            cat >> /tmp/latest.json << ENDJSON
-              "windows-x86_64": {
-                "signature": "${WIN_NSIS_SIG}",
-                "url": "${WIN_URL}"
+              platforms["darwin-x86_64"] = {
+                  "signature": macos_sig.strip(),
+                  "url": "${BASE_URL}/MenuFacil_universal.app.tar.gz"
               }
-          ENDJSON
-          fi
+          if win_sig.strip():
+              platforms["windows-x86_64"] = {
+                  "signature": win_sig.strip(),
+                  "url": "${BASE_URL}/MenuFacil_${VERSION}_x64-setup.nsis.zip"
+              }
 
-          cat >> /tmp/latest.json << 'ENDJSON'
-            }
+          data = {
+              "version": "${VERSION}",
+              "notes": "MenuFácil Desktop ${TAG}",
+              "pub_date": "${DATE}",
+              "platforms": platforms
           }
-          ENDJSON
 
-          echo "Generated latest.json:"
+          with open("/tmp/latest.json", "w") as f:
+              json.dump(data, f, indent=2)
+
+          print(f"Generated latest.json with {len(platforms)} platforms")
+          PYEOF
+
           cat /tmp/latest.json
-
-          # Validate JSON
-          python3 -c "import json; json.load(open('/tmp/latest.json'))" || {
-            echo "ERROR: Invalid JSON"
-            exit 1
-          }
-
-          # Upload
           gh release upload "$TAG" /tmp/latest.json --repo "$REPO" --clobber
-          echo "Uploaded latest.json successfully!"
+          echo "Uploaded latest.json"
