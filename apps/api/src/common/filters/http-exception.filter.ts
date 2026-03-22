@@ -34,7 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // Handle class-validator array messages
         if (Array.isArray(message)) {
           errors = (message as string[]).map((m) => ({ message: m }));
-          message = 'Dados invalidos';
+          message = 'Dados inválidos';
         }
       }
     } else if (exception instanceof Error) {
@@ -46,15 +46,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
         const detail = (exception as any).detail;
         if ((exception as any).code === '23505') {
           status = HttpStatus.CONFLICT;
-          message = detail
-            ? `Conflito: registro duplicado. ${detail}`
-            : 'Conflito: registro duplicado.';
+          const field = detail?.match(/Key \((\w+)\)/)?.[1];
+          const fieldMessages: Record<string, string> = {
+            slug: 'Já existe um estabelecimento com esse slug/código.',
+            email: 'Já existe um cadastro com esse e-mail.',
+            phone: 'Já existe um cadastro com esse telefone.',
+            code: 'Já existe um registro com esse código.',
+            name: 'Já existe um registro com esse nome.',
+            key: 'Já existe uma permissão com essa chave.',
+          };
+          message = (field && fieldMessages[field]) || 'Já existe um registro com esses dados. Verifique e tente novamente.';
         } else if ((exception as any).code === '23503') {
           status = HttpStatus.BAD_REQUEST;
-          message = 'Operacao invalida: referencia a registro inexistente.';
+          message = 'Operação inválida: referência a registro inexistente.';
         } else if ((exception as any).code === '23502') {
           status = HttpStatus.BAD_REQUEST;
-          message = 'Dados incompletos: campo obrigatorio nao informado.';
+          message = 'Dados incompletos: campo obrigatório não informado.';
         } else {
           message = 'Erro interno do servidor. Tente novamente.';
         }

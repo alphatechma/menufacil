@@ -112,7 +112,7 @@ export class TenantService {
   async findById(id: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findById(id);
     if (!tenant) {
-      throw new NotFoundException('Estabelecimento nao encontrado');
+      throw new NotFoundException('Estabelecimento não encontrado');
     }
     return tenant;
   }
@@ -120,7 +120,7 @@ export class TenantService {
   async findBySlug(slug: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findBySlug(slug);
     if (!tenant) {
-      throw new NotFoundException('Estabelecimento nao encontrado');
+      throw new NotFoundException('Estabelecimento não encontrado');
     }
     return tenant;
   }
@@ -133,13 +133,13 @@ export class TenantService {
     if (dto.slug) {
       const existing = await this.tenantRepository.findBySlug(dto.slug);
       if (existing && existing.id !== id) {
-        throw new ConflictException(`Slug "${dto.slug}" ja esta em uso`);
+        throw new ConflictException('Já existe um estabelecimento com esse slug/código.');
       }
     }
 
     const tenant = await this.tenantRepository.update(id, dto);
     if (!tenant) {
-      throw new NotFoundException('Estabelecimento nao encontrado');
+      throw new NotFoundException('Estabelecimento não encontrado');
     }
     return tenant;
   }
@@ -185,7 +185,7 @@ export class TenantService {
       relations: ['plan', 'plan.modules'],
     });
     if (!tenant) {
-      throw new NotFoundException('Estabelecimento nao encontrado');
+      throw new NotFoundException('Estabelecimento não encontrado');
     }
     // Attach admin email for super-admin detail view
     const admin = await this.userRepo.findOne({
@@ -346,7 +346,7 @@ export class TenantService {
       withDeleted: true,
     });
     if (!tenant) {
-      throw new NotFoundException('Estabelecimento nao encontrado');
+      throw new NotFoundException('Estabelecimento não encontrado');
     }
     if (!tenant.deleted_at) {
       throw new BadRequestException('Este estabelecimento nao esta excluido');
