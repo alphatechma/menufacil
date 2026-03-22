@@ -101,15 +101,20 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#desktop-v}"
 
-          # Find all .sig files
-          for sigfile in $(find apps/desktop/src-tauri/target -name "*.sig" -type f 2>/dev/null); do
+          echo "=== Searching for .sig files ==="
+          find . -name "*.sig" -type f 2>/dev/null | head -20
+          echo "=== Searching for updater bundles ==="
+          find . \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" -o -name "*.app.tar.gz" \) -not -path "*/deps/*" -not -path "*/node_modules/*" 2>/dev/null | head -20
+
+          # Upload .sig files
+          for sigfile in $(find . -name "*.sig" -type f -not -path "*/node_modules/*" -not -path "*/deps/*" 2>/dev/null); do
             filename=$(basename "$sigfile")
             echo "Uploading signature: $filename"
             gh release upload "$TAG" "$sigfile" --clobber || true
           done
 
-          # Find and upload .tar.gz and .zip updater bundles
-          for bundle in $(find apps/desktop/src-tauri/target \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" -o -name "*.app.tar.gz" \) -not -path "*/deps/*" 2>/dev/null); do
+          # Upload updater bundles (.tar.gz, .nsis.zip, .msi.zip)
+          for bundle in $(find . \( -name "*.AppImage.tar.gz" -o -name "*.nsis.zip" -o -name "*.msi.zip" \) -not -path "*/deps/*" -not -path "*/node_modules/*" 2>/dev/null); do
             filename=$(basename "$bundle")
             echo "Uploading bundle: $filename"
             gh release upload "$TAG" "$bundle" --clobber || true
