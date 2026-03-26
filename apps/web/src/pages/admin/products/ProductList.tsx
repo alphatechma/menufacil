@@ -337,7 +337,7 @@ export default function ProductList() {
   const someSelected = selectedIds.length > 0;
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
         <Link to="/admin/products/new">

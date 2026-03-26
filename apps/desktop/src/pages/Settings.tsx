@@ -149,12 +149,12 @@ export default function Settings() {
   };
 
   return (
-    <div className="h-full flex relative">
+    <div className="h-full flex relative animate-page-enter">
 
-      <div className="w-52 shrink-0 border-r border-gray-200 bg-white p-3 space-y-0.5 overflow-y-auto">
-        <h2 className="text-lg font-bold text-gray-900 px-3 py-2 mb-2">Configuracoes</h2>
+      <div className="w-52 shrink-0 border-r border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-0.5 overflow-y-auto">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 px-3 py-2 mb-2">Configuracoes</h2>
         {TABS.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors', activeTab === tab.key ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50')}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200', activeTab === tab.key ? 'bg-primary/10 text-primary' : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800')}>
             <tab.icon className="w-4 h-4 shrink-0" /> {tab.label}
           </button>
         ))}
@@ -165,7 +165,7 @@ export default function Settings() {
 
           {activeTab === 'geral' && (<>
             <h3 className="text-base font-bold text-gray-900">Dados do Estabelecimento</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Nome</label><input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Slug</label><div className="flex"><span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm">menufacil.com/</span><input value={slug} onChange={(e) => setSlug(e.target.value)} className="flex-1 px-4 py-2.5 rounded-r-xl border border-gray-200 text-sm font-mono" /></div></div>
               <div className="grid grid-cols-2 gap-4">
@@ -179,7 +179,7 @@ export default function Settings() {
 
           {activeTab === 'horarios' && (<>
             <h3 className="text-base font-bold text-gray-900">Horario de Funcionamento</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-3">
               {DAYS.map((day) => { const h = businessHours[day.key] || { open: false, openTime: '08:00', closeTime: '22:00' }; return (
                 <div key={day.key} className="flex items-center gap-3">
                   <Toggle checked={!!h.open} onChange={(v) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], open: v, openTime: h.openTime || '08:00', closeTime: h.closeTime || '22:00' } }))} />
@@ -192,7 +192,7 @@ export default function Settings() {
 
           {activeTab === 'modos' && (<>
             <h3 className="text-base font-bold text-gray-900">Modos de Pedido</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               {[{ key: 'delivery', label: 'Entrega', desc: 'Pedidos para entrega', icon: Truck }, { key: 'pickup', label: 'Retirada', desc: 'Cliente retira no restaurante', icon: ShoppingBag }, { key: 'dine_in', label: 'Consumo no Local', desc: 'Mesas com QR Code', icon: UtensilsCrossed }].map((mode) => (
                 <div key={mode.key} className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><mode.icon className="w-5 h-5 text-primary" /></div><div><p className="text-sm font-medium text-gray-900">{mode.label}</p><p className="text-xs text-gray-500">{mode.desc}</p></div></div>
@@ -205,7 +205,7 @@ export default function Settings() {
 
           {activeTab === 'pagamento' && (<>
             <h3 className="text-base font-bold text-gray-900">Configuracoes de Pagamento</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Tipo da chave PIX</label><select value={paymentConfig.pix_key_type || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, pix_key_type: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"><option value="">Selecionar...</option><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="phone">Telefone</option><option value="random">Chave Aleatoria</option></select></div>
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Chave PIX</label><input value={paymentConfig.pix_key || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, pix_key: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Link de pagamento</label><input value={paymentConfig.payment_link_url || ''} onChange={(e) => setPaymentConfig((p) => ({ ...p, payment_link_url: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
@@ -216,7 +216,7 @@ export default function Settings() {
 
           {activeTab === 'parametros' && (<>
             <h3 className="text-base font-bold text-gray-900">Parametros do Sistema</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Tempo limite para cancelamento (min)</label><input type="number" min={0} max={60} value={cancelTimeLimit} onChange={(e) => setCancelTimeLimit(parseInt(e.target.value) || 0)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm" /><p className="text-xs text-gray-400 mt-1">0 = desabilitado</p></div>
               <div className="flex justify-end"><SaveBtn onClick={() => save({ cancel_time_limit: cancelTimeLimit })} loading={saving} /></div>
             </div>
@@ -224,7 +224,7 @@ export default function Settings() {
 
           {activeTab === 'notificacoes' && (<>
             <h3 className="text-base font-bold text-gray-900">Notificacoes</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               {[{ key: 'sound_enabled', label: 'Sons ativados', desc: 'Habilitar sons de notificação' }, { key: 'sound_new_order', label: 'Novo pedido', desc: 'Tocar som ao receber pedido' }, { key: 'sound_out_for_delivery', label: 'Saiu para entrega', desc: 'Som ao sair para entrega' }, { key: 'sound_delivered', label: 'Entregue', desc: 'Som ao confirmar entrega' }, { key: 'push_enabled', label: 'Push notifications', desc: 'Notificações push' }].map((item) => (
                 <div key={item.key} className="flex items-center justify-between py-1"><div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">{item.desc}</p></div><Toggle checked={!!(notifSettings as any)[item.key]} onChange={(v) => setNotifSettings((prev) => ({ ...prev, [item.key]: v }))} /></div>
               ))}
@@ -239,7 +239,7 @@ export default function Settings() {
 
           {activeTab === 'whatsapp' && (<>
             <h3 className="text-base font-bold text-gray-900">WhatsApp</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className={cn('w-3 h-3 rounded-full', waStatus?.connected ? 'bg-green-500' : 'bg-red-400')} />
                 <span className="text-sm font-medium text-gray-900">{waStatus?.connected ? 'Conectado' : 'Desconectado'}</span>
@@ -259,7 +259,7 @@ export default function Settings() {
 
           {activeTab === 'desktop' && (<>
             <h3 className="text-base font-bold text-gray-900">Configuracoes do Desktop</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div><label className="text-sm font-medium text-gray-700 mb-1 block">Ambiente</label><p className="text-sm text-gray-500">API: {env.apiUrl}</p></div>
               <div className="h-px bg-gray-100" />
               {[{ key: 'desktop_auto_confirm', label: 'Confirmar pedidos automaticamente', desc: 'Novos pedidos confirmados sem intervenção', value: autoConfirm, set: setAutoConfirm },
@@ -284,7 +284,7 @@ export default function Settings() {
 
             {/* Auto-update section */}
             <h3 className="text-base font-bold text-gray-900 pt-4">Atualizacoes</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Versao atual</p>

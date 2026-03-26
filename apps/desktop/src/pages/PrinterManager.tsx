@@ -160,7 +160,7 @@ export default function PrinterManager() {
 
             return (
               <div key={p.key} className={cn(
-                'bg-white rounded-2xl border p-4 transition-all duration-200',
+                'bg-white dark:bg-zinc-900 rounded-2xl border p-4 transition-all duration-200',
                 isDefault || isKitchen ? 'border-primary/30 shadow-sm' : 'border-gray-100 hover:border-gray-200',
               )}>
                 {/* Top row: icon + name + connection badge */}
@@ -233,7 +233,7 @@ export default function PrinterManager() {
           })}
         </div>
       ) : !loading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 py-12 text-center">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 py-12 text-center">
           <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
             <Printer className="w-7 h-7 text-gray-300" />
           </div>
@@ -243,7 +243,7 @@ export default function PrinterManager() {
       ) : null}
 
       {/* Settings Row */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
@@ -268,7 +268,7 @@ export default function PrinterManager() {
 
       {/* Print Queue */}
       {queue.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-900">Fila de Impressão</p>
             {completedCount > 0 && (
@@ -299,7 +299,7 @@ export default function PrinterManager() {
       )}
 
       {/* System Print Queue */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-gray-900">Fila do Sistema</p>

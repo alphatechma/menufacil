@@ -179,22 +179,22 @@ export default function Orders() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col p-5">
+    <div className="flex h-full flex-col p-5 animate-page-enter">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <ShoppingCart className="w-6 h-6 text-gray-700" />
-          <h1 className="text-xl font-bold text-gray-900">Pedidos</h1>
+          <ShoppingCart className="w-6 h-6 text-gray-700 dark:text-zinc-300" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-zinc-100">Pedidos</h1>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors active:scale-95"
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors active:scale-95"
         >
           <RefreshCw className="w-4 h-4" />
           Atualizar
@@ -208,7 +208,7 @@ export default function Orders() {
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="mr-2 px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 focus:border-orange-400 focus:outline-none"
+            className="mr-2 px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 focus:border-primary focus:outline-none"
           />
         )}
         {STATUS_TABS.map((tab) => (
@@ -218,7 +218,7 @@ export default function Orders() {
             className={cn(
               'px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap',
               statusFilter === tab.key
-                ? 'border-orange-500 text-orange-600'
+                ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700',
             )}
           >
@@ -227,7 +227,7 @@ export default function Orders() {
               <span className={cn(
                 'ml-1.5 px-1.5 py-0.5 text-xs font-bold rounded-full',
                 statusFilter === tab.key
-                  ? 'bg-orange-100 text-orange-600'
+                  ? 'bg-primary-50 text-primary'
                   : 'bg-gray-100 text-gray-500',
               )}>
                 {statusCounts[tab.key]}
@@ -239,9 +239,12 @@ export default function Orders() {
 
       {/* Order Cards */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 text-gray-400">
-          <ShoppingCart className="w-16 h-16 mb-3 opacity-20" />
-          <p className="text-sm font-medium">Nenhum pedido {STATUS_TABS.find(t => t.key === statusFilter)?.label.toLowerCase()}</p>
+        <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+            <ShoppingCart className="w-8 h-8 text-gray-300" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Nenhum pedido {STATUS_TABS.find(t => t.key === statusFilter)?.label.toLowerCase()}</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-xs">Novos pedidos aparecerao aqui automaticamente</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto flex-1 pb-4">
@@ -256,7 +259,7 @@ export default function Orders() {
             return (
               <div
                 key={order.id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden animate-scale-in"
               >
                 {/* Card Header */}
                 <div className="px-4 py-3 flex items-center justify-between border-b border-gray-50">
@@ -337,7 +340,7 @@ export default function Orders() {
                       <button
                         onClick={() => handleAdvance(order.id, next.status)}
                         disabled={updatingId === order.id}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 active:scale-95"
+                        className="flex-1 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 active:scale-95"
                       >
                         {updatingId === order.id ? 'Atualizando...' : next.label}
                       </button>
@@ -380,9 +383,9 @@ export default function Orders() {
       {/* Delivery Person Modal */}
       {deliveryModalOrderId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Selecionar Entregador</h2>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md mx-4 animate-slide-up">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Selecionar Entregador</h2>
               <button
                 onClick={() => setDeliveryModalOrderId(null)}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -392,9 +395,13 @@ export default function Orders() {
             </div>
             <div className="p-5 max-h-80 overflow-y-auto">
               {deliveryPersons.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">
-                  Nenhum entregador cadastrado
-                </p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+                    <Truck className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">Nenhum entregador cadastrado</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Cadastre entregadores para atribuir pedidos de delivery</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {deliveryPersons.map((dp: any) => (
@@ -402,7 +409,7 @@ export default function Orders() {
                       key={dp.id}
                       onClick={() => handleAssignDelivery(deliveryModalOrderId, dp.id)}
                       disabled={updatingId === deliveryModalOrderId}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:bg-orange-50 hover:border-orange-200 transition-colors disabled:opacity-50 active:scale-[0.98]"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:bg-primary-50 hover:border-primary-200 transition-colors disabled:opacity-50 active:scale-[0.98]"
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-sm font-bold">
                         {dp.name?.charAt(0)?.toUpperCase() || 'E'}
@@ -428,7 +435,7 @@ export default function Orders() {
         const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden flex flex-col animate-slide-up">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-bold text-gray-900">Pedido #{order.order_number}</h2>

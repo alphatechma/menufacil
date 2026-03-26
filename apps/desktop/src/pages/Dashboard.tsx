@@ -88,7 +88,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -120,8 +120,8 @@ export default function Dashboard() {
       value: formatPrice(avgTicket),
       comparison: data?.avgTicketComparison ?? 0,
       icon: TrendingUp,
-      bg: 'bg-orange-50',
-      color: 'text-orange-600',
+      bg: 'bg-primary-50',
+      color: 'text-primary',
     },
     {
       label: 'Cancelamento',
@@ -144,15 +144,15 @@ export default function Dashboard() {
   const topProducts = data?.topProducts || [];
 
   return (
-    <div className="flex h-full flex-col p-5 overflow-y-auto">
+    <div className="flex h-full flex-col p-5 overflow-y-auto animate-page-enter">
       {/* Header + Date Range */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-gray-700" />
-          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+          <BarChart3 className="w-6 h-6 text-gray-700 dark:text-zinc-300" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-zinc-100">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-1">
             {presets.map((p) => (
               <button
                 key={p.key}
@@ -160,7 +160,7 @@ export default function Dashboard() {
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
                   preset === p.key
-                    ? 'bg-orange-500 text-white'
+                    ? 'bg-primary text-white'
                     : 'text-gray-600 hover:bg-gray-100',
                 )}
               >
@@ -194,14 +194,14 @@ export default function Dashboard() {
         {kpis.map((kpi) => {
           const compValue = kpi.invertComparison ? -kpi.comparison : kpi.comparison;
           return (
-            <div key={kpi.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={kpi.label} className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-500">{kpi.label}</span>
                 <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', kpi.bg)}>
                   <kpi.icon className={cn('w-4 h-4', kpi.color)} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{kpi.value}</p>
               <div className="mt-1">
                 <ComparisonBadge value={compValue} />
               </div>
@@ -211,8 +211,8 @@ export default function Dashboard() {
       </div>
 
       {/* Revenue + Orders Trend Chart */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-        <h2 className="text-sm font-bold text-gray-900 mb-4">Receita e Pedidos</h2>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5 mb-6">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-zinc-100 mb-4">Receita e Pedidos</h2>
         <div className="h-64">
           {trendData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -243,7 +243,13 @@ export default function Dashboard() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+                <BarChart3 className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">Sem dados no periodo</p>
+              <p className="text-xs text-gray-400 mt-1">Selecione outro intervalo de datas</p>
+            </div>
           )}
         </div>
       </div>
@@ -251,14 +257,14 @@ export default function Dashboard() {
       {/* Bottom row: Top Products + Orders by Hour */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Products */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Top 5 Produtos</h2>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-zinc-100 mb-4">Top 5 Produtos</h2>
           {topProducts.length > 0 ? (
             <div className="space-y-2">
               {topProducts.map((product: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-full bg-primary-50 text-primary text-xs font-bold flex items-center justify-center">
                       {idx + 1}
                     </span>
                     <span className="text-sm font-medium text-gray-900">{product.name}</span>
@@ -271,13 +277,19 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
+            <div className="h-48 flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+                <BarChart3 className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">Sem dados no periodo</p>
+              <p className="text-xs text-gray-400 mt-1">Selecione outro intervalo de datas</p>
+            </div>
           )}
         </div>
 
         {/* Orders by Hour */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">Pedidos por Hora</h2>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-zinc-100 mb-4">Pedidos por Hora</h2>
           <div className="h-56">
             {hourData.some((h: any) => h.count > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -299,7 +311,13 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem dados no período</div>
+              <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+                <BarChart3 className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">Sem dados no periodo</p>
+              <p className="text-xs text-gray-400 mt-1">Selecione outro intervalo de datas</p>
+            </div>
             )}
           </div>
         </div>

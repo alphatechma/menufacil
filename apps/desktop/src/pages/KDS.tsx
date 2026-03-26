@@ -101,7 +101,7 @@ function KDSCard({
   const isPreparing = order.status === 'preparing';
 
   return (
-    <div className={cn('rounded-2xl border-2 bg-white overflow-hidden transition-all', config.border)}>
+    <div className={cn('rounded-2xl border-2 bg-white dark:bg-zinc-900 overflow-hidden transition-all animate-scale-in', config.border)}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div>
@@ -156,7 +156,7 @@ function KDSCard({
                   onClick={() => onToggleItem(order.id, idx)}
                   className={cn(
                     'mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
-                    isChecked ? 'bg-orange-500 border-orange-500' : 'border-gray-300 hover:border-orange-400',
+                    isChecked ? 'bg-primary border-primary' : 'border-gray-300 hover:border-primary-light',
                   )}
                 >
                   {isChecked && <Check className="w-3 h-3 text-white" />}
@@ -308,22 +308,22 @@ export default function KDS() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col p-5">
+    <div className="flex h-full flex-col p-5 animate-page-enter">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <ChefHat className="w-6 h-6 text-gray-700" />
-          <h1 className="text-xl font-black text-gray-900">Cozinha</h1>
+          <ChefHat className="w-6 h-6 text-gray-700 dark:text-zinc-300" />
+          <h1 className="text-xl font-black text-gray-900 dark:text-zinc-100">Cozinha</h1>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors active:scale-95"
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors active:scale-95"
         >
           <RefreshCw className="w-4 h-4" />
           Atualizar
@@ -332,7 +332,7 @@ export default function KDS() {
 
       {/* TMA Bar */}
       {tma.count > 0 && (
-        <div className="flex items-center gap-6 px-4 py-2 mb-4 bg-white rounded-xl border border-gray-200 text-sm">
+        <div className="flex items-center gap-6 px-4 py-2 mb-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-gray-400">TMA</span>
             <span className={cn('text-base font-black', tmaColor)}>{formatMinutes(tma.avg)}</span>
@@ -347,19 +347,19 @@ export default function KDS() {
       <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('active')}
-          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'active' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700')}
+          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'active' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700')}
         >
           Pedidos ({activeOrders.length})
         </button>
         <button
           onClick={() => setActiveTab('finished')}
-          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'finished' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700')}
+          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'finished' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700')}
         >
           Finalizados ({finishedOrders.length})
         </button>
         <button
           onClick={() => setActiveTab('cancelled')}
-          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'cancelled' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700')}
+          className={cn('px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors', activeTab === 'cancelled' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700')}
         >
           Cancelados ({cancelledOrders.length})
         </button>
@@ -367,9 +367,12 @@ export default function KDS() {
 
       {/* Order Grid */}
       {displayOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 text-gray-400">
-          <Package className="w-16 h-16 mb-3 opacity-20" />
-          <p className="text-sm font-medium">Nenhum pedido</p>
+        <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+            <ChefHat className="w-8 h-8 text-gray-300" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Nenhum pedido</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-xs">Os pedidos da cozinha aparecerao aqui em tempo real</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto flex-1 pb-4 auto-rows-min content-start">

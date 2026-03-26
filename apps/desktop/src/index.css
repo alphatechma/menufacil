@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #FF6B35;
   --color-primary-dark: #E55A2B;
@@ -29,4 +31,76 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f9fafb;
+}
+
+/* ─── Dark Mode Variables ─────────────────────────────────────────────────── */
+
+.dark body,
+.dark {
+  --color-bg: #0f0f11;
+  --color-surface: #18181b;
+  --color-surface-raised: #27272a;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.1);
+  --color-text: #fafafa;
+  --color-text-secondary: #d4d4d8;
+  --color-text-muted: #a1a1aa;
+}
+
+.dark body {
+  background-color: var(--color-bg);
+}
+
+/* ─── Smooth Transitions ──────────────────────────────────────────────────── */
+
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Page Enter Animation ────────────────────────────────────────────────── */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-page-enter {
+  animation: page-enter 0.3s ease-out;
+}
+
+/* ─── Slide Up for Modals ─────────────────────────────────────────────────── */
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
+/* ─── Scale In for Cards ──────────────────────────────────────────────────── */
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* ─── Skeleton Shimmer ────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+  background-size: 200% 100%;
 }

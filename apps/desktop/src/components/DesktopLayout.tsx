@@ -4,7 +4,7 @@ import {
   UtensilsCrossed, Calculator, ShoppingCart, ChefHat, Settings, LogOut,
   BarChart3, FolderTree, Package, ListPlus, MapPin, Bike, LayoutGrid,
   CalendarCheck, Users, Ticket, Heart, Warehouse, UsersRound, ChevronDown,
-  ChevronLeft, ChevronRight, PieChart,
+  ChevronLeft, ChevronRight, PieChart, Sun, Moon,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -73,6 +73,21 @@ export default function DesktopLayout() {
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
 
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('desktop_sidebar_collapsed') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('desktop-theme') === 'dark');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem('desktop-theme', next ? 'dark' : 'light');
+  };
 
   const socketRef = useWebSocket();
   const { syncStatus, lastSyncTime, syncCache } = useOfflineCache();
@@ -131,8 +146,8 @@ export default function DesktopLayout() {
   const displayName = tenant?.name ?? tenantSlug ?? 'MenuFacil';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <aside className={cn('flex shrink-0 flex-col bg-gray-900 z-50 transition-[width] duration-200', collapsed ? 'w-[68px]' : 'w-60')}>
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-[#0f0f11]">
+      <aside className={cn('flex shrink-0 flex-col bg-gray-900 dark:bg-zinc-950 z-50 transition-[width] duration-200', collapsed ? 'w-[68px]' : 'w-60')}>
         {/* Logo */}
         <div className={cn('flex items-center h-14 shrink-0', collapsed ? 'justify-center' : 'gap-3 px-4')}>
           <img src="/logo-icon.png" alt="MenuFácil" className="h-9 w-9 rounded-xl shrink-0" />
@@ -144,7 +159,7 @@ export default function DesktopLayout() {
           )}
         </div>
 
-        <div className="h-px bg-gray-800 mx-2" />
+        <div className="h-px bg-gray-800 dark:bg-zinc-800 mx-2" />
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
@@ -159,13 +174,13 @@ export default function DesktopLayout() {
                       to={to}
                       end={to === '/'}
                       className={({ isActive }) => cn(
-                        'relative flex h-10 w-10 mx-auto items-center justify-center rounded-xl transition-colors mb-0.5',
+                        'group relative flex h-10 w-10 mx-auto items-center justify-center rounded-xl transition-all duration-200 mb-0.5',
                         isActive ? 'bg-primary/20 text-primary' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300',
                       )}
                     >
                       {({ isActive }) => (<>
                         {isActive && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />}
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
                         {to === '/orders' && pendingOrdersCount > 0 && (
                           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
                             {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
@@ -206,11 +221,11 @@ export default function DesktopLayout() {
                           to={to}
                           end={to === '/'}
                           className={({ isActive: itemActive }) => cn(
-                            'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150',
+                            'group flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                             itemActive ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
                           )}
                         >
-                          <Icon className="w-4 h-4 shrink-0" />
+                          <Icon className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                           <span className="truncate">{label}</span>
                           {to === '/orders' && pendingOrdersCount > 0 && (
                             <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
@@ -227,7 +242,7 @@ export default function DesktopLayout() {
           )}
         </nav>
 
-        <div className="h-px bg-gray-800 mx-2" />
+        <div className="h-px bg-gray-800 dark:bg-zinc-800 mx-2" />
 
         {/* User + collapse toggle */}
         <div className="p-2 shrink-0">
@@ -236,6 +251,11 @@ export default function DesktopLayout() {
               <SidebarTooltip label={user?.name || 'Usuario'} show>
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">{userInitial}</div>
               </SidebarTooltip>
+              <SidebarTooltip label={darkMode ? 'Modo claro' : 'Modo escuro'} show>
+                <button onClick={toggleDarkMode} className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-800 hover:text-yellow-400 transition-colors">
+                  {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+              </SidebarTooltip>
               <SidebarTooltip label="Sair" show>
                 <button onClick={() => { dispatch(logout()); navigate('/login'); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-800 hover:text-red-400 transition-colors">
                   <LogOut className="h-4 w-4" />
@@ -243,15 +263,20 @@ export default function DesktopLayout() {
               </SidebarTooltip>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-gray-800/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary shrink-0">{userInitial}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-white truncate">{user?.name || 'Admin'}</p>
-                <p className="text-[10px] text-gray-500 truncate">{user?.email}</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-gray-800/50">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary shrink-0">{userInitial}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">{user?.name || 'Admin'}</p>
+                  <p className="text-[10px] text-gray-500 truncate">{user?.email}</p>
+                </div>
+                <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-700 hover:text-yellow-400 transition-colors" title={darkMode ? 'Modo claro' : 'Modo escuro'}>
+                  {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+                <button onClick={() => { dispatch(logout()); navigate('/login'); }} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-700 hover:text-red-400 transition-colors" title="Sair">
+                  <LogOut className="h-4 w-4" />
+                </button>
               </div>
-              <button onClick={() => { dispatch(logout()); navigate('/login'); }} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-700 hover:text-red-400 transition-colors" title="Sair">
-                <LogOut className="h-4 w-4" />
-              </button>
             </div>
           )}
         </div>
@@ -260,7 +285,7 @@ export default function DesktopLayout() {
       {/* Collapse toggle button */}
       <button
         onClick={toggleCollapse}
-        className="absolute top-[52px] z-[60] flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm hover:text-gray-600 hover:scale-110 transition-all"
+        className="absolute top-[52px] z-[60] flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-400 dark:text-zinc-400 shadow-sm hover:text-gray-600 dark:hover:text-zinc-200 hover:scale-110 transition-all"
         style={{ left: collapsed ? '56px' : '228px' }}
       >
         {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
@@ -268,8 +293,8 @@ export default function DesktopLayout() {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5">
-          <span className="text-sm font-semibold text-gray-700">{displayName}</span>
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5">
+          <span className="text-sm font-semibold text-gray-700 dark:text-zinc-200">{displayName}</span>
           <div className="flex items-center gap-3">
             {pendingOrdersCount > 0 && (
               <span className="flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600">

@@ -88,7 +88,7 @@ export default function CategoryList() {
   if (isLoading) return <ListPageSkeleton />;
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">Categorias</h1>
         <Link to="/admin/categories/new">
