@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock, Flame, Heart, Tag, Percent, Clock, Gift, Search } from 'lucide-react';
+import { Lock, Flame, Heart, Tag, Percent, Clock, Gift, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery, useGetActivePromotionsQuery } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleFavorite, selectFavoriteIds } from '@/store/slices/favoritesSlice';
@@ -9,10 +9,10 @@ import { cn } from '@/utils/cn';
 import { SmartSearch } from '@/components/ui/SmartSearch';
 
 const DIETARY_FILTERS = [
-  { key: 'vegetariano', label: 'Vegetariano' },
-  { key: 'vegano', label: 'Vegano' },
-  { key: 'sem_gluten', label: 'Sem Gluten' },
-  { key: 'sem_lactose', label: 'Sem Lactose' },
+  { key: 'vegetariano', label: 'Vegetariano', emoji: '🥬' },
+  { key: 'vegano', label: 'Vegano', emoji: '🌱' },
+  { key: 'sem_gluten', label: 'Sem Gluten', emoji: '🚫' },
+  { key: 'sem_lactose', label: 'Sem Lactose', emoji: '🥛' },
 ] as const;
 
 export default function Menu() {
@@ -43,6 +43,16 @@ export default function Menu() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDietaryFilters, setActiveDietaryFilters] = useState<string[]>([]);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const categorySectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const promoScrollRef = useRef<HTMLDivElement>(null);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Trigger fade-in animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Compute top 5 products by order_count for "Mais Pedido" badge
   const topProductIds = useMemo(() => {
@@ -68,7 +78,7 @@ export default function Menu() {
     [products],
   );
 
-  // Popular items: first 5 active products (could be sorted by order count in the future)
+  // Popular items: first 5 active products
   const popularItems = useMemo(
     () => searchItems.slice(0, 5),
     [searchItems],
@@ -96,8 +106,21 @@ export default function Menu() {
     setActiveCategory(categoryId);
     if (categoryId) {
       setSearchParams({ category: categoryId });
+      // Smooth scroll to category section when in grouped mode
+      const section = categorySectionRefs.current.get(categoryId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } else {
       setSearchParams({});
+    }
+
+    // Scroll the active category pill into view
+    if (categoryScrollRef.current) {
+      const activeButton = categoryScrollRef.current.querySelector('[data-active="true"]');
+      if (activeButton) {
+        activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
     }
   };
 
@@ -169,61 +192,129 @@ export default function Menu() {
         .filter((group: any) => group.items.length > 0)
     : null;
 
-  return (
-    <div className="pb-6">
-      {/* Search bar */}
-      <div className="sticky top-16 z-30 bg-white border-b border-gray-100 px-4 py-3">
-        <SmartSearch
-          items={searchItems}
-          onSelect={handleSmartSelect}
-          onSearch={handleSmartSearch}
-          placeholder="Buscar no cardapio..."
-          storageKey="menu-search-recent"
-          popularItems={popularItems}
-        />
-      </div>
+  // Count products per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of products) {
+      if ((p as any).is_active) {
+        const catId = (p as any).category_id;
+        counts[catId] = (counts[catId] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [products]);
 
-      {/* Category tabs */}
-      {categories.length > 0 && (
-        <div
-          ref={categoryScrollRef}
-          className="sticky top-[7.75rem] z-20 bg-white border-b border-gray-100 px-4 py-2.5 flex gap-2 overflow-x-auto scrollbar-none"
-        >
-          <button
-            onClick={() => handleCategoryClick(null)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              !activeCategory
-                ? 'text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-            style={
-              !activeCategory
-                ? { background: 'var(--tenant-gradient)' }
-                : {}
-            }
+  // Auto-scroll promotions
+  useEffect(() => {
+    if (activePromotions.length <= 1) return;
+    const interval = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % activePromotions.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activePromotions.length]);
+
+  // Scroll promo carousel to current index
+  useEffect(() => {
+    if (promoScrollRef.current) {
+      const container = promoScrollRef.current;
+      const child = container.children[promoIndex] as HTMLElement;
+      if (child) {
+        container.scrollTo({ left: child.offsetLeft - 16, behavior: 'smooth' });
+      }
+    }
+  }, [promoIndex]);
+
+  const scrollPromo = (direction: 'left' | 'right') => {
+    setPromoIndex((prev) => {
+      if (direction === 'left') return prev > 0 ? prev - 1 : activePromotions.length - 1;
+      return prev < activePromotions.length - 1 ? prev + 1 : 0;
+    });
+  };
+
+  return (
+    <div className="pb-24 scroll-smooth">
+      {/* Sticky header with search + categories + glass effect */}
+      <div className="sticky top-16 z-30 bg-white/80 backdrop-blur-lg border-b border-gray-100/80">
+        {/* Search bar */}
+        <div className="px-4 py-3">
+          <SmartSearch
+            items={searchItems}
+            onSelect={handleSmartSelect}
+            onSearch={handleSmartSearch}
+            placeholder="Buscar no cardapio..."
+            storageKey="menu-search-recent"
+            popularItems={popularItems}
+          />
+        </div>
+
+        {/* Category tabs */}
+        {categories.length > 0 && (
+          <div
+            ref={categoryScrollRef}
+            className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none scroll-smooth snap-x snap-mandatory"
           >
-            Todos
-          </button>
-          {categories.map((cat: any) => (
             <button
-              key={cat.id}
-              onClick={() => handleCategoryClick(cat.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeCategory === cat.id
-                  ? 'text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              onClick={() => handleCategoryClick(null)}
+              data-active={!activeCategory}
+              className={cn(
+                'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 snap-start flex items-center gap-1.5',
+                !activeCategory
+                  ? 'text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95',
+              )}
               style={
-                activeCategory === cat.id
-                  ? { background: 'var(--tenant-gradient)' }
+                !activeCategory
+                  ? { backgroundColor: 'var(--tenant-primary)', boxShadow: '0 4px 12px color-mix(in srgb, var(--tenant-primary) 40%, transparent)' }
                   : {}
               }
             >
-              {cat.name}
+              Todos
+              <span
+                className={cn(
+                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                  !activeCategory
+                    ? 'bg-white/25 text-white'
+                    : 'bg-gray-200 text-gray-500',
+                )}
+              >
+                {products.filter((p: any) => p.is_active).length}
+              </span>
             </button>
-          ))}
-        </div>
-      )}
+            {categories.map((cat: any) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                data-active={activeCategory === cat.id}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 snap-start flex items-center gap-1.5',
+                  activeCategory === cat.id
+                    ? 'text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95',
+                )}
+                style={
+                  activeCategory === cat.id
+                    ? { backgroundColor: 'var(--tenant-primary)', boxShadow: '0 4px 12px color-mix(in srgb, var(--tenant-primary) 40%, transparent)' }
+                    : {}
+                }
+              >
+                {cat.name}
+                {categoryCounts[cat.id] > 0 && (
+                  <span
+                    className={cn(
+                      'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                      activeCategory === cat.id
+                        ? 'bg-white/25 text-white'
+                        : 'bg-gray-200 text-gray-500',
+                    )}
+                  >
+                    {categoryCounts[cat.id]}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Dietary filter pills */}
       <div className="px-4 pt-3 flex gap-2 overflow-x-auto scrollbar-none">
@@ -232,17 +323,18 @@ export default function Menu() {
             key={filter.key}
             onClick={() => handleToggleDietaryFilter(filter.key)}
             className={cn(
-              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 flex items-center gap-1.5 active:scale-95',
               activeDietaryFilters.includes(filter.key)
                 ? 'text-white border-transparent shadow-sm'
                 : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
             )}
             style={
               activeDietaryFilters.includes(filter.key)
-                ? { background: 'var(--tenant-primary)' }
+                ? { backgroundColor: 'var(--tenant-primary)' }
                 : {}
             }
           >
+            <span className="text-sm leading-none">{filter.emoji}</span>
             {filter.label}
           </button>
         ))}
@@ -250,53 +342,107 @@ export default function Menu() {
 
       {/* Active Promotions */}
       {activePromotions.length > 0 && (
-        <div className="px-4 pt-4">
-          <h3 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <Tag className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
-            Promocoes
-          </h3>
-          <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
-            {activePromotions.map((promo: any) => (
-              <div
-                key={promo.id}
-                className="flex-shrink-0 w-56 rounded-xl p-3 border border-gray-100 shadow-sm bg-white"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {promo.type === 'happy_hour' && <Clock className="w-3.5 h-3.5 text-amber-500" />}
-                  {promo.type === 'combo' && <Gift className="w-3.5 h-3.5 text-blue-500" />}
-                  {promo.type === 'buy_x_get_y' && <Gift className="w-3.5 h-3.5 text-red-500" />}
-                  {(promo.type === 'discount' || promo.type === 'weekday') && <Percent className="w-3.5 h-3.5 text-green-500" />}
-                  <span className="text-xs font-semibold text-gray-500 uppercase">
-                    {promo.type === 'happy_hour' ? 'Happy Hour' :
-                     promo.type === 'combo' ? 'Combo' :
-                     promo.type === 'buy_x_get_y' ? 'Compre e Leve' :
-                     promo.type === 'weekday' ? 'Promo do Dia' : 'Desconto'}
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-gray-900 leading-tight">{promo.name}</p>
-                <p
-                  className="text-xs font-bold mt-1"
-                  style={{ color: 'var(--tenant-primary)' }}
+        <div className="px-4 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Tag className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+              Promocoes
+            </h3>
+            {activePromotions.length > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => scrollPromo('left')}
+                  className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors active:scale-90"
                 >
-                  {promo.discount_type === 'percent'
-                    ? `-${promo.discount_value}%`
-                    : `-R$ ${Number(promo.discount_value).toFixed(2)}`}
-                </p>
-                {promo.description && (
-                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{promo.description}</p>
-                )}
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => scrollPromo('right')}
+                  className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors active:scale-90"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </button>
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Promo carousel with gradient fade */}
+          <div className="relative">
+            {/* Left fade */}
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[hsl(var(--background))] to-transparent z-10 pointer-events-none rounded-l-xl" />
+            {/* Right fade */}
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[hsl(var(--background))] to-transparent z-10 pointer-events-none rounded-r-xl" />
+
+            <div
+              ref={promoScrollRef}
+              className="flex gap-3 overflow-x-auto scrollbar-none pb-1 scroll-smooth"
+            >
+              {activePromotions.map((promo: any, idx: number) => (
+                <div
+                  key={promo.id}
+                  className={cn(
+                    'flex-shrink-0 w-64 rounded-2xl p-4 border-0 shadow-sm transition-all duration-300',
+                    idx === promoIndex ? 'scale-100 opacity-100' : 'scale-[0.97] opacity-80',
+                  )}
+                  style={{
+                    background: `linear-gradient(135deg, var(--tenant-primary), var(--tenant-primary-dark))`,
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
+                      {promo.type === 'happy_hour' && <Clock className="w-4 h-4 text-white" />}
+                      {promo.type === 'combo' && <Gift className="w-4 h-4 text-white" />}
+                      {promo.type === 'buy_x_get_y' && <Gift className="w-4 h-4 text-white" />}
+                      {(promo.type === 'discount' || promo.type === 'weekday') && <Percent className="w-4 h-4 text-white" />}
+                    </div>
+                    <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">
+                      {promo.type === 'happy_hour' ? 'Happy Hour' :
+                       promo.type === 'combo' ? 'Combo' :
+                       promo.type === 'buy_x_get_y' ? 'Compre e Leve' :
+                       promo.type === 'weekday' ? 'Promo do Dia' : 'Desconto'}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-white leading-tight">{promo.name}</p>
+                  <p className="text-lg font-extrabold text-white mt-1">
+                    {promo.discount_type === 'percent'
+                      ? `-${promo.discount_value}%`
+                      : `-R$ ${Number(promo.discount_value).toFixed(2)}`}
+                  </p>
+                  {promo.description && (
+                    <p className="text-xs text-white/70 mt-1 line-clamp-1">{promo.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Scroll dots */}
+            {activePromotions.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-3">
+                {activePromotions.map((_: any, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPromoIndex(idx)}
+                    className={cn(
+                      'rounded-full transition-all duration-300',
+                      idx === promoIndex
+                        ? 'w-5 h-1.5'
+                        : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400',
+                    )}
+                    style={idx === promoIndex ? { backgroundColor: 'var(--tenant-primary)' } : {}}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Products */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-5">
         {activeCategory || searchQuery ? (
           // Flat list when filtered
-          <div className="space-y-3">
-            {filteredProducts.map((product: any) => (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {filteredProducts.map((product: any, idx: number) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -304,6 +450,8 @@ export default function Menu() {
                 isClosed={isClosed}
                 isTopProduct={topProductIds.has(product.id)}
                 promoBadge={productPromoBadges[product.id]}
+                index={idx}
+                isVisible={isVisible}
               />
             ))}
           </div>
@@ -311,18 +459,32 @@ export default function Menu() {
           // Grouped by category
           <div className="space-y-8">
             {groupedProducts?.map((group: any) => (
-              <div key={group.id}>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  {group.name}
-                </h3>
-                <div className="space-y-3">
-                  {group.items.map((product: any) => (
+              <div
+                key={group.id}
+                ref={(el) => {
+                  if (el) categorySectionRefs.current.set(group.id, el);
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {group.name}
+                  </h3>
+                  <div className="flex-1 h-px bg-gray-100" />
+                  <span className="text-xs font-medium text-gray-400">
+                    {group.items.length} {group.items.length === 1 ? 'item' : 'itens'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  {group.items.map((product: any, idx: number) => (
                     <ProductCard
                       key={product.id}
                       product={product}
                       slug={slug!}
                       isClosed={isClosed}
+                      isTopProduct={topProductIds.has(product.id)}
                       promoBadge={productPromoBadges[product.id]}
+                      index={idx}
+                      isVisible={isVisible}
                     />
                   ))}
                 </div>
@@ -332,12 +494,12 @@ export default function Menu() {
         )}
 
         {filteredProducts.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-gray-300" />
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Search className="w-10 h-10 text-gray-200" />
             </div>
-            <p className="text-sm font-medium text-gray-500">Nenhum produto encontrado</p>
-            <p className="text-xs text-gray-400 mt-1 max-w-xs">Tente buscar por outro termo ou categoria</p>
+            <p className="text-base font-semibold text-gray-500">Nenhum produto encontrado</p>
+            <p className="text-sm text-gray-400 mt-1 max-w-xs">Tente buscar por outro termo ou categoria</p>
           </div>
         )}
       </div>
@@ -351,16 +513,21 @@ function ProductCard({
   isClosed,
   isTopProduct,
   promoBadge,
+  index,
+  isVisible,
 }: {
   product: any;
   slug: string;
   isClosed: boolean;
   isTopProduct?: boolean;
   promoBadge?: string;
+  index: number;
+  isVisible: boolean;
 }) {
   const dispatch = useAppDispatch();
   const favoriteIds = useAppSelector(selectFavoriteIds);
   const isFavorited = favoriteIds.includes(product.id);
+  const [heartAnimating, setHeartAnimating] = useState(false);
 
   const hasVariations = product.variations && product.variations.length > 0;
 
@@ -374,17 +541,39 @@ function ProductCard({
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setHeartAnimating(true);
     dispatch(toggleFavorite(product.id));
+    setTimeout(() => setHeartAnimating(false), 400);
   };
+
+  // Dietary tag dots
+  const dietaryDots = useMemo(() => {
+    const tags = product.dietary_tags ?? [];
+    const dotMap: Record<string, string> = {
+      vegetariano: '#22c55e',
+      vegano: '#16a34a',
+      sem_gluten: '#f59e0b',
+      sem_lactose: '#3b82f6',
+    };
+    return tags
+      .filter((t: string) => dotMap[t])
+      .map((t: string) => ({ key: t, color: dotMap[t] }));
+  }, [product.dietary_tags]);
+
+  // Staggered fade-in delay
+  const animationDelay = `${Math.min(index * 60, 400)}ms`;
 
   return (
     <Wrapper
       {...(wrapperProps as any)}
-      className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex group relative ${
+      className={cn(
+        'bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col group relative transition-all duration-300',
         isClosed
           ? 'border-gray-200 cursor-not-allowed'
-          : 'border-gray-100 hover:shadow-md transition-shadow'
-      }`}
+          : 'border-gray-100 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]',
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+      )}
+      style={{ transitionDelay: animationDelay }}
     >
       {/* Closed overlay */}
       {isClosed && (
@@ -394,76 +583,143 @@ function ProductCard({
           </div>
         </div>
       )}
-      <div className={`flex-1 p-4 flex flex-col justify-between ${isClosed ? 'opacity-50' : ''}`}>
-        <div>
-          <div className="flex items-start gap-2">
-            <h4 className="font-semibold text-gray-900 mb-1 flex-1">{product.name}</h4>
-            <button
-              onClick={handleFavoriteClick}
-              className="shrink-0 p-1 -mt-0.5 -mr-1 rounded-full hover:bg-gray-100 transition-colors z-20 relative"
-              aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-            >
-              <Heart
-                className={cn(
-                  'w-4 h-4 transition-colors',
-                  isFavorited
-                    ? 'fill-red-500 text-red-500'
-                    : 'text-gray-300 hover:text-red-400',
-                )}
-              />
-            </button>
+
+      {/* Image area */}
+      <div className={cn(
+        'relative aspect-[4/3] w-full bg-gray-100 overflow-hidden',
+        isClosed ? 'grayscale opacity-60' : '',
+      )}>
+        {(product.image_url || product.category?.image_url) ? (
+          <img
+            src={product.image_url || product.category?.image_url}
+            alt={product.name}
+            className={cn(
+              'w-full h-full object-cover transition-transform duration-500',
+              isClosed ? '' : 'group-hover:scale-110',
+            )}
+            loading="lazy"
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-4xl text-white/70"
+            style={{
+              background: isClosed
+                ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
+                : 'linear-gradient(135deg, var(--tenant-primary), var(--tenant-primary-dark))',
+            }}
+          >
+            {product.name.charAt(0)}
           </div>
+        )}
+
+        {/* Favorite heart - top right */}
+        <button
+          onClick={handleFavoriteClick}
+          className={cn(
+            'absolute top-2 right-2 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm transition-all duration-200 z-20',
+            'hover:bg-white hover:shadow-md active:scale-90',
+            heartAnimating && 'scale-125',
+          )}
+          aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+        >
+          <Heart
+            className={cn(
+              'w-4 h-4 transition-all duration-300',
+              isFavorited
+                ? 'fill-red-500 text-red-500'
+                : 'text-gray-400',
+              heartAnimating && 'scale-110',
+            )}
+          />
+        </button>
+
+        {/* Badges overlay - top left */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
           {isTopProduct && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-50 text-primary mb-1" style={{ backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 15%, white)', color: 'var(--tenant-primary)' }}>
+            <span
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white shadow-sm backdrop-blur-sm"
+              style={{
+                background: 'linear-gradient(135deg, #f97316, #ef4444)',
+              }}
+            >
               <Flame className="w-3 h-3" />
               Mais Pedido
             </span>
           )}
           {promoBadge && (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1"
-              style={{ backgroundColor: 'var(--tenant-primary)', color: 'white', opacity: 0.9 }}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white shadow-sm backdrop-blur-sm"
+              style={{ backgroundColor: 'var(--tenant-primary)' }}
             >
               <Tag className="w-3 h-3" />
               {promoBadge}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Content area */}
+      <div className={cn(
+        'flex-1 p-3 flex flex-col justify-between',
+        isClosed ? 'opacity-50' : '',
+      )}>
+        <div>
+          <div className="flex items-start gap-1">
+            <h4 className="text-base font-bold text-gray-900 leading-tight flex-1 line-clamp-1">
+              {product.name}
+            </h4>
+            {/* Dietary dots */}
+            {dietaryDots.length > 0 && (
+              <div className="flex items-center gap-1 mt-1 shrink-0">
+                {dietaryDots.map((dot: { key: string; color: string }) => (
+                  <span
+                    key={dot.key}
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: dot.color }}
+                    title={dot.key}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
           {product.description && (
-            <p className="text-sm text-gray-500 line-clamp-2">
+            <p className="text-sm text-gray-500 line-clamp-2 mt-1 leading-snug">
               {product.description}
             </p>
           )}
         </div>
+
         <div className="flex items-end justify-between mt-3">
-          <p
-            className="font-bold"
-            style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
-          >
-            {hasVariations
-              ? `A partir de ${formatPrice(minPrice)}`
-              : formatPrice(minPrice)}
-          </p>
-        </div>
-      </div>
-      <div className={`w-28 h-28 flex-shrink-0 bg-gray-100 overflow-hidden ${isClosed ? 'grayscale opacity-60' : ''}`}>
-        {(product.image_url || product.category?.image_url) ? (
-          <img
-            src={product.image_url || product.category?.image_url}
-            alt={product.name}
-            className={`w-full h-full object-cover ${isClosed ? '' : 'group-hover:scale-105'} transition-transform duration-300`}
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-3xl text-white/70"
-            style={{
-              background: isClosed
-                ? 'linear-gradient(135deg, #9ca3af, #6b7280)'
-                : `var(--tenant-gradient)`,
-            }}
-          >
-            {product.name.charAt(0)}
+          <div>
+            {hasVariations && (
+              <span className="text-[10px] text-gray-400 font-medium block">A partir de</span>
+            )}
+            <p
+              className="text-lg font-extrabold leading-tight"
+              style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
+            >
+              {formatPrice(minPrice)}
+            </p>
           </div>
-        )}
+
+          {!isClosed && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Navigate to product detail for adding to cart
+                if (!isClosed) {
+                  window.location.href = `/${slug}/menu/${product.id}`;
+                }
+              }}
+              className="p-2 rounded-xl text-white shadow-sm transition-all duration-200 hover:shadow-md active:scale-90"
+              style={{ backgroundColor: 'var(--tenant-primary)' }}
+              aria-label="Ver produto"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </Wrapper>
   );
