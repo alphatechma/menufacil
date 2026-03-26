@@ -236,7 +236,8 @@ export default function KDS() {
   useLiveTimer();
 
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery(undefined, {
-    pollingInterval: 10000,
+    pollingInterval: 5000,
+    refetchOnMountOrArgChange: true,
   });
   const [updateStatus] = useUpdateOrderStatusMutation();
 

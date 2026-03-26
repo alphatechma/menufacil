@@ -102,7 +102,7 @@ export default function DesktopLayout() {
   }, [socketRef, pendingOfflineOrders, syncPendingOrders]);
 
   const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, { skip: !tenantSlug });
-  const { data: orders } = useGetOrdersQuery(undefined, { pollingInterval: 30000 });
+  const { data: orders } = useGetOrdersQuery(undefined, { pollingInterval: 5000 });
 
   const pendingOrdersCount = useMemo(() => {
     if (!orders || !Array.isArray(orders)) return 0;

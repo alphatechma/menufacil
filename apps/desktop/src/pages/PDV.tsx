@@ -82,7 +82,10 @@ export default function PDV() {
   const [createOrder, { isLoading: creating }] = useCreateAdminOrderMutation();
   const [createCustomer, { isLoading: creatingCustomer }] =
     useCreateCustomerMutation();
-  const { data: cashRegister } = useGetCashRegisterQuery();
+  const { data: cashRegister, refetch: refetchCashRegister } = useGetCashRegisterQuery(undefined, {
+    pollingInterval: 5000,
+    refetchOnMountOrArgChange: true,
+  });
   const [openRegister, { isLoading: openingRegister }] =
     useOpenCashRegisterMutation();
   const [closeRegister, { isLoading: closingRegister }] =
@@ -90,7 +93,7 @@ export default function PDV() {
   const { data: tables = [] } = useGetTablesQuery();
   const { data: allOrders = [], refetch: refetchOrders } = useGetOrdersQuery(
     undefined,
-    { pollingInterval: 15000 },
+    { pollingInterval: 5000, refetchOnMountOrArgChange: true },
   );
   const tenantSlug = useAppSelector((s) => s.auth.tenantSlug);
   const { data: tenant } = useGetTenantBySlugQuery(tenantSlug!, {

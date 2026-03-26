@@ -111,6 +111,7 @@ export function usePrinter() {
           paperWidth: savedPaperWidth,
         });
         await getPrintQueue();
+        getSystemQueue();
         return jobId;
       } catch (err) {
         throw new Error(err instanceof Error ? err.message : String(err));
@@ -170,18 +171,17 @@ export function usePrinter() {
     }
   }, [listPrinters, getSystemQueue]);
 
-  // Auto-poll queues
+  // Auto-poll queues — always poll system queue, fast poll when app jobs pending
   useEffect(() => {
     const hasPending = queue.some((j) => j.status === 'pending' || j.status === 'printing');
-    if (hasPending && !pollingRef.current) {
-      pollingRef.current = setInterval(() => {
-        getPrintQueue();
-        getSystemQueue();
-      }, 2000);
-    } else if (!hasPending && pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
+    const interval = hasPending ? 1000 : 5000;
+
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(() => {
+      getPrintQueue();
+      getSystemQueue();
+    }, interval);
+
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);

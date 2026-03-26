@@ -99,7 +99,8 @@ export default function Orders() {
   const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10));
 
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery(undefined, {
-    pollingInterval: 15000,
+    pollingInterval: 5000,
+    refetchOnMountOrArgChange: true,
   });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
