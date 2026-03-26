@@ -1,6 +1,19 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Loader2,
+  Save,
+  AlertCircle,
+  DollarSign,
+  Users,
+  Package,
+  Puzzle,
+  Check,
+  Minus,
+  Plus,
+  ToggleLeft,
+} from 'lucide-react';
 import { useNotify } from '@/hooks/useNotify';
 import {
   useGetPlanQuery,
@@ -13,8 +26,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardHeader,
@@ -22,6 +35,18 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+const MODULE_ICONS: Record<string, any> = {
+  product: Package,
+  order: Package,
+  customer: Users,
+  delivery: Package,
+  coupon: Package,
+  loyalty: Package,
+  kds: Package,
+  report: Package,
+};
 
 export default function PlanForm() {
   const { id } = useParams();
@@ -114,17 +139,25 @@ export default function PlanForm() {
     }
   };
 
+  const allSelected = modules && modules.length > 0 && selectedModules.length === modules.length;
+
   return (
-    <div className="space-y-6 max-w-2xl animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate(-1)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-xl border border-border/50 hover:border-border"
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {isEditing ? 'Editar Plano' : 'Novo Plano'}
           </h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          <p className="text-sm text-muted-foreground">
             {isEditing
               ? 'Atualize as informações do plano.'
               : 'Preencha as informações para criar um novo plano.'}
@@ -133,150 +166,221 @@ export default function PlanForm() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-scale-in">
+        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-500 dark:text-red-400 animate-scale-in">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Informacoes Gerais</CardTitle>
-            <CardDescription>Nome, preço e limites do plano.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
-              <Input
-                id="name"
-                required
-                placeholder="Ex: Básico, Profissional, Enterprise"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column: Info */}
+          <div className="space-y-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/30">
+                <CardTitle className="text-base">Informações Gerais</CardTitle>
+                <CardDescription>Nome, preço e limites do plano.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-5">
+                {/* Plan Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Nome do Plano *
+                  </Label>
+                  <Input
+                    id="name"
+                    required
+                    placeholder="Ex: Básico, Profissional, Enterprise"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="h-11"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="price">Preço (R$) *</Label>
-              <Input
-                id="price"
-                type="number"
-                required
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-              />
-            </div>
+                {/* Price */}
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Preço Mensal *
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-0 top-0 flex h-11 w-12 items-center justify-center rounded-l-md border-r border-border bg-muted/50">
+                      <span className="text-sm font-semibold text-muted-foreground">R$</span>
+                    </div>
+                    <Input
+                      id="price"
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      placeholder="0,00"
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      className="h-11 pl-14 text-2xl font-bold"
+                    />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max_users">Max Usuários</Label>
-                <Input
-                  id="max_users"
-                  type="number"
-                  min="1"
-                  placeholder="Ilimitado"
-                  value={form.max_users}
-                  onChange={(e) => setForm({ ...form, max_users: e.target.value })}
-                />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Vazio = ilimitado
+                <Separator />
+
+                {/* Limits with stepper-like UI */}
+                <div className="grid grid-cols-2 gap-4">
+                  <StepperField
+                    id="max_users"
+                    label="Max Usuários"
+                    icon={Users}
+                    value={form.max_users}
+                    onChange={(val) => setForm({ ...form, max_users: val })}
+                    placeholder="Ilimitado"
+                  />
+                  <StepperField
+                    id="max_products"
+                    label="Max Produtos"
+                    icon={Package}
+                    value={form.max_products}
+                    onChange={(val) => setForm({ ...form, max_products: val })}
+                    placeholder="Ilimitado"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Deixe vazio para ilimitado.
                 </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="max_products">Max Produtos</Label>
-                <Input
-                  id="max_products"
-                  type="number"
-                  min="1"
-                  placeholder="Ilimitado"
-                  value={form.max_products}
-                  onChange={(e) => setForm({ ...form, max_products: e.target.value })}
-                />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Vazio = ilimitado
-                </p>
-              </div>
-            </div>
 
-            <Separator />
+                <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="is_active">Ativo</Label>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Planos inativos não ficam disponíveis para novos estabelecimentos.
-                </p>
-              </div>
-              <Switch
-                id="is_active"
-                checked={form.is_active}
-                onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                {/* Active switch */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-lg',
+                      form.is_active
+                        ? 'bg-emerald-500/15 text-emerald-500'
+                        : 'bg-muted text-muted-foreground',
+                    )}>
+                      <ToggleLeft className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer">
+                        {form.is_active ? 'Plano Ativo' : 'Plano Inativo'}
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Planos inativos não ficam disponíveis para novos estabelecimentos.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="is_active"
+                    checked={form.is_active}
+                    onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Módulos do Sistema</CardTitle>
-                <CardDescription>
-                  Selecione quais módulos estarão disponíveis neste plano.
-                </CardDescription>
-              </div>
-              {modules && modules.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={toggleAll}>
-                  {selectedModules.length === modules.length ? 'Desmarcar todos' : 'Selecionar todos'}
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {modules && modules.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {modules.map((mod: any) => {
-                  const isChecked = selectedModules.includes(mod.id);
-                  return (
-                    <label
-                      key={mod.id}
-                      className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all duration-150 ${
-                        isChecked
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
-                          : 'border-[hsl(var(--border))] hover:border-[hsl(var(--muted-foreground))]/25 hover:bg-[hsl(var(--muted))]/50'
-                      }`}
+          {/* Right Column: Modules */}
+          <div className="space-y-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Puzzle className="h-4 w-4 text-primary" />
+                      Módulos do Sistema
+                    </CardTitle>
+                    <CardDescription>
+                      Selecione quais módulos estarão disponíveis.
+                    </CardDescription>
+                  </div>
+                  {modules && modules.length > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs tabular-nums"
                     >
-                      <Checkbox
-                        checked={isChecked}
-                        onCheckedChange={() => toggleModule(mod.id)}
-                        className="mt-0.5"
-                      />
-                      <div>
-                        <span className="text-sm font-medium leading-none text-[hsl(var(--foreground))]">
-                          {mod.name}
-                        </span>
-                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                          {mod.key}
-                        </p>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Nenhum modulo cadastrado.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                      {selectedModules.length}/{modules.length}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                {/* Toggle all */}
+                {modules && modules.length > 0 && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                    <span className="text-sm font-medium text-foreground">
+                      {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+                    </span>
+                    <Switch
+                      checked={!!allSelected}
+                      onCheckedChange={toggleAll}
+                    />
+                  </div>
+                )}
 
-        <div className="flex items-center gap-3">
-          <Button type="submit" disabled={isSaving}>
+                {/* Module toggle cards */}
+                {modules && modules.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {modules.map((mod: any) => {
+                      const isChecked = selectedModules.includes(mod.id);
+                      const ModIcon = MODULE_ICONS[mod.key] || Puzzle;
+
+                      return (
+                        <button
+                          key={mod.id}
+                          type="button"
+                          onClick={() => toggleModule(mod.id)}
+                          className={cn(
+                            'relative flex items-center gap-3 rounded-xl border p-4 text-left transition-all duration-200',
+                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            isChecked
+                              ? 'border-primary/40 bg-primary/5 dark:bg-primary/10 shadow-sm ring-1 ring-primary/10'
+                              : 'border-border hover:border-border hover:bg-muted/50',
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
+                              isChecked
+                                ? 'bg-primary/15 text-primary'
+                                : 'bg-muted text-muted-foreground',
+                            )}
+                          >
+                            <ModIcon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-medium text-foreground block truncate">
+                              {mod.name}
+                            </span>
+                            <code className="text-[10px] text-muted-foreground font-mono">
+                              {mod.key}
+                            </code>
+                          </div>
+                          <div
+                            className={cn(
+                              'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all',
+                              isChecked
+                                ? 'border-primary bg-primary text-white'
+                                : 'border-border bg-transparent',
+                            )}
+                          >
+                            {isChecked && <Check className="h-3 w-3" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Puzzle className="h-8 w-8 mb-2 opacity-30" />
+                    <p className="text-sm">Nenhum módulo cadastrado.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-border/50">
+          <Button type="submit" disabled={isSaving} className="min-w-[120px]">
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -289,6 +393,74 @@ export default function PlanForm() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function StepperField({
+  id,
+  label,
+  icon: Icon,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  icon: any;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+}) {
+  const numValue = value ? parseInt(value) : 0;
+
+  const increment = () => {
+    onChange(String(numValue + 1));
+  };
+
+  const decrement = () => {
+    if (numValue > 1) {
+      onChange(String(numValue - 1));
+    } else {
+      onChange('');
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </Label>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-lg"
+          onClick={decrement}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </Button>
+        <Input
+          id={id}
+          type="number"
+          min="1"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 text-center font-semibold"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-lg"
+          onClick={increment}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
     </div>
   );
 }

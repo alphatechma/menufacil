@@ -2286,8 +2286,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "menufacil-desktop"
-version = "0.4.0"
+name = "menufacil"
+version = "0.4.6"
 dependencies = [
  "rusb",
  "serde",
