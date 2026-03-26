@@ -487,6 +487,106 @@ pub fn test_print(printer_key: &str) -> Result<(), String> {
     print_to(printer_key, &data)
 }
 
+// ── System Print Queue ───────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemJob {
+    pub id: String,
+    pub printer: String,
+    pub user: String,
+    pub size: String,
+    pub status: String,
+}
+
+/// List system print queue jobs
+pub fn get_system_queue() -> Result<Vec<SystemJob>, String> {
+    let mut jobs: Vec<SystemJob> = Vec::new();
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // lpstat -o gives active jobs, lpstat -W completed gives recent completed
+        if let Ok(output) = Command::new("lpstat").args(["-o"]).env("LANG", "C").output() {
+            if let Ok(text) = String::from_utf8(output.stdout) {
+                for line in text.lines() {
+                    // Format: "PRINTER-123 user 1024 Mon 01 Jan 2026 12:00:00"
+                    let parts: Vec<&str> = line.splitn(4, ' ').collect();
+                    if parts.len() >= 3 {
+                        let job_id = parts[0].trim().to_string();
+                        let user = parts[1].trim().to_string();
+                        let size_and_rest = parts.get(2).unwrap_or(&"").trim().to_string();
+                        let printer = job_id.rsplitn(2, '-').last().unwrap_or("").to_string();
+
+                        jobs.push(SystemJob {
+                            id: job_id,
+                            printer,
+                            user,
+                            size: size_and_rest.split_whitespace().next().unwrap_or("?").to_string(),
+                            status: "active".to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let ps = r#"Get-PrintJob -PrinterName * 2>$null | ForEach-Object { "$($_.Id)|$($_.PrinterName)|$($_.UserName)|$($_.Size)|$($_.JobStatus)" }"#;
+        if let Ok(output) = Command::new("powershell").args(["-NoProfile", "-Command", ps]).output() {
+            if let Ok(text) = String::from_utf8(output.stdout) {
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.split('|').collect();
+                    if parts.len() >= 5 {
+                        jobs.push(SystemJob {
+                            id: parts[0].trim().to_string(),
+                            printer: parts[1].trim().to_string(),
+                            user: parts[2].trim().to_string(),
+                            size: parts[3].trim().to_string(),
+                            status: parts[4].trim().to_lowercase(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(jobs)
+}
+
+/// Cancel a system print job
+pub fn cancel_system_job(job_id: &str) -> Result<(), String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        let output = Command::new("cancel")
+            .arg(job_id)
+            .output()
+            .map_err(|e| format!("Erro ao cancelar: {}", e))?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Erro ao cancelar job: {}", stderr));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, need printer name and job ID separately
+        let parts: Vec<&str> = job_id.splitn(2, ':').collect();
+        if parts.len() == 2 {
+            let ps = format!("Remove-PrintJob -PrinterName '{}' -ID {} -ErrorAction Stop", parts[0], parts[1]);
+            let output = Command::new("powershell")
+                .args(["-NoProfile", "-Command", &ps])
+                .output()
+                .map_err(|e| format!("Erro ao cancelar: {}", e))?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(format!("Erro ao cancelar job: {}", stderr));
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// Test TCP connection to a network printer
 pub fn test_network_connection(ip: &str, port: u16) -> Result<(), String> {
     let address = format!("{}:{}", ip, port);

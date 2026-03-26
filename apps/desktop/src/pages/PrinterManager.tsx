@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Printer, Search, CheckCircle2, XCircle, Loader2, Clock, Trash2, Zap,
-  Usb, AlertTriangle, Wifi, Plus, X, Monitor, Star, ChefHat, Settings2,
+  Usb, AlertTriangle, Wifi, Plus, X, Monitor, Star, ChefHat, Settings2, RefreshCw,
 } from 'lucide-react';
 import { usePrinter, type PrinterInfo, type QueueJob } from '@/hooks/usePrinter';
 import { useNotify } from '@/hooks/useNotify';
@@ -42,9 +42,10 @@ function PrinterName({ name }: { name: string }) {
 
 export default function PrinterManager() {
   const {
-    printers, queue, loading, error,
+    printers, queue, systemQueue, loading, error,
     listPrinters, testPrint, getPrintQueue, clearPrintQueue,
     addNetworkPrinter, removeNetworkPrinter,
+    getSystemQueue, cancelSystemJob,
   } = usePrinter();
   const notify = useNotify();
 
@@ -296,6 +297,49 @@ export default function PrinterManager() {
           </div>
         </div>
       )}
+
+      {/* System Print Queue */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-gray-900">Fila do Sistema</p>
+            {systemQueue.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">{systemQueue.length}</span>
+            )}
+          </div>
+          <button onClick={() => getSystemQueue()}
+            className="text-[11px] font-medium text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors">
+            <RefreshCw className="w-3 h-3" /> Atualizar
+          </button>
+        </div>
+
+        {systemQueue.length > 0 ? (
+          <div className="space-y-1.5">
+            {systemQueue.map((job) => (
+              <div key={job.id} className="flex items-center justify-between bg-gray-50/50 rounded-lg px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-800">{job.id}</p>
+                    <p className="text-[10px] text-gray-400">{job.printer} • {job.user} • {job.size} bytes</p>
+                  </div>
+                </div>
+                <button onClick={async () => {
+                  try {
+                    await cancelSystemJob(job.id);
+                    notify.success('Job cancelado');
+                  } catch (err: any) { notify.error(err?.message || 'Erro ao cancelar'); }
+                }}
+                  className="text-[11px] font-medium text-red-500 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors flex items-center gap-1">
+                  <XCircle className="w-3 h-3" /> Cancelar
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400 text-center py-3">Nenhum trabalho na fila do sistema</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -126,6 +126,34 @@ fn clear_print_queue(queue: tauri::State<'_, Arc<PrintQueue>>) {
     queue.clear_queue();
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct SystemJobResponse {
+    id: String,
+    printer: String,
+    user: String,
+    size: String,
+    status: String,
+}
+
+#[tauri::command]
+fn get_system_print_queue() -> Vec<SystemJobResponse> {
+    printer::get_system_queue().unwrap_or_default()
+        .into_iter()
+        .map(|j| SystemJobResponse {
+            id: j.id,
+            printer: j.printer,
+            user: j.user,
+            size: j.size,
+            status: j.status,
+        })
+        .collect()
+}
+
+#[tauri::command]
+fn cancel_system_print_job(job_id: String) -> Result<(), String> {
+    printer::cancel_system_job(&job_id)
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 fn main() {
@@ -144,6 +172,8 @@ fn main() {
             get_print_queue,
             clear_print_queue,
             add_network_printer,
+            get_system_print_queue,
+            cancel_system_print_job,
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

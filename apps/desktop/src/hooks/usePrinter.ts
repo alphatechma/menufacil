@@ -21,12 +21,22 @@ export interface QueueJob {
   created_at: string;
 }
 
+export interface SystemJob {
+  id: string;
+  printer: string;
+  user: string;
+  size: string;
+  status: string;
+}
+
 export function usePrinter() {
   const [printers, setPrinters] = useState<PrinterInfo[]>([]);
   const [queue, setQueue] = useState<QueueJob[]>([]);
+  const [systemQueue, setSystemQueue] = useState<SystemJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initRef = useRef(false);
 
   const listPrinters = useCallback(async () => {
     setLoading(true);
@@ -134,11 +144,40 @@ export function usePrinter() {
     } catch { /* ignore */ }
   }, [getPrintQueue]);
 
-  // Auto-poll queue
+  const getSystemQueue = useCallback(async () => {
+    try {
+      const result = await invoke<SystemJob[]>('get_system_print_queue');
+      setSystemQueue(result);
+      return result;
+    } catch { return []; }
+  }, []);
+
+  const cancelSystemJob = useCallback(async (jobId: string) => {
+    try {
+      await invoke('cancel_system_print_job', { jobId });
+      await getSystemQueue();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : String(err));
+    }
+  }, [getSystemQueue]);
+
+  // Auto-detect printers on first mount
+  useEffect(() => {
+    if (!initRef.current) {
+      initRef.current = true;
+      listPrinters();
+      getSystemQueue();
+    }
+  }, [listPrinters, getSystemQueue]);
+
+  // Auto-poll queues
   useEffect(() => {
     const hasPending = queue.some((j) => j.status === 'pending' || j.status === 'printing');
     if (hasPending && !pollingRef.current) {
-      pollingRef.current = setInterval(() => getPrintQueue(), 2000);
+      pollingRef.current = setInterval(() => {
+        getPrintQueue();
+        getSystemQueue();
+      }, 2000);
     } else if (!hasPending && pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
@@ -149,11 +188,12 @@ export function usePrinter() {
         pollingRef.current = null;
       }
     };
-  }, [queue, getPrintQueue]);
+  }, [queue, getPrintQueue, getSystemQueue]);
 
   return {
     printers,
     queue,
+    systemQueue,
     loading,
     error,
     listPrinters,
@@ -163,5 +203,7 @@ export function usePrinter() {
     clearPrintQueue,
     addNetworkPrinter,
     removeNetworkPrinter,
+    getSystemQueue,
+    cancelSystemJob,
   };
 }
