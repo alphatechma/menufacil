@@ -1,5 +1,32 @@
 #![allow(dead_code)]
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
+
+/// Deserialize a value that can be either a number or a numeric string
+fn deserialize_optional_f64<'de, D>(deserializer: D) -> Result<Option<f64>, D::Error>
+where D: Deserializer<'de> {
+    use serde::de;
+
+    struct F64OrString;
+    impl<'de> de::Visitor<'de> for F64OrString {
+        type Value = Option<f64>;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a number or numeric string")
+        }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> { Ok(Some(v)) }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> { Ok(Some(v as f64)) }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> { Ok(Some(v as f64)) }
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            if v.is_empty() { return Ok(None); }
+            v.parse::<f64>().map(Some).map_err(de::Error::custom)
+        }
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> { Ok(None) }
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> { Ok(None) }
+        fn visit_some<D2: Deserializer<'de>>(self, d: D2) -> Result<Self::Value, D2::Error> {
+            d.deserialize_any(F64OrString)
+        }
+    }
+    deserializer.deserialize_any(F64OrString)
+}
 
 // ── ESC/POS Command Constants ──────────────────────────────────────────────
 
@@ -57,8 +84,11 @@ pub const OPEN_DRAWER: &[u8] = &[0x1B, 0x70, 0x00, 0x19, 0xFA];
 struct OrderItem {
     name: Option<String>,
     product_name: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     quantity: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     unit_price: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     total: Option<f64>,
     notes: Option<String>,
     observation: Option<String>,
@@ -75,7 +105,9 @@ struct ComplementGroup {
 #[derive(Debug, Deserialize)]
 struct ComplementItem {
     name: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     quantity: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     price: Option<f64>,
 }
 
@@ -96,11 +128,16 @@ struct OrderData {
     order_type: Option<String>,
     status: Option<String>,
     items: Option<Vec<OrderItem>>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     subtotal: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     delivery_fee: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     discount: Option<f64>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     total: Option<f64>,
     payment_method: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_f64")]
     change_for: Option<f64>,
     notes: Option<String>,
     observation: Option<String>,
