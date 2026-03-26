@@ -421,8 +421,25 @@ pub fn print_to(printer_key: &str, data: &[u8]) -> Result<(), String> {
         let queue_name = &printer_key[4..];
         print_raw_system(queue_name, data)
     } else {
-        // USB: vid:pid format
-        print_raw_usb(printer_key, data)
+        // USB vid:pid format — try direct USB first, fall back to system queue
+        match print_raw_usb(printer_key, data) {
+            Ok(()) => Ok(()),
+            Err(usb_err) => {
+                // On macOS, USB direct access often fails due to permissions
+                // Try to find a system printer that matches and use lp instead
+                #[cfg(target_os = "macos")]
+                {
+                    if let Ok(sys_printers) = list_system_printers() {
+                        // Find a system printer with USB connection
+                        if let Some(sys) = sys_printers.iter().find(|p| p.connection == "usb") {
+                            let queue_name = sys.name.clone();
+                            return print_raw_system(&queue_name, data);
+                        }
+                    }
+                }
+                Err(usb_err)
+            }
+        }
     }
 }
 

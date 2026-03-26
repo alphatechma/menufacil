@@ -10,6 +10,7 @@ import {
   Truck,
   UtensilsCrossed,
   RefreshCw,
+  Printer,
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
@@ -19,6 +20,7 @@ import {
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { useNotify } from '@/hooks/useNotify';
+import { usePrinter } from '@/hooks/usePrinter';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
 
@@ -88,6 +90,7 @@ function getTimeColor(order: any): string {
 
 export default function Orders() {
   const notify = useNotify();
+  const { printReceipt } = usePrinter();
   const [statusFilter, setStatusFilter] = useState('pending');
   const [, setTick] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -157,6 +160,20 @@ export default function Orders() {
       await updateStatus({ id: orderId, status: 'cancelled' }).unwrap();
     } catch { notify.error('Erro ao cancelar pedido.'); }
     setUpdatingId(null);
+  };
+
+  const handlePrint = async (order: any) => {
+    const printerKey = localStorage.getItem('menufacil_default_printer');
+    if (!printerKey) {
+      notify.warning('Nenhuma impressora padrão configurada. Vá em Configurações → Impressora.');
+      return;
+    }
+    try {
+      await printReceipt(JSON.stringify(order), printerKey);
+      notify.success('Pedido enviado para impressão!');
+    } catch (err: any) {
+      notify.error(err?.message || 'Erro ao imprimir pedido.');
+    }
   };
 
   if (isLoading) {
@@ -295,6 +312,14 @@ export default function Orders() {
                           ? new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
                           : ''}
                       </span>
+                      <button
+                        onClick={() => handlePrint(order)}
+                        className="text-xs text-gray-500 hover:text-primary font-medium flex items-center gap-1 transition-colors"
+                        title="Imprimir pedido"
+                      >
+                        <Printer className="w-3 h-3" />
+                        Imprimir
+                      </button>
                       <button
                         onClick={() => setDetailOrderId(order.id)}
                         className="text-xs text-primary font-medium hover:underline"
@@ -493,6 +518,20 @@ export default function Orders() {
                     <p className="text-xs font-bold text-amber-800">Obs: {order.notes}</p>
                   </div>
                 )}
+              </div>
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => handlePrint(order)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Imprimir
+                </button>
+                <button
+                  onClick={() => setDetailOrderId(null)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors active:scale-95"
+                >
+                  Fechar
+                </button>
               </div>
             </div>
           </div>
