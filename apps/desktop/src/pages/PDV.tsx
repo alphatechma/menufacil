@@ -569,13 +569,18 @@ export default function PDV() {
               onChange={(e) => setOpeningBalance(e.target.value)}
               onKeyDown={async (e) => {
                 if (e.key === 'Enter' && !openingRegister) {
-                  const bal = parseFloat(openingBalance) || 0;
-                  await openRegister({ opening_balance: bal }).unwrap();
-                  setShowOpenRegister(false);
-                  setOpeningBalance('');
-                  printCashReceipt('Abertura de Caixa', {
-                    'Valor de abertura': 'R$ ' + bal.toFixed(2),
-                  });
+                  try {
+                    const bal = parseFloat(openingBalance) || 0;
+                    await openRegister({ opening_balance: bal }).unwrap();
+                    setShowOpenRegister(false);
+                    setOpeningBalance('');
+                    notify.success('Caixa aberto com sucesso!');
+                    printCashReceipt('Abertura de Caixa', {
+                      'Valor de abertura': 'R$ ' + bal.toFixed(2),
+                    });
+                  } catch (err: any) {
+                    notify.error(err?.data?.message || 'Erro ao abrir o caixa');
+                  }
                 }
               }}
               placeholder="0.00"
@@ -586,13 +591,18 @@ export default function PDV() {
           <button
             disabled={openingRegister}
             onClick={async () => {
-              const bal = parseFloat(openingBalance) || 0;
-              await openRegister({ opening_balance: bal }).unwrap();
-              setShowOpenRegister(false);
-              setOpeningBalance('');
-              printCashReceipt('Abertura de Caixa', {
-                'Valor de abertura': 'R$ ' + bal.toFixed(2),
-              });
+              try {
+                const bal = parseFloat(openingBalance) || 0;
+                await openRegister({ opening_balance: bal }).unwrap();
+                setShowOpenRegister(false);
+                setOpeningBalance('');
+                notify.success('Caixa aberto com sucesso!');
+                printCashReceipt('Abertura de Caixa', {
+                  'Valor de abertura': 'R$ ' + bal.toFixed(2),
+                });
+              } catch (err: any) {
+                notify.error(err?.data?.message || 'Erro ao abrir o caixa');
+              }
             }}
             className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl transition-colors active:scale-95 text-base"
           >

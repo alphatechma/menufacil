@@ -526,9 +526,9 @@ export default function POS() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Valor de abertura (R$)</label>
-              <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !openingRegister) { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); } }} placeholder="0.00" autoFocus />
+              <Input type="number" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter' && !openingRegister) { try { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); notify.success('Caixa aberto com sucesso!'); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); } catch (err: any) { notify.error(err?.data?.message || 'Erro ao abrir o caixa'); } } }} placeholder="0.00" autoFocus />
             </div>
-            <Button className="w-full" loading={openingRegister} onClick={async () => { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); }}>
+            <Button className="w-full" loading={openingRegister} onClick={async () => { try { const bal = parseFloat(openingBalance) || 0; await openRegister({ opening_balance: bal }).unwrap(); setShowOpenRegister(false); setOpeningBalance(''); notify.success('Caixa aberto com sucesso!'); printCashReceipt('Abertura de Caixa', { 'Valor de abertura': 'R$ ' + bal.toFixed(2) }); } catch (err: any) { notify.error(err?.data?.message || 'Erro ao abrir o caixa'); } }}>
               Abrir Caixa
             </Button>
           </div>

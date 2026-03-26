@@ -8,8 +8,8 @@ interface EnvConfig {
 
 const configs: Record<Environment, EnvConfig> = {
   dev: {
-    apiUrl: '/api',
-    wsUrl: 'http://localhost:3000',
+    apiUrl: 'https://menufacil-api.mp1rvc.easypanel.host/api',
+    wsUrl: 'https://menufacil-api.mp1rvc.easypanel.host',
     env: 'dev',
   },
   homol: {
