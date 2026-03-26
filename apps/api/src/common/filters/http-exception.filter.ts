@@ -33,8 +33,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
         // Handle class-validator array messages
         if (Array.isArray(message)) {
-          errors = (message as string[]).map((m) => ({ message: m }));
+          // Deduplicate error messages
+          const unique = [...new Set(message as string[])];
+          errors = unique.map((m) => ({ message: m }));
           message = 'Dados inválidos';
+        }
+        // Deduplicate errors array if present
+        if (errors && Array.isArray(errors)) {
+          const seen = new Set<string>();
+          errors = errors.filter((e) => {
+            const key = e.message || e.field || JSON.stringify(e);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
         }
       }
     } else if (exception instanceof Error) {
