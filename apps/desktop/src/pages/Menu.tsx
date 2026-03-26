@@ -112,7 +112,7 @@ export default function Menu() {
   if (loadingProducts || loadingCategories) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -153,16 +153,19 @@ export default function Menu() {
           placeholder="Buscar produto ou categoria..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+          className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
         />
       </div>
 
       {/* Category groups */}
       <div className="flex-1 overflow-y-auto space-y-2 pb-4">
         {groupedByCategory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center flex-1 py-16 text-gray-400">
-            <Package className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhum produto encontrado</p>
+          <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Package className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhum produto encontrado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Tente buscar por outro termo</p>
           </div>
         ) : (
           groupedByCategory.map(({ category, products: catProducts }) => {
@@ -248,7 +251,7 @@ export default function Menu() {
                                     if (e.key === 'Escape') handleCancelEditPrice();
                                   }}
                                   autoFocus
-                                  className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                  className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                 />
                                 <button
                                   onClick={handleSavePrice}
@@ -267,7 +270,7 @@ export default function Menu() {
                             ) : (
                               <button
                                 onClick={() => handleStartEditPrice(product)}
-                                className="flex items-center gap-1 text-sm font-bold text-gray-900 hover:text-orange-600 transition-colors group"
+                                className="flex items-center gap-1 text-sm font-bold text-gray-900 hover:text-primary transition-colors group"
                               >
                                 {formatPrice(product.price || 0)}
                                 <Pencil className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />

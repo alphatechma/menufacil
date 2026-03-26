@@ -106,7 +106,7 @@ export default function ExtraGroups() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -121,7 +121,7 @@ export default function ExtraGroups() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Novo Grupo
@@ -130,9 +130,12 @@ export default function ExtraGroups() {
 
       <div className="flex-1 overflow-y-auto space-y-2">
         {groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <ListPlus className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhum grupo de extras</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <ListPlus className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhum grupo de extras</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Crie grupos de extras para complementar seus produtos</p>
           </div>
         ) : (
           groups.map((g: any) => {
@@ -146,13 +149,13 @@ export default function ExtraGroups() {
                       <span className="text-sm font-bold text-gray-900">{g.name}</span>
                       <span className="ml-2 text-xs text-gray-500">
                         Min: {g.min_select || 0} / Max: {g.max_select || 1}
-                        {g.is_required && <span className="ml-1 text-orange-500 font-medium">(Obrigatorio)</span>}
+                        {g.is_required && <span className="ml-1 text-primary font-medium">(Obrigatorio)</span>}
                       </span>
                     </div>
                   </button>
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-400 mr-2">{g.extras?.length || 0} extra(s)</span>
-                    <button onClick={() => openEdit(g)} className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
+                    <button onClick={() => openEdit(g)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleDelete(g.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -195,7 +198,7 @@ export default function ExtraGroups() {
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
               </div>
@@ -206,7 +209,7 @@ export default function ExtraGroups() {
                     type="number"
                     value={form.min_select}
                     onChange={(e) => setForm({ ...form, min_select: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     min={0}
                   />
                 </div>
@@ -216,7 +219,7 @@ export default function ExtraGroups() {
                     type="number"
                     value={form.max_select}
                     onChange={(e) => setForm({ ...form, max_select: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     min={1}
                   />
                 </div>
@@ -226,7 +229,7 @@ export default function ExtraGroups() {
                   type="checkbox"
                   checked={form.is_required}
                   onChange={(e) => setForm({ ...form, is_required: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <label className="text-sm text-gray-700">Obrigatorio</label>
               </div>
@@ -235,7 +238,7 @@ export default function ExtraGroups() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-gray-700">Extras</label>
-                  <button type="button" onClick={addExtra} className="text-xs text-orange-500 hover:text-orange-600 font-medium">
+                  <button type="button" onClick={addExtra} className="text-xs text-primary hover:text-primary-dark font-medium">
                     + Adicionar Extra
                   </button>
                 </div>
@@ -247,7 +250,7 @@ export default function ExtraGroups() {
                         value={ex.name}
                         onChange={(e) => updateExtra(idx, 'name', e.target.value)}
                         placeholder="Nome do extra"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
                       <input
                         type="number"
@@ -255,7 +258,7 @@ export default function ExtraGroups() {
                         onChange={(e) => updateExtra(idx, 'price', Number(e.target.value))}
                         placeholder="Preço"
                         step="0.01"
-                        className="w-24 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-24 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
                       <button type="button" onClick={() => removeExtra(idx)} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg">
                         <Trash2 className="w-4 h-4" />
@@ -276,7 +279,7 @@ export default function ExtraGroups() {
                 <button
                   type="submit"
                   disabled={creating || updating}
-                  className="px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   {creating || updating ? 'Salvando...' : 'Salvar'}
                 </button>

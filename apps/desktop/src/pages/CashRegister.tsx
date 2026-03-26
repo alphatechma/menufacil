@@ -78,7 +78,7 @@ export default function CashRegister() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -135,7 +135,7 @@ export default function CashRegister() {
 
           <button
             onClick={() => { setCloseSummary(null); refetch(); }}
-            className="w-full py-3 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors active:scale-95"
+            className="w-full py-3 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors active:scale-95"
           >
             Fechar resumo
           </button>
@@ -150,8 +150,8 @@ export default function CashRegister() {
       <div className="flex h-full items-center justify-center">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-              <Unlock className="w-8 h-8 text-orange-600" />
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
+              <Unlock className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">Abrir Caixa</h2>
             <p className="text-sm text-gray-500 mt-1">Informe o saldo inicial para abrir o caixa</p>
@@ -167,7 +167,7 @@ export default function CashRegister() {
                 value={openingBalance}
                 onChange={(e) => setOpeningBalance(e.target.value)}
                 placeholder="0,00"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-lg font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-lg font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 onKeyDown={(e) => e.key === 'Enter' && handleOpen()}
               />
             </div>
@@ -176,7 +176,7 @@ export default function CashRegister() {
           <button
             onClick={handleOpen}
             disabled={isOpening}
-            className="w-full py-3 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 active:scale-95"
+            className="w-full py-3 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 active:scale-95"
           >
             {isOpening ? 'Abrindo...' : 'Abrir Caixa'}
           </button>
@@ -297,7 +297,7 @@ export default function CashRegister() {
                     onChange={(e) => setClosingBalance(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !isClosing) handleClose(); }}
                     placeholder="0,00"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-lg font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-lg font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -309,7 +309,7 @@ export default function CashRegister() {
                   onChange={(e) => setCloseNotes(e.target.value)}
                   placeholder="Alguma observacao sobre o fechamento..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                 />
               </div>
 

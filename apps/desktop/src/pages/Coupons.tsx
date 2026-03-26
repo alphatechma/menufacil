@@ -83,7 +83,7 @@ export default function Coupons() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function Coupons() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Novo Cupom
@@ -107,9 +107,12 @@ export default function Coupons() {
 
       <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
         {coupons.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <Ticket className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhum cupom cadastrado</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Ticket className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhum cupom cadastrado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Crie cupons de desconto para seus clientes</p>
           </div>
         ) : (
           <table className="w-full">
@@ -129,7 +132,7 @@ export default function Coupons() {
               {coupons.map((c: any) => (
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
-                    <span className="inline-flex px-2 py-1 text-xs font-bold text-orange-600 bg-orange-50 rounded-lg">
+                    <span className="inline-flex px-2 py-1 text-xs font-bold text-primary bg-primary-50 rounded-lg">
                       {c.code}
                     </span>
                   </td>
@@ -155,7 +158,7 @@ export default function Coupons() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
+                      <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -189,7 +192,7 @@ export default function Coupons() {
                   type="text"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
               </div>
@@ -199,7 +202,7 @@ export default function Coupons() {
                   <select
                     value={form.discount_type}
                     onChange={(e) => setForm({ ...form, discount_type: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   >
                     <option value="percentage">Percentual (%)</option>
                     <option value="fixed">Valor Fixo (R$)</option>
@@ -211,7 +214,7 @@ export default function Coupons() {
                     type="number"
                     value={form.discount_value}
                     onChange={(e) => setForm({ ...form, discount_value: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     step="0.01"
                     required
                   />
@@ -224,7 +227,7 @@ export default function Coupons() {
                     type="number"
                     value={form.min_order_value}
                     onChange={(e) => setForm({ ...form, min_order_value: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     step="0.01"
                   />
                 </div>
@@ -234,7 +237,7 @@ export default function Coupons() {
                     type="number"
                     value={form.max_uses}
                     onChange={(e) => setForm({ ...form, max_uses: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -244,7 +247,7 @@ export default function Coupons() {
                   type="date"
                   value={form.expires_at}
                   onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -252,7 +255,7 @@ export default function Coupons() {
                   type="checkbox"
                   checked={form.is_active}
                   onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <label className="text-sm text-gray-700">Cupom ativo</label>
               </div>
@@ -267,7 +270,7 @@ export default function Coupons() {
                 <button
                   type="submit"
                   disabled={creating || updating}
-                  className="px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   {creating || updating ? 'Salvando...' : 'Salvar'}
                 </button>

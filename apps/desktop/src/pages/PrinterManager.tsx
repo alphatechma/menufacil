@@ -197,7 +197,7 @@ export default function PrinterManager() {
                     </span>
                   )}
                   {isKitchen && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-100">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 border border-primary-100">
                       <ChefHat className="w-3 h-3" /> Cozinha
                     </span>
                   )}
@@ -211,7 +211,7 @@ export default function PrinterManager() {
                   </button>
                   <button onClick={() => handleSetKitchen(p.key)}
                     className={cn('h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all',
-                      isKitchen ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200')}>
+                      isKitchen ? 'bg-primary text-white shadow-sm' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200')}>
                     <ChefHat className={cn('w-3 h-3', isKitchen && 'fill-white')} /> Cozinha
                   </button>
                   <button onClick={() => handleTestPrint(p.key)} disabled={testingPrinter === p.key}

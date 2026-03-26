@@ -57,7 +57,7 @@ export default function Categories() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function Categories() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Nova Categoria
@@ -81,9 +81,12 @@ export default function Categories() {
 
       <div className="flex-1 overflow-y-auto">
         {categories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <FolderTree className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma categoria cadastrada</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <FolderTree className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhuma categoria cadastrada</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Crie categorias para organizar seus produtos</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -98,8 +101,8 @@ export default function Categories() {
                   {cat.image_url ? (
                     <img src={cat.image_url} alt={cat.name} className="w-12 h-12 rounded-xl object-cover bg-gray-100" />
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                      <FolderTree className="w-5 h-5 text-orange-400" />
+                    <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
+                      <FolderTree className="w-5 h-5 text-primary-400" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -109,7 +112,7 @@ export default function Categories() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => openEdit(cat)}
-                      className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -145,7 +148,7 @@ export default function Categories() {
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Nome da categoria"
                   required
                 />
@@ -156,7 +159,7 @@ export default function Categories() {
                   type="text"
                   value={form.image_url}
                   onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="https://..."
                 />
               </div>
@@ -166,7 +169,7 @@ export default function Categories() {
                   type="number"
                   value={form.sort_order}
                   onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -180,7 +183,7 @@ export default function Categories() {
                 <button
                   type="submit"
                   disabled={creating || updating}
-                  className="px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   {creating || updating ? 'Salvando...' : 'Salvar'}
                 </button>

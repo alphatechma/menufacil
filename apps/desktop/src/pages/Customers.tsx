@@ -20,7 +20,7 @@ export default function Customers() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -42,15 +42,18 @@ export default function Customers() {
           placeholder="Buscar por nome, telefone ou email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
 
       <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <Users className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhum cliente encontrado</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Users className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhum cliente encontrado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Os clientes aparecerao aqui ao fazerem pedidos</p>
           </div>
         ) : (
           <table className="w-full">
@@ -67,7 +70,7 @@ export default function Customers() {
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-orange-600">
+                      <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary">
                         {c.name?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <span className="text-sm font-semibold text-gray-900">{c.name || '-'}</span>
@@ -76,7 +79,7 @@ export default function Customers() {
                   <td className="px-4 py-3 text-sm text-gray-600">{c.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{c.email || '-'}</td>
                   <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1 text-sm text-orange-600 font-medium">
+                    <div className="flex items-center justify-center gap-1 text-sm text-primary font-medium">
                       <Star className="w-3.5 h-3.5" />
                       {c.loyalty_points || 0}
                     </div>

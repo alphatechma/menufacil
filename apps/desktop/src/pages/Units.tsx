@@ -7,7 +7,7 @@ export default function Units() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -22,9 +22,12 @@ export default function Units() {
 
       <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
         {units.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <Ruler className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma unidade cadastrada</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Ruler className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhuma unidade cadastrada</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Unidades de medida aparecerao aqui</p>
           </div>
         ) : (
           <table className="w-full">

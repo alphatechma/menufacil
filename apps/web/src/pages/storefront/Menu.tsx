@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock, Flame, Heart, Tag, Percent, Clock, Gift } from 'lucide-react';
+import { Lock, Flame, Heart, Tag, Percent, Clock, Gift, Search } from 'lucide-react';
 import { useGetStorefrontProductsQuery, useGetStorefrontCategoriesQuery, useGetActivePromotionsQuery } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleFavorite, selectFavoriteIds } from '@/store/slices/favoritesSlice';
@@ -332,13 +332,12 @@ export default function Menu() {
         )}
 
         {filteredProducts.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-400 text-lg mb-1">
-              Nenhum produto encontrado
-            </p>
-            <p className="text-gray-400 text-sm">
-              Tente buscar por outro termo ou categoria
-            </p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhum produto encontrado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Tente buscar por outro termo ou categoria</p>
           </div>
         )}
       </div>
@@ -415,7 +414,7 @@ function ProductCard({
             </button>
           </div>
           {isTopProduct && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-600 mb-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-50 text-primary mb-1" style={{ backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 15%, white)', color: 'var(--tenant-primary)' }}>
               <Flame className="w-3 h-3" />
               Mais Pedido
             </span>

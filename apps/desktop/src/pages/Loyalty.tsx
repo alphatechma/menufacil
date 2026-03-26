@@ -80,7 +80,7 @@ export default function Loyalty() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -93,16 +93,19 @@ export default function Loyalty() {
           <h1 className="text-xl font-bold text-gray-900">Fidelidade</h1>
           <span className="text-sm text-gray-500">{rewards.length} recompensa(s)</span>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors active:scale-95">
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors active:scale-95">
           <Plus className="w-4 h-4" /> Nova Recompensa
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {rewards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <Gift className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma recompensa cadastrada</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <Gift className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhuma recompensa cadastrada</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Crie recompensas para seu programa de fidelidade</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -110,8 +113,8 @@ export default function Loyalty() {
               <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                      <Gift className="w-4 h-4 text-orange-500" />
+                    <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+                      <Gift className="w-4 h-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-gray-900">{r.name}</h3>
@@ -119,13 +122,13 @@ export default function Loyalty() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openEdit(r)} className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => openEdit(r)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-orange-600">{r.points_required || 0}</p>
+                    <p className="text-lg font-bold text-primary">{r.points_required || 0}</p>
                     <p className="text-[10px] text-gray-400 uppercase">Pontos</p>
                   </div>
                   <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
@@ -151,20 +154,20 @@ export default function Loyalty() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descricao</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows={2} />
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" rows={2} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pontos Necessarios</label>
-                <input type="number" value={form.points_required} onChange={(e) => setForm({ ...form, points_required: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                <input type="number" value={form.points_required} onChange={(e) => setForm({ ...form, points_required: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                  <select value={form.reward_type} onChange={(e) => setForm({ ...form, reward_type: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                  <select value={form.reward_type} onChange={(e) => setForm({ ...form, reward_type: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option value="discount_percentage">Desconto %</option>
                     <option value="discount_fixed">Desconto Fixo</option>
                     <option value="free_item">Item Gratis</option>
@@ -173,16 +176,16 @@ export default function Loyalty() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
-                  <input type="number" value={form.reward_value} onChange={(e) => setForm({ ...form, reward_value: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" step="0.01" />
+                  <input type="number" value={form.reward_value} onChange={(e) => setForm({ ...form, reward_value: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+                <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
                 <label className="text-sm text-gray-700">Ativa</label>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" disabled={creating || updating} className="px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50">
+                <button type="submit" disabled={creating || updating} className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50">
                   {creating || updating ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>

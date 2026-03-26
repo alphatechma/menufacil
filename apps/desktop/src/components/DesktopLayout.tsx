@@ -297,7 +297,7 @@ export default function DesktopLayout() {
           <span className="text-sm font-semibold text-gray-700 dark:text-zinc-200">{displayName}</span>
           <div className="flex items-center gap-3">
             {pendingOrdersCount > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600">
+              <span className="flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary">
                 <ShoppingCart className="h-3 w-3" />
                 {pendingOrdersCount} pendente{pendingOrdersCount !== 1 ? 's' : ''}
               </span>

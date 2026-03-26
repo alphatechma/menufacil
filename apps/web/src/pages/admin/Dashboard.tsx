@@ -162,7 +162,7 @@ export default function Dashboard() {
       value: formatPrice(avgTicket),
       comparison: data?.avgTicketComparison ?? 0,
       icon: TrendingUp,
-      bgColor: 'bg-orange-50',
+      bgColor: 'bg-primary-50',
       iconColor: 'text-primary',
     },
     {

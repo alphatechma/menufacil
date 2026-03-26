@@ -1089,12 +1089,12 @@ export default function Account() {
             </div>
 
             {loyaltyRewards.length === 0 ? (
-              <div className="p-8 text-center">
-                <Gift className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Nenhuma recompensa disponível</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Acumule pontos para resgatar recompensas futuras.
-                </p>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+                  <Gift className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-sm font-medium text-gray-500">Nenhuma recompensa disponivel</p>
+                <p className="text-xs text-gray-400 mt-1 max-w-xs">Acumule pontos para resgatar recompensas futuras</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -1374,11 +1374,15 @@ export default function Account() {
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center">
-                  <p className="text-sm text-gray-400">Nenhum endereço cadastrado</p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+                    <MapPin className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">Nenhum endereco cadastrado</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Adicione um endereco para facilitar seus pedidos</p>
                   <button
                     onClick={() => setShowAddressForm(true)}
-                    className="text-xs font-bold mt-2"
+                    className="text-xs font-bold mt-3"
                     style={{ color: 'var(--tenant-primary)' }}
                   >
                     Cadastrar o primeiro
@@ -1405,10 +1409,12 @@ export default function Account() {
               <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">Nenhum pedido ainda</p>
-              <p className="text-sm text-gray-400 mt-1">
+            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+                <Package className="w-8 h-8 text-gray-300" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">Nenhum pedido ainda</p>
+              <p className="text-xs text-gray-400 mt-1 max-w-xs">
                 Seus pedidos aparecerao aqui
               </p>
               <button

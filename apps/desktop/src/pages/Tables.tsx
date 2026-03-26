@@ -69,7 +69,7 @@ export default function Tables() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function Tables() {
           <h1 className="text-xl font-bold text-gray-900">Mesas</h1>
           <span className="text-sm text-gray-500">{tables.length} mesa(s)</span>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors active:scale-95">
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors active:scale-95">
           <Plus className="w-4 h-4" /> Nova Mesa
         </button>
       </div>
@@ -105,9 +105,12 @@ export default function Tables() {
 
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <LayoutGrid className="w-16 h-16 mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma mesa cadastrada</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <LayoutGrid className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">Nenhuma mesa cadastrada</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">Adicione mesas para gerenciar o salao</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -131,7 +134,7 @@ export default function Tables() {
                     {cfg.label}
                   </span>
                   <div className="absolute top-2 right-2 flex gap-0.5">
-                    <button onClick={() => openEdit(t)} className="p-1 text-gray-400 hover:text-orange-500 rounded transition-colors">
+                    <button onClick={() => openEdit(t)} className="p-1 text-gray-400 hover:text-primary rounded transition-colors">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => handleDelete(t.id)} className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors">
@@ -155,15 +158,15 @@ export default function Tables() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
-                <input type="number" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                <input type="number" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Lugares</label>
-                <input type="number" value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" min={1} />
+                <input type="number" value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" min={1} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
                   <option value="available">Disponivel</option>
                   <option value="occupied">Ocupada</option>
                   <option value="reserved">Reservada</option>
@@ -172,7 +175,7 @@ export default function Tables() {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" disabled={creating || updating} className="px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50">
+                <button type="submit" disabled={creating || updating} className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50">
                   {creating || updating ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
