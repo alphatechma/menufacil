@@ -136,20 +136,24 @@ fn list_system_printers() -> Result<Vec<PrinterInfo>, String> {
 
     #[cfg(target_os = "macos")]
     {
-        // Get default printer
+        // Get default printer (force English output)
         let default_printer = Command::new("lpstat")
             .args(["-d"])
+            .env("LANG", "C")
             .output()
             .ok()
             .and_then(|o| String::from_utf8(o.stdout).ok())
             .and_then(|s| s.split(':').last().map(|p| p.trim().to_string()));
 
-        // List all printers with their URIs
-        if let Ok(output) = Command::new("lpstat").args(["-v"]).output() {
+        // List all printers with their URIs (force English output)
+        if let Ok(output) = Command::new("lpstat").args(["-v"]).env("LANG", "C").output() {
             if let Ok(text) = String::from_utf8(output.stdout) {
                 for line in text.lines() {
-                    // Format: "device for PRINTER_NAME: URI"
-                    if let Some(rest) = line.strip_prefix("device for ") {
+                    // Format: "device for PRINTER_NAME: URI" (English)
+                    // Also handle: "dispositivo para PRINTER_NAME: URI" (Portuguese)
+                    let rest = line.strip_prefix("device for ")
+                        .or_else(|| line.strip_prefix("dispositivo para "));
+                    if let Some(rest) = rest {
                         if let Some((name, uri)) = rest.split_once(": ") {
                             let name = name.trim().to_string();
                             let uri = uri.trim().to_string();
@@ -176,15 +180,18 @@ fn list_system_printers() -> Result<Vec<PrinterInfo>, String> {
     {
         let default_printer = Command::new("lpstat")
             .args(["-d"])
+            .env("LANG", "C")
             .output()
             .ok()
             .and_then(|o| String::from_utf8(o.stdout).ok())
             .and_then(|s| s.split(':').last().map(|p| p.trim().to_string()));
 
-        if let Ok(output) = Command::new("lpstat").args(["-v"]).output() {
+        if let Ok(output) = Command::new("lpstat").args(["-v"]).env("LANG", "C").output() {
             if let Ok(text) = String::from_utf8(output.stdout) {
                 for line in text.lines() {
-                    if let Some(rest) = line.strip_prefix("device for ") {
+                    let rest = line.strip_prefix("device for ")
+                        .or_else(|| line.strip_prefix("dispositivo para "));
+                    if let Some(rest) = rest {
                         if let Some((name, uri)) = rest.split_once(": ") {
                             let name = name.trim().to_string();
                             let uri = uri.trim().to_string();
