@@ -57,8 +57,8 @@ export const axiosBaseQuery: BaseQueryFn<
   if (typeof args === 'string') {
     fetchArgs = { url: args };
   } else {
-    const { meta: argsMeta, ...rest } = args;
-    fetchArgs = rest;
+    const { meta: argsMeta, data, ...rest } = args as FetchArgs & { meta?: ExtraMeta; data?: unknown };
+    fetchArgs = { ...rest, body: data ?? (rest as FetchArgs).body };
     meta = argsMeta;
   }
 
