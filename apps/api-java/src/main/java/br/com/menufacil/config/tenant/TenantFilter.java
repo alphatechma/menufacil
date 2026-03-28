@@ -1,15 +1,9 @@
 package br.com.menufacil.config.tenant;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -17,13 +11,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+/**
+ * Servlet Filter que extrai o tenant do header X-Tenant-Slug,
+ * resolve o UUID no banco e armazena no TenantContext.
+ */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class TenantFilter implements Filter {
 
     private final DataSource dataSource;
-
     private static final String HEADER_TENANT_SLUG = "X-Tenant-Slug";
 
     @Override
@@ -31,12 +27,14 @@ public class TenantFilter implements Filter {
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        String slug = httpRequest.getHeader(HEADER_TENANT_SLUG);
+        String slug = normalize(httpRequest.getHeader(HEADER_TENANT_SLUG));
 
-        if (slug != null && !slug.isBlank()) {
-            String tenantId = resolveTenantId(slug.trim());
+        if (slug != null) {
+            String tenantId = resolveTenantId(slug);
             if (tenantId != null) {
-                TenantContext.setCurrentTenant(slug.trim(), tenantId);
+                TenantContext.setCurrentTenant(slug, tenantId);
+            } else if (log.isDebugEnabled()) {
+                log.debug("Tenant não encontrado para slug: {}", slug);
             }
         }
 
@@ -49,28 +47,23 @@ public class TenantFilter implements Filter {
 
     private String resolveTenantId(String slug) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT id FROM tenants WHERE slug = ? AND is_active = true")) {
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT id::text FROM tenants WHERE slug = ? AND is_active = true AND deleted_at IS NULL")) {
             ps.setString(1, slug);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("id");
+                    return rs.getString(1);
                 }
             }
         } catch (Exception e) {
-            log.warn("Erro ao resolver tenant slug '{}': {}", slug, e.getMessage());
+            log.warn("Erro ao resolver tenant '{}': {}", slug, e.getMessage());
         }
         return null;
     }
 
-    @Configuration
-    static class TenantFilterConfig {
-        @Bean
-        public FilterRegistrationBean<TenantFilter> tenantFilterRegistration(TenantFilter filter) {
-            FilterRegistrationBean<TenantFilter> registration = new FilterRegistrationBean<>();
-            registration.setFilter(filter);
-            registration.addUrlPatterns("/*");
-            registration.setOrder(1);
-            return registration;
-        }
+    private static String normalize(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

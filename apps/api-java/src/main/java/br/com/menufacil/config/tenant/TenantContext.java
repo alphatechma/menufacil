@@ -1,25 +1,31 @@
 package br.com.menufacil.config.tenant;
 
-public class TenantContext {
+/**
+ * Contexto do tenant corrente via ThreadLocal.
+ * Armazena slug e UUID do tenant para a thread atual.
+ */
+public final class TenantContext {
 
-    private static final ThreadLocal<String> currentTenantSlug = new ThreadLocal<>();
-    private static final ThreadLocal<String> currentTenantId = new ThreadLocal<>();
+    private static final ThreadLocal<String> CURRENT_SLUG = new ThreadLocal<>();
+    private static final ThreadLocal<String> CURRENT_ID = new ThreadLocal<>();
+
+    private TenantContext() {}
 
     public static void setCurrentTenant(String slug, String id) {
-        currentTenantSlug.set(slug);
-        currentTenantId.set(id);
+        CURRENT_SLUG.set(slug);
+        CURRENT_ID.set(id);
     }
 
     public static String getCurrentSlug() {
-        return currentTenantSlug.get();
+        return CURRENT_SLUG.get();
     }
 
     public static String getCurrentId() {
-        return currentTenantId.get();
+        return CURRENT_ID.get();
     }
 
     public static void clear() {
-        currentTenantSlug.remove();
-        currentTenantId.remove();
+        CURRENT_SLUG.remove();
+        CURRENT_ID.remove();
     }
 }
