@@ -26,14 +26,14 @@ public class ReviewController {
     @Operation(summary = "Listar todas as avaliações do tenant")
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(reviewService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar avaliação por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReviewResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(reviewService.findById(id, tenantId));
     }
 
@@ -41,7 +41,7 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ReviewResponse> create(
             @Valid @RequestBody CreateReviewRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(reviewService.create(tenantId, request));
     }
@@ -51,26 +51,26 @@ public class ReviewController {
     public ResponseEntity<ReviewResponse> reply(
             @PathVariable UUID id,
             @Valid @RequestBody ReplyReviewRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(reviewService.reply(id, tenantId, request.getReply()));
     }
 
     @Operation(summary = "Estatísticas de avaliações")
     @GetMapping("/stats")
     public ResponseEntity<ReviewStatsResponse> getStats() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(reviewService.getStats(tenantId));
     }
 
     @Operation(summary = "Remover avaliação")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         reviewService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

@@ -26,18 +26,18 @@ public class TableSessionController {
     @GetMapping
     public ResponseEntity<List<TableSessionResponse>> listByTable(
             @RequestParam UUID tableId) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(tableService.findSessionsByTable(tableId, tenantId));
     }
 
     @Operation(summary = "Fechar sessão de mesa")
     @PostMapping("/{id}/close")
     public ResponseEntity<TableSessionResponse> closeSession(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(tableService.closeSession(id, tenantId));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

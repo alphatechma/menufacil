@@ -27,21 +27,21 @@ public class DeliveryZoneController {
     @Operation(summary = "Listar todas as zonas de entrega do tenant")
     @GetMapping
     public ResponseEntity<List<DeliveryZoneResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryZoneService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar zona de entrega por ID")
     @GetMapping("/{id}")
     public ResponseEntity<DeliveryZoneResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryZoneService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar zona de entrega")
     @PostMapping
     public ResponseEntity<DeliveryZoneResponse> create(@Valid @RequestBody CreateDeliveryZoneRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(deliveryZoneService.create(tenantId, request));
     }
@@ -51,19 +51,19 @@ public class DeliveryZoneController {
     public ResponseEntity<DeliveryZoneResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateDeliveryZoneRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryZoneService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover zona de entrega")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         deliveryZoneService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

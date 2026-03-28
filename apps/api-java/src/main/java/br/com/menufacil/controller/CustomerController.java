@@ -27,21 +27,21 @@ public class CustomerController {
     @Operation(summary = "Listar todos os clientes do tenant")
     @GetMapping
     public ResponseEntity<List<CustomerResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(customerService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar cliente por ID")
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(customerService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar cliente")
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@Valid @RequestBody CreateCustomerRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(customerService.create(tenantId, request));
     }
@@ -51,19 +51,19 @@ public class CustomerController {
     public ResponseEntity<CustomerResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCustomerRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(customerService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover cliente")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         customerService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

@@ -26,21 +26,21 @@ public class PromotionController {
     @Operation(summary = "Listar todas as promoções do tenant")
     @GetMapping
     public ResponseEntity<List<PromotionResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(promotionService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Listar promoções ativas")
     @GetMapping("/active")
     public ResponseEntity<List<PromotionResponse>> listActive() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(promotionService.getActivePromotions(tenantId));
     }
 
     @Operation(summary = "Buscar promoção por ID")
     @GetMapping("/{id}")
     public ResponseEntity<PromotionResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(promotionService.findById(id, tenantId));
     }
 
@@ -48,7 +48,7 @@ public class PromotionController {
     @PostMapping
     public ResponseEntity<PromotionResponse> create(
             @Valid @RequestBody CreatePromotionRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(promotionService.create(tenantId, request));
     }
@@ -58,14 +58,14 @@ public class PromotionController {
     public ResponseEntity<PromotionResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreatePromotionRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(promotionService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover promoção")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         promotionService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
@@ -74,11 +74,11 @@ public class PromotionController {
     @PostMapping("/evaluate")
     public ResponseEntity<PromotionEvaluateResponse> evaluate(
             @RequestBody PromotionEvaluateRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(promotionService.evaluateCart(tenantId, request));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

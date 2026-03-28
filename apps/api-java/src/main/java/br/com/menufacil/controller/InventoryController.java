@@ -28,21 +28,21 @@ public class InventoryController {
     @Operation(summary = "Listar todos os itens de estoque do tenant")
     @GetMapping("/items")
     public ResponseEntity<List<InventoryItemResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(inventoryService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar item de estoque por ID")
     @GetMapping("/items/{id}")
     public ResponseEntity<InventoryItemResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(inventoryService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar item de estoque")
     @PostMapping("/items")
     public ResponseEntity<InventoryItemResponse> create(@Valid @RequestBody CreateInventoryItemRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(inventoryService.create(tenantId, request));
     }
@@ -52,14 +52,14 @@ public class InventoryController {
     public ResponseEntity<InventoryItemResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateInventoryItemRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(inventoryService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover item de estoque")
     @DeleteMapping("/items/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         inventoryService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
@@ -69,7 +69,7 @@ public class InventoryController {
     @Operation(summary = "Listar itens com estoque baixo")
     @GetMapping("/items/low-stock")
     public ResponseEntity<List<InventoryItemResponse>> lowStock() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(inventoryService.getLowStockItems(tenantId));
     }
 
@@ -78,12 +78,12 @@ public class InventoryController {
     @Operation(summary = "Registrar movimentação de estoque")
     @PostMapping("/movements")
     public ResponseEntity<StockMovementResponse> createMovement(@Valid @RequestBody CreateStockMovementRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(inventoryService.createMovement(tenantId, request));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

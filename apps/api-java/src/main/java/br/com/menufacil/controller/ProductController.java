@@ -27,28 +27,28 @@ public class ProductController {
     @Operation(summary = "Listar produtos ativos do tenant (público)")
     @GetMapping
     public ResponseEntity<List<ProductResponse>> listActive() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(productService.findActiveByTenant(tenantId));
     }
 
     @Operation(summary = "Listar todos os produtos do tenant (admin)")
     @GetMapping("/all")
     public ResponseEntity<List<ProductResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(productService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar produto por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(productService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar produto (admin)")
     @PostMapping
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productService.create(tenantId, request));
     }
@@ -58,19 +58,19 @@ public class ProductController {
     public ResponseEntity<ProductResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateProductRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(productService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover produto (admin)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         productService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

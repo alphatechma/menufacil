@@ -27,28 +27,28 @@ public class DeliveryPersonController {
     @Operation(summary = "Listar todos os entregadores do tenant")
     @GetMapping
     public ResponseEntity<List<DeliveryPersonResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryPersonService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Listar entregadores ativos do tenant")
     @GetMapping("/active")
     public ResponseEntity<List<DeliveryPersonResponse>> listActive() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryPersonService.findActiveByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar entregador por ID")
     @GetMapping("/{id}")
     public ResponseEntity<DeliveryPersonResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryPersonService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar entregador")
     @PostMapping
     public ResponseEntity<DeliveryPersonResponse> create(@Valid @RequestBody CreateDeliveryPersonRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(deliveryPersonService.create(tenantId, request));
     }
@@ -58,19 +58,19 @@ public class DeliveryPersonController {
     public ResponseEntity<DeliveryPersonResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateDeliveryPersonRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(deliveryPersonService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover entregador")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         deliveryPersonService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

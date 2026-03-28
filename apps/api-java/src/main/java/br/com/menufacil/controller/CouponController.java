@@ -26,21 +26,21 @@ public class CouponController {
     @Operation(summary = "Listar todos os cupons do tenant")
     @GetMapping
     public ResponseEntity<List<CouponResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(couponService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar cupom por ID")
     @GetMapping("/{id}")
     public ResponseEntity<CouponResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(couponService.findById(id, tenantId));
     }
 
     @Operation(summary = "Criar cupom")
     @PostMapping
     public ResponseEntity<CouponResponse> create(@Valid @RequestBody CreateCouponRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(couponService.create(tenantId, request));
     }
@@ -50,14 +50,14 @@ public class CouponController {
     public ResponseEntity<CouponResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCouponRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(couponService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover cupom")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         couponService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
@@ -65,12 +65,12 @@ public class CouponController {
     @Operation(summary = "Validar cupom de desconto")
     @PostMapping("/validate")
     public ResponseEntity<CouponValidationResponse> validate(@Valid @RequestBody ValidateCouponRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(couponService.validateCoupon(
                 request.getCode(), tenantId, request.getOrderTotal()));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

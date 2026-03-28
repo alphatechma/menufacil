@@ -28,7 +28,7 @@ public class WalletController {
     @Operation(summary = "Consultar saldo do cliente")
     @GetMapping("/balance")
     public ResponseEntity<WalletResponse> getBalance(@RequestParam UUID customerId) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(walletService.getBalance(customerId, tenantId));
     }
 
@@ -36,7 +36,7 @@ public class WalletController {
     @GetMapping("/transactions")
     public ResponseEntity<List<WalletTransactionResponse>> getTransactions(
             @RequestParam UUID customerId) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(walletService.getTransactions(customerId, tenantId));
     }
 
@@ -44,14 +44,14 @@ public class WalletController {
     @PostMapping("/admin/credit")
     public ResponseEntity<WalletResponse> addCredit(
             @Valid @RequestBody WalletCreditRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         UUID customerId = UUID.fromString(request.getCustomerId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(walletService.addCredit(customerId, tenantId,
                         request.getAmount(), request.getDescription()));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

@@ -28,28 +28,28 @@ public class LoyaltyController {
     @Operation(summary = "Listar todas as recompensas do tenant")
     @GetMapping("/rewards")
     public ResponseEntity<List<LoyaltyRewardResponse>> listRewards() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(loyaltyService.findAllRewardsByTenant(tenantId));
     }
 
     @Operation(summary = "Listar recompensas ativas do tenant")
     @GetMapping("/rewards/active")
     public ResponseEntity<List<LoyaltyRewardResponse>> listActiveRewards() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(loyaltyService.findActiveRewardsByTenant(tenantId));
     }
 
     @Operation(summary = "Buscar recompensa por ID")
     @GetMapping("/rewards/{id}")
     public ResponseEntity<LoyaltyRewardResponse> findRewardById(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(loyaltyService.findRewardById(id, tenantId));
     }
 
     @Operation(summary = "Criar recompensa")
     @PostMapping("/rewards")
     public ResponseEntity<LoyaltyRewardResponse> createReward(@Valid @RequestBody CreateLoyaltyRewardRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(loyaltyService.createReward(tenantId, request));
     }
@@ -59,14 +59,14 @@ public class LoyaltyController {
     public ResponseEntity<LoyaltyRewardResponse> updateReward(
             @PathVariable UUID id,
             @Valid @RequestBody CreateLoyaltyRewardRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(loyaltyService.updateReward(id, tenantId, request));
     }
 
     @Operation(summary = "Remover recompensa")
     @DeleteMapping("/rewards/{id}")
     public ResponseEntity<Void> deleteReward(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         loyaltyService.deleteReward(id, tenantId);
         return ResponseEntity.noContent().build();
     }
@@ -76,7 +76,7 @@ public class LoyaltyController {
     @Operation(summary = "Resgatar recompensa (customer)")
     @PostMapping("/redeem")
     public ResponseEntity<LoyaltyRedemptionResponse> redeem(@Valid @RequestBody RedeemRewardRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         // TODO: Extrair customerId do token JWT do customer autenticado
         // Por enquanto recebe via header temporário
         UUID customerId = getCustomerIdFromHeader();
@@ -88,12 +88,12 @@ public class LoyaltyController {
     @Operation(summary = "Listar resgates do customer autenticado")
     @GetMapping("/my-redemptions")
     public ResponseEntity<List<LoyaltyRedemptionResponse>> myRedemptions() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         UUID customerId = getCustomerIdFromHeader();
         return ResponseEntity.ok(loyaltyService.findRedemptionsByCustomer(customerId, tenantId));
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

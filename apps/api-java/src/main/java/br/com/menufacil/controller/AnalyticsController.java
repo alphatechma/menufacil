@@ -31,7 +31,7 @@ public class AnalyticsController {
     public ResponseEntity<AnalyticsOverviewResponse> overview(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
 
         // Dados simplificados/mockados por enquanto
         // Em produção, usar queries agregadas com from/to
@@ -66,7 +66,7 @@ public class AnalyticsController {
                 .build());
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

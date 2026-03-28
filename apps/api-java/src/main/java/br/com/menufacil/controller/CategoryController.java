@@ -27,21 +27,21 @@ public class CategoryController {
     @Operation(summary = "Listar categorias ativas do tenant (público)")
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> listActive() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(categoryService.findActiveByTenant(tenantId));
     }
 
     @Operation(summary = "Listar todas as categorias do tenant (admin)")
     @GetMapping("/all")
     public ResponseEntity<List<CategoryResponse>> listAll() {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(categoryService.findAllByTenant(tenantId));
     }
 
     @Operation(summary = "Criar categoria (admin)")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CreateCategoryRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.create(tenantId, request));
     }
@@ -51,19 +51,19 @@ public class CategoryController {
     public ResponseEntity<CategoryResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCategoryRequest request) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(categoryService.update(id, tenantId, request));
     }
 
     @Operation(summary = "Remover categoria (admin)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = getTenantId();
+        UUID tenantId = TenantContext.getRequiredTenantUUID();
         categoryService.delete(id, tenantId);
         return ResponseEntity.noContent().build();
     }
 
-    private UUID getTenantId() {
+    private UUID TenantContext.getRequiredTenantUUID() {
         String tenantIdStr = TenantContext.getCurrentId();
         if (tenantIdStr == null || tenantIdStr.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
