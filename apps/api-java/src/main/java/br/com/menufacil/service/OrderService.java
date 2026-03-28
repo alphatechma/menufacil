@@ -32,6 +32,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final OrderConverter orderConverter;
+    private final WebSocketService webSocketService;
 
     /**
      * Transições de status válidas
@@ -134,6 +135,10 @@ public class OrderService {
 
         order = orderRepository.save(order);
         log.info("Pedido #{} criado no tenant {}", order.getOrderNumber(), tenantId);
+
+        // Notificar via WebSocket
+        webSocketService.notifyNewOrder(tenantId, order.getId(), order.getOrderNumber());
+
         return orderConverter.toResponse(order);
     }
 
@@ -169,6 +174,10 @@ public class OrderService {
 
         order = orderRepository.save(order);
         log.info("Pedido #{} status atualizado para {} no tenant {}", order.getOrderNumber(), newStatus, tenantId);
+
+        // Notificar via WebSocket
+        webSocketService.notifyOrderUpdate(tenantId, order.getId(), newStatus.name());
+
         return orderConverter.toResponse(order);
     }
 
