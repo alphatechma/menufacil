@@ -15,6 +15,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.HttpMethod;
+
 import java.util.List;
 
 @Configuration
@@ -29,6 +31,7 @@ public class SecurityConfig {
             "/health/**",
             "/tenants/slug/**",
             "/products",
+            "/products/{id}",
             "/categories",
             "/plans/public",
     };
@@ -48,6 +51,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
                         .requestMatchers(SWAGGER_ROUTES).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/orders").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
