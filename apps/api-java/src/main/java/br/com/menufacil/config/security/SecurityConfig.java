@@ -34,6 +34,8 @@ public class SecurityConfig {
             "/products/{id}",
             "/categories",
             "/plans/public",
+            "/delivery-zones",
+            "/coupons/validate",
     };
 
     private static final String[] SWAGGER_ROUTES = {
