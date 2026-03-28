@@ -216,10 +216,13 @@ fn list_system_printers() -> Result<Vec<PrinterInfo>, String> {
 
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         // Use PowerShell for reliable printer listing
         let ps_script = r#"Get-Printer | ForEach-Object { "$($_.Name)|$($_.PortName)|$($_.Default)|$($_.DriverName)|$($_.Type)" }"#;
         if let Ok(output) = Command::new("powershell")
             .args(["-NoProfile", "-Command", ps_script])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
         {
             if let Ok(text) = String::from_utf8(output.stdout) {
@@ -403,8 +406,11 @@ fn print_raw_system(queue_name: &str, data: &[u8]) -> Result<(), String> {
             queue_name.replace("'", "''")
         );
 
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         let output = Command::new("powershell")
             .args(["-NoProfile", "-Command", &ps_cmd])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .map_err(|e| format!("Erro ao iniciar impressão: {}", e))?;
 
@@ -531,8 +537,10 @@ pub fn get_system_queue() -> Result<Vec<SystemJob>, String> {
 
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         let ps = r#"Get-PrintJob -PrinterName * 2>$null | ForEach-Object { "$($_.Id)|$($_.PrinterName)|$($_.UserName)|$($_.Size)|$($_.JobStatus)" }"#;
-        if let Ok(output) = Command::new("powershell").args(["-NoProfile", "-Command", ps]).output() {
+        if let Ok(output) = Command::new("powershell").args(["-NoProfile", "-Command", ps]).creation_flags(CREATE_NO_WINDOW).output() {
             if let Ok(text) = String::from_utf8(output.stdout) {
                 for line in text.lines() {
                     let parts: Vec<&str> = line.split('|').collect();
@@ -569,12 +577,15 @@ pub fn cancel_system_job(job_id: &str) -> Result<(), String> {
 
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         // On Windows, need printer name and job ID separately
         let parts: Vec<&str> = job_id.splitn(2, ':').collect();
         if parts.len() == 2 {
             let ps = format!("Remove-PrintJob -PrinterName '{}' -ID {} -ErrorAction Stop", parts[0], parts[1]);
             let output = Command::new("powershell")
                 .args(["-NoProfile", "-Command", &ps])
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
                 .map_err(|e| format!("Erro ao cancelar: {}", e))?;
             if !output.status.success() {
