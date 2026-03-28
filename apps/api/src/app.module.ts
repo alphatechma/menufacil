@@ -1,5 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { join } from 'path';
@@ -39,6 +41,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { HealthController } from './common/controllers/health.controller';
 
 @Module({
   imports: [
@@ -51,6 +54,10 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,   // 1 minute window
+      limit: 100,   // 100 requests per minute per IP
+    }]),
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -91,6 +98,10 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
     PromotionModule,
     WalletModule,
     AuditLogModule,
+  ],
+  controllers: [HealthController],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {

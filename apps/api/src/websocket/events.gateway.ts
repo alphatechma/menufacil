@@ -9,8 +9,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from '@menufacil/shared';
 
+@SkipThrottle()
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/',
