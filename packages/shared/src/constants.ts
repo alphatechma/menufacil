@@ -34,3 +34,29 @@ export const PAGINATION_DEFAULTS = {
   LIMIT: 20,
   MAX_LIMIT: 100,
 } as const;
+
+export const ORDER_TYPE_LABELS: Record<string, string> = {
+  delivery: 'Entrega',
+  pickup: 'Retirada',
+  dine_in: 'Mesa',
+};
+
+export const PAYMENT_LABELS: Record<string, string> = {
+  pix: 'PIX',
+  credit_card: 'Cartão de Crédito',
+  debit_card: 'Cartão de Débito',
+  cash: 'Dinheiro',
+  wallet: 'Carteira Digital',
+};
+
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendente',
+  confirmed: 'Confirmado',
+  preparing: 'Preparando',
+  ready: 'Pronto',
+  out_for_delivery: 'Saiu para Entrega',
+  delivered: 'Entregue',
+  picked_up: 'Retirado',
+  served: 'Servido',
+  cancelled: 'Cancelado',
+};
