@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { OrderStatus, OrderType, PaymentStatus, ORDER_STATUS_TRANSITIONS, RewardType } from '@menufacil/shared';
 import { BulkOrderStatusDto, BulkOrderActionType } from './dto/bulk-order-status.dto';
@@ -46,6 +48,9 @@ export class OrderService {
     private readonly whatsappMessageService: WhatsappMessageService,
     private readonly inventoryService: InventoryService,
     private readonly autoAssignService: AutoAssignService,
+    @InjectQueue('notifications') private readonly notificationQueue: Queue,
+    @InjectQueue('inventory') private readonly inventoryQueue: Queue,
+    @InjectQueue('loyalty') private readonly loyaltyQueue: Queue,
   ) {}
 
   async create(dto: CreateOrderDto, customerId: string, tenantId: string, unitId?: string | null): Promise<Order> {
@@ -363,11 +368,16 @@ export class OrderService {
 
     await this.orderRepository.updateStatus(id, tenantId, updateData);
 
-    // Auto-deduct stock when order is confirmed
+    // Auto-deduct stock when order is confirmed (via queue with sync fallback)
     if (status === OrderStatus.CONFIRMED) {
-      this.inventoryService
-        .autoDeductStock(id, tenantId)
-        .catch((err) => this.logger.warn(`Auto-deduct stock failed: ${err.message}`));
+      try {
+        await this.inventoryQueue.add('deduct-stock', { orderId: id, tenantId });
+      } catch (err) {
+        this.logger.warn(`Failed to enqueue stock deduction, falling back to sync: ${(err as Error).message}`);
+        this.inventoryService
+          .autoDeductStock(id, tenantId)
+          .catch((e) => this.logger.warn(`Auto-deduct stock failed: ${e.message}`));
+      }
     }
 
     // Auto-assign delivery person when order is ready and is delivery type with no person assigned
@@ -382,18 +392,35 @@ export class OrderService {
       }
     }
 
-    // Award loyalty points when order is delivered (1 point per R$1)
+    // Award loyalty points when order is delivered (1 point per R$1) — via queue with sync fallback
     if (status === OrderStatus.DELIVERED) {
       const points = Math.floor(Number(order.total));
       if (points > 0) {
-        await this.loyaltyService.addPoints(order.customer_id, points, tenantId);
+        try {
+          await this.loyaltyQueue.add('add-points', {
+            customerId: order.customer_id,
+            points,
+            tenantId,
+          });
+        } catch (err) {
+          this.logger.warn(`Failed to enqueue loyalty points, falling back to sync: ${(err as Error).message}`);
+          await this.loyaltyService.addPoints(order.customer_id, points, tenantId);
+        }
       }
 
-      // Award referral points on first delivered order
+      // Award referral points on first delivered order — via queue with sync fallback
       try {
-        await this.referralService.awardReferralPoints(order.customer_id, tenantId);
+        await this.loyaltyQueue.add('award-referral', {
+          customerId: order.customer_id,
+          tenantId,
+        });
       } catch (err) {
-        this.logger.warn(`Referral award failed: ${(err as Error).message}`);
+        this.logger.warn(`Failed to enqueue referral award, falling back to sync: ${(err as Error).message}`);
+        try {
+          await this.referralService.awardReferralPoints(order.customer_id, tenantId);
+        } catch (refErr) {
+          this.logger.warn(`Referral award failed: ${(refErr as Error).message}`);
+        }
       }
     }
 
@@ -402,10 +429,15 @@ export class OrderService {
     // Emit WebSocket event for status update
     this.eventsGateway.emitOrderStatusUpdate(tenantId, id, updatedOrder);
 
-    // Send WhatsApp notification (fire-and-forget)
-    this.whatsappMessageService
-      .sendOrderNotification(updatedOrder)
-      .catch((err) => this.logger.warn(`WhatsApp notification failed: ${err.message}`));
+    // Send WhatsApp notification via queue (fire-and-forget with sync fallback)
+    try {
+      await this.notificationQueue.add('whatsapp-order-status', { orderId: id, tenantId });
+    } catch (err) {
+      this.logger.warn(`Failed to enqueue WhatsApp notification, falling back to sync: ${(err as Error).message}`);
+      this.whatsappMessageService
+        .sendOrderNotification(updatedOrder)
+        .catch((e) => this.logger.warn(`WhatsApp notification failed: ${e.message}`));
+    }
 
     return updatedOrder;
   }

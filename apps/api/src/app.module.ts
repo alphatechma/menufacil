@@ -43,6 +43,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { HealthController } from './common/controllers/health.controller';
 import { CacheConfigModule } from './common/cache/cache.module';
+import { QueueModule } from './common/queues/queue.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { CacheConfigModule } from './common/cache/cache.module';
         password: process.env.REDIS_PASSWORD || undefined,
       },
     }),
+    QueueModule,
     TenantModule,
     AuthModule,
     UserModule,
