@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Package, AlertTriangle, Search, Trash2, Pencil, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Trash2, Pencil, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
 import { useGetInventoryItemsQuery, useGetLowStockItemsQuery, useDeleteInventoryItemMutation, useCreateStockMovementMutation } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -13,11 +13,9 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
 
-const UNITS: Record<string, string> = { un: 'un', kg: 'kg', g: 'g', L: 'L', mL: 'mL', pct: 'pct' };
-
 export default function InventoryList() {
   const navigate = useNavigate();
-  const { data: items = [], isLoading } = useGetInventoryItemsQuery();
+  const { data: items = [] } = useGetInventoryItemsQuery();
   const { data: lowStock = [] } = useGetLowStockItemsQuery();
   const [deleteItem] = useDeleteInventoryItemMutation();
   const [createMovement] = useCreateStockMovementMutation();
@@ -199,9 +197,9 @@ export default function InventoryList() {
       <ConfirmDialog
         open={!!deleteId}
         title="Excluir Insumo"
-        description="Tem certeza? Todas as movimentacoes e fichas tecnicas vinculadas serao removidas."
+        message="Tem certeza? Todas as movimentacoes e fichas tecnicas vinculadas serao removidas."
         onConfirm={async () => { if (deleteId) await deleteItem(deleteId); setDeleteId(null); }}
-        onCancel={() => setDeleteId(null)}
+        onClose={() => setDeleteId(null)}
       />
     </>
   );

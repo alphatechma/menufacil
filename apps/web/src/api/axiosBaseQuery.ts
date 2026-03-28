@@ -112,14 +112,15 @@ export const axiosBaseQuery: BaseQueryFn<
   if (result.error?.status === 401 && authContext === 'admin') {
     try {
       if (!refreshPromise) {
-        refreshPromise = rawBaseQuery(
-          { url: '/auth/refresh', method: 'POST', body: {} },
-          api,
-          extraOptions,
-        ).then((res) => {
+        refreshPromise = (async () => {
+          const res = await rawBaseQuery(
+            { url: '/auth/refresh', method: 'POST', body: {} },
+            api,
+            extraOptions,
+          );
           if (res.error) throw res.error;
           return res.data;
-        }).finally(() => {
+        })().finally(() => {
           refreshPromise = null;
         });
       }

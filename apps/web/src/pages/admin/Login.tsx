@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogIn, UtensilsCrossed, ChefHat, ShieldCheck, BarChart3 } from 'lucide-react';
+import { LogIn, ChefHat, ShieldCheck, BarChart3 } from 'lucide-react';
 import { useNotify } from '@/hooks/useNotify';
 import { loginSchema, type LoginFormData } from '@/schemas/admin/loginSchema';
 import { useAdminLoginMutation } from '@/api/adminApi';

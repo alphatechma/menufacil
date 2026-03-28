@@ -1,4 +1,4 @@
-import { AlertTriangle, Package, TrendingDown, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Package, TrendingDown, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGetReorderSuggestionsQuery } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -25,8 +25,8 @@ export default function LowStockAlerts() {
     <div className="space-y-6">
       <PageHeader
         title="Alertas de Estoque Baixo"
-        subtitle={`${suggestions.length} item(ns) abaixo do estoque mínimo`}
-        onBack={() => navigate('/admin/inventory')}
+        description={`${suggestions.length} item(ns) abaixo do estoque mínimo`}
+        backTo="/admin/inventory"
       />
 
       {suggestions.length === 0 ? (

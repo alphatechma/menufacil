@@ -6,8 +6,6 @@ import {
   CreditCard,
   QrCode,
   Banknote,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Clock,
   Loader2,

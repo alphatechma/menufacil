@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Truck, Clock, TrendingUp, DollarSign, Star } from 'lucide-react';
+import { Trophy, Truck, Clock, Star } from 'lucide-react';
 import { useGetDeliveryScoreboardQuery } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -32,7 +32,7 @@ export default function DeliveryScoreboard() {
     <div className="space-y-6">
       <PageHeader
         title="Ranking de Entregadores"
-        subtitle="Performance dos entregadores no período selecionado"
+        description="Performance dos entregadores no período selecionado"
       />
 
       {/* Date filter */}

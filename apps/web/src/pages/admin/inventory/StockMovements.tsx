@@ -2,7 +2,6 @@ import { ArrowDownCircle, ArrowUpCircle, RefreshCw, Sliders } from 'lucide-react
 import { useGetStockMovementsQuery } from '@/api/adminApi';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
 

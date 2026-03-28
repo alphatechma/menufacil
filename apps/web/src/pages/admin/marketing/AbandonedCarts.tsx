@@ -13,7 +13,6 @@ import {
   useGetAbandonedCartsQuery,
   useGetAbandonedCartStatsQuery,
 } from '@/api/adminApi';
-import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 
 function timeAgo(date: string) {

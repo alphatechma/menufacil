@@ -95,7 +95,7 @@ export default function ReferralDashboard() {
         ) : (
           <div className="p-8">
             <EmptyState
-              icon={Users}
+              icon={<Users className="w-5 h-5" />}
               title="Nenhuma indicação ainda"
               description="Quando seus clientes indicarem amigos, os dados aparecerão aqui"
             />

@@ -19,8 +19,6 @@ import {
   Smartphone,
   ShoppingBag,
   Download,
-  Apple,
-  Laptop,
   QrCode,
   Flame,
   Pizza,

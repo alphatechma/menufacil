@@ -3,7 +3,6 @@ import {
   DollarSign,
   ShoppingCart,
   TrendingUp,
-  TrendingDown,
   XCircle,
   ArrowUp,
   ArrowDown,

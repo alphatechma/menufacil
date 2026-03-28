@@ -179,7 +179,7 @@ export default function LoyaltyTiers() {
 
       {tiers.length === 0 ? (
         <EmptyState
-          icon={Crown}
+          icon={<Crown className="w-5 h-5" />}
           title="Nenhum tier cadastrado"
           description="Crie tiers de fidelidade para motivar seus clientes"
         />
