@@ -18,6 +18,9 @@ import {
   Share2,
   Smartphone,
   ShoppingBag,
+  Download,
+  Apple,
+  Laptop,
   QrCode,
   Flame,
   Pizza,
@@ -45,6 +48,105 @@ import {
   useCheckSlugAvailabilityQuery,
   useRegisterTenantMutation,
 } from '@/api/customerApi';
+
+const GITHUB_REPO = 'alphatechma/menufacil';
+
+interface ReleaseAsset {
+  name: string;
+  browser_download_url: string;
+  size: number;
+}
+
+function getAssetInfo(assets: ReleaseAsset[]) {
+  const result: { platform: string; label: string; icon: string; url: string; size: string }[] = [];
+
+  const windows = assets.find((a) => a.name.endsWith('.exe') && !a.name.includes('.sig'));
+  if (windows) result.push({ platform: 'windows', label: 'Windows', icon: '🪟', url: windows.browser_download_url, size: formatSize(windows.size) });
+
+  const mac = assets.find((a) => a.name.endsWith('.dmg'));
+  if (mac) result.push({ platform: 'macos', label: 'macOS', icon: '🍎', url: mac.browser_download_url, size: formatSize(mac.size) });
+
+  const linux = assets.find((a) => a.name.endsWith('.AppImage'));
+  if (linux) result.push({ platform: 'linux', label: 'Linux', icon: '🐧', url: linux.browser_download_url, size: formatSize(linux.size) });
+
+  const deb = assets.find((a) => a.name.endsWith('.deb'));
+  if (deb) result.push({ platform: 'deb', label: 'Debian/Ubuntu', icon: '📦', url: deb.browser_download_url, size: formatSize(deb.size) });
+
+  return result;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function DesktopDownloadSection() {
+  const [release, setRelease] = useState<{ version: string; assets: any[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.tag_name) {
+          setRelease({
+            version: data.tag_name.replace('desktop-v', 'v'),
+            assets: data.assets || [],
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const downloads = release ? getAssetInfo(release.assets) : [];
+
+  if (loading || downloads.length === 0) return null;
+
+  return (
+    <section id="download" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-5xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 bg-[#FF6B35]/10 text-[#FF6B35] text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+          <Download className="w-4 h-4" />
+          App Desktop
+        </div>
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          Baixe o MenuFácil Desktop
+        </h2>
+        <p className="text-gray-500 text-lg mb-2 max-w-2xl mx-auto">
+          PDV completo, impressão térmica, modo offline e muito mais.
+          Disponível para Windows, macOS e Linux.
+        </p>
+        {release && (
+          <p className="text-sm text-gray-400 mb-10">Versão {release.version}</p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          {downloads.map((d) => (
+            <a
+              key={d.platform}
+              href={d.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center gap-3 bg-white border border-gray-200 rounded-2xl p-6 hover:border-[#FF6B35] hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+            >
+              <span className="text-4xl">{d.icon}</span>
+              <div>
+                <p className="text-base font-bold text-gray-900 group-hover:text-[#FF6B35] transition-colors">
+                  {d.label}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">{d.size}</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF6B35] bg-[#FF6B35]/10 px-3 py-1.5 rounded-lg group-hover:bg-[#FF6B35] group-hover:text-white transition-all">
+                <Download className="w-3 h-3" /> Baixar
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function slugify(text: string): string {
   return text
@@ -320,6 +422,7 @@ export default function LandingPage() {
             <button onClick={() => scrollToSection('como-funciona')} className="hover:text-[#FF6B35] transition-colors">Como Funciona</button>
             <button onClick={() => scrollToSection('funcionalidades')} className="hover:text-[#FF6B35] transition-colors">Funcionalidades</button>
             <button onClick={() => scrollToSection('planos')} className="hover:text-[#FF6B35] transition-colors">Planos</button>
+            <button onClick={() => scrollToSection('download')} className="hover:text-[#FF6B35] transition-colors">Download</button>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -817,6 +920,9 @@ export default function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* ===== DOWNLOAD DESKTOP ===== */}
+      <DesktopDownloadSection />
 
       {/* ===== FOOTER ===== */}
       <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900">
