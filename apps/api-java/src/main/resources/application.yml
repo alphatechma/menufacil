@@ -1,0 +1,83 @@
+server:
+  port: ${API_PORT:3001}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: menufacil-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:menufacil}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: false
+
+# JWT
+app:
+  jwt:
+    secret: ${JWT_SECRET:menufacil-jwt-secret-key-change-in-production}
+    expiration: 86400000  # 24h
+    refresh-expiration: 604800000  # 7d
+
+# Swagger
+springdoc:
+  api-docs:
+    path: /docs/api-docs
+  swagger-ui:
+    path: /docs
+    display-request-duration: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Logging
+logging:
+  level:
+    root: INFO
+    br.com.menufacil: DEBUG
+    org.hibernate.SQL: WARN
+
+---
+# Perfil de produção
+spring:
+  config:
+    activate:
+      on-profile: prod
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+logging:
+  level:
+    root: WARN
+    br.com.menufacil: INFO
+    org.hibernate.SQL: ERROR
