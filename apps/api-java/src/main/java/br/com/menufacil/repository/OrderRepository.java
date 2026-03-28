@@ -12,5 +12,6 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByTenantIdOrderByCreatedAtDesc(UUID tenantId);
     List<Order> findByTenantIdAndStatus(UUID tenantId, OrderStatus status);
+    long countByTenantId(UUID tenantId);
     long countByTenantIdAndStatus(UUID tenantId, OrderStatus status);
 }
