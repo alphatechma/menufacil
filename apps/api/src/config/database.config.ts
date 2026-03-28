@@ -12,7 +12,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   entities: [join(__dirname, '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
   migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
   synchronize: false, // Always false — use migrations
-  migrationsRun: true,
+  migrationsRun: false, // Rodar migrations manualmente via CLI
   logging: configService.get('NODE_ENV') === 'development',
   extra: {
     options: '-c timezone=America/Sao_Paulo',
