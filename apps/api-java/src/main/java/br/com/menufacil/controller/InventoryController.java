@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,23 +27,20 @@ public class InventoryController {
     @Operation(summary = "Listar todos os itens de estoque do tenant")
     @GetMapping("/items")
     public ResponseEntity<List<InventoryItemResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(inventoryService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(inventoryService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar item de estoque por ID")
     @GetMapping("/items/{id}")
     public ResponseEntity<InventoryItemResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(inventoryService.findById(id, tenantId));
+        return ResponseEntity.ok(inventoryService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar item de estoque")
     @PostMapping("/items")
     public ResponseEntity<InventoryItemResponse> create(@Valid @RequestBody CreateInventoryItemRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(inventoryService.create(tenantId, request));
+                .body(inventoryService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar item de estoque")
@@ -52,15 +48,13 @@ public class InventoryController {
     public ResponseEntity<InventoryItemResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateInventoryItemRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(inventoryService.update(id, tenantId, request));
+        return ResponseEntity.ok(inventoryService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover item de estoque")
     @DeleteMapping("/items/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        inventoryService.delete(id, tenantId);
+        inventoryService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
     }
 
@@ -69,8 +63,7 @@ public class InventoryController {
     @Operation(summary = "Listar itens com estoque baixo")
     @GetMapping("/items/low-stock")
     public ResponseEntity<List<InventoryItemResponse>> lowStock() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(inventoryService.getLowStockItems(tenantId));
+        return ResponseEntity.ok(inventoryService.getLowStockItems(TenantContext.getRequiredTenantUUID()));
     }
 
     // ---- Movements ----
@@ -78,17 +71,7 @@ public class InventoryController {
     @Operation(summary = "Registrar movimentação de estoque")
     @PostMapping("/movements")
     public ResponseEntity<StockMovementResponse> createMovement(@Valid @RequestBody CreateStockMovementRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(inventoryService.createMovement(tenantId, request));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
+                .body(inventoryService.createMovement(TenantContext.getRequiredTenantUUID(), request));
     }
 }

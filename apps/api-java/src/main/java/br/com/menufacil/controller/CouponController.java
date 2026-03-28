@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,23 +25,20 @@ public class CouponController {
     @Operation(summary = "Listar todos os cupons do tenant")
     @GetMapping
     public ResponseEntity<List<CouponResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(couponService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(couponService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar cupom por ID")
     @GetMapping("/{id}")
     public ResponseEntity<CouponResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(couponService.findById(id, tenantId));
+        return ResponseEntity.ok(couponService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar cupom")
     @PostMapping
     public ResponseEntity<CouponResponse> create(@Valid @RequestBody CreateCouponRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(couponService.create(tenantId, request));
+                .body(couponService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar cupom")
@@ -50,32 +46,20 @@ public class CouponController {
     public ResponseEntity<CouponResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCouponRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(couponService.update(id, tenantId, request));
+        return ResponseEntity.ok(couponService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover cupom")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        couponService.delete(id, tenantId);
+        couponService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Validar cupom de desconto")
     @PostMapping("/validate")
     public ResponseEntity<CouponValidationResponse> validate(@Valid @RequestBody ValidateCouponRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.ok(couponService.validateCoupon(
-                request.getCode(), tenantId, request.getOrderTotal()));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
+                request.getCode(), TenantContext.getRequiredTenantUUID(), request.getOrderTotal()));
     }
 }

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,24 +27,21 @@ public class ReservationController {
     @Operation(summary = "Listar todas as reservas do tenant")
     @GetMapping
     public ResponseEntity<List<ReservationResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reservationService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(reservationService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar reserva por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReservationResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reservationService.findById(id, tenantId));
+        return ResponseEntity.ok(reservationService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar reserva")
     @PostMapping
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody CreateReservationRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(reservationService.create(tenantId, request));
+                .body(reservationService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar reserva")
@@ -53,8 +49,7 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateReservationRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reservationService.update(id, tenantId, request));
+        return ResponseEntity.ok(reservationService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar status da reserva")
@@ -62,24 +57,13 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateReservationStatusRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reservationService.updateStatus(id, tenantId, request.getStatus()));
+        return ResponseEntity.ok(reservationService.updateStatus(id, TenantContext.getRequiredTenantUUID(), request.getStatus()));
     }
 
     @Operation(summary = "Remover reserva")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        reservationService.delete(id, tenantId);
+        reservationService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

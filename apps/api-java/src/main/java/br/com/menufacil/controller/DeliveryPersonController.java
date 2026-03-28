@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,30 +26,26 @@ public class DeliveryPersonController {
     @Operation(summary = "Listar todos os entregadores do tenant")
     @GetMapping
     public ResponseEntity<List<DeliveryPersonResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(deliveryPersonService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(deliveryPersonService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar entregadores ativos do tenant")
     @GetMapping("/active")
     public ResponseEntity<List<DeliveryPersonResponse>> listActive() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(deliveryPersonService.findActiveByTenant(tenantId));
+        return ResponseEntity.ok(deliveryPersonService.findActiveByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar entregador por ID")
     @GetMapping("/{id}")
     public ResponseEntity<DeliveryPersonResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(deliveryPersonService.findById(id, tenantId));
+        return ResponseEntity.ok(deliveryPersonService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar entregador")
     @PostMapping
     public ResponseEntity<DeliveryPersonResponse> create(@Valid @RequestBody CreateDeliveryPersonRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(deliveryPersonService.create(tenantId, request));
+                .body(deliveryPersonService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar entregador")
@@ -58,24 +53,13 @@ public class DeliveryPersonController {
     public ResponseEntity<DeliveryPersonResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateDeliveryPersonRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(deliveryPersonService.update(id, tenantId, request));
+        return ResponseEntity.ok(deliveryPersonService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover entregador")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        deliveryPersonService.delete(id, tenantId);
+        deliveryPersonService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

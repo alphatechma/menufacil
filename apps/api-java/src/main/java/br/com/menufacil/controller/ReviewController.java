@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,24 +25,21 @@ public class ReviewController {
     @Operation(summary = "Listar todas as avaliações do tenant")
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reviewService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(reviewService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar avaliação por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReviewResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reviewService.findById(id, tenantId));
+        return ResponseEntity.ok(reviewService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar avaliação")
     @PostMapping
     public ResponseEntity<ReviewResponse> create(
             @Valid @RequestBody CreateReviewRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(reviewService.create(tenantId, request));
+                .body(reviewService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Responder avaliação")
@@ -51,31 +47,19 @@ public class ReviewController {
     public ResponseEntity<ReviewResponse> reply(
             @PathVariable UUID id,
             @Valid @RequestBody ReplyReviewRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reviewService.reply(id, tenantId, request.getReply()));
+        return ResponseEntity.ok(reviewService.reply(id, TenantContext.getRequiredTenantUUID(), request.getReply()));
     }
 
     @Operation(summary = "Estatísticas de avaliações")
     @GetMapping("/stats")
     public ResponseEntity<ReviewStatsResponse> getStats() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(reviewService.getStats(tenantId));
+        return ResponseEntity.ok(reviewService.getStats(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Remover avaliação")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        reviewService.delete(id, tenantId);
+        reviewService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

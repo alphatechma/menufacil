@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,31 +25,27 @@ public class PromotionController {
     @Operation(summary = "Listar todas as promoções do tenant")
     @GetMapping
     public ResponseEntity<List<PromotionResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(promotionService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(promotionService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar promoções ativas")
     @GetMapping("/active")
     public ResponseEntity<List<PromotionResponse>> listActive() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(promotionService.getActivePromotions(tenantId));
+        return ResponseEntity.ok(promotionService.getActivePromotions(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar promoção por ID")
     @GetMapping("/{id}")
     public ResponseEntity<PromotionResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(promotionService.findById(id, tenantId));
+        return ResponseEntity.ok(promotionService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar promoção")
     @PostMapping
     public ResponseEntity<PromotionResponse> create(
             @Valid @RequestBody CreatePromotionRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(promotionService.create(tenantId, request));
+                .body(promotionService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar promoção")
@@ -58,15 +53,13 @@ public class PromotionController {
     public ResponseEntity<PromotionResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreatePromotionRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(promotionService.update(id, tenantId, request));
+        return ResponseEntity.ok(promotionService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover promoção")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        promotionService.delete(id, tenantId);
+        promotionService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
     }
 
@@ -74,16 +67,6 @@ public class PromotionController {
     @PostMapping("/evaluate")
     public ResponseEntity<PromotionEvaluateResponse> evaluate(
             @RequestBody PromotionEvaluateRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(promotionService.evaluateCart(tenantId, request));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
+        return ResponseEntity.ok(promotionService.evaluateCart(TenantContext.getRequiredTenantUUID(), request));
     }
 }

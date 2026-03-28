@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,23 +26,20 @@ public class CustomerController {
     @Operation(summary = "Listar todos os clientes do tenant")
     @GetMapping
     public ResponseEntity<List<CustomerResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(customerService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(customerService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar cliente por ID")
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(customerService.findById(id, tenantId));
+        return ResponseEntity.ok(customerService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar cliente")
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@Valid @RequestBody CreateCustomerRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(customerService.create(tenantId, request));
+                .body(customerService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar cliente")
@@ -51,24 +47,13 @@ public class CustomerController {
     public ResponseEntity<CustomerResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCustomerRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(customerService.update(id, tenantId, request));
+        return ResponseEntity.ok(customerService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover cliente")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        customerService.delete(id, tenantId);
+        customerService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,23 +26,20 @@ public class CategoryController {
     @Operation(summary = "Listar categorias ativas do tenant (público)")
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> listActive() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(categoryService.findActiveByTenant(tenantId));
+        return ResponseEntity.ok(categoryService.findActiveByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar todas as categorias do tenant (admin)")
     @GetMapping("/all")
     public ResponseEntity<List<CategoryResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(categoryService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(categoryService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar categoria (admin)")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CreateCategoryRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(categoryService.create(tenantId, request));
+                .body(categoryService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar categoria (admin)")
@@ -51,24 +47,13 @@ public class CategoryController {
     public ResponseEntity<CategoryResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCategoryRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(categoryService.update(id, tenantId, request));
+        return ResponseEntity.ok(categoryService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover categoria (admin)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        categoryService.delete(id, tenantId);
+        categoryService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

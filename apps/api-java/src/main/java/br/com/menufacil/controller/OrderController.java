@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,23 +27,20 @@ public class OrderController {
     @Operation(summary = "Listar pedidos do tenant (admin)")
     @GetMapping
     public ResponseEntity<List<OrderResponse>> list() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(orderService.findByTenant(tenantId));
+        return ResponseEntity.ok(orderService.findByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar pedido por ID")
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(orderService.findById(id, tenantId));
+        return ResponseEntity.ok(orderService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar pedido (público/customer)")
     @PostMapping
     public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.create(tenantId, request));
+                .body(orderService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar status do pedido (admin)")
@@ -52,16 +48,6 @@ public class OrderController {
     public ResponseEntity<OrderResponse> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(orderService.updateStatus(id, tenantId, request));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
+        return ResponseEntity.ok(orderService.updateStatus(id, TenantContext.getRequiredTenantUUID(), request));
     }
 }

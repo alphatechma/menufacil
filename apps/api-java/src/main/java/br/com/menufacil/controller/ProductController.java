@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,30 +26,26 @@ public class ProductController {
     @Operation(summary = "Listar produtos ativos do tenant (público)")
     @GetMapping
     public ResponseEntity<List<ProductResponse>> listActive() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(productService.findActiveByTenant(tenantId));
+        return ResponseEntity.ok(productService.findActiveByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar todos os produtos do tenant (admin)")
     @GetMapping("/all")
     public ResponseEntity<List<ProductResponse>> listAll() {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(productService.findAllByTenant(tenantId));
+        return ResponseEntity.ok(productService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar produto por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> findById(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(productService.findById(id, tenantId));
+        return ResponseEntity.ok(productService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar produto (admin)")
     @PostMapping
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productService.create(tenantId, request));
+                .body(productService.create(TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Atualizar produto (admin)")
@@ -58,24 +53,13 @@ public class ProductController {
     public ResponseEntity<ProductResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateProductRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(productService.update(id, tenantId, request));
+        return ResponseEntity.ok(productService.update(id, TenantContext.getRequiredTenantUUID(), request));
     }
 
     @Operation(summary = "Remover produto (admin)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        productService.delete(id, tenantId);
+        productService.delete(id, TenantContext.getRequiredTenantUUID());
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

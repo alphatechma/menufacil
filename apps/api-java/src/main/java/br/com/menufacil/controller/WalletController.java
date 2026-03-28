@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,35 +27,23 @@ public class WalletController {
     @Operation(summary = "Consultar saldo do cliente")
     @GetMapping("/balance")
     public ResponseEntity<WalletResponse> getBalance(@RequestParam UUID customerId) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(walletService.getBalance(customerId, tenantId));
+        return ResponseEntity.ok(walletService.getBalance(customerId, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar transações do cliente")
     @GetMapping("/transactions")
     public ResponseEntity<List<WalletTransactionResponse>> getTransactions(
             @RequestParam UUID customerId) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(walletService.getTransactions(customerId, tenantId));
+        return ResponseEntity.ok(walletService.getTransactions(customerId, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Adicionar crédito à carteira (admin)")
     @PostMapping("/admin/credit")
     public ResponseEntity<WalletResponse> addCredit(
             @Valid @RequestBody WalletCreditRequest request) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
         UUID customerId = UUID.fromString(request.getCustomerId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(walletService.addCredit(customerId, tenantId,
+                .body(walletService.addCredit(customerId, TenantContext.getRequiredTenantUUID(),
                         request.getAmount(), request.getDescription()));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
     }
 }

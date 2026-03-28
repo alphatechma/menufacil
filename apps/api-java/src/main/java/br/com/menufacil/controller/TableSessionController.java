@@ -6,10 +6,8 @@ import br.com.menufacil.service.RestaurantTableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,23 +24,12 @@ public class TableSessionController {
     @GetMapping
     public ResponseEntity<List<TableSessionResponse>> listByTable(
             @RequestParam UUID tableId) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(tableService.findSessionsByTable(tableId, tenantId));
+        return ResponseEntity.ok(tableService.findSessionsByTable(tableId, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Fechar sessão de mesa")
     @PostMapping("/{id}/close")
     public ResponseEntity<TableSessionResponse> closeSession(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.getRequiredTenantUUID();
-        return ResponseEntity.ok(tableService.closeSession(id, tenantId));
-    }
-
-    private UUID TenantContext.getRequiredTenantUUID() {
-        String tenantIdStr = TenantContext.getCurrentId();
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Header X-Tenant-Slug é obrigatório");
-        }
-        return UUID.fromString(tenantIdStr);
+        return ResponseEntity.ok(tableService.closeSession(id, TenantContext.getRequiredTenantUUID()));
     }
 }
