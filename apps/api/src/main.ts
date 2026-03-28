@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -31,6 +33,12 @@ async function bootstrap() {
 
   // ── Global Filters ───────────────────────────────────────────────
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // ── Global Interceptors ──────────────────────────────────────────
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new PerformanceInterceptor(),
+  );
 
   // ── Global Pipes ─────────────────────────────────────────────────
   app.useGlobalPipes(

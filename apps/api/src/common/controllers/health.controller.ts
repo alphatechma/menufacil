@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
 import { SkipThrottle } from '@nestjs/throttler';
+import { getMetrics } from '../interceptors/performance.interceptor';
 
 @ApiTags('Health')
 @Controller('health')
@@ -38,5 +39,11 @@ export class HealthController {
         heap: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
       },
     };
+  }
+
+  @Get('metrics')
+  @ApiOperation({ summary: 'Application metrics' })
+  metrics() {
+    return getMetrics();
   }
 }

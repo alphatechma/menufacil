@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { join } from 'path';
 import { getDatabaseConfig } from './config/database.config';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { UnitMiddleware } from './common/middleware/unit.middleware';
 import { TenantModule } from './modules/tenant/tenant.module';
@@ -110,6 +111,7 @@ import { QueueModule } from './common/queues/queue.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
     consumer.apply(TenantMiddleware).forRoutes('*');
     consumer.apply(UnitMiddleware).forRoutes('*');
   }
