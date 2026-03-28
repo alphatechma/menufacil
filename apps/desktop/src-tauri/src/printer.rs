@@ -396,18 +396,46 @@ fn print_raw_system(queue_name: &str, data: &[u8]) -> Result<(), String> {
 
     #[cfg(target_os = "windows")]
     {
-        // Write data to temp file, then print via PowerShell
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // Write raw ESC/POS data to temp file
         let temp_path = std::env::temp_dir().join(format!("menufacil_print_{}.bin", std::process::id()));
         std::fs::write(&temp_path, data).map_err(|e| format!("Erro ao criar arquivo temporário: {}", e))?;
 
+        // Use .NET RawPrinterHelper to send bytes directly to printer (RAW mode)
         let ps_cmd = format!(
-            "Get-Content -Path '{}' -Encoding Byte -Raw | Out-Printer -Name '{}'",
-            temp_path.display(),
+            r#"
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class RawPrint {{
+    [StructLayout(LayoutKind.Sequential)] public struct DOCINFOA {{ [MarshalAs(UnmanagedType.LPStr)] public string pDocName; [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile; [MarshalAs(UnmanagedType.LPStr)] public string pDataType; }}
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool StartDocPrinter(IntPtr hPrinter, int level, ref DOCINFOA pDocInfo);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool StartPagePrinter(IntPtr hPrinter);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, int dwCount, out int dwWritten);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool EndPagePrinter(IntPtr hPrinter);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool EndDocPrinter(IntPtr hPrinter);
+    [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr hPrinter);
+    public static bool SendRaw(string printer, byte[] data) {{
+        IntPtr hPrinter; if (!OpenPrinter(printer, out hPrinter, IntPtr.Zero)) return false;
+        var di = new DOCINFOA {{ pDocName = "MenuFacil", pDataType = "RAW" }};
+        StartDocPrinter(hPrinter, 1, ref di); StartPagePrinter(hPrinter);
+        IntPtr p = Marshal.AllocCoTaskMem(data.Length); Marshal.Copy(data, 0, p, data.Length);
+        int written; WritePrinter(hPrinter, p, data.Length, out written);
+        Marshal.FreeCoTaskMem(p); EndPagePrinter(hPrinter); EndDocPrinter(hPrinter); ClosePrinter(hPrinter);
+        return written == data.Length;
+    }}
+}}
+'@
+$bytes = [System.IO.File]::ReadAllBytes('{}')
+[RawPrint]::SendRaw('{}', $bytes)
+"#,
+            temp_path.display().to_string().replace("'", "''"),
             queue_name.replace("'", "''")
         );
 
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
         let output = Command::new("powershell")
             .args(["-NoProfile", "-Command", &ps_cmd])
             .creation_flags(CREATE_NO_WINDOW)
