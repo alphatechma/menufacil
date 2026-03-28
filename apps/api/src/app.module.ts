@@ -42,6 +42,7 @@ import { PromotionModule } from './modules/promotion/promotion.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { HealthController } from './common/controllers/health.controller';
+import { CacheConfigModule } from './common/cache/cache.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { HealthController } from './common/controllers/health.controller';
       isGlobal: true,
       envFilePath: join(__dirname, '..', '..', '..', '.env'),
     }),
+    CacheConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

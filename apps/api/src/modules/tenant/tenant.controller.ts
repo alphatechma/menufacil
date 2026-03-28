@@ -7,7 +7,9 @@ import {
   Body,
   Param,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -38,6 +40,8 @@ export class TenantController {
   }
 
   @Get('slug/:slug')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120000)
   @ApiOperation({ summary: 'Get tenant by slug (public)' })
   findBySlug(@Param('slug') slug: string) {
     return this.tenantService.findBySlug(slug);

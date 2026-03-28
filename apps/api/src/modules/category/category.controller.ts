@@ -8,8 +8,10 @@ import {
   Param,
   ParseUUIDPipe,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -26,6 +28,8 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000)
   @ApiOperation({ summary: 'List all active categories (public)' })
   findActive(@CurrentTenant('id') tenantId: string) {
     return this.categoryService.findActive(tenantId);

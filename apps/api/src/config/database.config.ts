@@ -11,10 +11,14 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   database: configService.get('DB_DATABASE', 'menufacil'),
   entities: [join(__dirname, '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
   migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
-  synchronize: configService.get('NODE_ENV') === 'development',
+  synchronize: false, // Always false — use migrations
   migrationsRun: true,
   logging: configService.get('NODE_ENV') === 'development',
   extra: {
     options: '-c timezone=America/Sao_Paulo',
+    max: 20, // max connections
+    min: 5, // min connections
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
   },
 });

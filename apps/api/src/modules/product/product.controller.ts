@@ -8,8 +8,10 @@ import {
   Param,
   ParseUUIDPipe,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { CreateProductDto, CreateExtraGroupDto } from './dto/create-product.dto';
@@ -28,6 +30,8 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
   @ApiOperation({ summary: 'List active products (public)' })
   findActive(@CurrentTenant('id') tenantId: string) {
     return this.productService.findActive(tenantId);
@@ -35,6 +39,8 @@ export class ProductController {
 
   @Get('all')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(15000)
   @ApiBearerAuth()
   @RequirePermissions('product:read')
   @ApiOperation({ summary: 'List all products (admin)' })
