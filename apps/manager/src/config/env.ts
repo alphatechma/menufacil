@@ -11,7 +11,12 @@ function resolveEnv(): Environment {
   return import.meta.env.DEV ? 'dev' : 'prod';
 }
 
+function resolveApiUrl(): string {
+  const url = import.meta.env.VITE_API_URL;
+  return url ? `${url}/api` : '/api';
+}
+
 export const env: EnvConfig = {
   env: resolveEnv(),
-  apiUrl: '/api',
+  apiUrl: resolveApiUrl(),
 };
