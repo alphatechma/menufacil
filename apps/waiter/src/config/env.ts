@@ -2,7 +2,6 @@ type Environment = 'dev' | 'homol' | 'prod';
 
 interface EnvConfig {
   apiUrl: string;
-  wsUrl: string;
   env: Environment;
 }
 
@@ -17,12 +16,7 @@ function resolveApiUrl(): string {
   return url ? `${url}/api` : '/api';
 }
 
-function resolveWsUrl(): string {
-  return import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '/';
-}
-
 export const env: EnvConfig = {
   env: resolveEnv(),
   apiUrl: resolveApiUrl(),
-  wsUrl: resolveWsUrl(),
 };
