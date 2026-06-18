@@ -12,7 +12,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME || 'menufacil',
   password: process.env.DB_PASSWORD || 'menufacil123',
   database: process.env.DB_DATABASE || 'menufacil',
-  entities: [join(__dirname, '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
+  entities: [join(__dirname, '..', 'modules', '**', '*.entity.{ts,js}')],
   migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
   synchronize: false,
 });

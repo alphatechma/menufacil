@@ -17,13 +17,11 @@
     "db:migration:generate": "pnpm --filter api migration:generate",
     "db:migration:run": "pnpm --filter api migration:run",
     "lint": "pnpm -r lint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "pnpm --filter @menufacil/shared build"
   },
   "engines": {
     "node": ">=18",
     "pnpm": ">=8"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "bcrypt", "esbuild"]
   }
 }
