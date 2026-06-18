@@ -31,7 +31,7 @@ export default function LowStockAlerts() {
 
       {suggestions.length === 0 ? (
         <EmptyState
-          icon={<Package className="w-12 h-12 text-gray-300" />}
+          icon={<Package className="w-12 h-12 text-muted-foreground" />}
           title="Estoque em dia!"
           description="Nenhum item abaixo do estoque mínimo."
         />
@@ -41,12 +41,12 @@ export default function LowStockAlerts() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-red-50">
+                <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10">
                   <AlertTriangle className="w-5 h-5 text-red-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Itens Criticos</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-xs text-muted-foreground">Itens Criticos</p>
+                  <p className="text-lg font-bold text-foreground">
                     {suggestions.filter((s) => s.current_stock === 0).length}
                   </p>
                 </div>
@@ -54,23 +54,23 @@ export default function LowStockAlerts() {
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-orange-50">
+                <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10">
                   <TrendingDown className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Estoque Baixo</p>
-                  <p className="text-lg font-bold text-gray-900">{suggestions.length}</p>
+                  <p className="text-xs text-muted-foreground">Estoque Baixo</p>
+                  <p className="text-lg font-bold text-foreground">{suggestions.length}</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-50">
+                <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-500/10">
                   <ShoppingCart className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Custo Reposicao</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-xs text-muted-foreground">Custo Reposicao</p>
+                  <p className="text-lg font-bold text-foreground">
                     {formatPrice(suggestions.reduce((sum, s) => sum + s.estimated_cost, 0))}
                   </p>
                 </div>
@@ -87,21 +87,21 @@ export default function LowStockAlerts() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 text-left">
-                      <th className="pb-3 font-medium text-gray-500">Item</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Qtd Atual</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Mínimo</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Deficit</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Consumo/Dia</th>
-                      <th className="pb-3 font-medium text-gray-500 text-center">Sugestao (7d)</th>
-                      <th className="pb-3 font-medium text-gray-500 text-right">Custo Est.</th>
+                    <tr className="border-b border-border text-left">
+                      <th className="pb-3 font-medium text-muted-foreground">Item</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-center">Qtd Atual</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-center">Mínimo</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-center">Deficit</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-center">Consumo/Dia</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-center">Sugestao (7d)</th>
+                      <th className="pb-3 font-medium text-muted-foreground text-right">Custo Est.</th>
                     </tr>
                   </thead>
                   <tbody>
                     {suggestions.map((item) => (
                       <tr
                         key={item.id}
-                        className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="border-b border-border hover:bg-muted transition-colors cursor-pointer"
                         onClick={() => navigate(`/admin/inventory/${item.id}`)}
                       >
                         <td className="py-3">
@@ -113,8 +113,8 @@ export default function LowStockAlerts() {
                               )}
                             />
                             <div>
-                              <p className="font-medium text-gray-900">{item.name}</p>
-                              <p className="text-xs text-gray-400">
+                              <p className="font-medium text-foreground">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {item.sku ? `${item.sku} - ` : ''}{item.category || 'Sem categoria'}
                                 {item.supplier ? ` | ${item.supplier}` : ''}
                               </p>
@@ -126,15 +126,15 @@ export default function LowStockAlerts() {
                             {item.current_stock} {item.unit}
                           </Badge>
                         </td>
-                        <td className="py-3 text-center text-gray-600">
+                        <td className="py-3 text-center text-muted-foreground">
                           {item.min_stock} {item.unit}
                         </td>
                         <td className="py-3 text-center">
-                          <span className="font-medium text-red-600">
+                          <span className="font-medium text-red-600 dark:text-red-400">
                             -{item.deficit} {item.unit}
                           </span>
                         </td>
-                        <td className="py-3 text-center text-gray-600">
+                        <td className="py-3 text-center text-muted-foreground">
                           {item.avg_daily_consumption} {item.unit}
                         </td>
                         <td className="py-3 text-center">
@@ -142,7 +142,7 @@ export default function LowStockAlerts() {
                             {item.suggested_reorder} {item.unit}
                           </span>
                         </td>
-                        <td className="py-3 text-right text-gray-700">
+                        <td className="py-3 text-right text-muted-foreground">
                           {formatPrice(item.estimated_cost)}
                         </td>
                       </tr>
