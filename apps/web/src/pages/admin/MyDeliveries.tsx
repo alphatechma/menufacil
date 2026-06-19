@@ -3,7 +3,7 @@ import {
   Bike,
   Package,
   MapPin,
-  Phone,
+  MessageCircle,
   User,
   Clock,
   CheckCircle2,
@@ -66,6 +66,15 @@ function calcCommission(order: any, dp: any): number {
 function formatDateKey(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+// Builds a wa.me link from a stored phone number (Brazilian numbers get the 55 country code).
+function buildWhatsappUrl(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+  if (!digits.startsWith('55')) {
+    digits = `55${digits}`;
+  }
+  return `https://wa.me/${digits}`;
 }
 
 function formatDateLabel(dateStr: string): string {
@@ -334,11 +343,13 @@ export default function MyDeliveries() {
                     </div>
                     {customerPhone && (
                       <a
-                        href={`tel:${customerPhone}`}
+                        href={buildWhatsappUrl(customerPhone)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center justify-center w-12 h-12 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0 shadow-sm"
-                        title="Ligar para o cliente"
+                        title="Conversar no WhatsApp"
                       >
-                        <Phone className="w-5 h-5" />
+                        <MessageCircle className="w-5 h-5" />
                       </a>
                     )}
                   </div>
