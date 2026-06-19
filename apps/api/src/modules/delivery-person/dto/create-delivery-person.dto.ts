@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsUUID, IsNumber, IsIn, Min } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsUUID, IsNumber, IsIn, Min, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDeliveryPersonDto {
@@ -32,4 +32,9 @@ export class CreateDeliveryPersonDto {
   @IsNumber({}, { message: 'Valor da comissão deve ser um número' })
   @Min(0, { message: 'Valor da comissão deve ser maior ou igual a 0' })
   commission_value?: number;
+
+  @ApiPropertyOptional({ description: 'Entregador recebe o valor da taxa de entrega' })
+  @IsOptional()
+  @IsBoolean({ message: 'Campo deve ser verdadeiro ou falso' })
+  receives_delivery_fee?: boolean;
 }

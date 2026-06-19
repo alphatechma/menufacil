@@ -256,7 +256,9 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     updateTenant: builder.mutation<void, { id: string; data: any }>({
       query: ({ id, data }) => ({ url: `/tenants/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Settings', 'Tenant'],
+      // 'TenantPublic' forces the storefront's getPublicTenant query to refetch so
+      // changes like business_hours unblock the vitrine immediately.
+      invalidatesTags: ['Settings', 'Tenant', 'TenantPublic'],
     }),
 
     // Delivery Persons

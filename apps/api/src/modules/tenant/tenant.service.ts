@@ -12,6 +12,7 @@ import { TenantUnit } from '../unit/entities/tenant-unit.entity';
 import { User } from '../user/entities/user.entity';
 import { Role } from '../role/entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
+import { CacheInvalidationService } from '../../common/cache/cache-invalidation.service';
 
 @Injectable()
 export class TenantService {
@@ -30,6 +31,7 @@ export class TenantService {
     @InjectRepository(Permission)
     private readonly permissionRepo: Repository<Permission>,
     private readonly dataSource: DataSource,
+    private readonly cacheInvalidation: CacheInvalidationService,
   ) {}
 
   async create(dto: CreateTenantDto): Promise<Tenant> {
@@ -141,12 +143,16 @@ export class TenantService {
     if (!tenant) {
       throw new NotFoundException('Estabelecimento não encontrado');
     }
+    // Flush cached public tenant data (GET /tenants/slug/:slug, TTL 120s) so changes
+    // like business_hours are reflected on the storefront immediately.
+    await this.cacheInvalidation.invalidateByPattern('tenants');
     return tenant;
   }
 
   async remove(id: string): Promise<void> {
     await this.findById(id);
     await this.tenantRepository.remove(id);
+    await this.cacheInvalidation.invalidateByPattern('tenants');
   }
 
   // Super-admin methods

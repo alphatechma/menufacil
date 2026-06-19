@@ -7,12 +7,10 @@ export class CacheInvalidationService {
   constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
 
   async invalidateByPattern(_pattern: string): Promise<void> {
-    // For in-memory cache, reset all (simple but effective)
-    // cache-manager v7 uses store.reset() or we clear individual keys
-    const store = (this.cache as any).store;
-    if (store && typeof store.reset === 'function') {
-      await store.reset();
-    }
+    // cache-manager v7 exposes Cache.clear() to flush all stores (in-memory/Redis).
+    // The old store.reset() API no longer exists, so we clear everything — coarse but
+    // safe, since cached entries (e.g. GET /tenants/slug/:slug, /plans/public) repopulate.
+    await this.cache.clear();
   }
 
   async invalidateKey(key: string): Promise<void> {
