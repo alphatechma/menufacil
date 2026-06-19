@@ -112,6 +112,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard'],
     }),
+    updateDeliveryStatus: builder.mutation<void, { id: string; status: string }>({
+      query: ({ id, ...body }) => ({ url: `/orders/${id}/delivery-status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
     bulkOrderStatus: builder.mutation<{ affected: number; errors: string[] }, { action: string; ids: string[]; status?: string }>({
       query: (body) => ({ url: '/orders/bulk-status', method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard'],
@@ -264,6 +268,10 @@ export const adminApi = baseApi.injectEndpoints({
     // Delivery Persons
     getDeliveryPersons: builder.query<any[], void>({
       query: () => ({ url: '/delivery-persons', meta: { authContext: 'admin' as const } }),
+      providesTags: ['DeliveryPersons'],
+    }),
+    getMyDeliveryPerson: builder.query<any, void>({
+      query: () => ({ url: '/delivery-persons/me', meta: { authContext: 'admin' as const } }),
       providesTags: ['DeliveryPersons'],
     }),
     getDeliveryPerson: builder.query<any, string>({
@@ -745,6 +753,7 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
+  useUpdateDeliveryStatusMutation,
   useBulkOrderStatusMutation,
   useGetDashboardDataQuery,
   useGetAdvancedStatsQuery,
@@ -777,6 +786,7 @@ export const {
   useUpdateTenantMutation,
   useUploadImageMutation,
   useGetDeliveryPersonsQuery,
+  useGetMyDeliveryPersonQuery,
   useGetDeliveryPersonQuery,
   useCreateDeliveryPersonMutation,
   useUpdateDeliveryPersonMutation,

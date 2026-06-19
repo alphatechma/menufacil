@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -21,6 +21,7 @@ import { EventsGateway } from '../../websocket/events.gateway';
 import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AutoAssignService } from '../delivery-person/auto-assign.service';
+import { DeliveryPersonService } from '../delivery-person/delivery-person.service';
 
 @Injectable()
 export class OrderService {
@@ -48,6 +49,7 @@ export class OrderService {
     private readonly whatsappMessageService: WhatsappMessageService,
     private readonly inventoryService: InventoryService,
     private readonly autoAssignService: AutoAssignService,
+    private readonly deliveryPersonService: DeliveryPersonService,
     @InjectQueue('notifications') private readonly notificationQueue: Queue,
     @InjectQueue('inventory') private readonly inventoryQueue: Queue,
     @InjectQueue('loyalty') private readonly loyaltyQueue: Queue,
@@ -333,6 +335,22 @@ export class OrderService {
     }
 
     return this.updateStatus(orderId, OrderStatus.CANCELLED, tenantId);
+  }
+
+  /**
+   * Status update scoped to a delivery driver: the driver may only change the status of
+   * orders assigned to them, and only to out_for_delivery/delivered.
+   */
+  async updateDeliveryStatus(id: string, status: OrderStatus, tenantId: string, userId: string): Promise<Order> {
+    if (![OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED].includes(status)) {
+      throw new BadRequestException('Status inválido para entregador');
+    }
+    const driver = await this.deliveryPersonService.findByUserId(userId, tenantId);
+    const order = await this.findById(id, tenantId);
+    if (order.delivery_person_id !== driver.id) {
+      throw new ForbiddenException('Este pedido não está atribuído a você');
+    }
+    return this.updateStatus(id, status, tenantId);
   }
 
   async updateStatus(id: string, status: OrderStatus, tenantId: string, deliveryPersonId?: string): Promise<Order> {

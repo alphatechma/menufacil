@@ -16,7 +16,7 @@ import { DeliveryPersonService } from './delivery-person.service';
 import { AutoAssignService } from './auto-assign.service';
 import { CreateDeliveryPersonDto } from './dto/create-delivery-person.dto';
 import { UpdateDeliveryPersonDto } from './dto/update-delivery-person.dto';
-import { CurrentTenant, CurrentUnit, RequirePermissions } from '../../common/decorators';
+import { CurrentTenant, CurrentUnit, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { PermissionsGuard } from '../../common/guards';
 
 @ApiTags('Delivery Persons')
@@ -58,6 +58,14 @@ export class DeliveryPersonController {
   @ApiOperation({ summary: 'List delivery persons' })
   findAll(@CurrentTenant('id') tenantId: string, @CurrentUnit() unitId: string | null) {
     return this.service.findAll(tenantId, unitId);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('delivery_driver:read')
+  @ApiOperation({ summary: 'Get the delivery person linked to the current user' })
+  findMe(@CurrentUser('id') userId: string, @CurrentTenant('id') tenantId: string) {
+    return this.service.findByUserId(userId, tenantId);
   }
 
   @Get(':id')
