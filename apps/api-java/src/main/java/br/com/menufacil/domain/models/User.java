@@ -29,6 +29,17 @@ public class User extends BaseEntity {
     @Column(name = "role_id", columnDefinition = "uuid")
     private UUID roleId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", insertable = false, updatable = false)
+    private Role role;
+
+    @Column(name = "unit_id", columnDefinition = "uuid")
+    private UUID unitId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_id", insertable = false, updatable = false)
+    private TenantUnit unit;
+
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
