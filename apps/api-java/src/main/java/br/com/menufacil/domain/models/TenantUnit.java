@@ -33,10 +33,10 @@ public class TenantUnit extends BaseEntity {
     private String businessHours;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "is_headquarters", nullable = false)
-    private boolean isHeadquarters = false;
+    private boolean headquarters = false;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_modes", columnDefinition = "jsonb")

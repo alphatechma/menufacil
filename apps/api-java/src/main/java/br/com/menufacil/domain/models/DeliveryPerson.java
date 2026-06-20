@@ -18,7 +18,7 @@ public class DeliveryPerson extends BaseEntity {
     private String phone;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "commission_type")
     private String commissionType;

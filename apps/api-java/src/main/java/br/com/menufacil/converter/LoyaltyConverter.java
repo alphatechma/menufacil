@@ -22,6 +22,7 @@ public interface LoyaltyConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     @Mapping(target = "productId", expression = "java(request.getProductId() != null ? java.util.UUID.fromString(request.getProductId()) : null)")
     LoyaltyReward toRewardEntity(CreateLoyaltyRewardRequest request);
@@ -31,6 +32,7 @@ public interface LoyaltyConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     @Mapping(target = "productId", expression = "java(request.getProductId() != null ? java.util.UUID.fromString(request.getProductId()) : null)")
     void updateRewardFromRequest(CreateLoyaltyRewardRequest request, @MappingTarget LoyaltyReward entity);

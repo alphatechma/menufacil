@@ -34,7 +34,7 @@ public class Plan extends BaseEntity {
     private Integer maxProducts;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

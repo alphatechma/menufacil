@@ -21,6 +21,7 @@ public interface ReviewConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "reply", ignore = true)
     @Mapping(target = "repliedAt", ignore = true)
     @Mapping(target = "orderId", expression = "java(java.util.UUID.fromString(request.getOrderId()))")

@@ -25,7 +25,7 @@ public class Product extends BaseEntity {
     private String imageUrl;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "sort_order")
     private int sortOrder;

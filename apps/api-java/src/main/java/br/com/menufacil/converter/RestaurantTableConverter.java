@@ -19,6 +19,7 @@ public interface RestaurantTableConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     RestaurantTable toEntity(CreateRestaurantTableRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -26,5 +27,6 @@ public interface RestaurantTableConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     void updateFromRequest(CreateRestaurantTableRequest request, @MappingTarget RestaurantTable entity);
 }

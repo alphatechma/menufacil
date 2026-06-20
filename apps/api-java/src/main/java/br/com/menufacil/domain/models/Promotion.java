@@ -34,7 +34,7 @@ public class Promotion extends BaseEntity {
     private BigDecimal discountValue;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "valid_from")
     private LocalDateTime validFrom;

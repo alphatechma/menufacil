@@ -31,7 +31,7 @@ public class LoyaltyReward extends BaseEntity {
     private UUID productId;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "cooldown_hours")
     private int cooldownHours;

@@ -38,5 +38,5 @@ public class Coupon extends BaseEntity {
     private LocalDateTime validTo;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 }

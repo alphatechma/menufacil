@@ -41,7 +41,7 @@ public class User extends BaseEntity {
     private TenantUnit unit;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     private String phone;
 

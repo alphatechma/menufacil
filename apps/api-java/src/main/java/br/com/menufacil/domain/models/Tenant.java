@@ -52,7 +52,7 @@ public class Tenant {
     private BigDecimal minOrderValue;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "plan_id", columnDefinition = "uuid")
     private UUID planId;

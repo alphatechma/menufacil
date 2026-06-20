@@ -19,6 +19,7 @@ public interface ProductConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "categoryId", expression = "java(request.getCategoryId() != null ? java.util.UUID.fromString(request.getCategoryId()) : null)")
     @Mapping(target = "active", source = "isActive")
     Product toEntity(CreateProductRequest request);
@@ -28,6 +29,7 @@ public interface ProductConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "categoryId", expression = "java(request.getCategoryId() != null ? java.util.UUID.fromString(request.getCategoryId()) : null)")
     @Mapping(target = "active", source = "isActive")
     void updateFromRequest(CreateProductRequest request, @MappingTarget Product product);

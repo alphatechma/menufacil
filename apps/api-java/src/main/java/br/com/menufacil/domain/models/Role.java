@@ -24,7 +24,7 @@ public class Role extends BaseEntity {
     private String description;
 
     @Column(name = "is_system_default", nullable = false)
-    private boolean isSystemDefault = false;
+    private boolean systemDefault = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
