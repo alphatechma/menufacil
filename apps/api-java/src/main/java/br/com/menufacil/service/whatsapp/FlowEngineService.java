@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -64,6 +65,21 @@ public class FlowEngineService {
      * consumindo o {@code content} como resposta. Caso contrário, busca um fluxo
      * com trigger {@code keyword} cujo conteúdo combine e inicia nova execução.</p>
      */
+    /**
+     * Versão assíncrona usada pelo webhook — não bloqueia o thread HTTP que
+     * recebe o evento da Evolution API. Engole exceções para garantir
+     * isolamento (webhook nunca pode pagar pelo erro do engine).
+     */
+    @Async
+    public void processIncomingMessageAsync(UUID tenantId, String phone, String content) {
+        try {
+            processIncomingMessage(tenantId, phone, content);
+        } catch (Exception e) {
+            log.error("Erro processando fluxo async para tenant={} phone={}: {}",
+                    tenantId, phone, e.getMessage(), e);
+        }
+    }
+
     @Transactional
     public Optional<WhatsappFlowExecution> processIncomingMessage(UUID tenantId, String phone, String content) {
         if (tenantId == null || phone == null || content == null) {

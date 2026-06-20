@@ -120,11 +120,9 @@ public class WhatsappWebhookController {
             log.error("Falha ao persistir mensagem recebida: {}", e.getMessage(), e);
         }
 
-        try {
-            flowEngineService.processIncomingMessage(tenantId, phone, content);
-        } catch (Exception e) {
-            log.error("Falha ao processar fluxo para mensagem recebida: {}", e.getMessage(), e);
-        }
+        // Dispara o engine de forma assíncrona — webhook responde 200 imediatamente
+        // e o processamento do fluxo ocorre em outro thread (sem bloquear Evolution).
+        flowEngineService.processIncomingMessageAsync(tenantId, phone, content);
     }
 
     private void handleConnectionUpdate(String instanceName, Object dataObj) {

@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,7 +68,7 @@ class WhatsappWebhookControllerTest {
 
         verify(whatsappMessageService).receiveMessage(
                 eq(tenantId), eq(instanceName), eq("5511999998888"), eq("Oi quero pedir"));
-        verify(flowEngineService).processIncomingMessage(
+        verify(flowEngineService).processIncomingMessageAsync(
                 eq(tenantId), eq("5511999998888"), eq("Oi quero pedir"));
     }
 
@@ -89,7 +90,7 @@ class WhatsappWebhookControllerTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(whatsappMessageService, never()).receiveMessage(any(), anyString(), anyString(), anyString());
-        verify(flowEngineService, never()).processIncomingMessage(any(), anyString(), anyString());
+        verify(flowEngineService, never()).processIncomingMessageAsync(any(), anyString(), anyString());
     }
 
     @Test
@@ -137,7 +138,7 @@ class WhatsappWebhookControllerTest {
         // Assert: webhook NUNCA pode retornar 5xx
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsEntry("ok", true);
-        verify(flowEngineService, never()).processIncomingMessage(any(), anyString(), anyString());
+        verify(flowEngineService, never()).processIncomingMessageAsync(any(), anyString(), anyString());
     }
 
     @Test
@@ -164,7 +165,7 @@ class WhatsappWebhookControllerTest {
 
         // Assert: sem tenant resolvido, retorna ok mas não chama services
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(flowEngineService, never()).processIncomingMessage(any(), anyString(), anyString());
+        verify(flowEngineService, never()).processIncomingMessageAsync(any(), anyString(), anyString());
         verify(whatsappMessageService, never()).receiveMessage(any(), anyString(), anyString(), anyString());
     }
 
@@ -177,8 +178,8 @@ class WhatsappWebhookControllerTest {
         when(whatsappInstanceRepository.findByInstanceName(instanceName))
                 .thenReturn(Optional.of(instance));
 
-        when(flowEngineService.processIncomingMessage(any(), anyString(), anyString()))
-                .thenThrow(new RuntimeException("erro interno simulado"));
+        doThrow(new RuntimeException("erro interno simulado"))
+                .when(flowEngineService).processIncomingMessageAsync(any(), anyString(), anyString());
 
         Map<String, Object> payload = buildMessagesUpsertPayload(
                 instanceName, "5511999998888@s.whatsapp.net", "boom", false);
@@ -189,7 +190,7 @@ class WhatsappWebhookControllerTest {
         // Assert: mesmo com exceção interna, retorna 200 pra Evolution não retentar
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsEntry("ok", true);
-        verify(flowEngineService, times(1)).processIncomingMessage(any(), anyString(), anyString());
+        verify(flowEngineService, times(1)).processIncomingMessageAsync(any(), anyString(), anyString());
     }
 
     // --- helpers -------------------------------------------------------------
