@@ -6,6 +6,10 @@ server:
 spring:
   application:
     name: menufacil-api
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:menufacil}
     username: ${DB_USER:postgres}
@@ -46,6 +50,24 @@ springdoc:
     display-request-duration: true
     tags-sorter: alpha
     operations-sorter: alpha
+
+# MinIO / S3 (upload de imagens)
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost}
+  port: ${MINIO_PORT:9000}
+  use-ssl: ${MINIO_USE_SSL:false}
+  access-key: ${MINIO_ACCESS_KEY:menufacil}
+  secret-key: ${MINIO_SECRET_KEY:menufacil123}
+  bucket: ${MINIO_BUCKET:menufacil}
+  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
+
+# Evolution API (WhatsApp)
+evolution:
+  api:
+    url: ${EVOLUTION_API_URL:http://localhost:8080}
+    key: ${EVOLUTION_API_KEY:}
+  webhook:
+    url: ${EVOLUTION_WEBHOOK_URL:}
 
 # Actuator
 management:

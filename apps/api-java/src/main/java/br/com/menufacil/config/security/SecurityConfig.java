@@ -38,6 +38,12 @@ public class SecurityConfig {
             "/plans/public",
             "/delivery-zones",
             "/coupons/validate",
+            "/public/units",
+            "/abandoned-carts/save",
+            "/abandoned-carts/recover",
+            "/qz-tray/**",
+            "/payments/webhook",
+            "/whatsapp/webhook/**",
     };
 
     private static final String[] SWAGGER_ROUTES = {

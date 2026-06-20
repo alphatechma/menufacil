@@ -14,10 +14,10 @@ import org.springframework.stereotype.Component;
 /**
  * Aspect que ativa automaticamente o Hibernate Filter de tenant
  * em todo método anotado com @Transactional.
- *
+ * <p>
  * Garante que queries JPA retornem apenas dados do tenant corrente,
  * sem que o desenvolvedor precise adicionar filtro manualmente.
- *
+ * <p>
  * Padrão replicado do projeto Sigma (HibernateEmpresaFilterAspect).
  */
 @Slf4j
@@ -29,8 +29,7 @@ public class HibernateTenantFilterAspect {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Around("@annotation(org.springframework.transaction.annotation.Transactional) || " +
-            "@within(org.springframework.transaction.annotation.Transactional)")
+    @Around("@annotation(org.springframework.transaction.annotation.Transactional) || " + "@within(org.springframework.transaction.annotation.Transactional)")
     public Object aroundTransactional(ProceedingJoinPoint pjp) throws Throwable {
         String tenantId = TenantContext.getCurrentId();
         boolean enabled = false;
