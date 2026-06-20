@@ -49,4 +49,7 @@ temp/
 *.key
 *-private.pem
 apps/desktop/src-tauri/target/
-apps/desktop/src-tauri/target/
+
+# Maven (Java)
+apps/api-java/target/
+apps/api-java/.idea/
