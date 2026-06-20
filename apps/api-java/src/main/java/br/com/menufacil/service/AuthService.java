@@ -1,6 +1,8 @@
 package br.com.menufacil.service;
 
 import br.com.menufacil.config.security.JwtService;
+import br.com.menufacil.domain.models.Permission;
+import br.com.menufacil.domain.models.Role;
 import br.com.menufacil.domain.models.Tenant;
 import br.com.menufacil.domain.models.User;
 import br.com.menufacil.dto.LoginRequest;
@@ -49,6 +51,9 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário desativado");
         }
 
+        // Carrega permissões granulares do role customizado (vazio se for super_admin/admin)
+        List<String> permissions = extractPermissionKeys(user.getRole());
+
         // Gerar tokens JWT (compatível com NestJS)
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId().toString());
@@ -56,6 +61,7 @@ public class AuthService {
         claims.put("tenant_id", tenant.getId().toString());
         claims.put("tenant_slug", tenant.getSlug());
         claims.put("type", "access");
+        claims.put("permissions", permissions);
 
         String accessToken = jwtService.generateAccessToken(user.getEmail(), claims);
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
@@ -74,8 +80,20 @@ public class AuthService {
                 .refresh_token(refreshToken)
                 .tenant_slug(tenant.getSlug())
                 .modules(List.of()) // TODO: carregar módulos do plano
-                .permissions(List.of()) // TODO: carregar permissões do role
+                .permissions(permissions)
                 .plan(null) // TODO: carregar plano
                 .build();
+    }
+
+    private List<String> extractPermissionKeys(Role role) {
+        if (role == null || role.getPermissions() == null || role.getPermissions().isEmpty()) {
+            return List.of();
+        }
+        return role.getPermissions().stream()
+                .map(Permission::getKey)
+                .filter(Objects::nonNull)
+                .filter(key -> !key.isBlank())
+                .sorted()
+                .toList();
     }
 }
