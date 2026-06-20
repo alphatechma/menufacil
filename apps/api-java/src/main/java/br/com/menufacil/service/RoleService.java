@@ -7,10 +7,12 @@ import br.com.menufacil.domain.models.Role;
 import br.com.menufacil.dto.CreateRoleRequest;
 import br.com.menufacil.dto.PermissionResponse;
 import br.com.menufacil.dto.RoleResponse;
+import br.com.menufacil.config.security.UserPermissionsService;
 import br.com.menufacil.repository.PermissionRepository;
 import br.com.menufacil.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,7 @@ public class RoleService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, allEntries = true)
     public RoleResponse update(UUID id, UUID tenantId, CreateRoleRequest request) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -85,6 +88,7 @@ public class RoleService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, allEntries = true)
     public void delete(UUID id, UUID tenantId) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(

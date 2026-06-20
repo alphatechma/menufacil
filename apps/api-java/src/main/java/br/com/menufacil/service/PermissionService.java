@@ -5,10 +5,12 @@ import br.com.menufacil.domain.models.Permission;
 import br.com.menufacil.domain.models.SystemModule;
 import br.com.menufacil.dto.CreatePermissionRequest;
 import br.com.menufacil.dto.PermissionResponse;
+import br.com.menufacil.config.security.UserPermissionsService;
 import br.com.menufacil.repository.PermissionRepository;
 import br.com.menufacil.repository.SystemModuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +66,7 @@ public class PermissionService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, allEntries = true)
     public PermissionResponse update(UUID id, CreatePermissionRequest request) {
         Permission permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -91,6 +94,7 @@ public class PermissionService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, allEntries = true)
     public void delete(UUID id) {
         Permission permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(

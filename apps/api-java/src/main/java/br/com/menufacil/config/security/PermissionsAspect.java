@@ -1,10 +1,5 @@
 package br.com.menufacil.config.security;
 
-import br.com.menufacil.domain.enums.UserRole;
-import br.com.menufacil.domain.models.Permission;
-import br.com.menufacil.domain.models.Role;
-import br.com.menufacil.domain.models.User;
-import br.com.menufacil.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Aspect que intercepta endpoints anotados com @RequirePermissions e valida
@@ -46,7 +39,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PermissionsAspect {
 
-    private final UserRepository userRepository;
+    private final UserPermissionsService userPermissionsService;
 
     @Around("@annotation(br.com.menufacil.config.security.RequirePermissions) "
             + "|| @within(br.com.menufacil.config.security.RequirePermissions)")
@@ -114,29 +107,7 @@ public class PermissionsAspect {
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido: userId ausente");
         }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
-
-        if (!user.isActive()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário desativado");
-        }
-
-        // Bypass dupla checagem (caso JWT esteja desatualizado)
-        UserRole systemRole = user.getSystemRole();
-        if (systemRole == UserRole.super_admin || systemRole == UserRole.admin) {
-            return collectAllAsBypass();
-        }
-
-        Role role = user.getRole();
-        if (role == null || role.getPermissions() == null || role.getPermissions().isEmpty()) {
-            return new HashSet<>();
-        }
-
-        return role.getPermissions().stream()
-                .map(Permission::getKey)
-                .filter(key -> key != null && !key.isBlank())
-                .collect(Collectors.toSet());
+        return userPermissionsService.findPermissionKeysByUserId(userId);
     }
 
     private UUID extractUserId(Authentication authentication) {
@@ -154,9 +125,4 @@ public class PermissionsAspect {
         return null;
     }
 
-    private Set<String> collectAllAsBypass() {
-        Set<String> bypass = new HashSet<>();
-        bypass.add("*");
-        return bypass;
-    }
 }

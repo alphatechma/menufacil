@@ -6,6 +6,8 @@ import br.com.menufacil.domain.models.User;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,9 @@ public class SuperAdminService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Estatísticas gerais do dashboard super admin.
@@ -161,6 +166,13 @@ public class SuperAdminService {
 
         tenant = tenantRepository.save(tenant);
         log.info("Tenant '{}' criado pelo super admin", tenant.getName());
+
+        // Criar roles padrão do tenant (Manager, Cashier, Kitchen, Waiter)
+        // via função PL/pgSQL definida na migration V4
+        entityManager.createNativeQuery("SELECT create_default_roles_for_tenant(:tenantId)")
+                .setParameter("tenantId", tenant.getId())
+                .getSingleResult();
+        log.info("Roles padrão criadas para tenant '{}'", tenant.getName());
 
         // Criar usuário admin
         User adminUser = new User();

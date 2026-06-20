@@ -6,9 +6,11 @@ import br.com.menufacil.dto.ChangePasswordRequest;
 import br.com.menufacil.dto.CreateUserRequest;
 import br.com.menufacil.dto.UpdateUserRequest;
 import br.com.menufacil.dto.UserResponse;
+import br.com.menufacil.config.security.UserPermissionsService;
 import br.com.menufacil.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -70,6 +72,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, key = "#id")
     public UserResponse update(UUID id, UUID tenantId, UpdateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -102,6 +105,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = UserPermissionsService.CACHE_NAME, key = "#id")
     public void delete(UUID id, UUID tenantId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
