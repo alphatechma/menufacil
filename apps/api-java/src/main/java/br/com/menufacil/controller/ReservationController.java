@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateReservationRequest;
 import br.com.menufacil.dto.ReservationResponse;
@@ -25,18 +26,21 @@ public class ReservationController {
     private final ReservationService reservationService;
 
     @Operation(summary = "Listar todas as reservas do tenant")
+    @RequirePermissions("customer:read")
     @GetMapping
     public ResponseEntity<List<ReservationResponse>> listAll() {
         return ResponseEntity.ok(reservationService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar reserva por ID")
+    @RequirePermissions("customer:read")
     @GetMapping("/{id}")
     public ResponseEntity<ReservationResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(reservationService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar reserva")
+    @RequirePermissions("customer:create")
     @PostMapping
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody CreateReservationRequest request) {
@@ -45,6 +49,7 @@ public class ReservationController {
     }
 
     @Operation(summary = "Atualizar reserva")
+    @RequirePermissions("customer:update")
     @PutMapping("/{id}")
     public ResponseEntity<ReservationResponse> update(
             @PathVariable UUID id,
@@ -53,6 +58,7 @@ public class ReservationController {
     }
 
     @Operation(summary = "Atualizar status da reserva")
+    @RequirePermissions("customer:update")
     @PutMapping("/{id}/status")
     public ResponseEntity<ReservationResponse> updateStatus(
             @PathVariable UUID id,
@@ -61,6 +67,7 @@ public class ReservationController {
     }
 
     @Operation(summary = "Remover reserva")
+    @RequirePermissions("customer:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         reservationService.delete(id, TenantContext.getRequiredTenantUUID());

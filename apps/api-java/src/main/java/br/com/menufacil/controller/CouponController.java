@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.CouponService;
@@ -23,18 +24,21 @@ public class CouponController {
     private final CouponService couponService;
 
     @Operation(summary = "Listar todos os cupons do tenant")
+    @RequirePermissions("coupon:read")
     @GetMapping
     public ResponseEntity<List<CouponResponse>> listAll() {
         return ResponseEntity.ok(couponService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar cupom por ID")
+    @RequirePermissions("coupon:read")
     @GetMapping("/{id}")
     public ResponseEntity<CouponResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(couponService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar cupom")
+    @RequirePermissions("coupon:create")
     @PostMapping
     public ResponseEntity<CouponResponse> create(@Valid @RequestBody CreateCouponRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -42,6 +46,7 @@ public class CouponController {
     }
 
     @Operation(summary = "Atualizar cupom")
+    @RequirePermissions("coupon:update")
     @PutMapping("/{id}")
     public ResponseEntity<CouponResponse> update(
             @PathVariable UUID id,
@@ -50,6 +55,7 @@ public class CouponController {
     }
 
     @Operation(summary = "Remover cupom")
+    @RequirePermissions("coupon:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         couponService.delete(id, TenantContext.getRequiredTenantUUID());

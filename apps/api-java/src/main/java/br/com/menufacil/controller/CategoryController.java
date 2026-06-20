@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CategoryResponse;
 import br.com.menufacil.dto.CreateCategoryRequest;
@@ -30,12 +31,14 @@ public class CategoryController {
     }
 
     @Operation(summary = "Listar todas as categorias do tenant (admin)")
+    @RequirePermissions("category:read")
     @GetMapping("/all")
     public ResponseEntity<List<CategoryResponse>> listAll() {
         return ResponseEntity.ok(categoryService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar categoria (admin)")
+    @RequirePermissions("category:create")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CreateCategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -43,6 +46,7 @@ public class CategoryController {
     }
 
     @Operation(summary = "Atualizar categoria (admin)")
+    @RequirePermissions("category:update")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(
             @PathVariable UUID id,
@@ -51,6 +55,7 @@ public class CategoryController {
     }
 
     @Operation(summary = "Remover categoria (admin)")
+    @RequirePermissions("category:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         categoryService.delete(id, TenantContext.getRequiredTenantUUID());

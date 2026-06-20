@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.InventoryService;
@@ -25,18 +26,21 @@ public class InventoryController {
     // ---- Items CRUD ----
 
     @Operation(summary = "Listar todos os itens de estoque do tenant")
+    @RequirePermissions("product:read")
     @GetMapping("/items")
     public ResponseEntity<List<InventoryItemResponse>> listAll() {
         return ResponseEntity.ok(inventoryService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar item de estoque por ID")
+    @RequirePermissions("product:read")
     @GetMapping("/items/{id}")
     public ResponseEntity<InventoryItemResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(inventoryService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar item de estoque")
+    @RequirePermissions("product:update")
     @PostMapping("/items")
     public ResponseEntity<InventoryItemResponse> create(@Valid @RequestBody CreateInventoryItemRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -44,6 +48,7 @@ public class InventoryController {
     }
 
     @Operation(summary = "Atualizar item de estoque")
+    @RequirePermissions("product:update")
     @PutMapping("/items/{id}")
     public ResponseEntity<InventoryItemResponse> update(
             @PathVariable UUID id,
@@ -52,6 +57,7 @@ public class InventoryController {
     }
 
     @Operation(summary = "Remover item de estoque")
+    @RequirePermissions("product:update")
     @DeleteMapping("/items/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         inventoryService.delete(id, TenantContext.getRequiredTenantUUID());
@@ -61,6 +67,7 @@ public class InventoryController {
     // ---- Low Stock ----
 
     @Operation(summary = "Listar itens com estoque baixo")
+    @RequirePermissions("product:read")
     @GetMapping("/items/low-stock")
     public ResponseEntity<List<InventoryItemResponse>> lowStock() {
         return ResponseEntity.ok(inventoryService.getLowStockItems(TenantContext.getRequiredTenantUUID()));
@@ -69,6 +76,7 @@ public class InventoryController {
     // ---- Movements ----
 
     @Operation(summary = "Registrar movimentação de estoque")
+    @RequirePermissions("product:update")
     @PostMapping("/movements")
     public ResponseEntity<StockMovementResponse> createMovement(@Valid @RequestBody CreateStockMovementRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)

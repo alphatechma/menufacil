@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateCustomerRequest;
 import br.com.menufacil.dto.CustomerResponse;
@@ -24,18 +25,21 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @Operation(summary = "Listar todos os clientes do tenant")
+    @RequirePermissions("customer:read")
     @GetMapping
     public ResponseEntity<List<CustomerResponse>> listAll() {
         return ResponseEntity.ok(customerService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar cliente por ID")
+    @RequirePermissions("customer:read")
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(customerService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar cliente")
+    @RequirePermissions("customer:create")
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@Valid @RequestBody CreateCustomerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -43,6 +47,7 @@ public class CustomerController {
     }
 
     @Operation(summary = "Atualizar cliente")
+    @RequirePermissions("customer:update")
     @PutMapping("/{id}")
     public ResponseEntity<CustomerResponse> update(
             @PathVariable UUID id,
@@ -51,6 +56,7 @@ public class CustomerController {
     }
 
     @Operation(summary = "Remover cliente")
+    @RequirePermissions("customer:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         customerService.delete(id, TenantContext.getRequiredTenantUUID());

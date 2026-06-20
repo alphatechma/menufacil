@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.LoyaltyService;
@@ -26,24 +27,28 @@ public class LoyaltyController {
     // ---- Rewards CRUD ----
 
     @Operation(summary = "Listar todas as recompensas do tenant")
+    @RequirePermissions("loyalty:read")
     @GetMapping("/rewards")
     public ResponseEntity<List<LoyaltyRewardResponse>> listRewards() {
         return ResponseEntity.ok(loyaltyService.findAllRewardsByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar recompensas ativas do tenant")
+    @RequirePermissions("loyalty:read")
     @GetMapping("/rewards/active")
     public ResponseEntity<List<LoyaltyRewardResponse>> listActiveRewards() {
         return ResponseEntity.ok(loyaltyService.findActiveRewardsByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar recompensa por ID")
+    @RequirePermissions("loyalty:read")
     @GetMapping("/rewards/{id}")
     public ResponseEntity<LoyaltyRewardResponse> findRewardById(@PathVariable UUID id) {
         return ResponseEntity.ok(loyaltyService.findRewardById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar recompensa")
+    @RequirePermissions("loyalty:create")
     @PostMapping("/rewards")
     public ResponseEntity<LoyaltyRewardResponse> createReward(@Valid @RequestBody CreateLoyaltyRewardRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -51,6 +56,7 @@ public class LoyaltyController {
     }
 
     @Operation(summary = "Atualizar recompensa")
+    @RequirePermissions("loyalty:update")
     @PutMapping("/rewards/{id}")
     public ResponseEntity<LoyaltyRewardResponse> updateReward(
             @PathVariable UUID id,
@@ -59,6 +65,7 @@ public class LoyaltyController {
     }
 
     @Operation(summary = "Remover recompensa")
+    @RequirePermissions("loyalty:delete")
     @DeleteMapping("/rewards/{id}")
     public ResponseEntity<Void> deleteReward(@PathVariable UUID id) {
         loyaltyService.deleteReward(id, TenantContext.getRequiredTenantUUID());

@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.WalletCreditRequest;
 import br.com.menufacil.dto.WalletResponse;
@@ -25,12 +26,14 @@ public class WalletController {
     private final WalletService walletService;
 
     @Operation(summary = "Consultar saldo do cliente")
+    @RequirePermissions("loyalty:read")
     @GetMapping("/balance")
     public ResponseEntity<WalletResponse> getBalance(@RequestParam UUID customerId) {
         return ResponseEntity.ok(walletService.getBalance(customerId, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar transações do cliente")
+    @RequirePermissions("loyalty:read")
     @GetMapping("/transactions")
     public ResponseEntity<List<WalletTransactionResponse>> getTransactions(
             @RequestParam UUID customerId) {
@@ -38,6 +41,7 @@ public class WalletController {
     }
 
     @Operation(summary = "Adicionar crédito à carteira (admin)")
+    @RequirePermissions("loyalty:update")
     @PostMapping("/admin/credit")
     public ResponseEntity<WalletResponse> addCredit(
             @Valid @RequestBody WalletCreditRequest request) {

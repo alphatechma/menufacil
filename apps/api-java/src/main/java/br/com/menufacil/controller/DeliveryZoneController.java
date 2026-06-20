@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateDeliveryZoneRequest;
 import br.com.menufacil.dto.DeliveryZoneResponse;
@@ -24,18 +25,21 @@ public class DeliveryZoneController {
     private final DeliveryZoneService deliveryZoneService;
 
     @Operation(summary = "Listar todas as zonas de entrega do tenant")
+    @RequirePermissions("delivery:read")
     @GetMapping
     public ResponseEntity<List<DeliveryZoneResponse>> listAll() {
         return ResponseEntity.ok(deliveryZoneService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar zona de entrega por ID")
+    @RequirePermissions("delivery:read")
     @GetMapping("/{id}")
     public ResponseEntity<DeliveryZoneResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryZoneService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar zona de entrega")
+    @RequirePermissions("delivery:create")
     @PostMapping
     public ResponseEntity<DeliveryZoneResponse> create(@Valid @RequestBody CreateDeliveryZoneRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -43,6 +47,7 @@ public class DeliveryZoneController {
     }
 
     @Operation(summary = "Atualizar zona de entrega")
+    @RequirePermissions("delivery:update")
     @PutMapping("/{id}")
     public ResponseEntity<DeliveryZoneResponse> update(
             @PathVariable UUID id,
@@ -51,6 +56,7 @@ public class DeliveryZoneController {
     }
 
     @Operation(summary = "Remover zona de entrega")
+    @RequirePermissions("delivery:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         deliveryZoneService.delete(id, TenantContext.getRequiredTenantUUID());

@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateOrderRequest;
 import br.com.menufacil.dto.OrderResponse;
@@ -25,12 +26,14 @@ public class OrderController {
     private final OrderService orderService;
 
     @Operation(summary = "Listar pedidos do tenant (admin)")
+    @RequirePermissions("order:read")
     @GetMapping
     public ResponseEntity<List<OrderResponse>> list() {
         return ResponseEntity.ok(orderService.findByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar pedido por ID")
+    @RequirePermissions("order:read")
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.findById(id, TenantContext.getRequiredTenantUUID()));
@@ -44,6 +47,7 @@ public class OrderController {
     }
 
     @Operation(summary = "Atualizar status do pedido (admin)")
+    @RequirePermissions("order:update")
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderResponse> updateStatus(
             @PathVariable UUID id,

@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.TableSessionResponse;
 import br.com.menufacil.service.RestaurantTableService;
@@ -21,6 +22,7 @@ public class TableSessionController {
     private final RestaurantTableService tableService;
 
     @Operation(summary = "Listar sessões por mesa")
+    @RequirePermissions("order:read")
     @GetMapping
     public ResponseEntity<List<TableSessionResponse>> listByTable(
             @RequestParam UUID tableId) {
@@ -28,6 +30,7 @@ public class TableSessionController {
     }
 
     @Operation(summary = "Fechar sessão de mesa")
+    @RequirePermissions("order:update")
     @PostMapping("/{id}/close")
     public ResponseEntity<TableSessionResponse> closeSession(@PathVariable UUID id) {
         return ResponseEntity.ok(tableService.closeSession(id, TenantContext.getRequiredTenantUUID()));

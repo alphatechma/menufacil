@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateProductRequest;
 import br.com.menufacil.dto.ProductResponse;
@@ -30,6 +31,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Listar todos os produtos do tenant (admin)")
+    @RequirePermissions("product:read")
     @GetMapping("/all")
     public ResponseEntity<List<ProductResponse>> listAll() {
         return ResponseEntity.ok(productService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
@@ -42,6 +44,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Criar produto (admin)")
+    @RequirePermissions("product:create")
     @PostMapping
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -49,6 +52,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Atualizar produto (admin)")
+    @RequirePermissions("product:update")
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> update(
             @PathVariable UUID id,
@@ -57,6 +61,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Remover produto (admin)")
+    @RequirePermissions("product:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         productService.delete(id, TenantContext.getRequiredTenantUUID());

@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.CreateRestaurantTableRequest;
 import br.com.menufacil.dto.RestaurantTableResponse;
@@ -25,18 +26,21 @@ public class RestaurantTableController {
     private final RestaurantTableService tableService;
 
     @Operation(summary = "Listar todas as mesas do tenant")
+    @RequirePermissions("order:read")
     @GetMapping
     public ResponseEntity<List<RestaurantTableResponse>> listAll() {
         return ResponseEntity.ok(tableService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar mesa por ID")
+    @RequirePermissions("order:read")
     @GetMapping("/{id}")
     public ResponseEntity<RestaurantTableResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(tableService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar mesa")
+    @RequirePermissions("order:create")
     @PostMapping
     public ResponseEntity<RestaurantTableResponse> create(
             @Valid @RequestBody CreateRestaurantTableRequest request) {
@@ -45,6 +49,7 @@ public class RestaurantTableController {
     }
 
     @Operation(summary = "Atualizar mesa")
+    @RequirePermissions("order:update")
     @PutMapping("/{id}")
     public ResponseEntity<RestaurantTableResponse> update(
             @PathVariable UUID id,
@@ -53,6 +58,7 @@ public class RestaurantTableController {
     }
 
     @Operation(summary = "Remover mesa")
+    @RequirePermissions("order:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tableService.delete(id, TenantContext.getRequiredTenantUUID());
@@ -62,12 +68,14 @@ public class RestaurantTableController {
     // ---- Table Sessions ----
 
     @Operation(summary = "Listar sessões de uma mesa")
+    @RequirePermissions("order:read")
     @GetMapping("/{tableId}/sessions")
     public ResponseEntity<List<TableSessionResponse>> listSessions(@PathVariable UUID tableId) {
         return ResponseEntity.ok(tableService.findSessionsByTable(tableId, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Abrir sessão em uma mesa")
+    @RequirePermissions("order:create")
     @PostMapping("/{tableId}/sessions")
     public ResponseEntity<TableSessionResponse> openSession(@PathVariable UUID tableId) {
         return ResponseEntity.status(HttpStatus.CREATED)

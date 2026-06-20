@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.PromotionService;
@@ -23,24 +24,28 @@ public class PromotionController {
     private final PromotionService promotionService;
 
     @Operation(summary = "Listar todas as promoções do tenant")
+    @RequirePermissions("product:read")
     @GetMapping
     public ResponseEntity<List<PromotionResponse>> listAll() {
         return ResponseEntity.ok(promotionService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Listar promoções ativas")
+    @RequirePermissions("product:read")
     @GetMapping("/active")
     public ResponseEntity<List<PromotionResponse>> listActive() {
         return ResponseEntity.ok(promotionService.getActivePromotions(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar promoção por ID")
+    @RequirePermissions("product:read")
     @GetMapping("/{id}")
     public ResponseEntity<PromotionResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(promotionService.findById(id, TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Criar promoção")
+    @RequirePermissions("product:update")
     @PostMapping
     public ResponseEntity<PromotionResponse> create(
             @Valid @RequestBody CreatePromotionRequest request) {
@@ -49,6 +54,7 @@ public class PromotionController {
     }
 
     @Operation(summary = "Atualizar promoção")
+    @RequirePermissions("product:update")
     @PutMapping("/{id}")
     public ResponseEntity<PromotionResponse> update(
             @PathVariable UUID id,
@@ -57,6 +63,7 @@ public class PromotionController {
     }
 
     @Operation(summary = "Remover promoção")
+    @RequirePermissions("product:update")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         promotionService.delete(id, TenantContext.getRequiredTenantUUID());

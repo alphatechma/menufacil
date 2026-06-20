@@ -1,5 +1,6 @@
 package br.com.menufacil.controller;
 
+import br.com.menufacil.config.security.RequirePermissions;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.ReviewService;
@@ -23,12 +24,14 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @Operation(summary = "Listar todas as avaliações do tenant")
+    @RequirePermissions("customer:read")
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> listAll() {
         return ResponseEntity.ok(reviewService.findAllByTenant(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Buscar avaliação por ID")
+    @RequirePermissions("customer:read")
     @GetMapping("/{id}")
     public ResponseEntity<ReviewResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(reviewService.findById(id, TenantContext.getRequiredTenantUUID()));
@@ -43,6 +46,7 @@ public class ReviewController {
     }
 
     @Operation(summary = "Responder avaliação")
+    @RequirePermissions("customer:update")
     @PutMapping("/{id}/reply")
     public ResponseEntity<ReviewResponse> reply(
             @PathVariable UUID id,
@@ -51,12 +55,14 @@ public class ReviewController {
     }
 
     @Operation(summary = "Estatísticas de avaliações")
+    @RequirePermissions("customer:read")
     @GetMapping("/stats")
     public ResponseEntity<ReviewStatsResponse> getStats() {
         return ResponseEntity.ok(reviewService.getStats(TenantContext.getRequiredTenantUUID()));
     }
 
     @Operation(summary = "Remover avaliação")
+    @RequirePermissions("customer:update")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         reviewService.delete(id, TenantContext.getRequiredTenantUUID());
