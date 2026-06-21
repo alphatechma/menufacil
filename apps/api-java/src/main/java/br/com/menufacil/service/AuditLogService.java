@@ -1,5 +1,6 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.converter.AuditLogConverter;
 import br.com.menufacil.domain.models.AuditLog;
 import br.com.menufacil.dto.AuditLogResponse;
@@ -34,6 +35,7 @@ public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final AuditLogConverter auditLogConverter;
+    private final MetricsService metricsService;
 
     /**
      * Lista logs de auditoria com filtros opcionais e paginação.
@@ -97,6 +99,7 @@ public class AuditLogService {
         auditLog.setTenantId(tenantId);
 
         auditLog = auditLogRepository.save(auditLog);
+        metricsService.incrementAuditLogCreated(auditLog.getEntityType(), auditLog.getAction());
         log.info("Auditoria registrada: action={} entityType={} userEmail={} tenantId={}",
                 auditLog.getAction(), auditLog.getEntityType(), auditLog.getUserEmail(), tenantId);
         return auditLogConverter.toResponse(auditLog);
@@ -127,6 +130,7 @@ public class AuditLogService {
         auditLog.setIpAddress(ipAddress);
 
         auditLog = auditLogRepository.save(auditLog);
+        metricsService.incrementAuditLogCreated(entityType, action);
         log.info("Auditoria registrada: action={} entityType={} userEmail={} tenantId={}",
                 action, entityType, userEmail, tenantId);
         return auditLog;

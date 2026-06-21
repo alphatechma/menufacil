@@ -1,5 +1,6 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.NotificationStatus;
 import br.com.menufacil.repository.NotificationRepository;
 import br.com.menufacil.repository.WhatsappFlowWaitRepository;
@@ -25,6 +26,7 @@ class CleanupWorkerTest {
 
     @Mock private WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     @Mock private NotificationRepository notificationRepository;
+    @Mock private MetricsService metricsService;
 
     @InjectMocks
     private CleanupWorker worker;

@@ -23,6 +23,12 @@
         <springdoc.version>2.5.0</springdoc.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <awssdk.version>2.25.70</awssdk.version>
+        <sentry.version>7.18.0</sentry.version>
+        <!-- Versão do instrumentation BOM: NÃO renomear para opentelemetry.version,
+             pois isso colidiria com a property gerenciada pelo spring-boot-dependencies
+             (que controla a versão do opentelemetry-bom, atualmente 1.37.0). -->
+        <opentelemetry-instrumentation.version>2.10.0</opentelemetry-instrumentation.version>
+        <logstash-logback.version>8.0</logstash-logback.version>
     </properties>
 
     <dependencyManagement>
@@ -31,6 +37,20 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
                 <version>${awssdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-bom</artifactId>
+                <version>${sentry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -141,6 +161,45 @@
             <artifactId>sesv2</artifactId>
         </dependency>
 
+        <!-- =================================================================
+             Observability
+             ================================================================= -->
+
+        <!-- Sentry: captura de exceções não tratadas + breadcrumbs + tracing -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+        </dependency>
+        <!-- Sentry: integração com Logback (envia ERROR/WARN como eventos) -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-logback</artifactId>
+        </dependency>
+
+        <!-- Micrometer + Prometheus: expõe /actuator/prometheus -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- OpenTelemetry: auto-instrumentação Spring Boot + OTLP exporter -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+        </dependency>
+        <!-- API pública para @WithSpan e tracer programático -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+        </dependency>
+
+        <!-- Logs JSON estruturados (Loki / ELK friendly) -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback.version}</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -150,6 +209,20 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers (integration tests com Postgres real) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.20.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -188,6 +261,52 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <!--
+                Surefire roda apenas unit tests (Test.java/Tests.java).
+                Integration tests (*IT.java) sao executados pelo Failsafe via `mvn verify`.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+            Profile `integration`: ativa o maven-failsafe-plugin para rodar
+            os testes *IT.java contra um Postgres real (Testcontainers).
+            Uso: mvn verify -P integration
+        -->
+        <profile>
+            <id>integration</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -143,7 +143,11 @@ public class UploadService {
         this.s3Client = s3Client;
     }
 
-    S3Client getS3Client() {
+    /**
+     * Acesso público ao S3Client subjacente.
+     * Usado pelo {@code MinioHealthIndicator} para validar conectividade.
+     */
+    public S3Client getS3Client() {
         return s3Client;
     }
 }

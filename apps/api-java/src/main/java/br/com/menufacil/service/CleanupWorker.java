@@ -1,5 +1,6 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.NotificationStatus;
 import br.com.menufacil.repository.NotificationRepository;
 import br.com.menufacil.repository.WhatsappFlowWaitRepository;
@@ -50,6 +51,7 @@ public class CleanupWorker {
 
     private final WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     private final NotificationRepository notificationRepository;
+    private final MetricsService metricsService;
 
     /**
      * Executa o cleanup diariamente às 03h00.
@@ -69,6 +71,9 @@ public class CleanupWorker {
 
         int notificationsRemoved = notificationRepository
                 .deleteByStatusInAndCreatedAtBefore(FINAL_STATUSES, cutoff30d);
+
+        metricsService.incrementCleanupRemoved("whatsapp_flow_waits", waitsRemoved);
+        metricsService.incrementCleanupRemoved("notifications", notificationsRemoved);
 
         log.info("Cleanup diario: {} waits + {} notifications removidos",
                 waitsRemoved, notificationsRemoved);

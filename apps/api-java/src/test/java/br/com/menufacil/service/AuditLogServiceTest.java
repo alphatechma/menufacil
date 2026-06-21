@@ -1,5 +1,6 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.converter.AuditLogConverter;
 import br.com.menufacil.domain.models.AuditLog;
 import br.com.menufacil.dto.AuditLogResponse;
@@ -30,6 +31,7 @@ class AuditLogServiceTest {
 
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private AuditLogConverter auditLogConverter;
+    @Mock private MetricsService metricsService;
 
     @InjectMocks
     private AuditLogService auditLogService;

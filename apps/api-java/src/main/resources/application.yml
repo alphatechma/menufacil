@@ -38,8 +38,10 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:menufacil-jwt-secret-key-change-in-production}
-    expiration: 86400000  # 24h
-    refresh-expiration: 604800000  # 7d
+    # Tempo de vida do access token (curto — protege em caso de vazamento).
+    access-expiration: ${JWT_ACCESS_EXPIRATION:900000}      # 15min
+    # Tempo de vida do refresh token (longo — usado para renovar o access via /auth/refresh).
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7d
 
 # Swagger
 springdoc:
@@ -83,17 +85,79 @@ aws:
 cleanup:
   enabled: ${CLEANUP_ENABLED:true}
 
-# Actuator
+# =============================================================================
+# Observability
+# =============================================================================
+
+# Sentry — captura de exceções, breadcrumbs e performance trace.
+# DSN vazio desativa o SDK (sem ruído em dev).
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:dev}
+  release: ${SENTRY_RELEASE:menufacil-api@0.1.0}
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.1}
+  # Resolver chamado ANTES do GlobalExceptionHandler do Spring para
+  # capturar a stack original (precedência mais alta possível).
+  exception-resolver-order: -2147483647
+  send-default-pii: false
+  enable-tracing: true
+  # Logback bridge: ERROR vai para Sentry como evento;
+  # WARN/INFO vão como breadcrumb.
+  logging:
+    minimum-event-level: error
+    minimum-breadcrumb-level: info
+
+# Actuator — health, info, metrics + Prometheus scrape target.
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when_authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: menufacil-api
+      environment: ${SPRING_PROFILES_ACTIVE:dev}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
 
-# Logging
+# OpenTelemetry — tracing distribuido (OTLP exporter).
+# Endpoint vazio + exporters=none desativa em dev local.
+otel:
+  service:
+    name: menufacil-api
+  resource:
+    attributes:
+      service.namespace: menufacil
+      deployment.environment: ${SPRING_PROFILES_ACTIVE:dev}
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:}
+      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:grpc}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:none}
+    sampler:
+      arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:none}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:none}
+
+# Logging — texto padrao em dev; JSON em prod/hml (ver logback-spring.xml).
 logging:
   level:
     root: INFO
@@ -117,3 +181,16 @@ logging:
     root: WARN
     br.com.menufacil: INFO
     org.hibernate.SQL: ERROR
+
+---
+# Perfil de homologação
+spring:
+  config:
+    activate:
+      on-profile: hml
+
+logging:
+  level:
+    root: INFO
+    br.com.menufacil: INFO
+    org.hibernate.SQL: WARN
