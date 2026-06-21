@@ -22,6 +22,19 @@ const persistMiddleware: Middleware = (store) => (next) => (action) => {
     );
   }
 
+  // Persist customer auth (JWT-based)
+  if (typeof action === 'object' && action !== null && 'type' in action && typeof (action as { type: string }).type === 'string' && (action as { type: string }).type.startsWith('customerAuth/')) {
+    const { customer, accessToken, refreshToken } = state.customerAuth;
+    if (accessToken && customer) {
+      localStorage.setItem(
+        'menufacil-customer-auth',
+        JSON.stringify({ customer, accessToken, refreshToken }),
+      );
+    } else {
+      localStorage.removeItem('menufacil-customer-auth');
+    }
+  }
+
   // Persist cart
   if (typeof action === 'object' && action !== null && 'type' in action && typeof (action as { type: string }).type === 'string' && (action as { type: string }).type.startsWith('cart/')) {
     localStorage.setItem('menufacil-cart', JSON.stringify({ items: state.cart.items }));

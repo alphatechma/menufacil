@@ -1,6 +1,7 @@
 import { fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { RootState } from '../store/index';
 import { adminLogout } from '../store/slices/adminAuthSlice';
+import { customerLogout } from '../store/slices/customerAuthSlice';
 import { env } from '@/config/env';
 
 export type AuthContext = 'admin' | 'customer' | 'public';
@@ -33,7 +34,9 @@ const rawBaseQuery = fetchBaseQuery({
     } else if (authContext === 'customer') {
       const slug = meta?.tenantSlug;
       if (slug) headers.set('X-Tenant-Slug', slug);
-      headers.set('X-Auth-Context', 'customer');
+
+      const customerToken = state.customerAuth?.accessToken;
+      if (customerToken) headers.set('Authorization', `Bearer ${customerToken}`);
 
       const customerUnitId = state.tenant?.selectedUnitId;
       if (customerUnitId) headers.set('X-Unit-Id', customerUnitId);
@@ -82,7 +85,8 @@ export const axiosBaseQuery: BaseQueryFn<
   } else if (authContext === 'customer') {
     const slug = meta?.tenantSlug;
     if (slug) headers['X-Tenant-Slug'] = slug;
-    headers['X-Auth-Context'] = 'customer';
+    const customerToken = state.customerAuth?.accessToken;
+    if (customerToken) headers['Authorization'] = `Bearer ${customerToken}`;
     const customerUnitId = state.tenant?.selectedUnitId;
     if (customerUnitId) headers['X-Unit-Id'] = customerUnitId;
   }
@@ -138,11 +142,9 @@ export const axiosBaseQuery: BaseQueryFn<
     }
   }
 
-  // Handle customer 401
+  // Handle customer 401 (JWT expired/invalid) — stateless, just clear local auth
   if (result.error?.status === 401 && authContext === 'customer') {
-    try {
-      await rawBaseQuery({ url: '/auth/logout', method: 'POST' }, api, extraOptions);
-    } catch { /* ignore */ }
+    api.dispatch(customerLogout());
     window.dispatchEvent(new CustomEvent('unauthorized'));
   }
 

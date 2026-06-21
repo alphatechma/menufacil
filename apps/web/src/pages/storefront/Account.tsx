@@ -300,8 +300,8 @@ export default function Account() {
     });
   };
 
-  const onLoginSuccess = (customer: any) => {
-    dispatch(customerLoginSuccess(customer));
+  const onLoginSuccess = (payload: { customer: any; accessToken: string; refreshToken?: string | null }) => {
+    dispatch(customerLoginSuccess(payload));
     if (redirectTo === 'checkout') {
       navigate(`/${slug}/checkout`, { replace: true });
     }
@@ -318,20 +318,14 @@ export default function Account() {
           setAuthError('As senhas nao coincidem.');
           return;
         }
-        await customerRegister({
+        const registerResult = await customerRegister({
           slug: slug!,
           name: loginName.trim(),
           phone: unmaskDigits(loginPhone),
           email: loginEmail.trim() || undefined,
           password: loginPassword,
         }).unwrap();
-
-        const loginResult = await customerLogin({
-          phone: unmaskDigits(loginPhone),
-          name: loginName.trim(),
-          slug: slug!,
-        }).unwrap();
-        onLoginSuccess(loginResult.customer);
+        onLoginSuccess(registerResult);
         return;
       }
 
@@ -352,7 +346,7 @@ export default function Account() {
         }).unwrap();
       }
 
-      onLoginSuccess(result.customer);
+      onLoginSuccess(result);
     } catch (err: any) {
       setAuthError(err?.data?.message || 'Erro ao entrar. Tente novamente.');
     }
@@ -421,10 +415,8 @@ export default function Account() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch { /* ignore */ }
+  const handleLogout = () => {
+    // JWT stateless: nada pra invalidar no backend, basta limpar o token local.
     dispatch(customerLogout());
   };
 

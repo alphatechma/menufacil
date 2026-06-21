@@ -1,5 +1,19 @@
 import { baseApi } from './baseApi';
 
+/**
+ * Java API returns the customer payload in camelCase ({ loyaltyPoints, birthDate, ... }).
+ * The storefront UI (Account, Checkout, ...) already consumes snake_case fields coming
+ * from /customers/me. Normalize the login/register payload so both sources match.
+ */
+function normalizeCustomer(c: any) {
+  if (!c) return c;
+  return {
+    ...c,
+    loyalty_points: c.loyalty_points ?? c.loyaltyPoints ?? 0,
+    birth_date: c.birth_date ?? c.birthDate ?? null,
+  };
+}
+
 export const customerApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Public tenant
@@ -37,22 +51,36 @@ export const customerApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // Customer auth
+    // Customer auth — new Java API returns camelCase { accessToken, refreshToken, customer }
+    // Normalize customer to snake_case shape consumed by the storefront UI.
     customerLogin: builder.mutation<
-      { access_token: string; customer: any },
+      { accessToken: string; refreshToken: string | null; customer: any },
       { slug: string; phone?: string; name?: string; email?: string; password?: string }
     >({
-      query: ({ slug, ...body }) => ({
-        url: '/auth/customer/login',
-        method: 'POST',
-        data: body,
-        meta: { authContext: 'customer' as const, tenantSlug: slug },
+      query: ({ slug, phone, name, email, password }) => {
+        // Java tem dois endpoints: /auth/customer/login (email+password) e /auth/customer/login-phone (phone-only)
+        const usePhoneEndpoint = !email && !password && !!phone;
+        const url = usePhoneEndpoint ? '/auth/customer/login-phone' : '/auth/customer/login';
+        const body = usePhoneEndpoint ? { phone, name } : { email, password, phone };
+        return {
+          url,
+          method: 'POST',
+          data: body,
+          // 'customer' context envia X-Tenant-Slug; ainda nao temos accessToken aqui,
+          // entao nenhum Authorization stale eh enviado.
+          meta: { authContext: 'customer' as const, tenantSlug: slug },
+        };
+      },
+      transformResponse: (response: any) => ({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken ?? null,
+        customer: normalizeCustomer(response.customer),
       }),
     }),
 
     // Customer register
     customerRegister: builder.mutation<
-      { access_token: string; refresh_token: string },
+      { accessToken: string; refreshToken: string | null; customer: any },
       { slug: string; name: string; phone: string; email?: string; password: string }
     >({
       query: ({ slug, ...body }) => ({
@@ -60,6 +88,11 @@ export const customerApi = baseApi.injectEndpoints({
         method: 'POST',
         data: body,
         meta: { authContext: 'customer' as const, tenantSlug: slug },
+      }),
+      transformResponse: (response: any) => ({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken ?? null,
+        customer: normalizeCustomer(response.customer),
       }),
     }),
 
