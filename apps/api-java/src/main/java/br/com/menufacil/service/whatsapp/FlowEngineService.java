@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -35,8 +36,9 @@ import java.util.UUID;
  *  - question : envia a pergunta e PARA (aguarda próxima mensagem do usuário)
  *  - condition: avalia config.expression contra executionState e escolhe
  *               a edge baseada em true/false
- *  - action   : stub — TODO implementar ações reais
- *  - delay    : stub — TODO implementar delay real
+ *  - action   : dispara HTTP request configurável (POST/GET/PUT/DELETE) com
+ *               placeholders {{key}} resolvidos do executionState
+ *  - delay    : stub — TODO implementar delay real (precisa @Scheduled + tabela de waits)
  *
  * Cada edge possui {source, target, condition?}.
  *
@@ -57,6 +59,7 @@ public class FlowEngineService {
     private final WhatsappFlowExecutionRepository whatsappFlowExecutionRepository;
     private final WhatsappMessageService whatsappMessageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestClient actionRestClient = RestClient.builder().build();
 
     /**
      * Processa uma mensagem recebida do usuário.
@@ -249,9 +252,7 @@ public class FlowEngineService {
                     break;
                 }
                 case "action": {
-                    // TODO: implementar ações reais (webhook HTTP, criar pedido, etc).
-                    log.info("Node action {} executado (stub) no fluxo {}",
-                            node.get("id"), execution.getFlowId());
+                    executeActionNode(node, execution, state);
                     String nextId = resolveNextNodeId(edges, execution.getCurrentNodeId(), null);
                     if (nextId == null) {
                         return finishExecution(execution, "fim do fluxo após action");
@@ -451,5 +452,85 @@ public class FlowEngineService {
             return List.of(s);
         }
         return List.of();
+    }
+
+    /**
+     * Executa um node {@code type=action} disparando um HTTP request configurado.
+     *
+     * Config esperada no node (todos opcionais — defaults aplicados):
+     * <pre>{
+     *   "url": "https://exemplo.com/hook",      // obrigatório — se ausente, vira no-op
+     *   "method": "POST",                       // GET, POST, PUT, DELETE (default POST)
+     *   "headers": { "X-Token": "abc" },        // opcional
+     *   "body": { "phone": "{{phone}}", ... }   // opcional — placeholders {{key}} resolvidos do state
+     * }</pre>
+     *
+     * Falhas HTTP são logadas mas não interrompem o fluxo (action é fire-and-forget).
+     */
+    @SuppressWarnings("unchecked")
+    private void executeActionNode(Map<String, Object> node,
+                                   WhatsappFlowExecution execution,
+                                   Map<String, Object> state) {
+        Map<String, Object> config = asMap(node.get("config"));
+        String url = config.get("url") instanceof String s ? s : null;
+
+        if (url == null || url.isBlank()) {
+            log.warn("Node action {} sem URL — pulando", node.get("id"));
+            return;
+        }
+
+        String method = (config.get("method") instanceof String m ? m : "POST").toUpperCase();
+        Map<String, Object> headers = asMap(config.get("headers"));
+        Object bodyTemplate = config.get("body");
+        Object body = resolvePlaceholders(bodyTemplate, state);
+
+        try {
+            RestClient.RequestBodySpec spec;
+            switch (method) {
+                case "GET" -> spec = actionRestClient.method(org.springframework.http.HttpMethod.GET).uri(url);
+                case "PUT" -> spec = actionRestClient.put().uri(url);
+                case "DELETE" -> spec = actionRestClient.method(org.springframework.http.HttpMethod.DELETE).uri(url);
+                default -> spec = actionRestClient.post().uri(url);
+            }
+            headers.forEach((k, v) -> {
+                if (v != null) spec.header(k, v.toString());
+            });
+            if (body != null && !"GET".equals(method) && !"DELETE".equals(method)) {
+                spec.body(body);
+            }
+            spec.retrieve().toBodilessEntity();
+
+            log.info("Node action {} executado: {} {} (flow={})",
+                    node.get("id"), method, url, execution.getFlowId());
+        } catch (Exception e) {
+            log.error("Falha executando action {} ({} {}): {}",
+                    node.get("id"), method, url, e.getMessage());
+        }
+    }
+
+    /**
+     * Substitui {{key}} no template pelo valor correspondente em state.
+     * Suporta String e Map recursivamente.
+     */
+    @SuppressWarnings("unchecked")
+    private Object resolvePlaceholders(Object template, Map<String, Object> state) {
+        if (template instanceof String s) {
+            String result = s;
+            for (Map.Entry<String, Object> entry : state.entrySet()) {
+                String placeholder = "{{" + entry.getKey() + "}}";
+                if (result.contains(placeholder)) {
+                    result = result.replace(placeholder, String.valueOf(entry.getValue()));
+                }
+            }
+            return result;
+        }
+        if (template instanceof Map<?, ?> map) {
+            Map<String, Object> resolved = new HashMap<>();
+            for (Map.Entry<?, ?> e : map.entrySet()) {
+                resolved.put(String.valueOf(e.getKey()), resolvePlaceholders(e.getValue(), state));
+            }
+            return resolved;
+        }
+        return template;
     }
 }
