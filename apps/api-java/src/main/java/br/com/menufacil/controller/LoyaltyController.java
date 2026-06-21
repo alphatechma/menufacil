@@ -1,6 +1,7 @@
 package br.com.menufacil.controller;
 
 import br.com.menufacil.config.security.RequirePermissions;
+import br.com.menufacil.config.security.SecurityContextHelper;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.service.LoyaltyService;
@@ -76,10 +77,10 @@ public class LoyaltyController {
 
     @Operation(summary = "Resgatar recompensa (customer)")
     @PostMapping("/redeem")
-    public ResponseEntity<LoyaltyRedemptionResponse> redeem(@Valid @RequestBody RedeemRewardRequest request) {
-        // TODO: Extrair customerId do token JWT do customer autenticado
-        // Por enquanto recebe via header temporário
-        UUID customerId = getCustomerIdFromHeader();
+    public ResponseEntity<LoyaltyRedemptionResponse> redeem(
+            @Valid @RequestBody RedeemRewardRequest request,
+            @RequestHeader(value = "X-Customer-Id", required = false) String customerIdHeader) {
+        UUID customerId = getCurrentCustomerId(customerIdHeader);
         UUID rewardId = UUID.fromString(request.getRewardId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(loyaltyService.redeemReward(customerId, rewardId, TenantContext.getRequiredTenantUUID()));
@@ -87,14 +88,38 @@ public class LoyaltyController {
 
     @Operation(summary = "Listar resgates do customer autenticado")
     @GetMapping("/my-redemptions")
-    public ResponseEntity<List<LoyaltyRedemptionResponse>> myRedemptions() {
-        UUID customerId = getCustomerIdFromHeader();
+    public ResponseEntity<List<LoyaltyRedemptionResponse>> myRedemptions(
+            @RequestHeader(value = "X-Customer-Id", required = false) String customerIdHeader) {
+        UUID customerId = getCurrentCustomerId(customerIdHeader);
         return ResponseEntity.ok(loyaltyService.findRedemptionsByCustomer(customerId, TenantContext.getRequiredTenantUUID()));
     }
 
-    private UUID getCustomerIdFromHeader() {
-        // TODO: Substituir por extração do JWT quando auth de customer estiver migrado
-        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
-                "Autenticação de customer ainda não migrada. Use o header X-Customer-Id temporariamente.");
+    /**
+     * Resolve o customerId logado.
+     *
+     * Estrategia:
+     *   1. Tenta extrair do JWT atual via {@link SecurityContextHelper#getCurrentCustomerId()}.
+     *   2. Fallback: aceita o header {@code X-Customer-Id} para backwards-compat
+     *      enquanto o frontend / clientes externos migram para o novo JWT.
+     *
+     * TODO: remover o fallback de header assim que todos os consumidores estiverem
+     * emitindo o JWT de customer com o claim {@code customerId} (deadline alvo: proximo release).
+     */
+    private UUID getCurrentCustomerId(String customerIdHeader) {
+        return SecurityContextHelper.getCurrentCustomerId()
+                .orElseGet(() -> parseHeaderFallback(customerIdHeader));
+    }
+
+    private UUID parseHeaderFallback(String customerIdHeader) {
+        if (customerIdHeader == null || customerIdHeader.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Cliente não autenticado (JWT sem customerId e header X-Customer-Id ausente)");
+        }
+        try {
+            return UUID.fromString(customerIdHeader.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "X-Customer-Id inválido");
+        }
     }
 }
