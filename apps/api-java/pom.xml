@@ -135,6 +135,12 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
 
+        <!-- AWS SES v2 (Email) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sesv2</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

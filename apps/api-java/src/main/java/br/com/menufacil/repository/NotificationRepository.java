@@ -13,4 +13,10 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findByTenantId(UUID tenantId);
     List<Notification> findByOrderId(UUID orderId);
     List<Notification> findByStatus(NotificationStatus status);
+
+    /**
+     * Usado pelo NotificationWorker para buscar a próxima janela de notificações
+     * pendentes (FIFO por createdAt). Limita a 50 por execução pra evitar long batches.
+     */
+    List<Notification> findTop50ByStatusOrderByCreatedAtAsc(NotificationStatus status);
 }

@@ -69,6 +69,15 @@ evolution:
   webhook:
     url: ${EVOLUTION_WEBHOOK_URL:}
 
+# AWS SES (Email)
+aws:
+  ses:
+    region: ${AWS_SES_REGION:us-east-1}
+    access-key: ${AWS_SES_ACCESS_KEY:}
+    secret-key: ${AWS_SES_SECRET_KEY:}
+    from-email: ${AWS_SES_FROM_EMAIL:noreply@menufacil.com.br}
+    enabled: ${AWS_SES_ENABLED:false}
+
 # Actuator
 management:
   endpoints:
