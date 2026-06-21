@@ -78,6 +78,11 @@ aws:
     from-email: ${AWS_SES_FROM_EMAIL:noreply@menufacil.com.br}
     enabled: ${AWS_SES_ENABLED:false}
 
+# Cleanup worker (TTL diario das tabelas de waits/notifications)
+# Setar CLEANUP_ENABLED=false em dev para desabilitar o @Scheduled das 03h.
+cleanup:
+  enabled: ${CLEANUP_ENABLED:true}
+
 # Actuator
 management:
   endpoints:

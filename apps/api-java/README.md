@@ -319,11 +319,30 @@ mvn test -Dtest='*Converter*'     # roda por padrao de nome
 
 ---
 
+## Workers ativos
+
+Componentes `@Scheduled` em execucao na API:
+
+| Worker                       | Pacote                                                | Cadencia              | Funcao                                                                                              |
+|------------------------------|-------------------------------------------------------|-----------------------|-----------------------------------------------------------------------------------------------------|
+| `NotificationWorker`         | `service.notification`                                | `fixedDelay=30s`      | Processa `notifications` em status `pending` (email + whatsapp).                                    |
+| `WhatsappFlowWaitWorker`     | `service.whatsapp`                                    | `fixedDelay=10s`      | Retoma execucoes pausadas por nodes `delay` (`whatsapp_flow_waits`).                                |
+| `CleanupWorker`              | `service`                                             | `cron=0 0 3 * * *`    | TTL diario: remove `whatsapp_flow_waits` processados >7d e `notifications` em sent/failed >30d.     |
+
+### Configuracao do `CleanupWorker`
+
+| Variavel           | Default | Descricao                                                                                                  |
+|--------------------|---------|------------------------------------------------------------------------------------------------------------|
+| `CLEANUP_ENABLED`  | `true`  | Quando `false`, desativa o bean (util em dev/CI). Internamente: `@ConditionalOnProperty(cleanup.enabled)`. |
+
+A tabela `audit_logs` **nao** e limpa por esse worker — registros de auditoria sao preservados por compliance.
+
+---
+
 ## Pendencias conhecidas
 
 - **Notification**: aguardando providers — Amazon SES sendo implementado (envio de e-mail transacional).
 - **Payment**: aguardando definicao do gateway (Pagar.me / Stripe / Mercado Pago a decidir).
-- **WhatsApp Flow Engine — node `delay`**: `TODO` no `WhatsappFlowExecutionService`. Recomendacao: `@Scheduled` com tabela auxiliar `whatsapp_flow_waits` (executions pausadas + `wake_at`).
 - **Cutover do NestJS**: estrategia sugerida — **route-by-endpoint via nginx**, comecando pelos modulos novos ja 100% migrados (whatsapp/*, analytics, audit-logs, abandoned-cart). Modulos com integracao externa critica (payment) ficam por ultimo.
 - **Cache de permissoes**: hoje em memoria (`@Cacheable` default — `ConcurrentMapCacheManager`). Migrar para Redis quando houver multiplas instancias.
 - **Open API**: alguns endpoints publicos (`/public/*`) ainda sem `@Operation` documentado.
