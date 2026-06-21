@@ -12,11 +12,18 @@ import br.com.menufacil.dto.OrderResponse;
 import br.com.menufacil.dto.UpdateOrderStatusRequest;
 import br.com.menufacil.repository.OrderRepository;
 import br.com.menufacil.repository.ProductRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -33,6 +40,8 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderConverter orderConverter;
     private final WebSocketService webSocketService;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Transições de status válidas
@@ -139,6 +148,28 @@ public class OrderService {
         // Notificar via WebSocket
         webSocketService.notifyNewOrder(tenantId, order.getId(), order.getOrderNumber());
 
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("total", order.getTotal() != null ? order.getTotal().toPlainString() : null);
+            details.put("itemCount", order.getItems().size());
+            details.put("customerId", order.getCustomerId() != null ? order.getCustomerId().toString() : null);
+            details.put("orderNumber", order.getOrderNumber());
+            details.put("orderType", order.getOrderType() != null ? order.getOrderType().name() : null);
+            auditLogService.log(
+                    order.getTenantId(),
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    "create",
+                    "order",
+                    order.getId(),
+                    order.getId().toString(),
+                    serializeDetails(details),
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de criação de pedido: {}", e.getMessage());
+        }
+
         return orderConverter.toResponse(order);
     }
 
@@ -165,6 +196,7 @@ public class OrderService {
                     String.format("Transição de status inválida: %s -> %s", order.getStatus(), newStatus));
         }
 
+        OrderStatus oldStatus = order.getStatus();
         order.setStatus(newStatus);
 
         // Marcar delivered_at quando entregue
@@ -177,6 +209,27 @@ public class OrderService {
 
         // Notificar via WebSocket
         webSocketService.notifyOrderUpdate(tenantId, order.getId(), newStatus.name());
+
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("oldStatus", oldStatus != null ? oldStatus.name() : null);
+            details.put("newStatus", newStatus.name());
+            details.put("orderNumber", order.getOrderNumber());
+            String action = newStatus == OrderStatus.cancelled ? "cancel" : "update_status";
+            auditLogService.log(
+                    order.getTenantId(),
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    action,
+                    "order",
+                    order.getId(),
+                    order.getId().toString(),
+                    serializeDetails(details),
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de mudança de status do pedido: {}", e.getMessage());
+        }
 
         return orderConverter.toResponse(order);
     }
@@ -202,6 +255,49 @@ public class OrderService {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Método de pagamento inválido: " + method);
+        }
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
+    }
+
+    private UUID getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return null;
+        Object details = auth.getDetails();
+        if (details instanceof Claims claims) {
+            String userId = claims.get("userId", String.class);
+            if (userId != null && !userId.isBlank()) {
+                try { return UUID.fromString(userId); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        return null;
+    }
+
+    private String getCurrentIpAddress() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes)
+                    RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String forwarded = req.getHeader("X-Forwarded-For");
+                if (forwarded != null && !forwarded.isBlank()) {
+                    return forwarded.split(",")[0].trim();
+                }
+                return req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String serializeDetails(Map<String, Object> details) {
+        if (details == null || details.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            return details.toString();
         }
     }
 }

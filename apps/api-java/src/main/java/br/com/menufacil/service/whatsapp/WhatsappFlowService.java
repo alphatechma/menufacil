@@ -10,19 +10,28 @@ import br.com.menufacil.dto.ValidateFlowResponse;
 import br.com.menufacil.dto.WhatsappFlowResponse;
 import br.com.menufacil.repository.WhatsappFlowExecutionRepository;
 import br.com.menufacil.repository.WhatsappFlowRepository;
+import br.com.menufacil.service.AuditLogService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,6 +45,7 @@ public class WhatsappFlowService {
     private final WhatsappFlowExecutionRepository flowExecutionRepository;
     private final WhatsappFlowConverter flowConverter;
     private final ObjectMapper objectMapper;
+    private final AuditLogService auditLogService;
 
     public List<WhatsappFlowResponse> listByTenant(UUID tenantId) {
         return flowRepository.findByTenantIdOrderByPriorityDescCreatedAtDesc(tenantId).stream()
@@ -59,6 +69,28 @@ public class WhatsappFlowService {
 
         flow = flowRepository.save(flow);
         log.info("Fluxo WhatsApp criado: {} no tenant {}", flow.getName(), tenantId);
+
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("name", flow.getName());
+            details.put("triggerType", flow.getTriggerType() != null ? flow.getTriggerType().name() : null);
+            details.put("active", flow.isActive());
+            details.put("priority", flow.getPriority());
+            auditLogService.log(
+                    flow.getTenantId(),
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    "create",
+                    "whatsapp_flow",
+                    flow.getId(),
+                    flow.getName(),
+                    serializeDetails(details),
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de create WhatsApp flow: {}", e.getMessage());
+        }
+
         return flowConverter.toResponse(flow);
     }
 
@@ -69,10 +101,40 @@ public class WhatsappFlowService {
                         HttpStatus.NOT_FOUND, "Fluxo não encontrado"));
 
         validateTenant(flow, tenantId);
+
+        String oldName = flow.getName();
+        boolean oldActive = flow.isActive();
+        int oldPriority = flow.getPriority();
+
         flowConverter.updateFromRequest(request, flow);
 
         flow = flowRepository.save(flow);
         log.info("Fluxo WhatsApp atualizado: {} no tenant {}", flow.getName(), tenantId);
+
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("oldName", oldName);
+            details.put("newName", flow.getName());
+            details.put("oldActive", oldActive);
+            details.put("newActive", flow.isActive());
+            details.put("oldPriority", oldPriority);
+            details.put("newPriority", flow.getPriority());
+            details.put("triggerType", flow.getTriggerType() != null ? flow.getTriggerType().name() : null);
+            auditLogService.log(
+                    flow.getTenantId(),
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    "update",
+                    "whatsapp_flow",
+                    flow.getId(),
+                    flow.getName(),
+                    serializeDetails(details),
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de update WhatsApp flow: {}", e.getMessage());
+        }
+
         return flowConverter.toResponse(flow);
     }
 
@@ -83,8 +145,29 @@ public class WhatsappFlowService {
                         HttpStatus.NOT_FOUND, "Fluxo não encontrado"));
 
         validateTenant(flow, tenantId);
+
+        UUID flowId = flow.getId();
+        String flowName = flow.getName();
+        UUID flowTenantId = flow.getTenantId();
+
         flowRepository.delete(flow);
         log.info("Fluxo WhatsApp removido: {} no tenant {}", id, tenantId);
+
+        try {
+            auditLogService.log(
+                    flowTenantId,
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    "delete",
+                    "whatsapp_flow",
+                    flowId,
+                    flowName,
+                    null,
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de delete WhatsApp flow: {}", e.getMessage());
+        }
     }
 
     @Transactional
@@ -108,6 +191,28 @@ public class WhatsappFlowService {
 
         copy = flowRepository.save(copy);
         log.info("Fluxo WhatsApp duplicado: {} -> {} no tenant {}", id, copy.getId(), tenantId);
+
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("sourceFlowId", source.getId().toString());
+            details.put("sourceName", source.getName());
+            details.put("newName", copy.getName());
+            details.put("triggerType", copy.getTriggerType() != null ? copy.getTriggerType().name() : null);
+            auditLogService.log(
+                    copy.getTenantId(),
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    "duplicate",
+                    "whatsapp_flow",
+                    copy.getId(),
+                    copy.getName(),
+                    serializeDetails(details),
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de duplicate WhatsApp flow: {}", e.getMessage());
+        }
+
         return flowConverter.toResponse(copy);
     }
 
@@ -286,6 +391,49 @@ public class WhatsappFlowService {
     private void validateTenant(WhatsappFlow flow, UUID tenantId) {
         if (!flow.getTenantId().equals(tenantId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a este recurso");
+        }
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
+    }
+
+    private UUID getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return null;
+        Object details = auth.getDetails();
+        if (details instanceof Claims claims) {
+            String userId = claims.get("userId", String.class);
+            if (userId != null && !userId.isBlank()) {
+                try { return UUID.fromString(userId); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        return null;
+    }
+
+    private String getCurrentIpAddress() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes)
+                    RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String forwarded = req.getHeader("X-Forwarded-For");
+                if (forwarded != null && !forwarded.isBlank()) {
+                    return forwarded.split(",")[0].trim();
+                }
+                return req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String serializeDetails(Map<String, Object> details) {
+        if (details == null || details.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            return details.toString();
         }
     }
 }

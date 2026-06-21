@@ -35,6 +35,7 @@ class ReferralServiceTest {
     @Mock private ReferralRepository referralRepository;
     @Mock private ReferralConverter referralConverter;
     @Mock private LoyaltyService loyaltyService;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private ReferralService referralService;

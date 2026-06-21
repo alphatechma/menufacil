@@ -6,6 +6,7 @@ import br.com.menufacil.domain.models.WhatsappInstance;
 import br.com.menufacil.dto.ConnectInstanceRequest;
 import br.com.menufacil.dto.WhatsappInstanceResponse;
 import br.com.menufacil.repository.WhatsappInstanceRepository;
+import br.com.menufacil.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,6 +33,7 @@ class WhatsappInstanceServiceTest {
     @Mock private WhatsappInstanceRepository instanceRepository;
     @Mock private WhatsappInstanceConverter instanceConverter;
     @Mock private EvolutionApiService evolutionApiService;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private WhatsappInstanceService instanceService;

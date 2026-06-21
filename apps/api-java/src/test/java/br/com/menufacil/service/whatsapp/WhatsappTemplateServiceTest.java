@@ -5,6 +5,7 @@ import br.com.menufacil.domain.models.WhatsappMessageTemplate;
 import br.com.menufacil.dto.CreateWhatsappTemplateRequest;
 import br.com.menufacil.dto.WhatsappTemplateResponse;
 import br.com.menufacil.repository.WhatsappMessageTemplateRepository;
+import br.com.menufacil.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -27,6 +28,7 @@ class WhatsappTemplateServiceTest {
 
     @Mock private WhatsappMessageTemplateRepository templateRepository;
     @Mock private WhatsappTemplateConverter templateConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private WhatsappTemplateService templateService;

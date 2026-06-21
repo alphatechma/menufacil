@@ -26,6 +26,7 @@ class FloorPlanServiceTest {
 
     @Mock private FloorPlanRepository floorPlanRepository;
     @Mock private FloorPlanConverter floorPlanConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private FloorPlanService floorPlanService;

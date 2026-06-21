@@ -29,6 +29,7 @@ class TenantUnitServiceTest {
 
     @Mock private TenantUnitRepository tenantUnitRepository;
     @Mock private TenantUnitConverter tenantUnitConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private TenantUnitService tenantUnitService;

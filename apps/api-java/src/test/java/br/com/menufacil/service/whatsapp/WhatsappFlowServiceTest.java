@@ -11,6 +11,7 @@ import br.com.menufacil.dto.ValidateFlowResponse;
 import br.com.menufacil.dto.WhatsappFlowResponse;
 import br.com.menufacil.repository.WhatsappFlowExecutionRepository;
 import br.com.menufacil.repository.WhatsappFlowRepository;
+import br.com.menufacil.service.AuditLogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class WhatsappFlowServiceTest {
     @Mock private WhatsappFlowRepository flowRepository;
     @Mock private WhatsappFlowExecutionRepository flowExecutionRepository;
     @Mock private WhatsappFlowConverter flowConverter;
+    @Mock private AuditLogService auditLogService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -41,7 +43,7 @@ class WhatsappFlowServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        flowService = new WhatsappFlowService(flowRepository, flowExecutionRepository, flowConverter, objectMapper);
+        flowService = new WhatsappFlowService(flowRepository, flowExecutionRepository, flowConverter, objectMapper, auditLogService);
     }
 
     @Test
