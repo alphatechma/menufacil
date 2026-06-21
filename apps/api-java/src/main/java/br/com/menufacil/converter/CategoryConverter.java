@@ -18,6 +18,7 @@ public interface CategoryConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     Category toEntity(CreateCategoryRequest request);
 
@@ -26,6 +27,7 @@ public interface CategoryConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     void updateFromRequest(CreateCategoryRequest request, @MappingTarget Category category);
 }

@@ -17,6 +17,6 @@ public class CouponResponse {
     private int currentUses;
     private String validFrom;
     private String validTo;
-    private boolean isActive;
+    private boolean active;
     private String createdAt;
 }

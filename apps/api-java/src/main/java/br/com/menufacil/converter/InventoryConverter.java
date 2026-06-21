@@ -22,6 +22,7 @@ public interface InventoryConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     InventoryItem toItemEntity(CreateInventoryItemRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -29,6 +30,7 @@ public interface InventoryConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     void updateItemFromRequest(CreateInventoryItemRequest request, @MappingTarget InventoryItem entity);
 
     @Mapping(target = "id", expression = "java(entity.getId().toString())")
@@ -41,6 +43,7 @@ public interface InventoryConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "inventoryItemId", expression = "java(java.util.UUID.fromString(request.getInventoryItemId()))")
     StockMovement toMovementEntity(CreateStockMovementRequest request);
 }

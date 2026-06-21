@@ -16,7 +16,7 @@ public class PromotionResponse {
     private String schedule;
     private String discountType;
     private BigDecimal discountValue;
-    private boolean isActive;
+    private boolean active;
     private String validFrom;
     private String validTo;
     private String createdAt;

@@ -19,6 +19,7 @@ public interface DeliveryPersonConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     DeliveryPerson toEntity(CreateDeliveryPersonRequest request);
 
@@ -27,6 +28,7 @@ public interface DeliveryPersonConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "active", source = "isActive")
     void updateFromRequest(CreateDeliveryPersonRequest request, @MappingTarget DeliveryPerson entity);
 }

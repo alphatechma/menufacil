@@ -15,7 +15,7 @@ public class LoyaltyRewardResponse {
     private String rewardType;
     private BigDecimal rewardValue;
     private String productId;
-    private boolean isActive;
+    private boolean active;
     private int cooldownHours;
     private int expirationHours;
     private int maxRedemptionsPerCustomer;

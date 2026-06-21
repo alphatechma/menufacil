@@ -13,7 +13,7 @@ public class ProductResponse {
     private String description;
     private BigDecimal basePrice;
     private String imageUrl;
-    private boolean isActive;
+    private boolean active;
     private String categoryId;
     private String dietaryTags;
     private int sortOrder;

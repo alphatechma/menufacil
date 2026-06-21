@@ -11,6 +11,6 @@ public class RoleResponse {
     private String id;
     private String name;
     private String description;
-    private boolean isSystemDefault;
+    private boolean systemDefault;
     private List<PermissionResponse> permissions;
 }
