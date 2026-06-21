@@ -1,0 +1,107 @@
+# =============================================================================
+# Profile `integration-test` — Configuracao para testes de integracao
+# com Testcontainers (Postgres real).
+#
+# Decisoes importantes:
+#
+# 1. ddl-auto: create-drop
+#    O Flyway baseline (V1__baseline.sql) e um no-op porque assume que o
+#    schema legado ja foi criado pelo TypeORM/NestJS. Em um Postgres limpo
+#    do Testcontainers nao ha schema, entao deixamos o Hibernate criar
+#    tudo a partir das entidades. A validacao das migrations Flyway e
+#    feita em FlywayMigrationIT, em um datasource separado.
+#
+# 2. flyway.enabled: false
+#    Desabilitamos o Flyway no contexto principal de teste por causa do
+#    item 1 (Hibernate cria o schema). O FlywayMigrationIT habilita Flyway
+#    manualmente via JdbcTemplate.
+#
+# 3. JWT secret fixo (>= 256 bits) para podermos gerar tokens reais nos
+#    testes sem variar entre execucoes.
+#
+# 4. AWS SES, MinIO e Evolution API ficam mockados via @MockBean ou
+#    configurados como no-op (enabled:false).
+#
+# 5. cleanup.enabled:false desativa o worker @Scheduled de limpeza
+#    durante os testes.
+# =============================================================================
+
+spring:
+  jpa:
+    hibernate:
+      # Hibernate cria o schema a partir das @Entity (V1 baseline e no-op).
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+    show-sql: false
+  flyway:
+    # Desabilitado no contexto principal — FlywayMigrationIT roda manualmente
+    # contra um datasource isolado.
+    enabled: false
+  sql:
+    init:
+      mode: never
+
+# JWT — secret fixo (32 bytes / 256 bits) para tokens determinsticos nos testes
+app:
+  jwt:
+    secret: integration-test-secret-256-bits-padding-padding-padding-padding
+    expiration: 86400000
+    refresh-expiration: 604800000
+
+# MinIO/S3 — endpoint local; UploadService deve ser @MockBean nos testes
+# que tocam upload.
+minio:
+  endpoint: http://localhost
+  port: 9000
+  use-ssl: false
+  access-key: test
+  secret-key: testtest
+  bucket: test-bucket
+  public-url: http://localhost:9000
+
+# Evolution API (WhatsApp) — URL fake; clients HTTP devem ser mockados nos
+# testes especificos.
+evolution:
+  api:
+    url: http://mock-evolution-api
+    key: mock-key
+  webhook:
+    url: ""
+
+# AWS SES desabilitado — cai no NoopEmailSender.
+aws:
+  ses:
+    region: us-east-1
+    access-key: ""
+    secret-key: ""
+    from-email: noreply@test.local
+    enabled: false
+
+# Worker de cleanup nao roda em testes
+cleanup:
+  enabled: false
+
+# Actuator habilitado para inspecao em testes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# Logging mais quieto em testes
+logging:
+  level:
+    root: WARN
+    br.com.menufacil: INFO
+    org.hibernate.SQL: WARN
+    org.testcontainers: INFO
+    com.github.dockerjava: WARN
