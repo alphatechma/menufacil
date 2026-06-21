@@ -6,16 +6,25 @@ import br.com.menufacil.domain.models.Permission;
 import br.com.menufacil.domain.models.Role;
 import br.com.menufacil.domain.models.Tenant;
 import br.com.menufacil.domain.models.User;
+import br.com.menufacil.dto.CustomerAuthResponse;
+import br.com.menufacil.dto.CustomerLoginByPhoneRequest;
+import br.com.menufacil.dto.CustomerLoginRequest;
+import br.com.menufacil.dto.CustomerRegisterRequest;
 import br.com.menufacil.dto.LoginRequest;
 import br.com.menufacil.dto.LoginResponse;
 import br.com.menufacil.repository.CustomerRepository;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -23,6 +32,7 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -30,6 +40,8 @@ public class AuthService {
     private final CustomerRepository customerRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public LoginResponse adminLogin(LoginRequest request) {
         // Resolver tenant pelo slug
@@ -98,6 +110,207 @@ public class AuthService {
                 .filter(key -> !key.isBlank())
                 .sorted()
                 .toList();
+    }
+
+    // ----------------------------------------------------------------------
+    // Customer (storefront) — autenticação
+    // ----------------------------------------------------------------------
+
+    /**
+     * Login do cliente final por e-mail e senha.
+     * Mensagens genéricas para não vazar existência de conta.
+     */
+    @Transactional
+    public CustomerAuthResponse customerLogin(UUID tenantId, CustomerLoginRequest request) {
+        Tenant tenant = requireTenant(tenantId);
+
+        Customer customer = customerRepository
+                .findByEmailAndTenantId(request.getEmail(), tenantId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "E-mail ou senha incorretos"));
+
+        if (customer.getPasswordHash() == null || customer.getPasswordHash().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Esta conta não possui senha. Entre pelo telefone e cadastre uma senha.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), customer.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha incorretos");
+        }
+
+        String accessToken = issueCustomerToken(customer, tenant);
+        log.info("Login customer (email): {} no tenant {}", customer.getEmail(), tenant.getSlug());
+
+        recordCustomerAudit(tenant.getId(), customer, "login",
+                Map.of("method", "email"));
+
+        return toAuthResponse(customer, accessToken);
+    }
+
+    /**
+     * Login simples por telefone (sem senha).
+     * Caso não exista customer para o telefone informado, cria um novo automaticamente
+     * (com apenas o telefone e o nome opcional do request).
+     */
+    @Transactional
+    public CustomerAuthResponse customerLoginByPhone(UUID tenantId, CustomerLoginByPhoneRequest request) {
+        Tenant tenant = requireTenant(tenantId);
+
+        Optional<Customer> existing = customerRepository
+                .findByPhoneAndTenantId(request.getPhone(), tenantId);
+
+        Customer customer;
+        boolean created = false;
+
+        if (existing.isPresent()) {
+            customer = existing.get();
+            // Atualiza o nome se o request trouxer um novo (e o atual estiver vazio ou diferente).
+            if (request.getName() != null && !request.getName().isBlank()
+                    && !request.getName().equals(customer.getName())) {
+                customer.setName(request.getName());
+                customer = customerRepository.save(customer);
+            }
+        } else {
+            customer = new Customer();
+            customer.setPhone(request.getPhone());
+            customer.setName(request.getName() != null && !request.getName().isBlank()
+                    ? request.getName()
+                    : request.getPhone());
+            customer.setTenantId(tenantId);
+            customer = customerRepository.save(customer);
+            created = true;
+            log.info("Customer criado via login por telefone: {} no tenant {}",
+                    customer.getPhone(), tenant.getSlug());
+        }
+
+        String accessToken = issueCustomerToken(customer, tenant);
+        log.info("Login customer (telefone): {} no tenant {}", customer.getPhone(), tenant.getSlug());
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("method", "phone");
+        details.put("created", created);
+        recordCustomerAudit(tenant.getId(), customer, created ? "create" : "login", details);
+
+        return toAuthResponse(customer, accessToken);
+    }
+
+    /**
+     * Cadastro completo de cliente final (storefront).
+     * Valida unicidade de e-mail e telefone dentro do tenant.
+     */
+    @Transactional
+    public CustomerAuthResponse customerRegister(UUID tenantId, CustomerRegisterRequest request) {
+        Tenant tenant = requireTenant(tenantId);
+
+        customerRepository.findByEmailAndTenantId(request.getEmail(), tenantId)
+                .ifPresent(c -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Este e-mail já está cadastrado");
+                });
+
+        customerRepository.findByPhoneAndTenantId(request.getPhone(), tenantId)
+                .ifPresent(c -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Este telefone já está cadastrado");
+                });
+
+        Customer customer = new Customer();
+        customer.setName(request.getName());
+        customer.setPhone(request.getPhone());
+        customer.setEmail(request.getEmail());
+        customer.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        customer.setBirthDate(request.getBirthDate());
+        customer.setGender(request.getGender());
+        customer.setCpf(request.getCpf());
+        customer.setTenantId(tenantId);
+
+        customer = customerRepository.save(customer);
+        log.info("Customer cadastrado: {} no tenant {}", customer.getEmail(), tenant.getSlug());
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("name", customer.getName());
+        details.put("email", customer.getEmail());
+        details.put("phone", customer.getPhone());
+        recordCustomerAudit(tenant.getId(), customer, "create", details);
+
+        String accessToken = issueCustomerToken(customer, tenant);
+        return toAuthResponse(customer, accessToken);
+    }
+
+    // ----------------------------------------------------------------------
+    // Helpers — customer
+    // ----------------------------------------------------------------------
+
+    private Tenant requireTenant(UUID tenantId) {
+        if (tenantId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Tenant é obrigatório para autenticação de cliente");
+        }
+        return tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Estabelecimento não encontrado"));
+    }
+
+    private CustomerAuthResponse toAuthResponse(Customer customer, String accessToken) {
+        return CustomerAuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(null) // TODO: portar fluxo de refresh token para customers
+                .customer(CustomerAuthResponse.CustomerData.builder()
+                        .id(customer.getId() != null ? customer.getId().toString() : null)
+                        .name(customer.getName())
+                        .email(customer.getEmail())
+                        .phone(customer.getPhone())
+                        .birthDate(customer.getBirthDate())
+                        .gender(customer.getGender())
+                        .cpf(customer.getCpf())
+                        .loyaltyPoints(customer.getLoyaltyPoints())
+                        .build())
+                .build();
+    }
+
+    private void recordCustomerAudit(UUID tenantId, Customer customer, String action,
+                                     Map<String, Object> details) {
+        try {
+            String detailsJson = serializeDetails(details);
+            auditLogService.log(
+                    tenantId,
+                    null, // customer não é user — userId fica nulo
+                    customer.getEmail() != null ? customer.getEmail() : customer.getPhone(),
+                    action,
+                    "customer",
+                    customer.getId(),
+                    customer.getName(),
+                    detailsJson,
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de cliente (action={}): {}", action, e.getMessage());
+        }
+    }
+
+    private String serializeDetails(Map<String, Object> details) {
+        if (details == null || details.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            return details.toString();
+        }
+    }
+
+    private String getCurrentIpAddress() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes)
+                    RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String forwarded = req.getHeader("X-Forwarded-For");
+                if (forwarded != null && !forwarded.isBlank()) {
+                    return forwarded.split(",")[0].trim();
+                }
+                return req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     // ----------------------------------------------------------------------
