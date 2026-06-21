@@ -3,8 +3,10 @@ package br.com.menufacil.service.whatsapp;
 import br.com.menufacil.domain.enums.WhatsappFlowTriggerType;
 import br.com.menufacil.domain.models.WhatsappFlow;
 import br.com.menufacil.domain.models.WhatsappFlowExecution;
+import br.com.menufacil.domain.models.WhatsappFlowWait;
 import br.com.menufacil.repository.WhatsappFlowExecutionRepository;
 import br.com.menufacil.repository.WhatsappFlowRepository;
+import br.com.menufacil.repository.WhatsappFlowWaitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +32,7 @@ class FlowEngineServiceTest {
 
     @Mock private WhatsappFlowRepository whatsappFlowRepository;
     @Mock private WhatsappFlowExecutionRepository whatsappFlowExecutionRepository;
+    @Mock private WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     @Mock private WhatsappMessageService whatsappMessageService;
 
     @InjectMocks
@@ -232,6 +235,76 @@ class FlowEngineServiceTest {
         // Assert
         assertThat(result).isPresent();
         verify(whatsappMessageService).sendOutbound(tenantId, phone, "Cardápio");
+    }
+
+    @Test
+    void shouldCriarWaitParaNodeDelay() {
+        // Arrange — fluxo: message n1 -> delay n2 (10s) -> message n3
+        // Espera-se que o engine envie "Oi", crie um WhatsappFlowWait para n2 (próximo=n3)
+        // e PARE a execução (não envia "Tchau" no mesmo step).
+        WhatsappFlow flow = buildFlow(
+                "[{\"id\":\"n1\",\"type\":\"message\",\"config\":{\"content\":\"Oi\"}},"
+                        + "{\"id\":\"n2\",\"type\":\"delay\",\"config\":{\"seconds\":10}},"
+                        + "{\"id\":\"n3\",\"type\":\"message\",\"config\":{\"content\":\"Tchau\"}}]",
+                "[{\"source\":\"n1\",\"target\":\"n2\"},{\"source\":\"n2\",\"target\":\"n3\"}]");
+        when(whatsappFlowRepository.findById(flowId)).thenReturn(Optional.of(flow));
+
+        LocalDateTime before = LocalDateTime.now();
+
+        // Act
+        WhatsappFlowExecution execution = flowEngineService.startExecution(flowId, tenantId, phone);
+
+        // Assert — execução fica ativa, posicionada no node delay
+        assertThat(execution.isActive()).isTrue();
+        assertThat(execution.getCurrentNodeId()).isEqualTo("n2");
+        verify(whatsappMessageService).sendOutbound(tenantId, phone, "Oi");
+        verify(whatsappMessageService, never()).sendOutbound(tenantId, phone, "Tchau");
+
+        // E foi salvo um WhatsappFlowWait com resumeAt ~ now + 10s e nextNodeId=n3
+        ArgumentCaptor<WhatsappFlowWait> waitCaptor = ArgumentCaptor.forClass(WhatsappFlowWait.class);
+        verify(whatsappFlowWaitRepository).save(waitCaptor.capture());
+        WhatsappFlowWait wait = waitCaptor.getValue();
+        assertThat(wait.getNodeId()).isEqualTo("n2");
+        assertThat(wait.getNextNodeId()).isEqualTo("n3");
+        assertThat(wait.isProcessed()).isFalse();
+        assertThat(wait.getExecutionId()).isEqualTo(execution.getId());
+        assertThat(wait.getTenantId()).isEqualTo(tenantId);
+        assertThat(wait.getResumeAt())
+                .isAfterOrEqualTo(before.plusSeconds(9))
+                .isBeforeOrEqualTo(LocalDateTime.now().plusSeconds(11));
+    }
+
+    @Test
+    void shouldResumirFluxoDeNodeAposDelay() {
+        // Arrange — execução pausada após delay n2; resumeFromNode("n3") deve enviar "Tchau" e encerrar.
+        UUID executionId = UUID.randomUUID();
+        WhatsappFlowExecution existing = new WhatsappFlowExecution();
+        existing.setId(executionId);
+        existing.setTenantId(tenantId);
+        existing.setFlowId(flowId);
+        existing.setPhone(phone);
+        existing.setActive(true);
+        existing.setStartedAt(LocalDateTime.now());
+        existing.setCurrentNodeId("n2");
+        existing.setExecutionState("{}");
+
+        WhatsappFlow flow = buildFlow(
+                "[{\"id\":\"n1\",\"type\":\"message\",\"config\":{\"content\":\"Oi\"}},"
+                        + "{\"id\":\"n2\",\"type\":\"delay\",\"config\":{\"seconds\":10}},"
+                        + "{\"id\":\"n3\",\"type\":\"message\",\"config\":{\"content\":\"Tchau\"}}]",
+                "[{\"source\":\"n1\",\"target\":\"n2\"},{\"source\":\"n2\",\"target\":\"n3\"}]");
+
+        when(whatsappFlowExecutionRepository.findById(executionId)).thenReturn(Optional.of(existing));
+        when(whatsappFlowRepository.findById(flowId)).thenReturn(Optional.of(flow));
+
+        // Act
+        WhatsappFlowExecution resumed = flowEngineService.resumeFromNode(executionId, "n3");
+
+        // Assert — partiu do n3, enviou Tchau e encerrou (fim do fluxo).
+        verify(whatsappMessageService).sendOutbound(tenantId, phone, "Tchau");
+        verify(whatsappMessageService, never()).sendOutbound(tenantId, phone, "Oi");
+        assertThat(resumed.isActive()).isFalse();
+        assertThat(resumed.getEndedAt()).isNotNull();
     }
 
     private WhatsappFlow buildFlow(String nodesJson, String edgesJson) {

@@ -3,8 +3,10 @@ package br.com.menufacil.service.whatsapp;
 import br.com.menufacil.domain.enums.WhatsappFlowTriggerType;
 import br.com.menufacil.domain.models.WhatsappFlow;
 import br.com.menufacil.domain.models.WhatsappFlowExecution;
+import br.com.menufacil.domain.models.WhatsappFlowWait;
 import br.com.menufacil.repository.WhatsappFlowExecutionRepository;
 import br.com.menufacil.repository.WhatsappFlowRepository;
+import br.com.menufacil.repository.WhatsappFlowWaitRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +40,8 @@ import java.util.UUID;
  *               a edge baseada em true/false
  *  - action   : dispara HTTP request configurável (POST/GET/PUT/DELETE) com
  *               placeholders {{key}} resolvidos do executionState
- *  - delay    : stub — TODO implementar delay real (precisa @Scheduled + tabela de waits)
+ *  - delay    : cria registro em whatsapp_flow_waits e PARA a execução; o
+ *               WhatsappFlowWaitWorker retoma o fluxo quando resumeAt chega
  *
  * Cada edge possui {source, target, condition?}.
  *
@@ -57,6 +60,7 @@ public class FlowEngineService {
 
     private final WhatsappFlowRepository whatsappFlowRepository;
     private final WhatsappFlowExecutionRepository whatsappFlowExecutionRepository;
+    private final WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     private final WhatsappMessageService whatsappMessageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestClient actionRestClient = RestClient.builder().build();
@@ -188,6 +192,38 @@ public class FlowEngineService {
     }
 
     /**
+     * Retoma a execução pausada por um node {@code delay}, posicionando o
+     * cursor em {@code fromNodeId} e re-entrando no loop do interpreter.
+     *
+     * <p>Usado exclusivamente pelo {@code WhatsappFlowWaitWorker} após o
+     * resumeAt do wait ser atingido.</p>
+     */
+    @Transactional
+    public WhatsappFlowExecution resumeFromNode(UUID executionId, String fromNodeId) {
+        WhatsappFlowExecution execution = whatsappFlowExecutionRepository.findById(executionId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Execução não encontrada"));
+
+        if (!execution.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Execução já encerrada");
+        }
+
+        if (fromNodeId == null) {
+            return finishExecution(execution, "fim do fluxo após delay (sem próximo node)");
+        }
+
+        WhatsappFlow flow = whatsappFlowRepository.findById(execution.getFlowId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Fluxo da execução não encontrado"));
+
+        List<Map<String, Object>> nodes = parseList(flow.getNodes());
+        List<Map<String, Object>> edges = parseList(flow.getEdges());
+
+        execution.setCurrentNodeId(fromNodeId);
+        return runFromCurrentNode(execution, nodes, edges, null);
+    }
+
+    /**
      * Encerra a execução manualmente.
      */
     @Transactional
@@ -261,15 +297,24 @@ public class FlowEngineService {
                     break;
                 }
                 case "delay": {
-                    // TODO: implementar delay real com @Scheduled + tabela de waits.
-                    log.info("Node delay {} ignorado (stub) no fluxo {}",
-                            node.get("id"), execution.getFlowId());
-                    String nextId = resolveNextNodeId(edges, execution.getCurrentNodeId(), null);
-                    if (nextId == null) {
-                        return finishExecution(execution, "fim do fluxo após delay");
-                    }
-                    execution.setCurrentNodeId(nextId);
-                    break;
+                    long delaySeconds = parseDelaySeconds(config);
+                    String currentNodeId = execution.getCurrentNodeId();
+                    String nextId = resolveNextNodeId(edges, currentNodeId, null);
+
+                    WhatsappFlowWait wait = new WhatsappFlowWait();
+                    wait.setTenantId(execution.getTenantId());
+                    wait.setExecutionId(execution.getId());
+                    wait.setNodeId(currentNodeId);
+                    wait.setNextNodeId(nextId);
+                    wait.setResumeAt(LocalDateTime.now().plusSeconds(delaySeconds));
+                    wait.setProcessed(false);
+                    whatsappFlowWaitRepository.save(wait);
+
+                    log.info("Node delay {} criou wait de {}s para execução {} (próximo node={})",
+                            currentNodeId, delaySeconds, execution.getId(), nextId);
+
+                    // PARA: persiste estado atual e sai do loop; o worker retoma quando resumeAt chegar.
+                    return whatsappFlowExecutionRepository.save(execution);
                 }
                 default:
                     log.warn("Tipo de node desconhecido '{}' na execução {}", type, execution.getId());
@@ -348,6 +393,30 @@ public class FlowEngineService {
             return value.substring(1, value.length() - 1);
         }
         return value;
+    }
+
+    /**
+     * Lê a duração de um node {@code delay} a partir de {@code config}.
+     *
+     * <p>Aceita, em ordem de prioridade: {@code seconds}, {@code milliseconds}
+     * (convertido p/ segundos) e {@code minutes}. Default: 60s (proteção
+     * contra config vazia — evita criar wait perpétuo).</p>
+     */
+    private long parseDelaySeconds(Map<String, Object> config) {
+        Object seconds = config.get("seconds");
+        if (seconds instanceof Number n) {
+            return Math.max(0L, n.longValue());
+        }
+        Object millis = config.get("milliseconds");
+        if (millis instanceof Number n) {
+            return Math.max(0L, n.longValue() / 1000L);
+        }
+        Object minutes = config.get("minutes");
+        if (minutes instanceof Number n) {
+            return Math.max(0L, n.longValue() * 60L);
+        }
+        log.warn("Node delay sem seconds/milliseconds/minutes em config — usando default 60s");
+        return 60L;
     }
 
     private String resolveNextNodeId(List<Map<String, Object>> edges,
