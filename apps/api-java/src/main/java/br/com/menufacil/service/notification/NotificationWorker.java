@@ -1,5 +1,6 @@
 package br.com.menufacil.service.notification;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.NotificationChannel;
 import br.com.menufacil.domain.enums.NotificationStatus;
 import br.com.menufacil.domain.models.Notification;
@@ -34,6 +35,7 @@ public class NotificationWorker {
     private final NotificationService notificationService;
     private final EmailSender emailSender;
     private final WhatsappSender whatsappSender;
+    private final MetricsService metricsService;
 
     /**
      * Varre as notificações em status=pending e tenta enviá-las.
@@ -72,16 +74,19 @@ public class NotificationWorker {
         log.warn("NotificationWorker: canal {} ainda não implementado (notification={})",
                 channel, notification.getId());
         markFailedSafely(notification, CHANNEL_NOT_IMPLEMENTED);
+        metricsService.incrementNotificationSent(channelTag(channel), "skipped");
     }
 
     private void sendEmail(Notification notification) {
         try {
             emailSender.send(notification.getRecipient(), SUBJECT, notification.getContent());
             notificationService.markAsSent(notification.getId(), notification.getTenantId());
+            metricsService.incrementNotificationSent("email", "sent");
         } catch (RuntimeException e) {
             log.error("NotificationWorker: falha ao enviar email notification={} recipient={}: {}",
                     notification.getId(), notification.getRecipient(), e.getMessage(), e);
             markFailedSafely(notification, e.getMessage());
+            metricsService.incrementNotificationSent("email", "failed");
         }
     }
 
@@ -92,10 +97,12 @@ public class NotificationWorker {
                     notification.getRecipient(),
                     notification.getContent());
             notificationService.markAsSent(notification.getId(), notification.getTenantId());
+            metricsService.incrementNotificationSent("whatsapp", "sent");
         } catch (RuntimeException e) {
             log.error("NotificationWorker: falha ao enviar whatsapp notification={} recipient={}: {}",
                     notification.getId(), notification.getRecipient(), e.getMessage(), e);
             markFailedSafely(notification, e.getMessage());
+            metricsService.incrementNotificationSent("whatsapp", "failed");
         }
     }
 
@@ -106,5 +113,9 @@ public class NotificationWorker {
             log.error("NotificationWorker: falha ao marcar notification={} como failed (motivo original={}): {}",
                     notification.getId(), reason, e.getMessage(), e);
         }
+    }
+
+    private static String channelTag(NotificationChannel channel) {
+        return channel != null ? channel.name() : "unknown";
     }
 }

@@ -1,5 +1,6 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.converter.PaymentConverter;
 import br.com.menufacil.domain.enums.PaymentMethod;
 import br.com.menufacil.domain.enums.PaymentStatus;
@@ -7,6 +8,8 @@ import br.com.menufacil.domain.models.PaymentTransaction;
 import br.com.menufacil.dto.CreatePaymentRequest;
 import br.com.menufacil.dto.PaymentResponse;
 import br.com.menufacil.dto.UpdatePaymentStatusRequest;
+import br.com.menufacil.repository.CustomerRepository;
+import br.com.menufacil.repository.OrderRepository;
 import br.com.menufacil.repository.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,10 @@ class PaymentServiceTest {
 
     @Mock private PaymentRepository paymentRepository;
     @Mock private PaymentConverter paymentConverter;
+    @Mock private OrderRepository orderRepository;
+    @Mock private CustomerRepository customerRepository;
+    @Mock private NotificationService notificationService;
+    @Mock private MetricsService metricsService;
 
     @InjectMocks
     private PaymentService paymentService;

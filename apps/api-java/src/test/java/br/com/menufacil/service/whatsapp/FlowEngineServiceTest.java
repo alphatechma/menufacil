@@ -1,5 +1,6 @@
 package br.com.menufacil.service.whatsapp;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.WhatsappFlowTriggerType;
 import br.com.menufacil.domain.models.WhatsappFlow;
 import br.com.menufacil.domain.models.WhatsappFlowExecution;
@@ -34,6 +35,7 @@ class FlowEngineServiceTest {
     @Mock private WhatsappFlowExecutionRepository whatsappFlowExecutionRepository;
     @Mock private WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     @Mock private WhatsappMessageService whatsappMessageService;
+    @Mock private MetricsService metricsService;
 
     @InjectMocks
     private FlowEngineService flowEngineService;

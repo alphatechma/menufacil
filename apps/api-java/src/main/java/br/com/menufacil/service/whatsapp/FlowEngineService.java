@@ -1,5 +1,6 @@
 package br.com.menufacil.service.whatsapp;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.WhatsappFlowTriggerType;
 import br.com.menufacil.domain.models.WhatsappFlow;
 import br.com.menufacil.domain.models.WhatsappFlowExecution;
@@ -10,6 +11,8 @@ import br.com.menufacil.repository.WhatsappFlowWaitRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -62,6 +65,7 @@ public class FlowEngineService {
     private final WhatsappFlowExecutionRepository whatsappFlowExecutionRepository;
     private final WhatsappFlowWaitRepository whatsappFlowWaitRepository;
     private final WhatsappMessageService whatsappMessageService;
+    private final MetricsService metricsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestClient actionRestClient = RestClient.builder().build();
 
@@ -78,7 +82,11 @@ public class FlowEngineService {
      * isolamento (webhook nunca pode pagar pelo erro do engine).
      */
     @Async
-    public void processIncomingMessageAsync(UUID tenantId, String phone, String content) {
+    @WithSpan("flow.processIncomingMessageAsync")
+    public void processIncomingMessageAsync(
+            @SpanAttribute("tenant.id") UUID tenantId,
+            String phone,
+            String content) {
         try {
             processIncomingMessage(tenantId, phone, content);
         } catch (Exception e) {
@@ -88,7 +96,11 @@ public class FlowEngineService {
     }
 
     @Transactional
-    public Optional<WhatsappFlowExecution> processIncomingMessage(UUID tenantId, String phone, String content) {
+    @WithSpan("flow.processIncomingMessage")
+    public Optional<WhatsappFlowExecution> processIncomingMessage(
+            @SpanAttribute("tenant.id") UUID tenantId,
+            String phone,
+            String content) {
         if (tenantId == null || phone == null || content == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "tenantId, phone e content são obrigatórios");
@@ -117,7 +129,11 @@ public class FlowEngineService {
      * Cria uma nova execução para o fluxo informado e executa o primeiro node.
      */
     @Transactional
-    public WhatsappFlowExecution startExecution(UUID flowId, UUID tenantId, String phone) {
+    @WithSpan("flow.startExecution")
+    public WhatsappFlowExecution startExecution(
+            @SpanAttribute("flow.id") UUID flowId,
+            @SpanAttribute("tenant.id") UUID tenantId,
+            String phone) {
         WhatsappFlow flow = whatsappFlowRepository.findById(flowId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Fluxo não encontrado"));
@@ -126,6 +142,9 @@ public class FlowEngineService {
         if (!flow.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fluxo inativo");
         }
+
+        String triggerType = flow.getTriggerType() != null ? flow.getTriggerType().name() : "unknown";
+        metricsService.incrementFlowExecution(triggerType, "started");
 
         WhatsappFlowExecution execution = new WhatsappFlowExecution();
         execution.setTenantId(tenantId);
@@ -334,6 +353,25 @@ public class FlowEngineService {
     private WhatsappFlowExecution finishExecution(WhatsappFlowExecution execution, String reason) {
         execution.setActive(false);
         execution.setEndedAt(LocalDateTime.now());
+
+        // Metrica: duração + resultado final do fluxo
+        String triggerType = "unknown";
+        try {
+            WhatsappFlow flow = whatsappFlowRepository.findById(execution.getFlowId()).orElse(null);
+            if (flow != null && flow.getTriggerType() != null) {
+                triggerType = flow.getTriggerType().name();
+            }
+        } catch (RuntimeException ignore) {
+            // não falha o finish por causa de métrica
+        }
+        String result = reason != null && reason.toLowerCase().contains("limite") ? "failed" : "completed";
+        if (execution.getStartedAt() != null) {
+            long durationMs = java.time.Duration.between(
+                    execution.getStartedAt(), execution.getEndedAt()).toMillis();
+            metricsService.recordFlowExecutionDuration(durationMs, result);
+        }
+        metricsService.incrementFlowExecution(triggerType, result);
+
         log.info("Execução {} encerrada: {}", execution.getId(), reason);
         return whatsappFlowExecutionRepository.save(execution);
     }

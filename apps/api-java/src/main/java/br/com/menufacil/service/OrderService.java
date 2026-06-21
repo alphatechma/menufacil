@@ -1,19 +1,25 @@
 package br.com.menufacil.service;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.converter.OrderConverter;
 import br.com.menufacil.domain.enums.OrderStatus;
 import br.com.menufacil.domain.enums.OrderType;
 import br.com.menufacil.domain.enums.PaymentMethod;
+import br.com.menufacil.domain.models.Customer;
 import br.com.menufacil.domain.models.Order;
 import br.com.menufacil.domain.models.OrderItem;
 import br.com.menufacil.domain.models.Product;
+import br.com.menufacil.dto.CreateNotificationRequest;
 import br.com.menufacil.dto.CreateOrderRequest;
 import br.com.menufacil.dto.OrderResponse;
 import br.com.menufacil.dto.UpdateOrderStatusRequest;
+import br.com.menufacil.repository.CustomerRepository;
 import br.com.menufacil.repository.OrderRepository;
 import br.com.menufacil.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +44,12 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
     private final OrderConverter orderConverter;
     private final WebSocketService webSocketService;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
+    private final MetricsService metricsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -74,7 +83,8 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse create(UUID tenantId, CreateOrderRequest request) {
+    @WithSpan("order.create")
+    public OrderResponse create(@SpanAttribute("tenant.id") UUID tenantId, CreateOrderRequest request) {
         Order order = new Order();
         order.setTenantId(tenantId);
         order.setStatus(OrderStatus.pending);
@@ -143,10 +153,22 @@ public class OrderService {
         order.setTotal(subtotal.add(order.getDeliveryFee()).subtract(order.getDiscount()));
 
         order = orderRepository.save(order);
+        metricsService.incrementOrderCreated(
+                order.getOrderType() != null ? order.getOrderType().name() : null,
+                order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null);
         log.info("Pedido #{} criado no tenant {}", order.getOrderNumber(), tenantId);
 
         // Notificar via WebSocket
         webSocketService.notifyNewOrder(tenantId, order.getId(), order.getOrderNumber());
+
+        // Notificar customer via WhatsApp: pedido criado
+        String phone = resolveCustomerPhone(order, tenantId);
+        if (phone != null) {
+            String msg = String.format(
+                    "Olá! Seu pedido #%d foi confirmado com sucesso. Em breve você receberá atualizações sobre o preparo.",
+                    order.getOrderNumber());
+            agendarNotificacao(tenantId, "whatsapp", phone, msg, order.getId());
+        }
 
         try {
             Map<String, Object> details = new HashMap<>();
@@ -209,6 +231,15 @@ public class OrderService {
 
         // Notificar via WebSocket
         webSocketService.notifyOrderUpdate(tenantId, order.getId(), newStatus.name());
+
+        // Notificar customer via WhatsApp sobre a mudança de status
+        String phoneUpd = resolveCustomerPhone(order, tenantId);
+        if (phoneUpd != null) {
+            String msg = buildStatusChangeMessage(order.getOrderNumber(), newStatus, null);
+            if (msg != null) {
+                agendarNotificacao(tenantId, "whatsapp", phoneUpd, msg, order.getId());
+            }
+        }
 
         try {
             Map<String, Object> details = new HashMap<>();
@@ -298,6 +329,68 @@ public class OrderService {
             return objectMapper.writeValueAsString(details);
         } catch (Exception e) {
             return details.toString();
+        }
+    }
+
+    /**
+     * Resolve o telefone do customer (com DDI 55) para envio via WhatsApp.
+     */
+    private String resolveCustomerPhone(Order order, UUID tenantId) {
+        if (order == null || order.getCustomerId() == null) return null;
+        try {
+            Customer customer = customerRepository.findById(order.getCustomerId()).orElse(null);
+            if (customer == null) return null;
+            return sanitizePhoneForWhatsApp(customer.getPhone());
+        } catch (Exception e) {
+            log.warn("Falha ao buscar customer para notificação: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Normaliza telefone: mantém apenas dígitos e adiciona DDI 55 se ausente.
+     */
+    private String sanitizePhoneForWhatsApp(String phone) {
+        if (phone == null) return null;
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.isBlank()) return null;
+        if (!digits.startsWith("55")) {
+            digits = "55" + digits;
+        }
+        return digits;
+    }
+
+    /**
+     * Monta a mensagem de mudança de status. Retorna null para status que não notificam.
+     */
+    private String buildStatusChangeMessage(Integer orderNumber, OrderStatus status, String reason) {
+        if (orderNumber == null || status == null) return null;
+        return switch (status) {
+            case preparing -> String.format("Seu pedido #%d está sendo preparado.", orderNumber);
+            case ready -> String.format("Seu pedido #%d está pronto para retirada/saída.", orderNumber);
+            case out_for_delivery -> String.format("Seu pedido #%d saiu para entrega!", orderNumber);
+            case delivered, picked_up, served -> String.format("Seu pedido #%d foi entregue. Bom apetite!", orderNumber);
+            case cancelled -> reason != null && !reason.isBlank()
+                    ? String.format("Seu pedido #%d foi cancelado: %s", orderNumber, reason)
+                    : String.format("Seu pedido #%d foi cancelado.", orderNumber);
+            default -> null;
+        };
+    }
+
+    /**
+     * Agenda notificação sem propagar falha — operação principal não pode ser interrompida.
+     */
+    private void agendarNotificacao(UUID tenantId, String channel, String recipient, String content, UUID orderId) {
+        try {
+            CreateNotificationRequest req = new CreateNotificationRequest();
+            req.setChannel(channel);
+            req.setRecipient(recipient);
+            req.setContent(content);
+            if (orderId != null) req.setOrderId(orderId.toString());
+            notificationService.create(tenantId, req);
+            log.info("Notificação agendada: orderId={} canal={}", orderId, channel);
+        } catch (Exception e) {
+            log.warn("Falha agendando notificação canal={} recipient={}: {}", channel, recipient, e.getMessage());
         }
     }
 }

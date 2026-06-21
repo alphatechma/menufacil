@@ -42,6 +42,7 @@ public class SuperAdminService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -212,7 +213,33 @@ public class SuperAdminService {
                 getCurrentIpAddress()
         );
 
+        // Notificar admin do novo tenant por e-mail (SES via NotificationWorker)
+        try {
+            String content = buildTenantWelcomeEmail(tenant, adminUser, request.getAdminPassword());
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setChannel("email");
+            notif.setRecipient(adminUser.getEmail());
+            notif.setContent(content);
+            notificationService.create(tenant.getId(), notif);
+            log.info("Notificação de boas-vindas agendada para admin {} do tenant {}", adminUser.getEmail(), tenant.getSlug());
+        } catch (Exception e) {
+            log.warn("Falha agendando notificação de boas-vindas para tenant {}: {}", tenant.getSlug(), e.getMessage());
+        }
+
         return getTenantDetail(tenant.getId());
+    }
+
+    private String buildTenantWelcomeEmail(Tenant tenant, User admin, String temporaryPassword) {
+        String loginUrl = "https://" + tenant.getSlug() + ".menufacil.maistechtecnologia.com.br/admin";
+        return "Olá " + admin.getName() + ",\n\n"
+                + "Seu restaurante \"" + tenant.getName() + "\" foi criado com sucesso no MenuFácil!\n\n"
+                + "Acesse o painel administrativo:\n"
+                + loginUrl + "\n\n"
+                + "Credenciais de primeiro acesso:\n"
+                + "  E-mail: " + admin.getEmail() + "\n"
+                + "  Senha: " + temporaryPassword + "\n\n"
+                + "Recomendamos alterar a senha após o primeiro acesso.\n\n"
+                + "Equipe MenuFácil";
     }
 
     /**

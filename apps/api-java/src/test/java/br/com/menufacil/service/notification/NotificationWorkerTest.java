@@ -1,5 +1,6 @@
 package br.com.menufacil.service.notification;
 
+import br.com.menufacil.config.observability.MetricsService;
 import br.com.menufacil.domain.enums.NotificationChannel;
 import br.com.menufacil.domain.enums.NotificationStatus;
 import br.com.menufacil.domain.models.Notification;
@@ -30,6 +31,7 @@ class NotificationWorkerTest {
     @Mock private NotificationService notificationService;
     @Mock private EmailSender emailSender;
     @Mock private WhatsappSender whatsappSender;
+    @Mock private MetricsService metricsService;
 
     @InjectMocks
     private NotificationWorker worker;
