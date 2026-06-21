@@ -15,8 +15,11 @@ import java.util.List;
 /**
  * Worker que processa notificações pendentes em intervalos regulares.
  *
- * Hoje suporta apenas {@link NotificationChannel#email} (via {@link EmailSender}).
- * Outros canais (sms, whatsapp, push) são marcados como failed enquanto não houver
+ * Canais suportados:
+ *  - {@link NotificationChannel#email} (via {@link EmailSender})
+ *  - {@link NotificationChannel#whatsapp} (via {@link WhatsappSender})
+ *
+ * Outros canais (sms, push) são marcados como failed enquanto não houver
  * implementação dedicada.
  */
 @Slf4j
@@ -30,6 +33,7 @@ public class NotificationWorker {
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final EmailSender emailSender;
+    private final WhatsappSender whatsappSender;
 
     /**
      * Varre as notificações em status=pending e tenta enviá-las.
@@ -59,6 +63,11 @@ public class NotificationWorker {
             return;
         }
 
+        if (channel == NotificationChannel.whatsapp) {
+            sendWhatsapp(notification);
+            return;
+        }
+
         // Canais ainda não implementados → marca como failed pra não ficar preso na fila
         log.warn("NotificationWorker: canal {} ainda não implementado (notification={})",
                 channel, notification.getId());
@@ -71,6 +80,20 @@ public class NotificationWorker {
             notificationService.markAsSent(notification.getId(), notification.getTenantId());
         } catch (RuntimeException e) {
             log.error("NotificationWorker: falha ao enviar email notification={} recipient={}: {}",
+                    notification.getId(), notification.getRecipient(), e.getMessage(), e);
+            markFailedSafely(notification, e.getMessage());
+        }
+    }
+
+    private void sendWhatsapp(Notification notification) {
+        try {
+            whatsappSender.send(
+                    notification.getTenantId(),
+                    notification.getRecipient(),
+                    notification.getContent());
+            notificationService.markAsSent(notification.getId(), notification.getTenantId());
+        } catch (RuntimeException e) {
+            log.error("NotificationWorker: falha ao enviar whatsapp notification={} recipient={}: {}",
                     notification.getId(), notification.getRecipient(), e.getMessage(), e);
             markFailedSafely(notification, e.getMessage());
         }

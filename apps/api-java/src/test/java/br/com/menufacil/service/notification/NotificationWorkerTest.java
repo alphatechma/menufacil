@@ -29,6 +29,7 @@ class NotificationWorkerTest {
     @Mock private NotificationRepository notificationRepository;
     @Mock private NotificationService notificationService;
     @Mock private EmailSender emailSender;
+    @Mock private WhatsappSender whatsappSender;
 
     @InjectMocks
     private NotificationWorker worker;
@@ -80,27 +81,71 @@ class NotificationWorkerTest {
 
     @Test
     void shouldMarcarCanaisNaoImplementadosComoFailed() {
-        // Arrange
+        // Arrange — sms e push ainda nao tem sender dedicado
         UUID smsId = UUID.randomUUID();
         UUID smsTenant = UUID.randomUUID();
         Notification sms = buildEmail(smsId, smsTenant, "+5511999999999", "msg");
         sms.setChannel(NotificationChannel.sms);
 
-        UUID waId = UUID.randomUUID();
-        UUID waTenant = UUID.randomUUID();
-        Notification wa = buildEmail(waId, waTenant, "+5511988888888", "msg");
-        wa.setChannel(NotificationChannel.whatsapp);
+        UUID pushId = UUID.randomUUID();
+        UUID pushTenant = UUID.randomUUID();
+        Notification push = buildEmail(pushId, pushTenant, "device-token", "msg");
+        push.setChannel(NotificationChannel.push);
 
         when(notificationRepository.findTop50ByStatusOrderByCreatedAtAsc(NotificationStatus.pending))
-                .thenReturn(List.of(sms, wa));
+                .thenReturn(List.of(sms, push));
 
         // Act
         worker.processPendingNotifications();
 
         // Assert
         verifyNoInteractions(emailSender);
+        verifyNoInteractions(whatsappSender);
         verify(notificationService).markAsFailed(smsId, smsTenant);
-        verify(notificationService).markAsFailed(waId, waTenant);
+        verify(notificationService).markAsFailed(pushId, pushTenant);
+        verify(notificationService, never()).markAsSent(any(), any());
+    }
+
+    @Test
+    void shouldEnviarWhatsappEMarcarComoSent() {
+        // Arrange
+        UUID id = UUID.randomUUID();
+        UUID tenantId = UUID.randomUUID();
+        Notification pending = buildEmail(id, tenantId, "+5511988887777", "Seu pedido saiu pra entrega");
+        pending.setChannel(NotificationChannel.whatsapp);
+
+        when(notificationRepository.findTop50ByStatusOrderByCreatedAtAsc(NotificationStatus.pending))
+                .thenReturn(List.of(pending));
+
+        // Act
+        worker.processPendingNotifications();
+
+        // Assert
+        verify(whatsappSender).send(eq(tenantId), eq("+5511988887777"), eq("Seu pedido saiu pra entrega"));
+        verify(notificationService).markAsSent(id, tenantId);
+        verify(notificationService, never()).markAsFailed(any(), any());
+        verifyNoInteractions(emailSender);
+    }
+
+    @Test
+    void shouldMarcarComoFailedQuandoWhatsappSenderLancaExcecao() {
+        // Arrange
+        UUID id = UUID.randomUUID();
+        UUID tenantId = UUID.randomUUID();
+        Notification pending = buildEmail(id, tenantId, "+5511988887777", "msg");
+        pending.setChannel(NotificationChannel.whatsapp);
+
+        when(notificationRepository.findTop50ByStatusOrderByCreatedAtAsc(NotificationStatus.pending))
+                .thenReturn(List.of(pending));
+        doThrow(new RuntimeException("Tenant nao tem instancia WhatsApp configurada"))
+                .when(whatsappSender).send(any(UUID.class), anyString(), anyString());
+
+        // Act
+        worker.processPendingNotifications();
+
+        // Assert
+        verify(whatsappSender).send(eq(tenantId), eq("+5511988887777"), eq("msg"));
+        verify(notificationService).markAsFailed(id, tenantId);
         verify(notificationService, never()).markAsSent(any(), any());
     }
 
