@@ -1,0 +1,40 @@
+# Homologacao values. Imagens com tag SNAPSHOT-<sha> bumpadas a cada push em develop.
+image:
+  repository: ghcr.io/maistech/menufacil-api-java
+  tag: "0.1.0-SNAPSHOT-abc1234"
+
+replicas: 1
+ingress:
+  host: api.hml.menufacil.maistechtecnologia.com.br
+namespace:
+  create: true
+  name: menufacil-hml
+  managedBy: argocd
+  env: hml
+
+hpa:
+  enabled: false
+pdb:
+  enabled: false
+
+secretEnvLabel: hml
+
+config:
+  SPRING_PROFILES_ACTIVE: "hml"
+  TZ: "America/Sao_Paulo"
+  API_PORT: "3001"
+  DB_HOST: "postgres.menufacil-hml.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "menufacil_hml"
+  DB_USER: "menufacil"
+  MINIO_ENDPOINT: "https://minio.hml.menufacil.maistechtecnologia.com.br"
+  MINIO_PORT: "443"
+  MINIO_USE_SSL: "true"
+  MINIO_BUCKET: "menufacil-hml"
+  AWS_SES_ENABLED: "false"
+
+secret:
+  DB_PASS: "REPLACE_ME"
+  JWT_SECRET: "REPLACE_ME"
+  MINIO_ACCESS_KEY: "REPLACE_ME"
+  MINIO_SECRET_KEY: "REPLACE_ME"

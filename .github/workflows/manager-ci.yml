@@ -1,0 +1,45 @@
+name: manager CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/manager/**'
+      - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
+      - 'infra/docker/manager/**'
+      - 'infra/charts/static-frontend/**'
+      - '.github/workflows/manager-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/manager/**'
+      - 'packages/shared/**'
+      - 'infra/docker/manager/**'
+
+jobs:
+  typecheck-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @menufacil/shared build
+      - run: pnpm --filter manager exec tsc --noEmit
+      - run: pnpm --filter manager build
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with: { version: v3.16.2 }
+      - run: helm lint infra/charts/static-frontend -f infra/apps/menufacil-manager/values-prod.yaml
+      - run: helm lint infra/charts/static-frontend -f infra/apps/menufacil-manager/values-hml.yaml

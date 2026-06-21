@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: menufacil-waiter-hml
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: menufacil
+  source:
+    repoURL: https://github.com/MaisTech/menufacil
+    targetRevision: develop
+    path: infra/charts/static-frontend
+    helm:
+      valueFiles:
+        - ../../apps/menufacil-waiter/values-hml.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: menufacil-hml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

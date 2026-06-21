@@ -1,0 +1,11 @@
+{{- if .Values.config.js }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "static-frontend.name" . }}-config
+  labels:
+    {{- include "static-frontend.configLabels" . | nindent 4 }}
+data:
+  config.js: |
+{{ .Values.config.js | indent 4 }}
+{{- end }}

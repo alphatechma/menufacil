@@ -1,0 +1,65 @@
+# CI do menufacil-api-java: compile + test em PRs e push em main/develop.
+# Roda so quando o api-java (ou seus arquivos de infra) mudam — economiza minutos.
+name: api-java CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/api-java/**'
+      - 'infra/docker/api-java/**'
+      - 'infra/charts/backend/**'
+      - '.github/workflows/api-java-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/api-java/**'
+      - 'infra/docker/api-java/**'
+      - 'infra/charts/backend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/api-java
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin) + Maven cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Compile
+        run: mvn -B -ntp -DskipTests compile
+
+      - name: Test
+        run: mvn -B -ntp test
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-java-surefire-reports
+          path: apps/api-java/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - name: helm lint (prod values)
+        run: helm lint infra/charts/backend -f infra/apps/menufacil-api-java/values-prod.yaml
+      - name: helm lint (hml values)
+        run: helm lint infra/charts/backend -f infra/apps/menufacil-api-java/values-hml.yaml
+      - name: helm template (sanity render)
+        run: helm template menufacil-api-java infra/charts/backend -f infra/apps/menufacil-api-java/values-prod.yaml > /dev/null

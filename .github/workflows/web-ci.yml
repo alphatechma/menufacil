@@ -1,0 +1,45 @@
+name: web CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
+      - 'infra/docker/web/**'
+      - 'infra/charts/static-frontend/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'infra/docker/web/**'
+
+jobs:
+  typecheck-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @menufacil/shared build
+      - run: pnpm --filter web exec tsc --noEmit
+      - run: pnpm --filter web build
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with: { version: v3.16.2 }
+      - run: helm lint infra/charts/static-frontend -f infra/apps/menufacil-web/values-prod.yaml
+      - run: helm lint infra/charts/static-frontend -f infra/apps/menufacil-web/values-hml.yaml

@@ -1,0 +1,30 @@
+appName: web
+image:
+  repository: ghcr.io/maistech/menufacil-web
+  tag: "0.1.0"                  # bumpado pelo CI (main -> prod)
+replicas: 2
+resources:
+  requests:
+    cpu: "20m"
+    memory: "32Mi"
+  limits:
+    cpu: "300m"
+    memory: "192Mi"
+ingress:
+  enabled: true
+  host: app.menufacil.maistechtecnologia.com.br
+  tlsSecret: menufacil-web-tls
+  proxyBodySize: "50m"
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+pdb:
+  enabled: true
+  minAvailable: 1
+# Runtime config — o app le window.__APP_CONFIG__ em /config.js.
+config:
+  js: |
+    window.__APP_CONFIG__ = {
+      VITE_API_URL: "https://api.menufacil.maistechtecnologia.com.br/api"
+    };

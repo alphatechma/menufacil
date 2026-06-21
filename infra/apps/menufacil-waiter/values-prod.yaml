@@ -1,0 +1,21 @@
+appName: waiter
+image:
+  repository: ghcr.io/maistech/menufacil-waiter
+  tag: "0.1.0"
+replicas: 2
+ingress:
+  enabled: true
+  host: waiter.menufacil.maistechtecnologia.com.br
+  tlsSecret: menufacil-waiter-tls
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+pdb:
+  enabled: true
+  minAvailable: 1
+config:
+  js: |
+    window.__APP_CONFIG__ = {
+      VITE_API_URL: "https://api.menufacil.maistechtecnologia.com.br/api"
+    };

@@ -1,0 +1,32 @@
+# Application do menufacil-api-java em producao.
+# O backend declara o Namespace no chart -> nao usar CreateNamespace=true aqui.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: menufacil-api-java-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: menufacil
+  source:
+    repoURL: https://github.com/MaisTech/menufacil
+    targetRevision: main
+    path: infra/charts/backend
+    helm:
+      valueFiles:
+        - ../../apps/menufacil-api-java/values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: menufacil
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        maxDuration: 5m

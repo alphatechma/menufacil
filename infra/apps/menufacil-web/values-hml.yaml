@@ -1,0 +1,18 @@
+appName: web
+image:
+  repository: ghcr.io/maistech/menufacil-web
+  tag: "0.1.0-SNAPSHOT-abc1234"
+replicas: 1
+ingress:
+  enabled: true
+  host: app.hml.menufacil.maistechtecnologia.com.br
+  tlsSecret: menufacil-web-tls
+hpa:
+  enabled: false
+pdb:
+  enabled: false
+config:
+  js: |
+    window.__APP_CONFIG__ = {
+      VITE_API_URL: "https://api.hml.menufacil.maistechtecnologia.com.br/api"
+    };

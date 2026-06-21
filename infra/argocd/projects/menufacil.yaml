@@ -1,0 +1,30 @@
+# ArgoCD AppProject para MenuFacil — agrupa as Applications e delimita
+# os namespaces/clusters/repos que elas podem tocar. Aplicar com:
+#   kubectl apply -f infra/argocd/projects/menufacil.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: menufacil
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Aplicacoes do MenuFacil (api-java + 3 frontends).
+  sourceRepos:
+    - https://github.com/MaisTech/menufacil
+    - https://github.com/MaisTech/menufacil-gitops
+  destinations:
+    - namespace: menufacil
+      server: https://kubernetes.default.svc
+    - namespace: menufacil-hml
+      server: https://kubernetes.default.svc
+    - namespace: menufacil-dev
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  orphanedResources:
+    warn: true

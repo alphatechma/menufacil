@@ -1,0 +1,19 @@
+{{- if .Values.serviceMonitor.enabled }}
+# Requer Prometheus Operator instalado (CRD monitoring.coreos.com/v1).
+# Para o endpoint funcionar, adicione `prometheus` em management.endpoints.web.exposure.include
+# do application.yml e a dependencia `micrometer-registry-prometheus` no pom.xml.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: menufacil-api-java
+  labels:
+    {{- include "backend.metaLabels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "backend.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ .Values.serviceMonitor.path }}
+      interval: {{ .Values.serviceMonitor.interval }}
+{{- end }}

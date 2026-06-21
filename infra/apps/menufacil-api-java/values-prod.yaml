@@ -1,0 +1,56 @@
+# Production values para o menufacil-api-java.
+# Aplicado por: Helm release `menufacil-api-java` no namespace `menufacil`.
+# Bumpado pelo CI (cd.yml) a cada merge em main.
+image:
+  repository: ghcr.io/maistech/menufacil-api-java
+  tag: "0.1.0"                  # bumpado pelo CI (main -> prod)
+
+replicas: 2
+ingress:
+  host: api.menufacil.maistechtecnologia.com.br
+namespace:
+  create: true
+  name: menufacil
+  managedBy: argocd
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: false  # Liga quando Prometheus Operator estiver instalado.
+
+config:
+  SPRING_PROFILES_ACTIVE: "prod"
+  TZ: "America/Sao_Paulo"
+  API_PORT: "3001"
+  DB_HOST: "postgres.menufacil.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "menufacil"
+  DB_USER: "menufacil"
+  MINIO_ENDPOINT: "https://minio.menufacil.maistechtecnologia.com.br"
+  MINIO_PORT: "443"
+  MINIO_USE_SSL: "true"
+  MINIO_BUCKET: "menufacil"
+  MINIO_PUBLIC_URL: "https://minio.menufacil.maistechtecnologia.com.br"
+  EVOLUTION_API_URL: "https://evolution.menufacil.maistechtecnologia.com.br"
+  AWS_SES_REGION: "us-east-1"
+  AWS_SES_FROM_EMAIL: "noreply@menufacil.maistechtecnologia.com.br"
+  AWS_SES_ENABLED: "true"
+
+# ATENCAO: secrets em plaintext aqui sao divida tecnica.
+# Para producao, substituir por SealedSecrets ou External Secrets Operator
+# (ver pendencias no README do infra/).
+secret:
+  DB_PASS: "REPLACE_ME"
+  JWT_SECRET: "REPLACE_ME_64_BYTES_RANDOM"
+  MINIO_ACCESS_KEY: "REPLACE_ME"
+  MINIO_SECRET_KEY: "REPLACE_ME"
+  EVOLUTION_API_KEY: "REPLACE_ME"
+  AWS_SES_ACCESS_KEY: "REPLACE_ME"
+  AWS_SES_SECRET_KEY: "REPLACE_ME"

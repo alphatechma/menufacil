@@ -1,0 +1,6 @@
+apiVersion: v2
+name: static-frontend
+description: Chart compartilhado para SPAs do MenuFacil (web, manager, waiter) — nginx-unprivileged + ConfigMap de runtime config.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

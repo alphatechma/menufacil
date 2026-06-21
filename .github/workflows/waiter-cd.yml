@@ -1,0 +1,89 @@
+name: waiter CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/waiter/**'
+      - 'packages/shared/**'
+      - 'infra/docker/waiter/**'
+      - '.github/workflows/waiter-cd.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: maistech/menufacil-waiter
+  APP_KEY: menufacil-waiter
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image_tag: ${{ steps.version.outputs.tag }}
+      target_env: ${{ steps.version.outputs.target_env }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: |
+          set -eu
+          BRANCH="${GITHUB_REF_NAME}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BASE_VERSION=$(awk -F'"' '/"version":/ {print $4; exit}' apps/waiter/package.json)
+          case "${BRANCH}" in
+            main)    TARGET_ENV=prod; TAG="${BASE_VERSION}";;
+            develop) TARGET_ENV=hml;  TAG="${BASE_VERSION}-SNAPSHOT-${SHORT_SHA}";;
+            *)       TARGET_ENV="";   TAG="${BASE_VERSION}-SNAPSHOT-${SHORT_SHA}";;
+          esac
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "target_env=${TARGET_ENV}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/waiter/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.target_env || 'latest' }}
+          build-args: |
+            VITE_API_URL=/api
+            APP_VERSION=${{ steps.version.outputs.tag }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha,scope=waiter
+          cache-to: type=gha,mode=max,scope=waiter
+
+  gitops-update:
+    needs: build-and-push
+    if: needs.build-and-push.outputs.target_env != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+      - env:
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          TARGET_ENV: ${{ needs.build-and-push.outputs.target_env }}
+          APP_KEY: ${{ env.APP_KEY }}
+        run: |
+          set -eu
+          VALUES_FILE="infra/apps/${APP_KEY}/values-${TARGET_ENV}.yaml"
+          sed -i "s|^  tag: .*|  tag: \"${TAG}\"|" "${VALUES_FILE}"
+          git config user.email "devops@maistechtecnologia.com.br"
+          git config user.name  "DevOps MaisTech"
+          git diff --quiet "${VALUES_FILE}" && { echo "Nada a commitar."; exit 0; }
+          git add "${VALUES_FILE}"
+          git commit -m "chore(deploy): ${APP_KEY} ${TARGET_ENV} ${TAG} [skip ci]"
+          git push

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: menufacil-api-java-config
+  labels:
+    {{- include "backend.auxLabels" . | nindent 4 }}
+data:
+  {{- toYaml .Values.config | nindent 2 }}

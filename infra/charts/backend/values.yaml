@@ -1,0 +1,67 @@
+# Defaults do chart backend. Cada ambiente sobrescreve via values file
+# em infra/apps/menufacil-api-java/values-{prod,hml,dev}.yaml.
+
+image:
+  repository: ghcr.io/maistech/menufacil-api-java
+  tag: placeholder        # bumpado pelo CI por ambiente
+  pullPolicy: IfNotPresent
+
+# Numero base de replicas (HPA pode escalar acima disso).
+replicas: 2
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+# Spring server.port = 3001; context-path = /api.
+containerPort: 3001
+# Endpoint do actuator (lembrar do context-path /api).
+healthPath: /api/actuator/health
+livenessPath: /api/actuator/health/liveness
+readinessPath: /api/actuator/health/readiness
+
+ingress:
+  enabled: true
+  host: ""                # api.menufacil.maistechtecnologia.com.br | api.hml.menufacil.maistechtecnologia.com.br
+  tlsSecret: menufacil-api-java-tls
+  clusterIssuer: letsencrypt-prod
+  proxyBodySize: "50m"
+
+# Horizontal Pod Autoscaler — 2-10 replicas por CPU.
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget — mantem ao menos N pods saudaveis em drains.
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# ServiceMonitor (Prometheus Operator). Liga so se o CRD existir no cluster.
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  path: /api/actuator/prometheus
+
+# Env vars do ConfigMap (resolvidas por ambiente no values file).
+config: {}
+
+# Env vars do Secret (stringData). Em prod migrar para SealedSecrets/ESO.
+secret: {}
+
+# Label `env:` no Secret (so HML/DEV tem). Vazio -> sem o label.
+secretEnvLabel: ""
+
+# Namespace do ambiente (o backend eh o dono dele).
+namespace:
+  create: true
+  name: ""                # menufacil | menufacil-hml | menufacil-dev
+  managedBy: argocd
+  env: ""                 # hml: "hml"; prod: vazio

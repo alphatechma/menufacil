@@ -1,0 +1,137 @@
+# CD do menufacil-api-java: builda imagem, pusha pro GHCR e bumpa a tag no
+# values do GitOps. Quando o repo for split, mudar `gitops-update` para
+# apontar pro repo separado de manifests.
+#
+# Versionamento:
+#   - main    -> SemVer puro (le <version> do pom.xml; opcional bump via input)
+#   - develop -> SNAPSHOT-<short_sha> (sempre unico)
+name: api-java CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/api-java/**'
+      - 'infra/docker/api-java/**'
+      - '.github/workflows/api-java-cd.yml'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'SemVer bump (so usado em main)'
+        type: choice
+        default: patch
+        options: [patch, minor, major, snapshot]
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: maistech/menufacil-api-java
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image_tag: ${{ steps.version.outputs.tag }}
+      target_env: ${{ steps.version.outputs.target_env }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version + target env
+        id: version
+        working-directory: apps/api-java
+        run: |
+          set -eu
+          BRANCH="${GITHUB_REF_NAME}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BASE_VERSION=$(grep -m1 '<version>' pom.xml | sed -E 's|.*<version>([^<]+)</version>.*|\1|' | sed 's/-SNAPSHOT$//')
+          echo "Base version from pom.xml: ${BASE_VERSION}"
+
+          case "${BRANCH}" in
+            main)
+              TARGET_ENV=prod
+              RELEASE_TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+              IFS=. read -r MA MI PA <<< "${BASE_VERSION}"
+              case "${RELEASE_TYPE}" in
+                major) MA=$((MA+1)); MI=0; PA=0 ;;
+                minor) MI=$((MI+1)); PA=0 ;;
+                patch) PA=$((PA+1)) ;;
+                snapshot) ;;
+              esac
+              if [ "${RELEASE_TYPE}" = "snapshot" ]; then
+                TAG="${BASE_VERSION}-SNAPSHOT-${SHORT_SHA}"
+              else
+                TAG="${MA}.${MI}.${PA}"
+              fi
+              ;;
+            develop)
+              TARGET_ENV=hml
+              TAG="${BASE_VERSION}-SNAPSHOT-${SHORT_SHA}"
+              ;;
+            *)
+              TARGET_ENV=""
+              TAG="${BASE_VERSION}-SNAPSHOT-${SHORT_SHA}"
+              ;;
+          esac
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "target_env=${TARGET_ENV}" >> "$GITHUB_OUTPUT"
+          echo "Resolved: TAG=${TAG} TARGET_ENV=${TARGET_ENV}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api-java
+          file: infra/docker/api-java/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.target_env || 'latest' }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.tag }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha,scope=api-java
+          cache-to: type=gha,mode=max,scope=api-java
+
+  gitops-update:
+    needs: build-and-push
+    if: needs.build-and-push.outputs.target_env != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Bump tag no values file
+        env:
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          TARGET_ENV: ${{ needs.build-and-push.outputs.target_env }}
+        run: |
+          set -eu
+          VALUES_FILE="infra/apps/menufacil-api-java/values-${TARGET_ENV}.yaml"
+          sed -i "s|^  tag: .*|  tag: \"${TAG}\"|" "${VALUES_FILE}"
+          git config user.email "devops@maistechtecnologia.com.br"
+          git config user.name  "DevOps MaisTech"
+          if git diff --quiet "${VALUES_FILE}"; then
+            echo "Nada a commitar."
+            exit 0
+          fi
+          git add "${VALUES_FILE}"
+          git commit -m "chore(deploy): menufacil-api-java ${TARGET_ENV} ${TAG} [skip ci]"
+          git push

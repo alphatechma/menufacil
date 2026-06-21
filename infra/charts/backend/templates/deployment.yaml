@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: menufacil-api-java
+  labels:
+    {{- include "backend.metaLabels" . | nindent 4 }}
+  annotations:
+    # Recria pods quando o ConfigMap/Secret mudam (sem precisar rollout manual).
+    checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+spec:
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "backend.podLabels" . | nindent 8 }}
+      {{- if .Values.serviceMonitor.enabled }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ .Values.serviceMonitor.path | quote }}
+        prometheus.io/port: {{ .Values.containerPort | quote }}
+      {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: menufacil-api-java-config
+            - secretRef:
+                name: menufacil-api-java-secrets
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            # 60s delay + 30 failures * 5s = ate 3min de boot tolerado (Flyway).
+            httpGet:
+              path: {{ .Values.livenessPath }}
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessPath }}
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

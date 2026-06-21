@@ -1,0 +1,18 @@
+{{- if .Values.namespace.create }}
+{{/*
+  O backend eh o "dono" do namespace do ambiente (os frontends so consomem).
+  Sem isso, no cutover o ArgoCD podaria o Namespace (e tudo dentro).
+  Os frontends usam CreateNamespace=true no syncPolicy como rede.
+*/}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ required "namespace.name eh obrigatorio" .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/part-of: menufacil
+    app.kubernetes.io/managed-by: {{ .Values.namespace.managedBy }}
+    project: menufacil
+    {{- with .Values.namespace.env }}
+    env: {{ . }}
+    {{- end }}
+{{- end }}
