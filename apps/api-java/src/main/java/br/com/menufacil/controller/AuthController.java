@@ -7,6 +7,8 @@ import br.com.menufacil.dto.CustomerLoginRequest;
 import br.com.menufacil.dto.CustomerRegisterRequest;
 import br.com.menufacil.dto.LoginRequest;
 import br.com.menufacil.dto.LoginResponse;
+import br.com.menufacil.dto.RefreshTokenRequest;
+import br.com.menufacil.dto.RefreshTokenResponse;
 import br.com.menufacil.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -83,6 +85,24 @@ public class AuthController {
 
         addCookie(response, "customer_token", authResponse.getAccessToken(), 86400);
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
+    }
+
+    @Operation(
+            summary = "Renovação de access token",
+            description = "Recebe um refresh token (admin ou customer) e devolve um novo access token. "
+                    + "O refresh token retornado é o mesmo recebido — rotação ainda não implementada."
+    )
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletResponse response) {
+
+        RefreshTokenResponse refreshed = authService.refreshAccessToken(request.getRefreshToken());
+
+        // Reescreve o cookie de access (mesma janela do login admin: 24h).
+        // Cliente customer continua lendo via body; mantemos o cookie admin para compat.
+        addCookie(response, "accessToken", refreshed.getAccessToken(), 86400);
+        return ResponseEntity.ok(refreshed);
     }
 
     @Operation(summary = "Health check da autenticação")

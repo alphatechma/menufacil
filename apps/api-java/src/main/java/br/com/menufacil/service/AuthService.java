@@ -12,10 +12,12 @@ import br.com.menufacil.dto.CustomerLoginRequest;
 import br.com.menufacil.dto.CustomerRegisterRequest;
 import br.com.menufacil.dto.LoginRequest;
 import br.com.menufacil.dto.LoginResponse;
+import br.com.menufacil.dto.RefreshTokenResponse;
 import br.com.menufacil.repository.CustomerRepository;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +81,14 @@ public class AuthService {
         claims.put("permissions", permissions);
 
         String accessToken = jwtService.generateAccessToken(user.getEmail(), claims);
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+
+        // Refresh token carrega minimo necessario para identificar o user no /auth/refresh.
+        // Permissoes/modulos NAO entram no refresh — sao recarregados a cada renovacao.
+        Map<String, Object> refreshClaims = new HashMap<>();
+        refreshClaims.put("userId", user.getId().toString());
+        refreshClaims.put("tenant_id", tenant.getId().toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), refreshClaims);
 
         log.info("Login admin: {} no tenant {}", user.getEmail(), tenant.getSlug());
 
@@ -139,12 +148,13 @@ public class AuthService {
         }
 
         String accessToken = issueCustomerToken(customer, tenant);
+        String refreshToken = issueCustomerRefreshToken(customer, tenant);
         log.info("Login customer (email): {} no tenant {}", customer.getEmail(), tenant.getSlug());
 
         recordCustomerAudit(tenant.getId(), customer, "login",
                 Map.of("method", "email"));
 
-        return toAuthResponse(customer, accessToken);
+        return toAuthResponse(customer, accessToken, refreshToken);
     }
 
     /**
@@ -184,6 +194,7 @@ public class AuthService {
         }
 
         String accessToken = issueCustomerToken(customer, tenant);
+        String refreshToken = issueCustomerRefreshToken(customer, tenant);
         log.info("Login customer (telefone): {} no tenant {}", customer.getPhone(), tenant.getSlug());
 
         Map<String, Object> details = new LinkedHashMap<>();
@@ -191,7 +202,7 @@ public class AuthService {
         details.put("created", created);
         recordCustomerAudit(tenant.getId(), customer, created ? "create" : "login", details);
 
-        return toAuthResponse(customer, accessToken);
+        return toAuthResponse(customer, accessToken, refreshToken);
     }
 
     /**
@@ -234,7 +245,8 @@ public class AuthService {
         recordCustomerAudit(tenant.getId(), customer, "create", details);
 
         String accessToken = issueCustomerToken(customer, tenant);
-        return toAuthResponse(customer, accessToken);
+        String refreshToken = issueCustomerRefreshToken(customer, tenant);
+        return toAuthResponse(customer, accessToken, refreshToken);
     }
 
     // ----------------------------------------------------------------------
@@ -251,10 +263,10 @@ public class AuthService {
                         "Estabelecimento não encontrado"));
     }
 
-    private CustomerAuthResponse toAuthResponse(Customer customer, String accessToken) {
+    private CustomerAuthResponse toAuthResponse(Customer customer, String accessToken, String refreshToken) {
         return CustomerAuthResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(null) // TODO: portar fluxo de refresh token para customers
+                .refreshToken(refreshToken)
                 .customer(CustomerAuthResponse.CustomerData.builder()
                         .id(customer.getId() != null ? customer.getId().toString() : null)
                         .name(customer.getName())
@@ -360,5 +372,163 @@ public class AuthService {
         }
 
         return jwtService.generateCustomerAccessToken(customer.getId().toString(), subject, claims);
+    }
+
+    /**
+     * Emite um refresh token para um customer. Carrega tenant_id/tenant_slug
+     * para que /auth/refresh saiba resolver o tenant atual sem depender do header.
+     */
+    public String issueCustomerRefreshToken(Customer customer, Tenant tenant) {
+        if (customer == null || customer.getId() == null) {
+            throw new IllegalArgumentException("Customer com id e obrigatorio para emitir refresh token");
+        }
+        if (tenant == null || tenant.getId() == null) {
+            throw new IllegalArgumentException("Tenant com id e obrigatorio para emitir refresh token de customer");
+        }
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tenant_id", tenant.getId().toString());
+        claims.put("tenant_slug", tenant.getSlug());
+
+        String subject = customer.getEmail();
+        if (subject == null || subject.isBlank()) {
+            subject = customer.getPhone();
+        }
+        if (subject == null || subject.isBlank()) {
+            subject = customer.getId().toString();
+        }
+
+        return jwtService.generateCustomerRefreshToken(customer.getId().toString(), subject, claims);
+    }
+
+    // ----------------------------------------------------------------------
+    // Refresh flow — admin + customer
+    // ----------------------------------------------------------------------
+
+    /**
+     * Renova o access token a partir de um refresh token valido.
+     *
+     * <p>Detecta automaticamente se o refresh e de admin ou de customer via claim
+     * {@code subject_type} e emite um novo access token apropriado. O refresh
+     * token retornado e o MESMO recebido (sem rotacao por enquanto — TODO).
+     *
+     * <p>Falhas:
+     * <ul>
+     *   <li>Token invalido / expirado / nao-refresh -> 401 (via {@link JwtService#parseRefreshToken})</li>
+     *   <li>User/customer nao encontrado -> 401</li>
+     *   <li>User desativado -> 403</li>
+     * </ul>
+     *
+     * @param refreshToken refresh token recebido no body
+     * @return {@link RefreshTokenResponse} com o novo access token (e o mesmo refresh)
+     */
+    public RefreshTokenResponse refreshAccessToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refresh token e obrigatorio");
+        }
+
+        Claims claims = jwtService.parseRefreshToken(refreshToken);
+        String subjectType = claims.get(JwtService.CLAIM_SUBJECT_TYPE, String.class);
+
+        // Compatibilidade: refresh tokens emitidos antes desta feature nao carregam
+        // subject_type. Tratamos como admin para nao quebrar sessoes ativas.
+        if (subjectType == null || subjectType.isBlank()) {
+            subjectType = JwtService.SUBJECT_TYPE_ADMIN;
+        }
+
+        if (JwtService.SUBJECT_TYPE_CUSTOMER.equals(subjectType)) {
+            return refreshCustomerAccessToken(claims, refreshToken);
+        }
+        return refreshAdminAccessToken(claims, refreshToken);
+    }
+
+    private RefreshTokenResponse refreshAdminAccessToken(Claims claims, String refreshToken) {
+        String email = claims.getSubject();
+        String tenantIdStr = claims.get("tenant_id", String.class);
+
+        if (email == null || email.isBlank() || tenantIdStr == null || tenantIdStr.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token invalido");
+        }
+
+        UUID tenantId;
+        try {
+            tenantId = UUID.fromString(tenantIdStr);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token invalido");
+        }
+
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Estabelecimento nao encontrado"));
+
+        User user = userRepository.findByEmailAndTenantId(email, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Usuario nao encontrado"));
+
+        if (!user.isActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario desativado");
+        }
+
+        List<String> permissions = extractPermissionKeys(user.getRole());
+
+        Map<String, Object> accessClaims = new HashMap<>();
+        accessClaims.put("userId", user.getId().toString());
+        accessClaims.put("system_role", user.getSystemRole().name());
+        accessClaims.put("tenant_id", tenant.getId().toString());
+        accessClaims.put("tenant_slug", tenant.getSlug());
+        accessClaims.put("type", JwtService.TYPE_ACCESS);
+        accessClaims.put("permissions", permissions);
+
+        String newAccessToken = jwtService.generateAccessToken(user.getEmail(), accessClaims);
+        log.info("Refresh admin token: {} no tenant {}", user.getEmail(), tenant.getSlug());
+
+        // TODO: rotacionar refresh token + manter blacklist do antigo.
+        return RefreshTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    private RefreshTokenResponse refreshCustomerAccessToken(Claims claims, String refreshToken) {
+        String customerIdStr = claims.get("customerId", String.class);
+        String tenantIdStr = claims.get("tenant_id", String.class);
+
+        if (customerIdStr == null || customerIdStr.isBlank()
+                || tenantIdStr == null || tenantIdStr.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token invalido");
+        }
+
+        UUID customerId;
+        UUID tenantId;
+        try {
+            customerId = UUID.fromString(customerIdStr);
+            tenantId = UUID.fromString(tenantIdStr);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token invalido");
+        }
+
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Estabelecimento nao encontrado"));
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Cliente nao encontrado"));
+
+        // Garante que o customer ainda pertence ao tenant do refresh (defesa em profundidade).
+        if (customer.getTenantId() == null || !customer.getTenantId().equals(tenantId)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token invalido");
+        }
+
+        String newAccessToken = issueCustomerToken(customer, tenant);
+        log.info("Refresh customer token: {} no tenant {}",
+                customer.getEmail() != null ? customer.getEmail() : customer.getPhone(),
+                tenant.getSlug());
+
+        // TODO: rotacionar refresh token + manter blacklist do antigo.
+        return RefreshTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 }

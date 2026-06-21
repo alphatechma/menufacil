@@ -1,12 +1,15 @@
 package br.com.menufacil.service;
 
 import br.com.menufacil.config.security.JwtService;
+import br.com.menufacil.domain.enums.UserRole;
 import br.com.menufacil.domain.models.Customer;
 import br.com.menufacil.domain.models.Tenant;
+import br.com.menufacil.domain.models.User;
 import br.com.menufacil.dto.CustomerAuthResponse;
 import br.com.menufacil.dto.CustomerLoginByPhoneRequest;
 import br.com.menufacil.dto.CustomerLoginRequest;
 import br.com.menufacil.dto.CustomerRegisterRequest;
+import br.com.menufacil.dto.RefreshTokenResponse;
 import br.com.menufacil.repository.CustomerRepository;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
@@ -57,7 +60,7 @@ class AuthServiceTest {
         // Secret base64 de 256 bits (32 bytes) — suficiente para HS256.
         ReflectionTestUtils.setField(jwtService, "secret",
                 "dGVzdC1zZWNyZXQta2V5LW1pbmltdW0tMzItYnl0ZXMtbG9uZy0xMjM0NTY=");
-        ReflectionTestUtils.setField(jwtService, "expiration", 3_600_000L);
+        ReflectionTestUtils.setField(jwtService, "accessExpiration", 3_600_000L);
         ReflectionTestUtils.setField(jwtService, "refreshExpiration", 86_400_000L);
 
         authService = new AuthService(
@@ -407,6 +410,226 @@ class AuthServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
 
         verify(customerRepository, never()).save(any());
+    }
+
+    // ------------------------------------------------------------------
+    // refreshAccessToken — admin
+    // ------------------------------------------------------------------
+
+    @Test
+    void refreshAccessToken_adminTokenValidoDeveEmitirNovoAccess() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", userId);
+        user.setEmail("admin@example.com");
+        user.setName("Admin");
+        user.setSystemRole(UserRole.admin);
+        user.setActive(true);
+
+        java.util.Map<String, Object> refreshClaims = new java.util.HashMap<>();
+        refreshClaims.put("userId", userId.toString());
+        refreshClaims.put("tenant_id", tenantId.toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateRefreshToken("admin@example.com", refreshClaims);
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(userRepository.findByEmailAndTenantId("admin@example.com", tenantId))
+                .thenReturn(Optional.of(user));
+
+        // Act
+        RefreshTokenResponse response = authService.refreshAccessToken(refreshToken);
+
+        // Assert
+        assertThat(response.getAccessToken()).isNotBlank();
+        assertThat(response.getRefreshToken())
+                .as("Refresh token retornado deve ser o MESMO (sem rotacao por enquanto)")
+                .isEqualTo(refreshToken);
+
+        Claims newAccess = jwtService.extractAllClaims(response.getAccessToken());
+        assertThat(newAccess.get("type", String.class)).isEqualTo(JwtService.TYPE_ACCESS);
+        assertThat(newAccess.get("userId", String.class)).isEqualTo(userId.toString());
+        assertThat(newAccess.get("system_role", String.class)).isEqualTo("admin");
+        assertThat(newAccess.get("tenant_id", String.class)).isEqualTo(tenantId.toString());
+        assertThat(newAccess.getSubject()).isEqualTo("admin@example.com");
+    }
+
+    @Test
+    void refreshAccessToken_deveLancar401QuandoTokenExpirado() {
+        // Arrange — refresh emitido ja expirado
+        ReflectionTestUtils.setField(jwtService, "refreshExpiration", -1_000L);
+        String expirado = jwtService.generateRefreshToken("admin@example.com",
+                java.util.Map.of("userId", UUID.randomUUID().toString(),
+                                 "tenant_id", tenantId.toString()));
+        // Restaura para nao contaminar outros testes.
+        ReflectionTestUtils.setField(jwtService, "refreshExpiration", 86_400_000L);
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.refreshAccessToken(expirado))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void refreshAccessToken_deveLancar401QuandoAccessTokenForUsadoComoRefresh() {
+        // Arrange — emite access token de admin
+        java.util.Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("userId", UUID.randomUUID().toString());
+        claims.put("type", JwtService.TYPE_ACCESS);
+        String accessToken = jwtService.generateAccessToken("admin@example.com", claims);
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.refreshAccessToken(accessToken))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void refreshAccessToken_deveLancar403QuandoUsuarioDesativado() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", userId);
+        user.setEmail("admin@example.com");
+        user.setSystemRole(UserRole.admin);
+        user.setActive(false); // desativado
+
+        java.util.Map<String, Object> refreshClaims = new java.util.HashMap<>();
+        refreshClaims.put("userId", userId.toString());
+        refreshClaims.put("tenant_id", tenantId.toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateRefreshToken("admin@example.com", refreshClaims);
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(userRepository.findByEmailAndTenantId("admin@example.com", tenantId))
+                .thenReturn(Optional.of(user));
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.refreshAccessToken(refreshToken))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void refreshAccessToken_deveLancar401QuandoUsuarioNaoExisteMais() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        java.util.Map<String, Object> refreshClaims = new java.util.HashMap<>();
+        refreshClaims.put("userId", userId.toString());
+        refreshClaims.put("tenant_id", tenantId.toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateRefreshToken("admin@example.com", refreshClaims);
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(userRepository.findByEmailAndTenantId("admin@example.com", tenantId))
+                .thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.refreshAccessToken(refreshToken))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    // ------------------------------------------------------------------
+    // refreshAccessToken — customer
+    // ------------------------------------------------------------------
+
+    @Test
+    void refreshAccessToken_customerTokenValidoDeveEmitirNovoAccessCustomer() {
+        // Arrange
+        Customer customer = buildPersistedCustomer("ana@example.com", "+5511900000001");
+
+        java.util.Map<String, Object> refreshClaims = new java.util.HashMap<>();
+        refreshClaims.put("tenant_id", tenantId.toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateCustomerRefreshToken(
+                customer.getId().toString(), "ana@example.com", refreshClaims);
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+
+        // Act
+        RefreshTokenResponse response = authService.refreshAccessToken(refreshToken);
+
+        // Assert
+        Claims newAccess = jwtService.extractAllClaims(response.getAccessToken());
+        assertThat(newAccess.get("type", String.class)).isEqualTo(JwtService.TYPE_CUSTOMER);
+        assertThat(newAccess.get("customerId", String.class)).isEqualTo(customer.getId().toString());
+        assertThat(newAccess.get("tenant_id", String.class)).isEqualTo(tenantId.toString());
+        assertThat(response.getRefreshToken()).isEqualTo(refreshToken);
+    }
+
+    @Test
+    void refreshAccessToken_customerDeveLancar401QuandoTenantNaoBate() {
+        // Arrange — customer pertence a outro tenant
+        Customer customer = buildPersistedCustomer("ana@example.com", "+5511900000001");
+        UUID outroTenantId = UUID.randomUUID();
+        customer.setTenantId(outroTenantId);
+
+        java.util.Map<String, Object> refreshClaims = new java.util.HashMap<>();
+        refreshClaims.put("tenant_id", tenantId.toString());
+        refreshClaims.put("tenant_slug", tenant.getSlug());
+        String refreshToken = jwtService.generateCustomerRefreshToken(
+                customer.getId().toString(), "ana@example.com", refreshClaims);
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.refreshAccessToken(refreshToken))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void refreshAccessToken_deveLancarBadRequestQuandoTokenVazio() {
+        assertThatThrownBy(() -> authService.refreshAccessToken(null))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThatThrownBy(() -> authService.refreshAccessToken(""))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    // ------------------------------------------------------------------
+    // Refresh emitido no login — sanity check
+    // ------------------------------------------------------------------
+
+    @Test
+    void customerLogin_deveRetornarRefreshTokenNaResposta() {
+        // Arrange
+        Customer customer = buildPersistedCustomer("ana@example.com", "+5511900000001");
+        customer.setPasswordHash("$2a$10$hashvalido");
+
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
+        when(customerRepository.findByEmailAndTenantId("ana@example.com", tenantId))
+                .thenReturn(Optional.of(customer));
+        when(passwordEncoder.matches("senha-correta", customer.getPasswordHash())).thenReturn(true);
+
+        CustomerLoginRequest request = new CustomerLoginRequest();
+        request.setEmail("ana@example.com");
+        request.setPassword("senha-correta");
+
+        // Act
+        CustomerAuthResponse response = authService.customerLogin(tenantId, request);
+
+        // Assert
+        assertThat(response.getRefreshToken())
+                .as("Customer login agora retorna refresh token")
+                .isNotBlank();
+
+        Claims refreshClaims = jwtService.extractAllClaims(response.getRefreshToken());
+        assertThat(refreshClaims.get(JwtService.CLAIM_TYPE, String.class)).isEqualTo(JwtService.TYPE_REFRESH);
+        assertThat(refreshClaims.get(JwtService.CLAIM_SUBJECT_TYPE, String.class)).isEqualTo(JwtService.SUBJECT_TYPE_CUSTOMER);
+        assertThat(refreshClaims.get("customerId", String.class)).isEqualTo(customer.getId().toString());
     }
 
     // ------------------------------------------------------------------

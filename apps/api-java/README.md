@@ -21,6 +21,7 @@ Coexiste com a API legada NestJS (`apps/api`) durante o cutover progressivo.
 | Real-time         | Spring WebSocket (STOMP) para push de pedidos / WhatsApp            |
 | Docs              | springdoc-openapi `2.5.0` (Swagger UI em `/api/docs`)                |
 | Build             | Maven (multistage Dockerfile)                                       |
+| Observability     | Sentry, Micrometer + Prometheus, OpenTelemetry, Logback JSON        |
 
 ---
 
@@ -33,6 +34,7 @@ br.com.menufacil/
 │   ├── security/        # SecurityConfig, JwtService, JwtAuthenticationFilter, PermissionsAspect, @RequirePermissions, UserPermissionsService
 │   ├── tenant/          # TenantContext, TenantFilter, TenantFilterConfig, TenantConnectionInterceptor, HibernateTenantFilterAspect
 │   ├── audit/           # Listeners + auditoria automatica
+│   ├── observability/   # MetricsConfig, MetricsService, MdcLoggingFilter, health/
 │   ├── AsyncConfig.java # Pool @Async
 │   ├── SwaggerConfig.java
 │   └── WebSocketConfig.java
@@ -107,11 +109,15 @@ Todas as variaveis suportadas pelo `application.yml` (com defaults entre `${...:
 | `DB_PASS` | `postgres`  | Senha                   |
 
 ### JWT
-| Variavel     | Default                                         | Descricao                                |
-|--------------|-------------------------------------------------|------------------------------------------|
-| `JWT_SECRET` | `menufacil-jwt-secret-key-change-in-production` | **Obrigatorio em prod** (256+ bits)      |
-| (fixo)       | `app.jwt.expiration=86400000`                   | Access token: 24h                        |
-| (fixo)       | `app.jwt.refresh-expiration=604800000`          | Refresh token: 7 dias                    |
+| Variavel                  | Default                                         | Descricao                                                                  |
+|---------------------------|-------------------------------------------------|----------------------------------------------------------------------------|
+| `JWT_SECRET`              | `menufacil-jwt-secret-key-change-in-production` | **Obrigatorio em prod** (256+ bits)                                        |
+| `JWT_ACCESS_EXPIRATION`   | `900000`                                        | Access token (ms) — 15min. Vale para admin e customer.                     |
+| `JWT_REFRESH_EXPIRATION`  | `604800000`                                     | Refresh token (ms) — 7 dias. Usado por `POST /auth/refresh`.               |
+
+> **Refresh flow:** `POST /auth/refresh` recebe `{ "refreshToken": "..." }` e devolve `{ access_token, refresh_token }`.
+> O endpoint detecta automaticamente se o refresh e de admin ou de customer (via claim `subject_type`).
+> O `refresh_token` retornado e o mesmo recebido — rotacao + blacklist ainda nao implementadas (TODO).
 
 ### MinIO / S3 (uploads)
 | Variavel             | Default                  | Descricao                              |
@@ -336,6 +342,111 @@ Componentes `@Scheduled` em execucao na API:
 | `CLEANUP_ENABLED`  | `true`  | Quando `false`, desativa o bean (util em dev/CI). Internamente: `@ConditionalOnProperty(cleanup.enabled)`. |
 
 A tabela `audit_logs` **nao** e limpa por esse worker — registros de auditoria sao preservados por compliance.
+
+---
+
+## Observability
+
+Stack instalada no Item 8 (espelha o padrao do **smartobra360**):
+
+| Camada     | Tecnologia                                                | Endpoint / Sink                              |
+|------------|-----------------------------------------------------------|----------------------------------------------|
+| Erros      | Sentry (`sentry-spring-boot-starter-jakarta` + `sentry-logback`) | `SENTRY_DSN`                            |
+| Metricas   | Micrometer + `micrometer-registry-prometheus`             | `GET /api/actuator/prometheus`               |
+| Tracing    | OpenTelemetry SDK (`opentelemetry-spring-boot-starter`)   | OTLP gRPC para `OTEL_EXPORTER_OTLP_ENDPOINT` |
+| Logs       | Logback + `logstash-logback-encoder` (JSON em prod/hml)   | stdout → Loki / Elastic / Datadog            |
+| Healthcheck| Spring Boot Actuator + indicators custom                  | `GET /api/actuator/health`                   |
+
+### Variaveis de ambiente
+
+| Variavel                          | Default                     | Descricao                                                                  |
+|-----------------------------------|-----------------------------|----------------------------------------------------------------------------|
+| `SENTRY_DSN`                      | (vazio = desabilitado)      | DSN do projeto Sentry — vazio em dev evita ruido.                          |
+| `SENTRY_ENVIRONMENT`              | `dev`                       | Tag de ambiente nos eventos (dev/hml/prod).                                 |
+| `SENTRY_RELEASE`                  | `menufacil-api@0.1.0`       | Tag de release (sourcemaps / deploys).                                      |
+| `SENTRY_TRACES_SAMPLE_RATE`       | `0.1`                       | Amostragem de spans de performance (0..1).                                  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`     | (vazio)                     | Endpoint OTLP (ex.: `http://otel-collector:4317`).                          |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`     | `grpc`                      | `grpc` ou `http/protobuf`.                                                  |
+| `OTEL_TRACES_EXPORTER`            | `none`                      | `otlp` para habilitar; mantenha `none` em dev local sem collector.          |
+| `OTEL_TRACES_SAMPLER_ARG`         | `0.1`                       | Probabilidade de sampling do tracer.                                        |
+| `SPRING_PROFILES_ACTIVE`          | `dev`                       | `prod`/`hml` ativam logs JSON via Logback.                                  |
+
+### Endpoints expostos
+
+```
+GET /api/actuator/health             -> Status geral (DB + MinIO + EvolutionApi)
+GET /api/actuator/health/liveness    -> K8s liveness probe
+GET /api/actuator/health/readiness   -> K8s readiness probe
+GET /api/actuator/info               -> Versao / git / build
+GET /api/actuator/metrics            -> Lista de meters
+GET /api/actuator/prometheus         -> Scrape target Prometheus
+```
+
+### HealthIndicators custom
+
+- **db** (default do Actuator) — ping no DataSource HikariCP.
+- **minio** — `s3Client.listBuckets()` com latencia em `details.latency_ms`.
+- **evolutionApi** — `GET /` na Evolution com timeout 2s; reporta `UNKNOWN` quando `evolution.api.url` esta vazia (esperado em dev).
+
+### Metricas customizadas
+
+Todas emitidas via `MetricsService` (fachada centralizada em `config/observability/`).
+
+| Meter (Micrometer)        | Tipo    | Tags                            | Onde incrementa                         |
+|---------------------------|---------|---------------------------------|-----------------------------------------|
+| `notifications.sent`      | Counter | `channel`, `status`             | `NotificationWorker`                    |
+| `flow.executions`         | Counter | `trigger_type`, `result`        | `FlowEngineService` (start/finish)      |
+| `flow.execution.duration` | Timer   | `result`                        | `FlowEngineService.finishExecution`     |
+| `audit.logs.created`      | Counter | `entity_type`, `action`         | `AuditLogService.log(...)`              |
+| `cleanup.removed`         | Counter | `table`                         | `CleanupWorker.dailyCleanup`            |
+| `order.created`           | Counter | `order_type`, `payment_method`  | `OrderService.create`                   |
+| `payment.webhook`         | Counter | `status`                        | `PaymentService.processWebhook`         |
+
+No Prometheus aparecem com sufixo `_total` (counters) e `_seconds` (timers).
+
+### Como adicionar uma metrica custom
+
+1. Adicionar metodo em `MetricsService` (mantem nomes consistentes).
+2. Injetar `MetricsService` no service (Lombok ja gera o construtor via `@RequiredArgsConstructor`).
+3. Chamar o metodo no ponto certo (idealmente apos a operacao concluir).
+4. Atualizar tests do service afetado adicionando `@Mock private MetricsService metricsService;`.
+
+### Tracing distribuido
+
+- Auto-instrumentacao do `opentelemetry-spring-boot-starter` cobre Spring MVC, JDBC, JPA, RestClient e HikariCP.
+- Spans manuais via `@WithSpan` (OpenTelemetry annotations) em hot paths:
+  - `FlowEngineService.processIncomingMessage` / `startExecution` / `processIncomingMessageAsync`
+  - `OrderService.create`
+  - `PaymentService.processWebhook`
+- `tenant.id` e propagado como atributo do span via `@SpanAttribute`.
+- IDs de trace/span aparecem automaticamente nos logs JSON (MDC `trace_id` / `span_id`).
+
+### Logs estruturados
+
+`src/main/resources/logback-spring.xml`:
+
+- Perfis `dev`/default: texto colorido, otimizado para terminal.
+- Perfis `prod`/`hml`: JSON via `LoggingEventCompositeJsonEncoder` (Logstash) com campos:
+  - `@timestamp`, `level`, `thread_name`, `logger_name`, `message`, `stack_trace`
+  - MDC: `request_id`, `tenant_id`, `tenant_slug`, `trace_id`, `span_id`
+  - Atributos extras: `service: menufacil-api`, `env: <profile>`
+
+O filtro `MdcLoggingFilter` (registrado com order=2, apos o `TenantFilter`) injeta `request_id` (header `X-Request-Id` ou UUID novo) e os campos do `TenantContext` no MDC.
+
+### Sentry — captura de exceções
+
+- Bridge Logback: `ERROR` vira evento Sentry; `INFO+` vira breadcrumb (configuravel em `sentry.logging.*`).
+- Resolver global registrado com `exception-resolver-order: Integer.MIN_VALUE` para preceder o `GlobalExceptionHandler` do Spring.
+- `send-default-pii: false` por compliance.
+- Em dev, deixar `SENTRY_DSN` vazio — o SDK inicializa sem fazer chamadas remotas.
+
+### Pendencias / secrets a configurar em prod
+
+- [ ] Provisionar projeto no Sentry e popular `SENTRY_DSN` no Helm values (`secret.sentryDsn`).
+- [ ] Subir OTel Collector no cluster + popular `OTEL_EXPORTER_OTLP_ENDPOINT`.
+- [ ] Adicionar `ServiceMonitor` (Prometheus Operator) apontando para `/api/actuator/prometheus`.
+- [ ] Configurar Promtail / Vector para shipping dos logs JSON (stdout) para Loki.
+- [ ] Criar dashboard Grafana base com paineis para os meters customizados.
 
 ---
 

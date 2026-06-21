@@ -7,6 +7,8 @@ import br.com.menufacil.dto.CustomerLoginRequest;
 import br.com.menufacil.dto.CustomerRegisterRequest;
 import br.com.menufacil.dto.LoginRequest;
 import br.com.menufacil.dto.LoginResponse;
+import br.com.menufacil.dto.RefreshTokenRequest;
+import br.com.menufacil.dto.RefreshTokenResponse;
 import br.com.menufacil.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -138,6 +140,32 @@ class AuthControllerTest {
         assertThat(result.getBody().getAccessToken()).isEqualTo("phone-token");
         assertThat(result.getBody().getCustomer().getPhone()).isEqualTo("+5511911112222");
         verify(authService).customerLoginByPhone(eq(tenantId), any(CustomerLoginByPhoneRequest.class));
+    }
+
+    @Test
+    void shouldRefreshAccessToken() {
+        // Arrange
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("refresh-original");
+
+        RefreshTokenResponse expected = RefreshTokenResponse.builder()
+                .accessToken("novo-access-token")
+                .refreshToken("refresh-original")
+                .build();
+        when(authService.refreshAccessToken("refresh-original")).thenReturn(expected);
+
+        HttpServletResponse response = new MockHttpServletResponse();
+
+        // Act
+        ResponseEntity<RefreshTokenResponse> result =
+                authController.refresh(request, response);
+
+        // Assert
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getAccessToken()).isEqualTo("novo-access-token");
+        assertThat(result.getBody().getRefreshToken()).isEqualTo("refresh-original");
+        verify(authService).refreshAccessToken("refresh-original");
     }
 
     @Test

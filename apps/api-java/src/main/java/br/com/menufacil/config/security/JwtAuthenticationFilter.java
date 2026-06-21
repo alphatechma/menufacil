@@ -38,6 +38,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String role = claims.get("system_role", String.class);
         String type = claims.get("type", String.class);
 
+        // Refresh tokens NUNCA sao validos como bearer — so /auth/refresh deve aceita-los.
+        // Sem essa guarda, um refresh capturado conseguiria autenticar endpoints normais.
+        if (JwtService.TYPE_REFRESH.equalsIgnoreCase(type)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (role != null) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
