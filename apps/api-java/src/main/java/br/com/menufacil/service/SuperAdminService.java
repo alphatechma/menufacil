@@ -6,8 +6,11 @@ import br.com.menufacil.domain.models.User;
 import br.com.menufacil.dto.*;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -15,9 +18,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -34,6 +41,9 @@ public class SuperAdminService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -186,6 +196,22 @@ public class SuperAdminService {
         userRepository.save(adminUser);
         log.info("Admin '{}' criado para tenant '{}'", adminUser.getEmail(), tenant.getName());
 
+        // Audit log
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("slug", tenant.getSlug());
+        details.put("adminEmail", adminUser.getEmail());
+        auditLogService.log(
+                tenant.getId(),
+                getCurrentUserId(),
+                getCurrentUserEmail(),
+                "create",
+                "tenant",
+                tenant.getId(),
+                tenant.getName(),
+                serializeDetails(details),
+                getCurrentIpAddress()
+        );
+
         return getTenantDetail(tenant.getId());
     }
 
@@ -198,7 +224,12 @@ public class SuperAdminService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Tenant não encontrado"));
 
-        if (request.getName() != null) tenant.setName(request.getName());
+        Map<String, Object> changes = new LinkedHashMap<>();
+
+        if (request.getName() != null) {
+            changes.put("name", request.getName());
+            tenant.setName(request.getName());
+        }
         if (request.getSlug() != null) {
             // Validar slug único (exceto o próprio)
             tenantRepository.findBySlug(request.getSlug())
@@ -207,25 +238,73 @@ public class SuperAdminService {
                         throw new ResponseStatusException(HttpStatus.CONFLICT,
                                 "Já existe um tenant com o slug: " + request.getSlug());
                     });
+            changes.put("slug", request.getSlug());
             tenant.setSlug(request.getSlug());
         }
-        if (request.getPhone() != null) tenant.setPhone(request.getPhone());
-        if (request.getAddress() != null) tenant.setAddress(request.getAddress());
-        if (request.getLogoUrl() != null) tenant.setLogoUrl(request.getLogoUrl());
-        if (request.getBannerUrl() != null) tenant.setBannerUrl(request.getBannerUrl());
-        if (request.getPrimaryColor() != null) tenant.setPrimaryColor(request.getPrimaryColor());
-        if (request.getSecondaryColor() != null) tenant.setSecondaryColor(request.getSecondaryColor());
-        if (request.getAccentColor() != null) tenant.setAccentColor(request.getAccentColor());
-        if (request.getBusinessHours() != null) tenant.setBusinessHours(request.getBusinessHours());
-        if (request.getOrderModes() != null) tenant.setOrderModes(request.getOrderModes());
-        if (request.getPaymentConfig() != null) tenant.setPaymentConfig(request.getPaymentConfig());
-        if (request.getCancelTimeLimit() != null) tenant.setCancelTimeLimit(request.getCancelTimeLimit());
+        if (request.getPhone() != null) {
+            changes.put("phone", request.getPhone());
+            tenant.setPhone(request.getPhone());
+        }
+        if (request.getAddress() != null) {
+            changes.put("address", request.getAddress());
+            tenant.setAddress(request.getAddress());
+        }
+        if (request.getLogoUrl() != null) {
+            changes.put("logoUrl", request.getLogoUrl());
+            tenant.setLogoUrl(request.getLogoUrl());
+        }
+        if (request.getBannerUrl() != null) {
+            changes.put("bannerUrl", request.getBannerUrl());
+            tenant.setBannerUrl(request.getBannerUrl());
+        }
+        if (request.getPrimaryColor() != null) {
+            changes.put("primaryColor", request.getPrimaryColor());
+            tenant.setPrimaryColor(request.getPrimaryColor());
+        }
+        if (request.getSecondaryColor() != null) {
+            changes.put("secondaryColor", request.getSecondaryColor());
+            tenant.setSecondaryColor(request.getSecondaryColor());
+        }
+        if (request.getAccentColor() != null) {
+            changes.put("accentColor", request.getAccentColor());
+            tenant.setAccentColor(request.getAccentColor());
+        }
+        if (request.getBusinessHours() != null) {
+            changes.put("businessHours", request.getBusinessHours());
+            tenant.setBusinessHours(request.getBusinessHours());
+        }
+        if (request.getOrderModes() != null) {
+            changes.put("orderModes", request.getOrderModes());
+            tenant.setOrderModes(request.getOrderModes());
+        }
+        if (request.getPaymentConfig() != null) {
+            changes.put("paymentConfig", request.getPaymentConfig());
+            tenant.setPaymentConfig(request.getPaymentConfig());
+        }
+        if (request.getCancelTimeLimit() != null) {
+            changes.put("cancelTimeLimit", request.getCancelTimeLimit());
+            tenant.setCancelTimeLimit(request.getCancelTimeLimit());
+        }
         if (request.getPlanId() != null) {
+            changes.put("planId", request.getPlanId());
             tenant.setPlanId(request.getPlanId().isBlank() ? null : UUID.fromString(request.getPlanId()));
         }
 
         tenantRepository.save(tenant);
         log.info("Tenant '{}' atualizado pelo super admin", tenant.getName());
+
+        // Audit log
+        auditLogService.log(
+                tenant.getId(),
+                getCurrentUserId(),
+                getCurrentUserEmail(),
+                "update",
+                "tenant",
+                tenant.getId(),
+                tenant.getName(),
+                serializeDetails(changes),
+                getCurrentIpAddress()
+        );
 
         return getTenantDetail(tenantId);
     }
@@ -245,6 +324,20 @@ public class SuperAdminService {
         String action = tenant.isActive() ? "ativado" : "desativado";
         log.info("Tenant '{}' {} pelo super admin", tenant.getName(), action);
 
+        // Audit log
+        String auditAction = tenant.isActive() ? "activate" : "deactivate";
+        auditLogService.log(
+                tenant.getId(),
+                getCurrentUserId(),
+                getCurrentUserEmail(),
+                auditAction,
+                "tenant",
+                tenant.getId(),
+                tenant.getName(),
+                null,
+                getCurrentIpAddress()
+        );
+
         return getTenantDetail(tenantId);
     }
 
@@ -261,6 +354,21 @@ public class SuperAdminService {
         tenant.setActive(false);
         tenantRepository.save(tenant);
         log.info("Tenant '{}' soft-deletado pelo super admin", tenant.getName());
+
+        // Audit log
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("deleteType", "soft");
+        auditLogService.log(
+                tenant.getId(),
+                getCurrentUserId(),
+                getCurrentUserEmail(),
+                "delete",
+                "tenant",
+                tenant.getId(),
+                tenant.getName(),
+                serializeDetails(details),
+                getCurrentIpAddress()
+        );
     }
 
     /**
@@ -272,11 +380,76 @@ public class SuperAdminService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Tenant não encontrado"));
 
+        UUID tenantIdSnapshot = tenant.getId();
+        String tenantNameSnapshot = tenant.getName();
+
         // Remover usuários vinculados
         List<User> users = userRepository.findByTenantId(tenantId);
         userRepository.deleteAll(users);
 
         tenantRepository.delete(tenant);
-        log.warn("Tenant '{}' removido permanentemente pelo super admin", tenant.getName());
+        log.warn("Tenant '{}' removido permanentemente pelo super admin", tenantNameSnapshot);
+
+        // Audit log
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("deleteType", "hard");
+        details.put("removedUsers", users.size());
+        auditLogService.log(
+                tenantIdSnapshot,
+                getCurrentUserId(),
+                getCurrentUserEmail(),
+                "delete",
+                "tenant",
+                tenantIdSnapshot,
+                tenantNameSnapshot,
+                serializeDetails(details),
+                getCurrentIpAddress()
+        );
+    }
+
+    // ===== Helpers de contexto de auditoria =====
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
+    }
+
+    private UUID getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return null;
+        Object details = auth.getDetails();
+        if (details instanceof Claims claims) {
+            String userId = claims.get("userId", String.class);
+            if (userId != null && !userId.isBlank()) {
+                try { return UUID.fromString(userId); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        return null;
+    }
+
+    private String getCurrentIpAddress() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes)
+                    RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String forwarded = req.getHeader("X-Forwarded-For");
+                if (forwarded != null && !forwarded.isBlank()) {
+                    return forwarded.split(",")[0].trim();
+                }
+                return req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String serializeDetails(Map<String, Object> details) {
+        if (details == null || details.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(details);
+        } catch (Exception e) {
+            log.warn("Falha ao serializar details de auditoria: {}", e.getMessage());
+            return details.toString();
+        }
     }
 }

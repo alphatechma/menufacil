@@ -32,6 +32,7 @@ class PlanServiceTest {
     @Mock private PlanRepository planRepository;
     @Mock private SystemModuleRepository systemModuleRepository;
     @Mock private PlanConverter planConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private PlanService planService;

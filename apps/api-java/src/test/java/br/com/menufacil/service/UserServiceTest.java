@@ -30,6 +30,7 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private UserConverter userConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private UserService userService;

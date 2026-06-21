@@ -29,6 +29,7 @@ class PermissionServiceTest {
     @Mock private PermissionRepository permissionRepository;
     @Mock private SystemModuleRepository systemModuleRepository;
     @Mock private PermissionConverter permissionConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private PermissionService permissionService;

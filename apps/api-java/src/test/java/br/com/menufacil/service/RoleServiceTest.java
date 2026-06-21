@@ -35,6 +35,7 @@ class RoleServiceTest {
     @Mock private PermissionRepository permissionRepository;
     @Mock private RoleConverter roleConverter;
     @Mock private PermissionConverter permissionConverter;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks
     private RoleService roleService;

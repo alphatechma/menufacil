@@ -8,6 +8,9 @@ import br.com.menufacil.dto.UpdateUserRequest;
 import br.com.menufacil.dto.UserResponse;
 import br.com.menufacil.config.security.UserPermissionsService;
 import br.com.menufacil.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,9 +20,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +38,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserConverter userConverter;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<UserResponse> findAllByTenant(UUID tenantId) {
         return userRepository.findByTenantIdOrderByNameAsc(tenantId).stream()
@@ -68,6 +78,12 @@ public class UserService {
 
         user = userRepository.save(user);
         log.info("Usuário criado: {} no tenant {}", user.getEmail(), tenantId);
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("systemRole", user.getSystemRole() != null ? user.getSystemRole().name() : null);
+        details.put("roleId", user.getRoleId() != null ? user.getRoleId().toString() : null);
+        recordAudit(user.getTenantId(), "create", user.getId(), user.getEmail(), details);
+
         return userConverter.toResponse(user);
     }
 
@@ -79,10 +95,19 @@ public class UserService {
                         HttpStatus.NOT_FOUND, "Usuário não encontrado"));
 
         validateTenant(user, tenantId);
+
+        Map<String, Object> before = snapshot(user);
+
         userConverter.updateFromRequest(request, user);
 
         user = userRepository.save(user);
         log.info("Usuário atualizado: {} no tenant {}", user.getEmail(), tenantId);
+
+        Map<String, Object> after = snapshot(user);
+        Map<String, Object> changes = diff(before, after);
+        recordAudit(user.getTenantId(), "update", user.getId(), user.getEmail(),
+                changes.isEmpty() ? null : changes);
+
         return userConverter.toResponse(user);
     }
 
@@ -102,6 +127,8 @@ public class UserService {
         user.setPasswordHash(encoder.encode(request.getNewPassword()));
         userRepository.save(user);
         log.info("Senha alterada para o usuário: {} no tenant {}", email, tenantId);
+
+        recordAudit(user.getTenantId(), "change_password", user.getId(), user.getEmail(), null);
     }
 
     @Transactional
@@ -115,6 +142,8 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
         log.info("Usuário desativado (soft delete): {} no tenant {}", id, tenantId);
+
+        recordAudit(user.getTenantId(), "delete", user.getId(), user.getEmail(), null);
     }
 
     private void validateTenant(User user, UUID tenantId) {
@@ -130,5 +159,95 @@ public class UserService {
                     "Usuário não autenticado");
         }
         return authentication.getName();
+    }
+
+    private void recordAudit(UUID tenantId, String action, UUID entityId, String entityName,
+                             Map<String, Object> details) {
+        try {
+            String detailsJson = null;
+            if (details != null && !details.isEmpty()) {
+                try {
+                    detailsJson = objectMapper.writeValueAsString(details);
+                } catch (Exception e) {
+                    detailsJson = details.toString();
+                }
+            }
+            auditLogService.log(
+                    tenantId,
+                    getCurrentUserId(),
+                    getCurrentUserEmail(),
+                    action,
+                    "user",
+                    entityId,
+                    entityName,
+                    detailsJson,
+                    getCurrentIpAddress()
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao registrar audit log (action={}, entityId={}): {}", action, entityId, e.getMessage());
+        }
+    }
+
+    private Map<String, Object> snapshot(User user) {
+        Map<String, Object> snap = new LinkedHashMap<>();
+        snap.put("name", user.getName());
+        snap.put("email", user.getEmail());
+        snap.put("phone", user.getPhone());
+        snap.put("avatarUrl", user.getAvatarUrl());
+        snap.put("systemRole", user.getSystemRole() != null ? user.getSystemRole().name() : null);
+        snap.put("roleId", user.getRoleId() != null ? user.getRoleId().toString() : null);
+        snap.put("unitId", user.getUnitId() != null ? user.getUnitId().toString() : null);
+        snap.put("active", user.isActive());
+        return snap;
+    }
+
+    private Map<String, Object> diff(Map<String, Object> before, Map<String, Object> after) {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : after.entrySet()) {
+            String key = entry.getKey();
+            Object newValue = entry.getValue();
+            Object oldValue = before.get(key);
+            if (!Objects.equals(oldValue, newValue)) {
+                Map<String, Object> change = new LinkedHashMap<>();
+                change.put("old", oldValue);
+                change.put("new", newValue);
+                changes.put(key, change);
+            }
+        }
+        return changes;
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
+    }
+
+    private UUID getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return null;
+        Object details = auth.getDetails();
+        if (details instanceof Claims claims) {
+            String userId = claims.get("userId", String.class);
+            if (userId != null && !userId.isBlank()) {
+                try { return UUID.fromString(userId); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        return null;
+    }
+
+    private String getCurrentIpAddress() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes)
+                    RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String forwarded = req.getHeader("X-Forwarded-For");
+                if (forwarded != null && !forwarded.isBlank()) {
+                    return forwarded.split(",")[0].trim();
+                }
+                return req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 }
