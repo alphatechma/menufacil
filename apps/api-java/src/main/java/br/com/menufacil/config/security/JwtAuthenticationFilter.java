@@ -34,15 +34,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Claims claims = jwtService.extractAllClaims(token);
-        String email = claims.getSubject();
+        String subject = claims.getSubject();
         String role = claims.get("system_role", String.class);
+        String type = claims.get("type", String.class);
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (role != null) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
         }
+        // Tokens emitidos para customers (storefront) recebem ROLE_CUSTOMER.
+        if ("customer".equalsIgnoreCase(type)) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+        }
 
-        var authToken = new UsernamePasswordAuthenticationToken(email, token, authorities);
+        var authToken = new UsernamePasswordAuthenticationToken(subject, token, authorities);
         authToken.setDetails(claims);
         SecurityContextHolder.getContext().setAuthentication(authToken);
 

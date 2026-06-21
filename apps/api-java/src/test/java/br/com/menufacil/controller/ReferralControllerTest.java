@@ -7,6 +7,7 @@ import br.com.menufacil.dto.ReferralCodeResponse;
 import br.com.menufacil.dto.ReferralResponse;
 import br.com.menufacil.dto.ReferralStatsResponse;
 import br.com.menufacil.service.ReferralService;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -22,7 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ReferralControllerTest {
@@ -48,11 +52,46 @@ class ReferralControllerTest {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        SecurityContextHolder.clearContext();
+    }
+
+    /**
+     * Coloca um Authentication mockado no SecurityContext cujo {@code getDetails()}
+     * retorna Claims com o customerId informado. Espelha o que o
+     * {@code JwtAuthenticationFilter} faz em producao.
+     */
+    private void authenticateAsCustomer(UUID customerId) {
+        Claims claims = mock(Claims.class);
+        when(claims.get("customerId", String.class)).thenReturn(customerId.toString());
+        when(claims.get("type", String.class)).thenReturn("customer");
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                "customer@example.com",
+                "token",
+                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        auth.setDetails(claims);
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Test
-    void shouldRetornarMeuCodigoDeIndicacao() {
-        // Arrange
+    void shouldRetornarMeuCodigoDeIndicacaoUsandoJwt() {
+        // Arrange — autenticacao via JWT (sem header)
+        authenticateAsCustomer(customerId);
+        ReferralCodeResponse expected = ReferralCodeResponse.builder().code("ABCD1234").build();
+        when(referralService.getMyCode(customerId, tenantId)).thenReturn(expected);
+
+        // Act — passa null pro header, controller deve preferir o JWT
+        ResponseEntity<ReferralCodeResponse> response = referralController.getMyCode(null);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getCode()).isEqualTo("ABCD1234");
+    }
+
+    @Test
+    void shouldRetornarMeuCodigoUsandoHeaderQuandoJwtAusente() {
+        // Arrange — sem autenticacao, controller cai no header (fallback)
         ReferralCodeResponse expected = ReferralCodeResponse.builder().code("ABCD1234").build();
         when(referralService.getMyCode(customerId, tenantId)).thenReturn(expected);
 
@@ -68,11 +107,12 @@ class ReferralControllerTest {
     @Test
     void shouldListarMinhasIndicacoes() {
         // Arrange
+        authenticateAsCustomer(customerId);
         when(referralService.getMyReferrals(customerId, tenantId))
                 .thenReturn(List.of(ReferralResponse.builder().code("X").build()));
 
         // Act
-        ResponseEntity<List<ReferralResponse>> response = referralController.getMyReferrals(customerIdHeader);
+        ResponseEntity<List<ReferralResponse>> response = referralController.getMyReferrals(null);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -82,6 +122,7 @@ class ReferralControllerTest {
     @Test
     void shouldAplicarCodigoDeIndicacao() {
         // Arrange
+        authenticateAsCustomer(customerId);
         ApplyReferralRequest request = new ApplyReferralRequest();
         request.setCode("VALIDCDE");
 
@@ -94,7 +135,7 @@ class ReferralControllerTest {
 
         // Act
         ResponseEntity<ApplyReferralResponse> response =
-                referralController.applyReferral(request, customerIdHeader);
+                referralController.applyReferral(request, null);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -125,8 +166,8 @@ class ReferralControllerTest {
     }
 
     @Test
-    void shouldRetornarUnauthorizedQuandoHeaderCustomerAusente() {
-        // Arrange
+    void shouldRetornarUnauthorizedQuandoSemJwtESemHeader() {
+        // Arrange — sem autenticacao e sem header
         ApplyReferralRequest request = new ApplyReferralRequest();
         request.setCode("ANYCODE1");
 
@@ -134,5 +175,24 @@ class ReferralControllerTest {
         assertThatThrownBy(() -> referralController.applyReferral(request, null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Cliente não autenticado");
+    }
+
+    @Test
+    void jwtTemPrioridadeSobreHeader() {
+        // Arrange — JWT presente com um customerId e header com outro: JWT vence
+        UUID jwtCustomerId = UUID.randomUUID();
+        UUID headerCustomerId = UUID.randomUUID();
+        authenticateAsCustomer(jwtCustomerId);
+
+        when(referralService.getMyCode(jwtCustomerId, tenantId))
+                .thenReturn(ReferralCodeResponse.builder().code("FROM-JWT").build());
+
+        // Act
+        ResponseEntity<ReferralCodeResponse> response =
+                referralController.getMyCode(headerCustomerId.toString());
+
+        // Assert
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getCode()).isEqualTo("FROM-JWT");
     }
 }

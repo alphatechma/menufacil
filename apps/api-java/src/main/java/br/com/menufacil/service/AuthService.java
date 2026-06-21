@@ -1,12 +1,14 @@
 package br.com.menufacil.service;
 
 import br.com.menufacil.config.security.JwtService;
+import br.com.menufacil.domain.models.Customer;
 import br.com.menufacil.domain.models.Permission;
 import br.com.menufacil.domain.models.Role;
 import br.com.menufacil.domain.models.Tenant;
 import br.com.menufacil.domain.models.User;
 import br.com.menufacil.dto.LoginRequest;
 import br.com.menufacil.dto.LoginResponse;
+import br.com.menufacil.repository.CustomerRepository;
 import br.com.menufacil.repository.TenantRepository;
 import br.com.menufacil.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final CustomerRepository customerRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
@@ -95,5 +98,54 @@ public class AuthService {
                 .filter(key -> !key.isBlank())
                 .sorted()
                 .toList();
+    }
+
+    // ----------------------------------------------------------------------
+    // Customer (storefront) token issuance
+    // ----------------------------------------------------------------------
+
+    /**
+     * Emite um access token para um customer (cliente final do storefront).
+     *
+     * Este e o ponto canonico de emissao de JWT para customers — qualquer fluxo
+     * (customerLogin por email/senha, customerLoginByPhone, registerCustomer)
+     * deve chamar este metodo para garantir que o claim {@code customerId} e o
+     * claim {@code type=customer} estejam sempre presentes.
+     *
+     * @param customer entidade Customer ja persistida (id obrigatorio)
+     * @param tenant   tenant ao qual o customer pertence
+     * @return JWT assinado
+     */
+    public String issueCustomerToken(Customer customer, Tenant tenant) {
+        if (customer == null || customer.getId() == null) {
+            throw new IllegalArgumentException("Customer com id e obrigatorio para emitir token");
+        }
+        if (tenant == null || tenant.getId() == null) {
+            throw new IllegalArgumentException("Tenant com id e obrigatorio para emitir token de customer");
+        }
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tenant_id", tenant.getId().toString());
+        claims.put("tenant_slug", tenant.getSlug());
+        if (customer.getName() != null) {
+            claims.put("name", customer.getName());
+        }
+        if (customer.getEmail() != null) {
+            claims.put("email", customer.getEmail());
+        }
+        if (customer.getPhone() != null) {
+            claims.put("phone", customer.getPhone());
+        }
+
+        // subject: prefere email, cai para phone, depois para customerId.
+        String subject = customer.getEmail();
+        if (subject == null || subject.isBlank()) {
+            subject = customer.getPhone();
+        }
+        if (subject == null || subject.isBlank()) {
+            subject = customer.getId().toString();
+        }
+
+        return jwtService.generateCustomerAccessToken(customer.getId().toString(), subject, claims);
     }
 }

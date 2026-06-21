@@ -1,6 +1,7 @@
 package br.com.menufacil.controller;
 
 import br.com.menufacil.config.security.RequirePermissions;
+import br.com.menufacil.config.security.SecurityContextHelper;
 import br.com.menufacil.config.tenant.TenantContext;
 import br.com.menufacil.dto.ApplyReferralRequest;
 import br.com.menufacil.dto.ApplyReferralResponse;
@@ -72,14 +73,24 @@ public class ReferralController {
 
     /**
      * Resolve o customerId logado.
-     * TODO: integrar com SecurityContext quando o JWT do cliente passar a expor o customerId
-     * (atualmente o JwtAuthenticationFilter só popula email + role). Por enquanto utilizamos
-     * o header X-Customer-Id como fallback temporário.
+     *
+     * Estrategia:
+     *   1. Tenta extrair do JWT atual via {@link SecurityContextHelper#getCurrentCustomerId()}.
+     *   2. Fallback: aceita o header {@code X-Customer-Id} para backwards-compat
+     *      enquanto o frontend / clientes externos migram para o novo JWT.
+     *
+     * TODO: remover o fallback de header assim que todos os consumidores estiverem
+     * emitindo o JWT de customer com o claim {@code customerId} (deadline alvo: proximo release).
      */
     private UUID getCurrentCustomerId(String customerIdHeader) {
+        return SecurityContextHelper.getCurrentCustomerId()
+                .orElseGet(() -> parseHeaderFallback(customerIdHeader));
+    }
+
+    private UUID parseHeaderFallback(String customerIdHeader) {
         if (customerIdHeader == null || customerIdHeader.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "Cliente não autenticado (header X-Customer-Id obrigatório)");
+                    "Cliente não autenticado (JWT sem customerId e header X-Customer-Id ausente)");
         }
         try {
             return UUID.fromString(customerIdHeader.trim());

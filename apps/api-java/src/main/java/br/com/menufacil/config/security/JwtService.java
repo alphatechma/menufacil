@@ -52,6 +52,24 @@ public class JwtService {
         return buildToken(email, new HashMap<>(), refreshExpiration);
     }
 
+    /**
+     * Gera um access token para um customer (cliente final do storefront).
+     * Garante que os claims essenciais (customerId, type=customer) estejam presentes.
+     *
+     * @param customerId UUID do customer (obrigatorio)
+     * @param subject    valor do subject do JWT — normalmente email ou phone do customer
+     * @param extraClaims claims adicionais a serem incluidos (tenant_id, tenant_slug, name, etc.)
+     */
+    public String generateCustomerAccessToken(String customerId, String subject, Map<String, Object> extraClaims) {
+        if (customerId == null || customerId.isBlank()) {
+            throw new IllegalArgumentException("customerId is required to generate a customer JWT");
+        }
+        Map<String, Object> claims = extraClaims == null ? new HashMap<>() : new HashMap<>(extraClaims);
+        claims.put("customerId", customerId);
+        claims.put("type", "customer");
+        return buildToken(subject, claims, expiration);
+    }
+
     private String buildToken(String email, Map<String, Object> extraClaims, long expirationMs) {
         return Jwts.builder()
                 .claims(extraClaims)
