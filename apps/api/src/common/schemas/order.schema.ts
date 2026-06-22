@@ -4,9 +4,12 @@ export const createOrderSchema = z.object({
   order_type: z.enum(['delivery', 'pickup', 'dine_in'], {
     message: 'Tipo de pedido inválido',
   }),
-  payment_method: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'wallet'], {
-    message: 'Método de pagamento inválido',
-  }),
+  payment_method: z
+    .enum(['cash', 'credit_card', 'debit_card', 'pix', 'wallet'], {
+      message: 'Método de pagamento inválido',
+    })
+    .optional()
+    .nullable(),
   items: z
     .array(
       z.object({

@@ -594,7 +594,7 @@ async function seed() {
     }
 
     const adminRole = savedRoles['Administrador'];
-    const waiterRole = savedRoles['Garcom'];
+    const waiterRole = savedRoles['Garçom'];
 
     // ── Create admin user ──
     let admin = await userRepo.findOne({ where: { email: demo.admin.email } });

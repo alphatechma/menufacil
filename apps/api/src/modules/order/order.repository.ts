@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderItemExtra } from './entities/order-item-extra.entity';
@@ -25,10 +25,14 @@ export class OrderRepository {
   }
 
   async findByTenant(tenantId: string, unitId?: string | null): Promise<Order[]> {
-    const where: any = { tenant_id: tenantId };
-    if (unitId) {
-      where.unit_id = unitId;
-    }
+    // Quando uma unidade está selecionada, inclui também pedidos sem unidade (não atribuídos),
+    // como os criados pelo garçom — senão eles ficariam invisíveis sob o filtro de unidade.
+    const where = unitId
+      ? [
+          { tenant_id: tenantId, unit_id: unitId },
+          { tenant_id: tenantId, unit_id: IsNull() },
+        ]
+      : { tenant_id: tenantId };
     return this.repo.find({
       where,
       relations: ['items', 'items.extras', 'customer', 'delivery_person', 'table'],

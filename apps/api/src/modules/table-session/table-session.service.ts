@@ -5,11 +5,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
+import { OrderStatus } from '@menufacil/shared';
 import { TableSession, SessionStatus } from './entities/table-session.entity';
 import { RestaurantTable, TableStatus } from '../table/entities/table.entity';
 import { Order } from '../order/entities/order.entity';
 import { OpenSessionDto } from './dto/open-session.dto';
+import { EventsGateway } from '../../websocket/events.gateway';
 
 @Injectable()
 export class TableSessionService {
@@ -20,6 +22,7 @@ export class TableSessionService {
     private readonly tableRepo: Repository<RestaurantTable>,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async openSession(dto: OpenSessionDto, tenantId: string): Promise<TableSession> {
@@ -41,6 +44,7 @@ export class TableSessionService {
 
     table.status = TableStatus.OCCUPIED;
     await this.tableRepo.save(table);
+    this.eventsGateway.emitTableStatusUpdate(tenantId, table.id, table.status);
 
     return this.sessionRepo.save(session);
   }
@@ -63,6 +67,7 @@ export class TableSessionService {
     if (table) {
       table.status = TableStatus.AVAILABLE;
       await this.tableRepo.save(table);
+      this.eventsGateway.emitTableStatusUpdate(tenantId, table.id, table.status);
     }
 
     return { session, bill };
@@ -121,12 +126,14 @@ export class TableSessionService {
     if (oldTable) {
       oldTable.status = TableStatus.AVAILABLE;
       await this.tableRepo.save(oldTable);
+      this.eventsGateway.emitTableStatusUpdate(tenantId, oldTable.id, oldTable.status);
     }
 
     // Move to new table
     session.table_id = newTableId;
     newTable.status = TableStatus.OCCUPIED;
     await this.tableRepo.save(newTable);
+    this.eventsGateway.emitTableStatusUpdate(tenantId, newTable.id, newTable.status);
 
     // Update orders to point to new table
     await this.orderRepo.update(
@@ -169,6 +176,7 @@ export class TableSessionService {
     if (sourceTable) {
       sourceTable.status = TableStatus.AVAILABLE;
       await this.tableRepo.save(sourceTable);
+      this.eventsGateway.emitTableStatusUpdate(tenantId, sourceTable.id, sourceTable.status);
     }
 
     return this.findById(targetSessionId, tenantId);
@@ -176,11 +184,13 @@ export class TableSessionService {
 
   async getBillSummary(sessionId: string, tenantId: string): Promise<BillSummary> {
     const session = await this.findById(sessionId, tenantId);
+    // Pedidos cancelados não entram na conta
     const orders = await this.orderRepo.find({
-      where: { table_session_id: sessionId, tenant_id: tenantId },
+      where: { table_session_id: sessionId, tenant_id: tenantId, status: Not(OrderStatus.CANCELLED) },
       relations: ['items', 'customer'],
     });
 
+    const subtotal = orders.reduce((sum, o) => sum + Number(o.subtotal), 0);
     const total = orders.reduce((sum, o) => sum + Number(o.total), 0);
 
     return {
@@ -194,12 +204,13 @@ export class TableSessionService {
         subtotal: Number(o.subtotal),
         total: Number(o.total),
         items: o.items?.map((i) => ({
-          name: i.product_name,
+          product_name: i.product_name,
           quantity: i.quantity,
           unit_price: Number(i.unit_price),
           total: Number(i.unit_price) * i.quantity,
         })) || [],
       })),
+      subtotal,
       total,
     };
   }
@@ -253,11 +264,12 @@ export interface BillSummary {
     subtotal: number;
     total: number;
     items: Array<{
-      name: string;
+      product_name: string;
       quantity: number;
       unit_price: number;
       total: number;
     }>;
   }>;
+  subtotal: number;
   total: number;
 }
