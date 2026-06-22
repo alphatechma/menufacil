@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RestaurantTable, TableStatus } from './entities/table.entity';
+import { TenantUnit } from '../unit/entities/tenant-unit.entity';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 
@@ -10,7 +11,16 @@ export class TableService {
   constructor(
     @InjectRepository(RestaurantTable)
     private readonly tableRepo: Repository<RestaurantTable>,
+    @InjectRepository(TenantUnit)
+    private readonly unitRepo: Repository<TenantUnit>,
   ) {}
+
+  /** Resolve the unit to anchor a table to: the one in context, or the tenant's HQ unit. */
+  private async resolveUnitId(tenantId: string, unitId?: string | null): Promise<string | null> {
+    if (unitId) return unitId;
+    const hq = await this.unitRepo.findOne({ where: { tenant_id: tenantId, is_headquarters: true } });
+    return hq?.id ?? null;
+  }
 
   async findAll(tenantId: string, unitId?: string | null): Promise<RestaurantTable[]> {
     const where: any = { tenant_id: tenantId };
@@ -29,18 +39,27 @@ export class TableService {
     return table;
   }
 
-  async findByNumber(number: number, tenantId: string): Promise<RestaurantTable | null> {
-    return this.tableRepo.findOne({ where: { number, tenant_id: tenantId } });
+  async findByNumber(number: number, tenantId: string, unitId?: string | null): Promise<RestaurantTable | null> {
+    // Mirror findAll: table numbers are unique per unit when a unit is in context,
+    // otherwise tenant-wide. Keeps the uniqueness check consistent with the listing.
+    const where: any = { number, tenant_id: tenantId };
+    if (unitId) {
+      where.unit_id = unitId;
+    }
+    return this.tableRepo.findOne({ where });
   }
 
   async create(dto: CreateTableDto, tenantId: string, unitId?: string | null): Promise<RestaurantTable> {
-    const existing = await this.findByNumber(dto.number, tenantId);
+    // Always anchor the table to a unit (falling back to the tenant's HQ) so it never becomes a
+    // "ghost" that disappears once the listing is filtered by a unit.
+    const effectiveUnitId = await this.resolveUnitId(tenantId, unitId);
+    const existing = await this.findByNumber(dto.number, tenantId, effectiveUnitId);
     if (existing) throw new ConflictException(`Mesa ${dto.number} ja existe`);
 
     const table = this.tableRepo.create({
       ...dto,
       tenant_id: tenantId,
-      unit_id: unitId || undefined,
+      unit_id: effectiveUnitId || undefined,
     });
     return this.tableRepo.save(table);
   }
@@ -49,7 +68,7 @@ export class TableService {
     const table = await this.findById(id, tenantId);
 
     if (dto.number && dto.number !== table.number) {
-      const existing = await this.findByNumber(dto.number, tenantId);
+      const existing = await this.findByNumber(dto.number, tenantId, table.unit_id);
       if (existing) throw new ConflictException(`Mesa ${dto.number} ja existe`);
     }
 

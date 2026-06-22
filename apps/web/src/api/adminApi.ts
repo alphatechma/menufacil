@@ -439,6 +439,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: () => ({ url: '/tables', meta: { authContext: 'admin' as const } }),
       providesTags: ['Tables'],
     }),
+    getTable: builder.query<any, string>({
+      query: (id) => ({ url: `/tables/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: (_result, _err, id) => [{ type: 'Tables', id }],
+    }),
     createTable: builder.mutation<void, any>({
       query: (body) => ({ url: '/tables', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Tables'],
@@ -824,6 +828,7 @@ export const {
   useUpdateRoleMutation,
   useDeleteRoleMutation,
   useGetTablesQuery,
+  useGetTableQuery,
   useCreateTableMutation,
   useUpdateTableMutation,
   useDeleteTableMutation,

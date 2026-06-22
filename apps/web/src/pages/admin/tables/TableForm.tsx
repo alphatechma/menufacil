@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  useGetTablesQuery,
+  useGetTableQuery,
   useCreateTableMutation,
   useUpdateTableMutation,
 } from '@/api/adminApi';
@@ -37,11 +37,11 @@ export default function TableForm() {
   const navigate = useNavigate();
   const isEditing = !!id;
 
-  const { data: tables = [], isLoading: isLoadingTables } = useGetTablesQuery(
-    undefined,
-    { skip: !isEditing },
-  );
-  const table = isEditing ? tables.find((t: any) => t.id === id) : undefined;
+  // Fetch by id (unit-agnostic on the backend) so editing works regardless of the
+  // currently selected unit filter.
+  const { data: table, isLoading: isLoadingTable } = useGetTableQuery(id!, {
+    skip: !isEditing,
+  });
 
   const [createTable, { isLoading: isCreating, error: createError }] =
     useCreateTableMutation();
@@ -90,7 +90,7 @@ export default function TableForm() {
     }
   };
 
-  if (isEditing && isLoadingTables) return <FormPageSkeleton />;
+  if (isEditing && isLoadingTable) return <FormPageSkeleton />;
 
   return (
     <div>

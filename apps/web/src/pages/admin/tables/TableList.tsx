@@ -12,6 +12,7 @@ import {
 import {
   useGetTablesQuery,
   useDeleteTableMutation,
+  useUpdateTableMutation,
   useUpdateTableStatusMutation,
 } from '@/api/adminApi';
 import { useAppSelector } from '@/store/hooks';
@@ -20,7 +21,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 import { ListPageSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Badge } from '@/components/ui/Badge';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Toggle } from '@/components/ui/Toggle';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -50,6 +51,7 @@ export default function TableList() {
 
   const { data: tables = [], isLoading } = useGetTablesQuery();
   const [deleteTable, { isLoading: isDeleting }] = useDeleteTableMutation();
+  const [updateTable] = useUpdateTableMutation();
   const [updateTableStatus] = useUpdateTableStatusMutation();
 
   const filtered = useMemo(() => {
@@ -72,8 +74,14 @@ export default function TableList() {
   };
 
   const handleToggleActive = async (table: any) => {
-    const newStatus = table.status === 'maintenance' ? 'available' : 'maintenance';
-    await updateTableStatus({ id: table.id, status: newStatus }).unwrap();
+    // The "Ativa" toggle controls is_active (enable/disable the table), which is what
+    // its `checked` prop reads — so toggling actually flips the switch and animates.
+    const isActive = table.is_active !== false;
+    await updateTable({ id: table.id, data: { is_active: !isActive } }).unwrap();
+  };
+
+  const handleChangeStatus = async (table: any, status: string) => {
+    await updateTableStatus({ id: table.id, status }).unwrap();
   };
 
   const qrUrl = qrTable
@@ -180,7 +188,6 @@ export default function TableList() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((table: any) => {
-                  const status = statusConfig[table.status] ?? statusConfig.available;
                   const isActive = table.is_active !== false;
 
                   return (
@@ -209,7 +216,17 @@ export default function TableList() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <Select
+                          value={table.status ?? 'available'}
+                          onChange={(e) => handleChangeStatus(table, e.target.value)}
+                          className="h-9 w-auto py-1.5"
+                        >
+                          {Object.entries(statusConfig).map(([value, cfg]) => (
+                            <option key={value} value={value}>
+                              {cfg.label}
+                            </option>
+                          ))}
+                        </Select>
                       </td>
                       <td className="px-6 py-4">
                         <Toggle

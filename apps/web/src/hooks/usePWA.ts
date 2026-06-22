@@ -6,7 +6,16 @@ export function usePWA() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
+      if (import.meta.env.PROD) {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+      } else {
+        // In dev the cache-first SW would serve stale (old) bundles, so code changes
+        // wouldn't take effect. Unregister any existing SW and drop its caches.
+        navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
+        if ('caches' in window) {
+          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+        }
+      }
     }
 
     const handler = (e: Event) => {

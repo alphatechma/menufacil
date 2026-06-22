@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestaurantTable } from './entities/table.entity';
+import { TenantUnit } from '../unit/entities/tenant-unit.entity';
 import { Tenant } from '../tenant/entities/tenant.entity';
 import { TableController } from './table.controller';
 import { TablePublicController } from './table-public.controller';
@@ -9,7 +10,7 @@ import { TableSessionModule } from '../table-session/table-session.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RestaurantTable, Tenant]),
+    TypeOrmModule.forFeature([RestaurantTable, TenantUnit, Tenant]),
     forwardRef(() => TableSessionModule),
   ],
   controllers: [TableController, TablePublicController],
