@@ -6,6 +6,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleFavorite, selectFavoriteIds } from '@/store/slices/favoritesSlice';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
+import { findItemPromo, unitDiscountedPrice, type PromoInfo } from '@/utils/promotions';
 import { SmartSearch } from '@/components/ui/SmartSearch';
 
 const DIETARY_FILTERS = [
@@ -152,34 +153,18 @@ export default function Menu() {
     return matchesCategory && matchesSearch && matchesDietary;
   });
 
-  // Build a map of productId -> promotion labels for badges on products
-  const productPromoBadges = useMemo(() => {
-    const badges: Record<string, string> = {};
-    for (const promo of activePromotions) {
-      const productIds = promo.rules?.products || [];
-      const categoryIds = promo.rules?.categories || [];
-      const label =
-        promo.type === 'happy_hour'
-          ? `Happy Hour -${promo.discount_type === 'percent' ? `${promo.discount_value}%` : `R$${Number(promo.discount_value).toFixed(2)}`}`
-          : promo.type === 'combo'
-            ? `Combo: ${promo.name}`
-            : promo.type === 'buy_x_get_y'
-              ? `Compre ${promo.rules?.buy_quantity || ''} Leve ${(promo.rules?.buy_quantity || 0) + (promo.rules?.get_quantity || 0)}`
-              : `-${promo.discount_type === 'percent' ? `${promo.discount_value}%` : `R$${Number(promo.discount_value).toFixed(2)}`}`;
-
-      for (const pid of productIds) {
-        badges[pid] = label;
-      }
-      // Also match by category
-      for (const cid of categoryIds) {
-        for (const p of products) {
-          if ((p as any).category_id === cid && !badges[(p as any).id]) {
-            badges[(p as any).id] = label;
-          }
-        }
-      }
+  // Build a map of productId -> promotion info (badge + discount) for the cards.
+  // First active promotion wins; product scope takes precedence over category scope.
+  const productPromos = useMemo(() => {
+    const map: Record<string, PromoInfo> = {};
+    for (const p of products) {
+      const promo = findItemPromo(activePromotions, {
+        product_id: (p as any).id,
+        category_id: (p as any).category_id,
+      });
+      if (promo) map[(p as any).id] = promo;
     }
-    return badges;
+    return map;
   }, [activePromotions, products]);
 
   // Group products by category for display when no category filter is active
@@ -449,7 +434,7 @@ export default function Menu() {
                 slug={slug!}
                 isClosed={isClosed}
                 isTopProduct={topProductIds.has(product.id)}
-                promoBadge={productPromoBadges[product.id]}
+                promo={productPromos[product.id]}
                 index={idx}
                 isVisible={isVisible}
               />
@@ -482,7 +467,7 @@ export default function Menu() {
                       slug={slug!}
                       isClosed={isClosed}
                       isTopProduct={topProductIds.has(product.id)}
-                      promoBadge={productPromoBadges[product.id]}
+                      promo={productPromos[product.id]}
                       index={idx}
                       isVisible={isVisible}
                     />
@@ -512,7 +497,7 @@ function ProductCard({
   slug,
   isClosed,
   isTopProduct,
-  promoBadge,
+  promo,
   index,
   isVisible,
 }: {
@@ -520,7 +505,7 @@ function ProductCard({
   slug: string;
   isClosed: boolean;
   isTopProduct?: boolean;
-  promoBadge?: string;
+  promo?: PromoInfo;
   index: number;
   isVisible: boolean;
 }) {
@@ -534,6 +519,9 @@ function ProductCard({
   const minPrice = hasVariations
     ? Math.min(...product.variations.map((v: any) => v.price))
     : product.base_price;
+
+  // Discounted price for item-level promos (combo / buy_x_get_y show only the badge)
+  const discountedPrice = useMemo(() => unitDiscountedPrice(minPrice, promo), [promo, minPrice]);
 
   const Wrapper = isClosed ? 'div' : Link;
   const wrapperProps = isClosed ? {} : { to: `/${slug}/menu/${product.id}` };
@@ -646,13 +634,13 @@ function ProductCard({
               Mais Pedido
             </span>
           )}
-          {promoBadge && (
+          {promo && (
             <span
               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white shadow-sm backdrop-blur-sm"
               style={{ backgroundColor: 'var(--tenant-primary)' }}
             >
               <Tag className="w-3 h-3" />
-              {promoBadge}
+              {promo.label}
             </span>
           )}
         </div>
@@ -694,12 +682,26 @@ function ProductCard({
             {hasVariations && (
               <span className="text-[10px] text-gray-400 font-medium block">A partir de</span>
             )}
-            <p
-              className="text-lg font-extrabold leading-tight"
-              style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
-            >
-              {formatPrice(minPrice)}
-            </p>
+            {discountedPrice != null && !isClosed ? (
+              <>
+                <span className="text-xs text-gray-400 line-through leading-tight block">
+                  {formatPrice(minPrice)}
+                </span>
+                <p
+                  className="text-lg font-extrabold leading-tight"
+                  style={{ color: 'var(--tenant-primary)' }}
+                >
+                  {formatPrice(discountedPrice)}
+                </p>
+              </>
+            ) : (
+              <p
+                className="text-lg font-extrabold leading-tight"
+                style={{ color: isClosed ? '#9ca3af' : 'var(--tenant-primary)' }}
+              >
+                {formatPrice(minPrice)}
+              </p>
+            )}
           </div>
 
           {!isClosed && (

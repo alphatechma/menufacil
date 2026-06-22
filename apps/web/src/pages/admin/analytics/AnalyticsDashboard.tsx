@@ -34,6 +34,7 @@ import {
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
 import { cn } from '@/utils/cn';
+import { parseDayDate } from '@/utils/datetime';
 import { env } from '@/config/env';
 import {
   useGetAnalyticsOverviewQuery,
@@ -271,8 +272,8 @@ function OverviewTab({
               <XAxis
                 dataKey="date"
                 tickFormatter={(v) => {
-                  const d = new Date(v + 'T00:00:00');
-                  return `${d.getDate()}/${d.getMonth() + 1}`;
+                  const d = parseDayDate(v);
+                  return isNaN(d.getTime()) ? '' : `${d.getDate()}/${d.getMonth() + 1}`;
                 }}
                 tick={{ fontSize: 11 }}
               />
@@ -283,8 +284,8 @@ function OverviewTab({
               <Tooltip
                 formatter={(value: number) => [formatCurrency(value), 'Receita']}
                 labelFormatter={(label) => {
-                  const d = new Date(label + 'T00:00:00');
-                  return d.toLocaleDateString('pt-BR');
+                  const d = parseDayDate(label);
+                  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR');
                 }}
               />
               <Area
@@ -549,16 +550,16 @@ function CustomersTab({
               <XAxis
                 dataKey="date"
                 tickFormatter={(v) => {
-                  const d = new Date(v + 'T00:00:00');
-                  return `${d.getDate()}/${d.getMonth() + 1}`;
+                  const d = parseDayDate(v);
+                  return isNaN(d.getTime()) ? '' : `${d.getDate()}/${d.getMonth() + 1}`;
                 }}
                 tick={{ fontSize: 11 }}
               />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip
                 labelFormatter={(label) => {
-                  const d = new Date(label + 'T00:00:00');
-                  return d.toLocaleDateString('pt-BR');
+                  const d = parseDayDate(label);
+                  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR');
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />

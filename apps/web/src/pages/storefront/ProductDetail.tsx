@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, Check, ShoppingBag, AlertCircle, Lock } from 'lucide-react';
-import { useGetStorefrontProductQuery } from '@/api/customerApi';
+import { useGetStorefrontProductQuery, useGetActivePromotionsQuery } from '@/api/customerApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addItem, openDrawer } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
+import { findItemPromo, unitDiscountedPrice } from '@/utils/promotions';
 import type { CartItemExtra } from '@/store/slices/cartSlice';
 
 export default function ProductDetail() {
@@ -18,6 +19,18 @@ export default function ProductDetail() {
     { slug: slug!, productId: productId! },
     { skip: !slug || !productId },
   );
+
+  const { data: activePromotions = [] } = useGetActivePromotionsQuery(
+    { slug: slug! },
+    { skip: !slug },
+  );
+
+  const productPromo = product
+    ? findItemPromo(activePromotions, {
+        product_id: product.id,
+        category_id: product.category_id,
+      })
+    : null;
 
   const [selectedVariations, setSelectedVariations] = useState<Map<string, number>>(new Map());
   const [selectedExtras, setSelectedExtras] = useState<
@@ -144,8 +157,16 @@ export default function ProductDetail() {
     );
   };
 
+  // Preço-base com a promoção aplicada (quando houver desconto por item)
+  const getDiscountedBasePrice = () => {
+    const base = getBasePrice();
+    return unitDiscountedPrice(base, productPromo) ?? base;
+  };
+
+  const hasItemDiscount = () => getDiscountedBasePrice() < getBasePrice();
+
   const getTotalPrice = () => {
-    return (getBasePrice() + getExtrasTotal()) * quantity;
+    return (getDiscountedBasePrice() + getExtrasTotal()) * quantity;
   };
 
   // Check if selection is complete enough to add to cart
@@ -230,6 +251,7 @@ export default function ProductDetail() {
     dispatch(
       addItem({
         product_id: product.id,
+        category_id: product.category_id ?? null,
         product_name: product.name,
         product_image: product.image_url || product.category?.image_url,
         variation_id: variationId,
@@ -326,12 +348,34 @@ export default function ProductDetail() {
             {product.description}
           </p>
         )}
-        <p
-          className="text-2xl font-bold mt-3"
-          style={{ color: 'var(--tenant-primary)' }}
-        >
-          {formatPrice(getBasePrice())}
-        </p>
+        {hasItemDiscount() ? (
+          <div className="flex items-baseline gap-2 mt-3">
+            <span className="text-base text-gray-400 line-through">
+              {formatPrice(getBasePrice())}
+            </span>
+            <p
+              className="text-2xl font-bold"
+              style={{ color: 'var(--tenant-primary)' }}
+            >
+              {formatPrice(getDiscountedBasePrice())}
+            </p>
+            {productPromo && (
+              <span
+                className="text-[11px] font-bold text-white px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: 'var(--tenant-primary)' }}
+              >
+                {productPromo.label}
+              </span>
+            )}
+          </div>
+        ) : (
+          <p
+            className="text-2xl font-bold mt-3"
+            style={{ color: 'var(--tenant-primary)' }}
+          >
+            {formatPrice(getBasePrice())}
+          </p>
+        )}
       </div>
 
       {/* Variations */}

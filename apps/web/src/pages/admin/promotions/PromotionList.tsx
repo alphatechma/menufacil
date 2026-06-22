@@ -149,8 +149,8 @@ export default function PromotionList() {
                     {promo.valid_from && (
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        {new Date(promo.valid_from).toLocaleDateString('pt-BR')}
-                        {promo.valid_to && ` - ${new Date(promo.valid_to).toLocaleDateString('pt-BR')}`}
+                        {new Date(promo.valid_from).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                        {promo.valid_to && ` - ${new Date(promo.valid_to).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`}
                       </span>
                     )}
 

@@ -10,6 +10,7 @@ import {
   useGetCategoriesQuery,
 } from '@/api/adminApi';
 import { cn } from '@/utils/cn';
+import { isoToSaoPauloInput, saoPauloInputToIso } from '@/utils/datetime';
 import { useNotify } from '@/hooks/useNotify';
 
 const PROMO_TYPES = [
@@ -71,8 +72,8 @@ export default function PromotionFormModal({ open, onClose, promotion }: Props) 
       setDiscountType(promotion.discount_type || 'percent');
       setDiscountValue(String(promotion.discount_value || ''));
       setIsActive(promotion.is_active ?? true);
-      setValidFrom(promotion.valid_from ? promotion.valid_from.slice(0, 16) : '');
-      setValidTo(promotion.valid_to ? promotion.valid_to.slice(0, 16) : '');
+      setValidFrom(isoToSaoPauloInput(promotion.valid_from));
+      setValidTo(isoToSaoPauloInput(promotion.valid_to));
       setSelectedProducts(promotion.rules?.products || []);
       setSelectedCategories(promotion.rules?.categories || []);
       setSelectedDays(promotion.schedule?.days || []);
@@ -129,8 +130,8 @@ export default function PromotionFormModal({ open, onClose, promotion }: Props) 
       discount_type: discountType,
       discount_value: Number(discountValue),
       is_active: isActive,
-      valid_from: validFrom || null,
-      valid_to: validTo || null,
+      valid_from: saoPauloInputToIso(validFrom),
+      valid_to: saoPauloInputToIso(validTo),
       rules: {
         products: selectedProducts.length > 0 ? selectedProducts : undefined,
         categories: selectedCategories.length > 0 ? selectedCategories : undefined,

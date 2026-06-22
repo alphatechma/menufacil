@@ -29,11 +29,13 @@ import {
   useLazyValidateCouponQuery,
   useGetCustomerOrdersQuery,
   useGetWalletBalanceQuery,
+  useGetActivePromotionsQuery,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
 import type { OrderMode } from '@/store/slices/cartSlice';
 import { formatPrice } from '@/utils/formatPrice';
+import { priceCartItems, type PricedLine } from '@/utils/promotions';
 import { maskCep } from '@/utils/masks';
 import { cn } from '@/utils/cn';
 import { useNotify } from '@/hooks/useNotify';
@@ -148,7 +150,9 @@ function CheckoutSteps({ currentStep }: { currentStep: number }) {
 // --- Order Summary Sidebar / Section ---
 function OrderSummary({
   cartItems,
+  pricedLines,
   subtotal,
+  promoDiscount,
   isDelivery,
   deliveryFee,
   lookingUpFee,
@@ -165,7 +169,9 @@ function OrderSummary({
   sticky,
 }: {
   cartItems: any[];
+  pricedLines: PricedLine[];
   subtotal: number;
+  promoDiscount: number;
   isDelivery: boolean;
   deliveryFee: number;
   lookingUpFee: boolean;
@@ -181,9 +187,10 @@ function OrderSummary({
   changeAmount: string;
   sticky?: boolean;
 }) {
-  const getItemTotal = (item: any) => {
+  const getItemTotal = (item: any, index: number) => {
     const extrasTotal = item.extras.reduce((s: number, e: any) => s + e.price, 0);
-    return (item.unit_price + extrasTotal) * item.quantity;
+    const unit = pricedLines[index]?.discountedUnitPrice ?? item.unit_price;
+    return (unit + extrasTotal) * item.quantity;
   };
 
   return (
@@ -192,7 +199,12 @@ function OrderSummary({
         <h3 className="font-bold text-gray-900 mb-4">Resumo do pedido</h3>
 
         <div className="space-y-3 max-h-64 overflow-y-auto">
-          {cartItems.map((item, index) => (
+          {cartItems.map((item, index) => {
+            const lineHasDiscount = pricedLines[index]?.promo != null;
+            const extrasTotal = item.extras.reduce((s: number, e: any) => s + e.price, 0);
+            const originalTotal =
+              ((pricedLines[index]?.originalUnitPrice ?? item.unit_price) + extrasTotal) * item.quantity;
+            return (
             <div key={index} className="flex justify-between text-sm">
               <div className="flex-1 min-w-0 mr-4">
                 <p className="text-gray-800 font-medium">
@@ -207,11 +219,17 @@ function OrderSummary({
                   </p>
                 )}
               </div>
-              <span className="text-gray-700 font-medium whitespace-nowrap">
-                {formatPrice(getItemTotal(item))}
+              <span className="text-gray-700 font-medium whitespace-nowrap text-right">
+                {lineHasDiscount && (
+                  <span className="block text-xs text-gray-400 line-through">
+                    {formatPrice(originalTotal)}
+                  </span>
+                )}
+                {formatPrice(getItemTotal(item, index))}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
@@ -219,6 +237,12 @@ function OrderSummary({
             <span>Subtotal</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
+          {promoDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 font-medium">
+              <span>Desconto promoções</span>
+              <span>-{formatPrice(promoDiscount)}</span>
+            </div>
+          )}
           {isDelivery && (
             <div className="flex justify-between text-sm text-gray-600">
               <span>Taxa de entrega</span>
@@ -392,18 +416,35 @@ export default function Checkout() {
 
   const neighborhoodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Promotions (per-item discount), computed live to match the backend
+  const { data: activePromotions = [] } = useGetActivePromotionsQuery(
+    { slug: slug! },
+    { skip: !slug },
+  );
+  const { lines: pricedLines, totalDiscount: promoDiscount } = priceCartItems(
+    activePromotions,
+    cartItems.map((i) => ({
+      product_id: i.product_id,
+      category_id: i.category_id,
+      unit_price: i.unit_price,
+      quantity: i.quantity,
+    })),
+  );
+
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
     return sum + (item.unit_price + extrasTotal) * item.quantity;
   }, 0);
+  const discountedSubtotal = subtotal - promoDiscount;
   const effectiveDeliveryFee = isDelivery ? deliveryFee : 0;
-  const total = subtotal + effectiveDeliveryFee - couponDiscount;
+  const total = discountedSubtotal + effectiveDeliveryFee - couponDiscount;
 
-  // Get item total
-  const getItemTotal = (item: typeof cartItems[0]) => {
+  // Get item total (with per-item promotion discount applied)
+  const getItemTotal = (item: typeof cartItems[0], index: number) => {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
-    return (item.unit_price + extrasTotal) * item.quantity;
+    const unit = pricedLines[index]?.discountedUnitPrice ?? item.unit_price;
+    return (unit + extrasTotal) * item.quantity;
   };
 
   // Extract available neighborhoods from delivery zones
@@ -516,7 +557,7 @@ export default function Checkout() {
     setCouponLoading(true);
     setCouponError(null);
     try {
-      const result = await validateCoupon({ slug: slug!, code: couponCode.trim(), total: subtotal }).unwrap();
+      const result = await validateCoupon({ slug: slug!, code: couponCode.trim(), total: discountedSubtotal }).unwrap();
       setCouponDiscount(result.discount);
       setAppliedCoupon(couponCode.trim().toUpperCase());
     } catch (err: any) {
@@ -1286,7 +1327,12 @@ export default function Checkout() {
         <h3 className="font-bold text-gray-900 mb-4">Resumo do pedido</h3>
 
         <div className="space-y-3">
-          {cartItems.map((item, index) => (
+          {cartItems.map((item, index) => {
+            const lineHasDiscount = pricedLines[index]?.promo != null;
+            const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
+            const originalTotal =
+              ((pricedLines[index]?.originalUnitPrice ?? item.unit_price) + extrasTotal) * item.quantity;
+            return (
             <div key={index} className="flex justify-between text-sm">
               <div className="flex-1 min-w-0 mr-4">
                 <p className="text-gray-800 font-medium">
@@ -1301,11 +1347,17 @@ export default function Checkout() {
                   </p>
                 )}
               </div>
-              <span className="text-gray-700 font-medium whitespace-nowrap">
-                {formatPrice(getItemTotal(item))}
+              <span className="text-gray-700 font-medium whitespace-nowrap text-right">
+                {lineHasDiscount && (
+                  <span className="block text-xs text-gray-400 line-through">
+                    {formatPrice(originalTotal)}
+                  </span>
+                )}
+                {formatPrice(getItemTotal(item, index))}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
@@ -1313,6 +1365,12 @@ export default function Checkout() {
             <span>Subtotal</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
+          {promoDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 font-medium">
+              <span>Desconto promoções</span>
+              <span>-{formatPrice(promoDiscount)}</span>
+            </div>
+          )}
           {isDelivery && (
             <div className="flex justify-between text-sm text-gray-600">
               <span>Taxa de entrega</span>
@@ -1541,7 +1599,9 @@ export default function Checkout() {
           <div className="hidden lg:block lg:w-[30%] lg:min-w-[280px] lg:pt-0">
             <OrderSummary
               cartItems={cartItems}
+              pricedLines={pricedLines}
               subtotal={subtotal}
+              promoDiscount={promoDiscount}
               isDelivery={isDelivery}
               deliveryFee={deliveryFee}
               lookingUpFee={lookingUpFee}

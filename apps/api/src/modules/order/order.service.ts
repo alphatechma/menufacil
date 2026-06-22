@@ -22,6 +22,7 @@ import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.se
 import { InventoryService } from '../inventory/inventory.service';
 import { AutoAssignService } from '../delivery-person/auto-assign.service';
 import { DeliveryPersonService } from '../delivery-person/delivery-person.service';
+import { PromotionService } from '../promotion/promotion.service';
 
 @Injectable()
 export class OrderService {
@@ -50,6 +51,7 @@ export class OrderService {
     private readonly inventoryService: InventoryService,
     private readonly autoAssignService: AutoAssignService,
     private readonly deliveryPersonService: DeliveryPersonService,
+    private readonly promotionService: PromotionService,
     @InjectQueue('notifications') private readonly notificationQueue: Queue,
     @InjectQueue('inventory') private readonly inventoryQueue: Queue,
     @InjectQueue('loyalty') private readonly loyaltyQueue: Queue,
@@ -190,6 +192,23 @@ export class OrderService {
         })) || [],
       };
     });
+
+    // Apply active promotions (per-item discount) — server is the source of truth for pricing.
+    const activePromotions = await this.promotionService.getActivePromotions(tenantId);
+    if (activePromotions.length > 0) {
+      const discountedUnitPrices = this.promotionService.priceItems(
+        activePromotions,
+        orderItems.map((oi) => ({
+          product_id: oi.product_id,
+          category_id: productMap.get(oi.product_id)?.category_id ?? null,
+          unit_price: oi.unit_price,
+          quantity: oi.quantity,
+        })),
+      );
+      orderItems.forEach((oi, i) => {
+        oi.unit_price = discountedUnitPrices[i];
+      });
+    }
 
     const subtotal = orderItems.reduce((sum, item) => {
       const extrasTotal = item.extras.reduce((s, e) => s + Number(e.extra_price), 0);

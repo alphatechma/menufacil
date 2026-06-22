@@ -12,8 +12,9 @@ import {
   selectSubtotal,
   selectTotalItems,
 } from '@/store/slices/cartSlice';
-import type { CartItem } from '@/store/slices/cartSlice';
+import { useGetActivePromotionsQuery } from '@/api/customerApi';
 import { formatPrice } from '@/utils/formatPrice';
+import { priceCartItems } from '@/utils/promotions';
 
 export function CartDrawer() {
   const { slug } = useParams<{ slug: string }>();
@@ -26,8 +27,23 @@ export function CartDrawer() {
   const totalItems = useAppSelector(selectTotalItems);
   const tenant = useAppSelector((state) => state.tenant.tenant);
 
+  const { data: activePromotions = [] } = useGetActivePromotionsQuery(
+    { slug: slug! },
+    { skip: !slug },
+  );
+  const { lines, totalDiscount } = priceCartItems(
+    activePromotions,
+    items.map((i) => ({
+      product_id: i.product_id,
+      category_id: i.category_id,
+      unit_price: i.unit_price,
+      quantity: i.quantity,
+    })),
+  );
+
   const deliveryFee = tenant?.delivery_fee || 0;
-  const total = subtotal + deliveryFee;
+  const discountedSubtotal = subtotal - totalDiscount;
+  const total = discountedSubtotal + deliveryFee;
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -44,11 +60,6 @@ export function CartDrawer() {
   const handleCheckout = () => {
     dispatch(closeDrawer());
     navigate(`/${slug}/checkout`);
-  };
-
-  const getItemTotalPrice = (item: CartItem) => {
-    const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
-    return (item.unit_price + extrasTotal) * item.quantity;
   };
 
   return (
@@ -103,7 +114,13 @@ export function CartDrawer() {
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((item, index) => (
+              {items.map((item, index) => {
+                const line = lines[index];
+                const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
+                const lineTotal = (line.discountedUnitPrice + extrasTotal) * item.quantity;
+                const originalLineTotal = (line.originalUnitPrice + extrasTotal) * item.quantity;
+                const lineHasDiscount = line.promo != null;
+                return (
                 <div
                   key={`${item.product_id}-${item.variation_id}-${index}`}
                   className="flex gap-3 p-3 bg-gray-50 rounded-xl"
@@ -156,9 +173,20 @@ export function CartDrawer() {
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-gray-900">
-                        {formatPrice(getItemTotalPrice(item))}
-                      </span>
+                      {lineHasDiscount ? (
+                        <span className="flex flex-col items-end leading-tight">
+                          <span className="text-xs text-gray-400 line-through">
+                            {formatPrice(originalLineTotal)}
+                          </span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {formatPrice(lineTotal)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-sm font-bold text-gray-900">
+                          {formatPrice(lineTotal)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
@@ -168,7 +196,8 @@ export function CartDrawer() {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
 
               {/* Clear all */}
               <button
@@ -188,6 +217,12 @@ export function CartDrawer() {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {totalDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600 font-medium">
+                <span>Desconto promoções</span>
+                <span>- {formatPrice(totalDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm text-gray-600">
               <span>Taxa de entrega</span>
               <span>
