@@ -20,7 +20,7 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
   available: { label: 'Disponivel', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   occupied: { label: 'Ocupada', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
   reserved: { label: 'Reservada', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  inactive: { label: 'Inativa', bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200' },
+  maintenance: { label: 'Manutenção', bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200' },
 };
 
 export default function Tables() {
@@ -49,7 +49,6 @@ export default function Tables() {
     e.preventDefault();
     const data = {
       number: parseInt(form.number) || 0,
-      seats: parseInt(form.seats) || 4,
       capacity: parseInt(form.seats) || 4,
       status: form.status,
     };
@@ -170,7 +169,7 @@ export default function Tables() {
                   <option value="available">Disponivel</option>
                   <option value="occupied">Ocupada</option>
                   <option value="reserved">Reservada</option>
-                  <option value="inactive">Inativa</option>
+                  <option value="maintenance">Manutenção</option>
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
