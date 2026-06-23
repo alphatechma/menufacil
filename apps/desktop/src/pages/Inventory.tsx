@@ -16,34 +16,44 @@ import {
   useDeleteInventoryItemMutation,
   useGetStockMovementsQuery,
   useCreateStockMovementMutation,
-  useGetUnitsQuery,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 
 interface ItemForm {
   name: string;
-  unit_id: string;
+  unit: string;
   current_stock: string;
   min_stock: string;
-  cost_per_unit: string;
+  cost_price: string;
 }
 
-const emptyForm: ItemForm = { name: '', unit_id: '', current_stock: '0', min_stock: '0', cost_per_unit: '0' };
+const emptyForm: ItemForm = { name: '', unit: 'un', current_stock: '0', min_stock: '0', cost_price: '0' };
+
+const UNITS = [
+  { value: 'un', label: 'Unidade (un)' },
+  { value: 'kg', label: 'Quilograma (kg)' },
+  { value: 'g', label: 'Grama (g)' },
+  { value: 'L', label: 'Litro (L)' },
+  { value: 'mL', label: 'Mililitro (mL)' },
+  { value: 'cx', label: 'Caixa (cx)' },
+  { value: 'pct', label: 'Pacote (pct)' },
+];
 
 export default function Inventory() {
   const { data: items = [], isLoading } = useGetInventoryItemsQuery();
   const { data: movements = [] } = useGetStockMovementsQuery();
-  const { data: units = [] } = useGetUnitsQuery();
   const [createItem, { isLoading: creating }] = useCreateInventoryItemMutation();
   const [updateItem, { isLoading: updating }] = useUpdateInventoryItemMutation();
   const [deleteItem] = useDeleteInventoryItemMutation();
   const [createMovement, { isLoading: movementCreating }] = useCreateStockMovementMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [movementModal, setMovementModal] = useState(false);
   const [showMovements, setShowMovements] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ItemForm>(emptyForm);
-  const [movementForm, setMovementForm] = useState({ inventory_item_id: '', type: 'in', quantity: '', reason: '' });
+  const [movementForm, setMovementForm] = useState({ item_id: '', type: 'entry', quantity: '', reason: '' });
 
   const openCreate = () => { setEditingId(null); setForm(emptyForm); setModalOpen(true); };
 
@@ -51,47 +61,63 @@ export default function Inventory() {
     setEditingId(item.id);
     setForm({
       name: item.name || '',
-      unit_id: item.unit_id || '',
+      unit: item.unit || 'un',
       current_stock: String(item.current_stock || 0),
       min_stock: String(item.min_stock || 0),
-      cost_per_unit: String(item.cost_per_unit || 0),
+      cost_price: String(item.cost_price ?? 0),
     });
     setModalOpen(true);
   };
 
   const openMovement = (itemId?: string) => {
-    setMovementForm({ inventory_item_id: itemId || '', type: 'in', quantity: '', reason: '' });
+    setMovementForm({ item_id: itemId || '', type: 'entry', quantity: '', reason: '' });
     setMovementModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = {
-      ...form,
-      current_stock: parseFloat(form.current_stock) || 0,
+    const base = {
+      name: form.name,
+      unit: form.unit,
       min_stock: parseFloat(form.min_stock) || 0,
-      cost_per_unit: parseFloat(form.cost_per_unit) || 0,
+      cost_price: parseFloat(form.cost_price) || 0,
     };
-    if (editingId) {
-      await updateItem({ id: editingId, data });
-    } else {
-      await createItem(data);
+    try {
+      if (editingId) {
+        // current_stock não faz parte do update (estoque muda via movimentação)
+        await updateItem({ id: editingId, data: base }).unwrap();
+      } else {
+        await createItem({ ...base, current_stock: parseFloat(form.current_stock) || 0 }).unwrap();
+      }
+      notify.success('Item salvo com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar item.');
     }
-    setModalOpen(false);
   };
 
   const handleMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createMovement({
-      ...movementForm,
-      quantity: parseFloat(movementForm.quantity) || 0,
-    });
-    setMovementModal(false);
+    try {
+      await createMovement({
+        ...movementForm,
+        quantity: parseFloat(movementForm.quantity) || 0,
+      }).unwrap();
+      notify.success('Movimentação registrada!');
+      setMovementModal(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao registrar movimentação.');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este item?')) return;
-    await deleteItem(id);
+    try {
+      await deleteItem(id).unwrap();
+      notify.success('Item excluído.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir item.');
+    }
   };
 
   if (isLoading) {
@@ -159,7 +185,7 @@ export default function Inventory() {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-semibold text-gray-900">{item.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{item.unit?.abbreviation || item.unit?.name || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{item.unit || '-'}</td>
                       <td className="px-4 py-3 text-right">
                         <span className={`text-sm font-bold ${isLow ? 'text-red-600' : 'text-gray-900'}`}>
                           {item.current_stock || 0}
@@ -167,7 +193,7 @@ export default function Inventory() {
                         {isLow && <span className="ml-1 text-[10px] text-red-500 font-medium">BAIXO</span>}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 text-right">{item.min_stock || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-right">R$ {(item.cost_per_unit || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-right">R$ {Number(item.cost_price || 0).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => openMovement(item.id)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Movimentar">
@@ -202,9 +228,9 @@ export default function Inventory() {
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {m.created_at ? new Date(m.created_at).toLocaleString('pt-BR') : '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{m.inventory_item?.name || '-'}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{m.item?.name || '-'}</td>
                   <td className="px-4 py-3 text-center">
-                    {m.type === 'in' ? (
+                    {m.type === 'entry' ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600"><ArrowDownCircle className="w-3 h-3" /> Entrada</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600"><ArrowUpCircle className="w-3 h-3" /> Saida</span>
@@ -239,17 +265,16 @@ export default function Inventory() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Unidade</label>
-                <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                  <option value="">Selecione...</option>
-                  {units.map((u: any) => (
-                    <option key={u.id} value={u.id}>{u.name} ({u.abbreviation})</option>
+                <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                  {UNITS.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
                   ))}
                 </select>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Estoque</label>
-                  <input type="number" value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
+                  <input type="number" value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} disabled={!!editingId} title={editingId ? 'Ajustado via movimentação de estoque' : undefined} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed" step="0.01" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mínimo</label>
@@ -257,7 +282,7 @@ export default function Inventory() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Custo/Un.</label>
-                  <input type="number" value={form.cost_per_unit} onChange={(e) => setForm({ ...form, cost_per_unit: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
+                  <input type="number" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -282,7 +307,7 @@ export default function Inventory() {
             <form onSubmit={handleMovement} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Item</label>
-                <select value={movementForm.inventory_item_id} onChange={(e) => setMovementForm({ ...movementForm, inventory_item_id: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                <select value={movementForm.item_id} onChange={(e) => setMovementForm({ ...movementForm, item_id: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required>
                   <option value="">Selecione...</option>
                   {items.map((i: any) => (
                     <option key={i.id} value={i.id}>{i.name}</option>
@@ -293,8 +318,8 @@ export default function Inventory() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                   <select value={movementForm.type} onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="in">Entrada</option>
-                    <option value="out">Saida</option>
+                    <option value="entry">Entrada</option>
+                    <option value="exit">Saida</option>
                   </select>
                 </div>
                 <div>

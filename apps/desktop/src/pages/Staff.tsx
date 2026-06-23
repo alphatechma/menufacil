@@ -7,6 +7,7 @@ import {
   useDeleteStaffMutation,
   useGetRolesQuery,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 interface StaffForm {
@@ -32,6 +33,7 @@ export default function Staff() {
   const [createStaff, { isLoading: creating }] = useCreateStaffMutation();
   const [updateStaff, { isLoading: updating }] = useUpdateStaffMutation();
   const [deleteStaff] = useDeleteStaffMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,25 +55,41 @@ export default function Staff() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data: any = {
-      name: form.name,
-      email: form.email,
-      system_role: form.system_role,
-      role_id: form.role_id || undefined,
-    };
-    if (form.password) data.password = form.password;
-    if (editingId) {
-      await updateStaff({ id: editingId, data });
-    } else {
-      data.password = form.password;
-      await createStaff(data);
+    try {
+      if (editingId) {
+        // UpdateUserDto aceita: name, role, role_id, is_active, unit_id (sem email/senha).
+        const data: any = {
+          name: form.name,
+          role: form.system_role,
+          role_id: form.role_id || null,
+        };
+        await updateStaff({ id: editingId, data }).unwrap();
+      } else {
+        // CreateUserDto: name, email, password, role, role_id?.
+        const data: any = {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: form.system_role,
+        };
+        if (form.role_id) data.role_id = form.role_id;
+        await createStaff(data).unwrap();
+      }
+      notify.success('Usuário salvo com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar usuário.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este usuario?')) return;
-    await deleteStaff(id);
+    if (!confirm('Desativar este usuário? Ele perderá acesso ao sistema.')) return;
+    try {
+      await deleteStaff(id).unwrap();
+      notify.success('Usuário desativado.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao desativar usuário.');
+    }
   };
 
   if (isLoading) {
@@ -166,14 +184,14 @@ export default function Staff() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!!editingId} title={editingId ? 'O e-mail não pode ser alterado' : undefined} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed" required />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Senha {editingId && <span className="text-xs text-gray-400">(deixe vazio para manter)</span>}
-                </label>
-                <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" {...(!editingId ? { required: true } : {})} />
-              </div>
+              {!editingId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                  <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>

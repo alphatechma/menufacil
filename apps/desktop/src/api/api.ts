@@ -155,6 +155,10 @@ export const api = baseApi.injectEndpoints({
       query: () => ({ url: '/reservations' }),
       providesTags: ['Reservations'],
     }),
+    createReservation: builder.mutation<any, any>({
+      query: (body) => ({ url: '/reservations', method: 'POST', body }),
+      invalidatesTags: ['Reservations'],
+    }),
     updateReservationStatus: builder.mutation<void, { id: string; status: string }>({
       query: ({ id, status }) => ({ url: `/reservations/${id}/status`, method: 'PATCH', body: { status } }),
       invalidatesTags: ['Reservations'],
@@ -373,6 +377,7 @@ export const {
   useDeleteTableMutation,
   // Reservations
   useGetReservationsQuery,
+  useCreateReservationMutation,
   useUpdateReservationStatusMutation,
   // Floor Plans
   useGetFloorPlansQuery,

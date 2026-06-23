@@ -6,6 +6,7 @@ import {
   useUpdateTableMutation,
   useDeleteTableMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 interface TableForm {
@@ -28,6 +29,7 @@ export default function Tables() {
   const [createTable, { isLoading: creating }] = useCreateTableMutation();
   const [updateTable, { isLoading: updating }] = useUpdateTableMutation();
   const [deleteTable] = useDeleteTableMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,17 +54,27 @@ export default function Tables() {
       capacity: parseInt(form.seats) || 4,
       status: form.status,
     };
-    if (editingId) {
-      await updateTable({ id: editingId, data });
-    } else {
-      await createTable(data);
+    try {
+      if (editingId) {
+        await updateTable({ id: editingId, data }).unwrap();
+      } else {
+        await createTable(data).unwrap();
+      }
+      notify.success('Mesa salva com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar mesa.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta mesa?')) return;
-    await deleteTable(id);
+    try {
+      await deleteTable(id).unwrap();
+      notify.success('Mesa excluída.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir mesa.');
+    }
   };
 
   if (isLoading) {

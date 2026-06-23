@@ -6,26 +6,28 @@ import {
   useUpdateCouponMutation,
   useDeleteCouponMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
+import { DateSelect } from '@/components/ui/DateTimeSelect';
 import { formatPrice } from '@/utils/formatPrice';
 
 interface CouponForm {
   code: string;
   discount_type: string;
   discount_value: string;
-  min_order_value: string;
+  min_order: string;
   max_uses: string;
-  expires_at: string;
-  is_active: boolean;
+  valid_from: string;
+  valid_until: string;
 }
 
 const emptyForm: CouponForm = {
   code: '',
-  discount_type: 'percentage',
+  discount_type: 'percent',
   discount_value: '',
-  min_order_value: '',
+  min_order: '',
   max_uses: '',
-  expires_at: '',
-  is_active: true,
+  valid_from: '',
+  valid_until: '',
 };
 
 export default function Coupons() {
@@ -33,6 +35,7 @@ export default function Coupons() {
   const [createCoupon, { isLoading: creating }] = useCreateCouponMutation();
   const [updateCoupon, { isLoading: updating }] = useUpdateCouponMutation();
   const [deleteCoupon] = useDeleteCouponMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,36 +51,50 @@ export default function Coupons() {
     setEditingId(c.id);
     setForm({
       code: c.code || '',
-      discount_type: c.discount_type || 'percentage',
-      discount_value: String(c.discount_value || ''),
-      min_order_value: String(c.min_order_value || ''),
-      max_uses: String(c.max_uses || ''),
-      expires_at: c.expires_at ? c.expires_at.split('T')[0] : '',
-      is_active: c.is_active !== false,
+      discount_type: c.discount_type || 'percent',
+      discount_value: String(c.discount_value ?? ''),
+      min_order: String(c.min_order ?? ''),
+      max_uses: String(c.max_uses ?? ''),
+      valid_from: c.valid_from ? c.valid_from.split('T')[0] : '',
+      valid_until: c.valid_until ? c.valid_until.split('T')[0] : '',
     });
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = {
-      ...form,
+    const data: any = {
+      code: form.code.trim().toUpperCase(),
+      discount_type: form.discount_type,
       discount_value: parseFloat(form.discount_value) || 0,
-      min_order_value: parseFloat(form.min_order_value) || 0,
-      max_uses: parseInt(form.max_uses) || null,
-      expires_at: form.expires_at || null,
+      valid_from: form.valid_from,
+      valid_until: form.valid_until,
     };
-    if (editingId) {
-      await updateCoupon({ id: editingId, data });
-    } else {
-      await createCoupon(data);
+    const min = parseFloat(form.min_order);
+    if (!isNaN(min)) data.min_order = min;
+    const uses = parseInt(form.max_uses, 10);
+    if (!isNaN(uses)) data.max_uses = uses;
+    try {
+      if (editingId) {
+        await updateCoupon({ id: editingId, data }).unwrap();
+      } else {
+        await createCoupon(data).unwrap();
+      }
+      notify.success('Cupom salvo com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar cupom.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este cupom?')) return;
-    await deleteCoupon(id);
+    try {
+      await deleteCoupon(id).unwrap();
+      notify.success('Cupom excluído.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir cupom.');
+    }
   };
 
   if (isLoading) {
@@ -137,19 +154,23 @@ export default function Coupons() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {c.discount_type === 'percentage' ? 'Percentual' : 'Valor Fixo'}
+                    {c.discount_type === 'percent' ? 'Percentual' : 'Valor Fixo'}
                   </td>
                   <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                    {c.discount_type === 'percentage' ? `${c.discount_value}%` : formatPrice(c.discount_value || 0)}
+                    {c.discount_type === 'percent' ? `${c.discount_value}%` : formatPrice(c.discount_value || 0)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 text-right">
-                    {c.min_order_value ? formatPrice(c.min_order_value) : '-'}
+                    {c.min_order ? formatPrice(c.min_order) : '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 text-center">
                     {c.uses_count || 0}/{c.max_uses || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : 'Sem validade'}
+                    {c.valid_from && c.valid_until
+                      ? `${new Date(c.valid_from).toLocaleDateString('pt-BR')} – ${new Date(c.valid_until).toLocaleDateString('pt-BR')}`
+                      : c.valid_until
+                        ? new Date(c.valid_until).toLocaleDateString('pt-BR')
+                        : 'Sem validade'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${c.is_active !== false ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
@@ -204,7 +225,7 @@ export default function Coupons() {
                     onChange={(e) => setForm({ ...form, discount_type: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   >
-                    <option value="percentage">Percentual (%)</option>
+                    <option value="percent">Percentual (%)</option>
                     <option value="fixed">Valor Fixo (R$)</option>
                   </select>
                 </div>
@@ -225,8 +246,8 @@ export default function Coupons() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Pedido Mínimo (R$)</label>
                   <input
                     type="number"
-                    value={form.min_order_value}
-                    onChange={(e) => setForm({ ...form, min_order_value: e.target.value })}
+                    value={form.min_order}
+                    onChange={(e) => setForm({ ...form, min_order: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     step="0.01"
                   />
@@ -242,22 +263,12 @@ export default function Coupons() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Validade</label>
-                <input
-                  type="date"
-                  value={form.expires_at}
-                  onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Válido de</label>
+                <DateSelect value={form.valid_from} onChange={(v) => setForm({ ...form, valid_from: v })} required />
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label className="text-sm text-gray-700">Cupom ativo</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Válido até</label>
+                <DateSelect value={form.valid_until} onChange={(v) => setForm({ ...form, valid_until: v })} required />
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button

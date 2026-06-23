@@ -6,6 +6,7 @@ import {
   useUpdateDeliveryZoneMutation,
   useDeleteDeliveryZoneMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { formatPrice } from '@/utils/formatPrice';
 
 interface ZoneForm {
@@ -23,6 +24,7 @@ export default function DeliveryZones() {
   const [createZone, { isLoading: creating }] = useCreateDeliveryZoneMutation();
   const [updateZone, { isLoading: updating }] = useUpdateDeliveryZoneMutation();
   const [deleteZone] = useDeleteDeliveryZoneMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,17 +53,27 @@ export default function DeliveryZones() {
       min_delivery_time: parseInt(form.min_delivery_time) || 0,
       max_delivery_time: parseInt(form.max_delivery_time) || 0,
     };
-    if (editingId) {
-      await updateZone({ id: editingId, data });
-    } else {
-      await createZone(data);
+    try {
+      if (editingId) {
+        await updateZone({ id: editingId, data }).unwrap();
+      } else {
+        await createZone(data).unwrap();
+      }
+      notify.success('Zona salva com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar zona.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta zona?')) return;
-    await deleteZone(id);
+    try {
+      await deleteZone(id).unwrap();
+      notify.success('Zona excluída.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir zona.');
+    }
   };
 
   if (isLoading) {

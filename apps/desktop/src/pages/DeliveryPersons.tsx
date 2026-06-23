@@ -6,22 +6,24 @@ import {
   useUpdateDeliveryPersonMutation,
   useDeleteDeliveryPersonMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 
 interface PersonForm {
   name: string;
   phone: string;
   vehicle: string;
-  commission_rate: string;
+  commission_value: string;
   is_active: boolean;
 }
 
-const emptyForm: PersonForm = { name: '', phone: '', vehicle: 'motorcycle', commission_rate: '', is_active: true };
+const emptyForm: PersonForm = { name: '', phone: '', vehicle: 'motorcycle', commission_value: '', is_active: true };
 
 export default function DeliveryPersons() {
   const { data: persons = [], isLoading } = useGetDeliveryPersonsQuery();
   const [createPerson, { isLoading: creating }] = useCreateDeliveryPersonMutation();
   const [updatePerson, { isLoading: updating }] = useUpdateDeliveryPersonMutation();
   const [deletePerson] = useDeleteDeliveryPersonMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function DeliveryPersons() {
       name: p.name || '',
       phone: p.phone || '',
       vehicle: p.vehicle || 'motorcycle',
-      commission_rate: String(p.commission_rate || ''),
+      commission_value: String(p.commission_value ?? ''),
       is_active: p.is_active !== false,
     });
     setModalOpen(true);
@@ -43,18 +45,34 @@ export default function DeliveryPersons() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { ...form, commission_rate: parseFloat(form.commission_rate) || 0 };
-    if (editingId) {
-      await updatePerson({ id: editingId, data });
-    } else {
-      await createPerson(data);
+    const base = {
+      name: form.name,
+      phone: form.phone,
+      vehicle: form.vehicle,
+      commission_type: 'percent',
+      commission_value: parseFloat(form.commission_value) || 0,
+    };
+    try {
+      if (editingId) {
+        await updatePerson({ id: editingId, data: { ...base, is_active: form.is_active } }).unwrap();
+      } else {
+        await createPerson(base).unwrap();
+      }
+      notify.success('Entregador salvo com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar entregador.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este entregador?')) return;
-    await deletePerson(id);
+    try {
+      await deletePerson(id).unwrap();
+      notify.success('Entregador excluído.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir.');
+    }
   };
 
   const vehicleLabel: Record<string, string> = {
@@ -112,7 +130,7 @@ export default function DeliveryPersons() {
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900">{p.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{vehicleLabel[p.vehicle] || p.vehicle || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{p.commission_rate || 0}%</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{p.commission_value || 0}%</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${p.is_active !== false ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
                       {p.is_active !== false ? 'Ativo' : 'Inativo'}
@@ -159,7 +177,7 @@ export default function DeliveryPersons() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Comissão (%)</label>
-                  <input type="number" value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.1" />
+                  <input type="number" value={form.commission_value} onChange={(e) => setForm({ ...form, commission_value: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.1" />
                 </div>
               </div>
               <div className="flex items-center gap-2">

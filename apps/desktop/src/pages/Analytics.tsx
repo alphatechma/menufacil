@@ -39,6 +39,7 @@ import {
   useGetAnalyticsCustomersQuery,
   useGetAnalyticsDeliveryQuery,
 } from '@/api/api';
+import { DateSelect } from '@/components/ui/DateTimeSelect';
 
 const TABS = [
   { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
@@ -115,21 +116,11 @@ export default function Analytics() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700">De:</label>
-          <input
-            type="date"
-            value={dateRange.from}
-            onChange={(e) => setDateRange((prev) => ({ ...prev, from: e.target.value }))}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="w-52"><DateSelect value={dateRange.from} onChange={(v) => setDateRange((prev) => ({ ...prev, from: v }))} /></div>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700">Ate:</label>
-          <input
-            type="date"
-            value={dateRange.to}
-            onChange={(e) => setDateRange((prev) => ({ ...prev, to: e.target.value }))}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="w-52"><DateSelect value={dateRange.to} onChange={(v) => setDateRange((prev) => ({ ...prev, to: v }))} /></div>
         </div>
       </div>
 
