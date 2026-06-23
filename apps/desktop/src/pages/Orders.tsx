@@ -23,6 +23,7 @@ import { useNotify } from '@/hooks/useNotify';
 import { usePrinter } from '@/hooks/usePrinter';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
+import { DateSelect } from '@/components/ui/DateTimeSelect';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700', icon: <Clock className="w-3 h-3" /> },
@@ -205,12 +206,7 @@ export default function Orders() {
       {/* Status Tabs + Date Filter */}
       <div className="flex items-center gap-1 mb-4 border-b border-gray-200 overflow-x-auto">
         {statusFilter === 'all' && (
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="mr-2 px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 focus:border-primary focus:outline-none"
-          />
+          <div className="w-52 mr-2 shrink-0"><DateSelect value={dateFilter} onChange={setDateFilter} /></div>
         )}
         {STATUS_TABS.map((tab) => (
           <button

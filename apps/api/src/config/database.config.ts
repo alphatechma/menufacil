@@ -9,7 +9,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   username: configService.get('DB_USERNAME', 'menufacil'),
   password: configService.get('DB_PASSWORD', 'menufacil123'),
   database: configService.get('DB_DATABASE', 'menufacil'),
-  entities: [join(__dirname, '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
+  entities: [join(__dirname, '..', 'modules', '**', '*.entity.{ts,js}')],
   migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
   synchronize: false, // Always false — use migrations
   migrationsRun: false, // Rodar migrations manualmente via CLI

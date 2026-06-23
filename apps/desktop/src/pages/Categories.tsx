@@ -6,6 +6,7 @@ import {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 interface CategoryForm {
@@ -21,6 +22,7 @@ export default function Categories() {
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation();
   const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,17 +43,27 @@ export default function Categories() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    if (editingId) {
-      await updateCategory({ id: editingId, data: form });
-    } else {
-      await createCategory(form);
+    try {
+      if (editingId) {
+        await updateCategory({ id: editingId, data: form }).unwrap();
+      } else {
+        await createCategory(form).unwrap();
+      }
+      notify.success('Categoria salva com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar categoria.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
-    await deleteCategory(id);
+    try {
+      await deleteCategory(id).unwrap();
+      notify.success('Categoria excluída.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir categoria.');
+    }
   };
 
   if (isLoading) {

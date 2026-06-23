@@ -112,6 +112,10 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard'],
     }),
+    updateDeliveryStatus: builder.mutation<void, { id: string; status: string }>({
+      query: ({ id, ...body }) => ({ url: `/orders/${id}/delivery-status`, method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
     bulkOrderStatus: builder.mutation<{ affected: number; errors: string[] }, { action: string; ids: string[]; status?: string }>({
       query: (body) => ({ url: '/orders/bulk-status', method: 'PUT', data: body, meta: { authContext: 'admin' as const } }),
       invalidatesTags: ['Orders', 'Dashboard'],
@@ -256,12 +260,18 @@ export const adminApi = baseApi.injectEndpoints({
     }),
     updateTenant: builder.mutation<void, { id: string; data: any }>({
       query: ({ id, data }) => ({ url: `/tenants/${id}`, method: 'PUT', data, meta: { authContext: 'admin' as const } }),
-      invalidatesTags: ['Settings', 'Tenant'],
+      // 'TenantPublic' forces the storefront's getPublicTenant query to refetch so
+      // changes like business_hours unblock the vitrine immediately.
+      invalidatesTags: ['Settings', 'Tenant', 'TenantPublic'],
     }),
 
     // Delivery Persons
     getDeliveryPersons: builder.query<any[], void>({
       query: () => ({ url: '/delivery-persons', meta: { authContext: 'admin' as const } }),
+      providesTags: ['DeliveryPersons'],
+    }),
+    getMyDeliveryPerson: builder.query<any, void>({
+      query: () => ({ url: '/delivery-persons/me', meta: { authContext: 'admin' as const } }),
       providesTags: ['DeliveryPersons'],
     }),
     getDeliveryPerson: builder.query<any, string>({
@@ -428,6 +438,10 @@ export const adminApi = baseApi.injectEndpoints({
     getTables: builder.query<any[], void>({
       query: () => ({ url: '/tables', meta: { authContext: 'admin' as const } }),
       providesTags: ['Tables'],
+    }),
+    getTable: builder.query<any, string>({
+      query: (id) => ({ url: `/tables/${id}`, meta: { authContext: 'admin' as const } }),
+      providesTags: (_result, _err, id) => [{ type: 'Tables', id }],
     }),
     createTable: builder.mutation<void, any>({
       query: (body) => ({ url: '/tables', method: 'POST', data: body, meta: { authContext: 'admin' as const } }),
@@ -743,6 +757,7 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
+  useUpdateDeliveryStatusMutation,
   useBulkOrderStatusMutation,
   useGetDashboardDataQuery,
   useGetAdvancedStatsQuery,
@@ -775,6 +790,7 @@ export const {
   useUpdateTenantMutation,
   useUploadImageMutation,
   useGetDeliveryPersonsQuery,
+  useGetMyDeliveryPersonQuery,
   useGetDeliveryPersonQuery,
   useCreateDeliveryPersonMutation,
   useUpdateDeliveryPersonMutation,
@@ -812,6 +828,7 @@ export const {
   useUpdateRoleMutation,
   useDeleteRoleMutation,
   useGetTablesQuery,
+  useGetTableQuery,
   useCreateTableMutation,
   useUpdateTableMutation,
   useDeleteTableMutation,

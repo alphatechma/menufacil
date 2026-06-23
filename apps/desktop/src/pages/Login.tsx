@@ -50,6 +50,7 @@ export default function Login() {
         loginSuccess({
           user: result.user,
           token: result.access_token,
+          refreshToken: result.refresh_token,
           tenantSlug: result.tenant_slug,
           modules: result.modules,
           permissions: result.permissions,

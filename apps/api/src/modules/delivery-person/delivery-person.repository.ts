@@ -33,6 +33,10 @@ export class DeliveryPersonRepository {
     return this.repo.findOne({ where: { id, tenant_id: tenantId } });
   }
 
+  async findByUserId(userId: string, tenantId: string): Promise<DeliveryPerson | null> {
+    return this.repo.findOne({ where: { user_id: userId, tenant_id: tenantId } });
+  }
+
   async findByIdWithOrders(id: string, tenantId: string): Promise<DeliveryPerson | null> {
     return this.repo.findOne({
       where: { id, tenant_id: tenantId },

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -21,6 +21,8 @@ import { EventsGateway } from '../../websocket/events.gateway';
 import { WhatsappMessageService } from '../whatsapp/services/whatsapp-message.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AutoAssignService } from '../delivery-person/auto-assign.service';
+import { DeliveryPersonService } from '../delivery-person/delivery-person.service';
+import { PromotionService } from '../promotion/promotion.service';
 
 @Injectable()
 export class OrderService {
@@ -48,6 +50,8 @@ export class OrderService {
     private readonly whatsappMessageService: WhatsappMessageService,
     private readonly inventoryService: InventoryService,
     private readonly autoAssignService: AutoAssignService,
+    private readonly deliveryPersonService: DeliveryPersonService,
+    private readonly promotionService: PromotionService,
     @InjectQueue('notifications') private readonly notificationQueue: Queue,
     @InjectQueue('inventory') private readonly inventoryQueue: Queue,
     @InjectQueue('loyalty') private readonly loyaltyQueue: Queue,
@@ -189,10 +193,42 @@ export class OrderService {
       };
     });
 
+    // Apply active promotions (per-item discount) — server is the source of truth for pricing.
+    const activePromotions = await this.promotionService.getActivePromotions(tenantId);
+    if (activePromotions.length > 0) {
+      const discountedUnitPrices = this.promotionService.priceItems(
+        activePromotions,
+        orderItems.map((oi) => ({
+          product_id: oi.product_id,
+          category_id: productMap.get(oi.product_id)?.category_id ?? null,
+          unit_price: oi.unit_price,
+          quantity: oi.quantity,
+        })),
+      );
+      orderItems.forEach((oi, i) => {
+        oi.unit_price = discountedUnitPrices[i];
+      });
+    }
+
     const subtotal = orderItems.reduce((sum, item) => {
       const extrasTotal = item.extras.reduce((s, e) => s + Number(e.extra_price), 0);
       return sum + (item.unit_price + extrasTotal) * item.quantity;
     }, 0);
+
+    // Cart-level promotions (combo / buy_x_get_y) — applied on top of the already-discounted
+    // per-item prices, stacking like a coupon. Reuses the activePromotions fetched above.
+    const comboDiscount =
+      activePromotions.length > 0
+        ? this.promotionService.getCartLevelDiscount(
+            activePromotions,
+            orderItems.map((oi) => ({
+              product_id: oi.product_id,
+              category_id: productMap.get(oi.product_id)?.category_id ?? null,
+              unit_price: oi.unit_price,
+              quantity: oi.quantity,
+            })),
+          )
+        : 0;
 
     // Validate and apply coupon if provided (regular coupon or loyalty redemption)
     let discount = 0;
@@ -221,6 +257,9 @@ export class OrderService {
         await this.couponService.use(couponResult.coupon.id);
       }
     }
+
+    // Combo/buy_x_get_y stacks on top of the coupon; cap the combined discount at the subtotal.
+    discount = Math.min(discount + comboDiscount, subtotal);
 
     const total = subtotal + deliveryFee - discount;
 
@@ -333,6 +372,22 @@ export class OrderService {
     }
 
     return this.updateStatus(orderId, OrderStatus.CANCELLED, tenantId);
+  }
+
+  /**
+   * Status update scoped to a delivery driver: the driver may only change the status of
+   * orders assigned to them, and only to out_for_delivery/delivered.
+   */
+  async updateDeliveryStatus(id: string, status: OrderStatus, tenantId: string, userId: string): Promise<Order> {
+    if (![OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED].includes(status)) {
+      throw new BadRequestException('Status inválido para entregador');
+    }
+    const driver = await this.deliveryPersonService.findByUserId(userId, tenantId);
+    const order = await this.findById(id, tenantId);
+    if (order.delivery_person_id !== driver.id) {
+      throw new ForbiddenException('Este pedido não está atribuído a você');
+    }
+    return this.updateStatus(id, status, tenantId);
   }
 
   async updateStatus(id: string, status: OrderStatus, tenantId: string, deliveryPersonId?: string): Promise<Order> {

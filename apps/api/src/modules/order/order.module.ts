@@ -19,6 +19,7 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
 import { ReferralModule } from '../referral/referral.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { DeliveryPersonModule } from '../delivery-person/delivery-person.module';
+import { PromotionModule } from '../promotion/promotion.module';
 import { QueueModule } from '../../common/queues/queue.module';
 import { NotificationProcessor } from '../../common/queues/notification.processor';
 import { InventoryProcessor } from '../../common/queues/inventory.processor';
@@ -34,6 +35,7 @@ import { LoyaltyProcessor } from '../../common/queues/loyalty.processor';
     ReferralModule,
     InventoryModule,
     DeliveryPersonModule,
+    PromotionModule,
     QueueModule,
   ],
   controllers: [OrderController],

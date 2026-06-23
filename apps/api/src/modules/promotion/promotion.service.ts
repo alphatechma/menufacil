@@ -52,8 +52,27 @@ export class PromotionService {
 
   async getActivePromotions(tenantId: string): Promise<Promotion[]> {
     const now = new Date();
-    const currentDay = now.getDay(); // 0=Sun ... 6=Sat
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    // Schedule (days/start_time/end_time) is configured in the restaurant's timezone
+    // (America/Sao_Paulo), but the server runs in UTC — compute day/time in SP to match.
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const weekdayMap: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+    const currentDay = weekdayMap[get('weekday')] ?? now.getUTCDay(); // 0=Sun ... 6=Sat
+    const currentTime = `${get('hour')}:${get('minute')}`;
 
     const promotions = await this.repo.find({
       where: {
@@ -78,6 +97,92 @@ export class PromotionService {
 
       return true;
     });
+  }
+
+  /**
+   * Preço unitário com desconto por item (tipos por item: discount/happy_hour/weekday).
+   * Espelha `apps/web/src/utils/promotions.ts` para que o valor exibido seja igual ao cobrado.
+   * Respeita `min_order_value` (discount/weekday checam o subtotal dos itens casados; happy_hour não).
+   * Retorna o `unit_price` (com desconto quando aplicável) na mesma ordem dos itens.
+   */
+  priceItems(
+    activePromotions: Promotion[],
+    items: { product_id: string; category_id?: string | null; unit_price: number; quantity: number }[],
+  ): number[] {
+    const pricedTypes = [
+      PromotionType.DISCOUNT,
+      PromotionType.HAPPY_HOUR,
+      PromotionType.WEEKDAY,
+    ];
+
+    const findPromo = (item: { product_id: string; category_id?: string | null }): Promotion | null => {
+      for (const p of activePromotions) {
+        if ((p.rules?.products || []).includes(item.product_id)) return p;
+      }
+      for (const p of activePromotions) {
+        if (item.category_id && (p.rules?.categories || []).includes(item.category_id)) return p;
+      }
+      return null;
+    };
+
+    const candidates = items.map(findPromo);
+
+    const matchedSubtotal: Record<string, number> = {};
+    candidates.forEach((promo, i) => {
+      if (promo) {
+        matchedSubtotal[promo.id] =
+          (matchedSubtotal[promo.id] || 0) + items[i].unit_price * items[i].quantity;
+      }
+    });
+
+    return items.map((item, i) => {
+      const promo = candidates[i];
+      if (!promo || !pricedTypes.includes(promo.type)) return item.unit_price;
+
+      const min = promo.rules?.min_order_value;
+      if (
+        min != null &&
+        (promo.type === PromotionType.DISCOUNT || promo.type === PromotionType.WEEKDAY) &&
+        (matchedSubtotal[promo.id] || 0) < Number(min)
+      ) {
+        return item.unit_price;
+      }
+
+      const value = Number(promo.discount_value);
+      const price =
+        promo.discount_type === PromotionDiscountType.PERCENT
+          ? item.unit_price * (1 - value / 100)
+          : Math.max(0, item.unit_price - value);
+      const rounded = Math.round(price * 100) / 100;
+      return rounded < item.unit_price ? rounded : item.unit_price;
+    });
+  }
+
+  /**
+   * Desconto em NÍVEL DE PEDIDO para promoções de carrinho (combo / buy_x_get_y), que não
+   * alteram o preço unitário e por isso não são cobertas por `priceItems`. Soma os
+   * `discount_amount` de cada promoção combo/buy_x_get_y casada e arredonda para 2 casas.
+   *
+   * Não inclui discount/happy_hour/weekday (aplicadas por item em `priceItems`) para evitar
+   * dupla contagem. Os `unit_price` recebidos já devem estar com o desconto por item aplicado.
+   */
+  getCartLevelDiscount(
+    activePromotions: Promotion[],
+    items: { product_id: string; category_id?: string | null; unit_price: number; quantity: number }[],
+  ): number {
+    let total = 0;
+    for (const promo of activePromotions) {
+      let applied: AppliedDiscount | null = null;
+      if (promo.type === PromotionType.COMBO) {
+        applied = this.applyCombo(promo, items as CartItemDto[]);
+      } else if (promo.type === PromotionType.BUY_X_GET_Y) {
+        applied = this.applyBuyXGetY(promo, items as CartItemDto[]);
+      }
+      if (applied) {
+        total += applied.discount_amount;
+      }
+    }
+    return Math.round(total * 100) / 100;
   }
 
   async evaluateCart(tenantId: string, items: CartItemDto[]): Promise<AppliedDiscount[]> {

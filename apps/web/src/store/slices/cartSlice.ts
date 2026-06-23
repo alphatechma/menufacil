@@ -8,6 +8,7 @@ export interface CartItemExtra {
 
 export interface CartItem {
   product_id: string;
+  category_id?: string | null;
   product_name: string;
   product_image?: string | null;
   variation_id: string | null;

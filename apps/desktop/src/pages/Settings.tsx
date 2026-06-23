@@ -13,6 +13,7 @@ import {
 } from '@/api/api';
 import { useAppSelector } from '@/store/hooks';
 import { useNotify } from '@/hooks/useNotify';
+import { TimeSelect } from '@/components/ui/DateTimeSelect';
 import { cn } from '@/utils/cn';
 import { env } from '@/config/env';
 import PrinterManager from './PrinterManager';
@@ -184,7 +185,7 @@ export default function Settings() {
                 <div key={day.key} className="flex items-center gap-3">
                   <Toggle checked={!!h.open} onChange={(v) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], open: v, openTime: h.openTime || '08:00', closeTime: h.closeTime || '22:00' } }))} />
                   <span className="text-sm font-medium text-gray-700 w-20">{day.label}</span>
-                  {h.open ? (<><input type="time" value={h.openTime || '08:00'} onChange={(e) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], openTime: e.target.value } }))} className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" /><span className="text-xs text-gray-400">ate</span><input type="time" value={h.closeTime || '22:00'} onChange={(e) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], closeTime: e.target.value } }))} className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" /></>) : <span className="text-xs text-gray-400">Fechado</span>}
+                  {h.open ? (<><div className="w-40"><TimeSelect minuteStep={1} value={h.openTime || '08:00'} onChange={(v) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], openTime: v } }))} /></div><span className="text-xs text-gray-400">ate</span><div className="w-40"><TimeSelect minuteStep={1} value={h.closeTime || '22:00'} onChange={(v) => setBusinessHours((p) => ({ ...p, [day.key]: { ...p[day.key], closeTime: v } }))} /></div></>) : <span className="text-xs text-gray-400">Fechado</span>}
                 </div>); })}
               <div className="flex justify-end pt-2"><SaveBtn onClick={() => save({ business_hours: businessHours })} loading={saving} /></div>
             </div>

@@ -87,8 +87,8 @@ export default function TableDetail() {
 
   useSocket({
     'table:status-updated': () => fetchData(),
-    'order:created': () => fetchData(),
-    'order:updated': () => fetchData(),
+    'order:new': () => fetchData(),
+    'order:status-updated': () => fetchData(),
   });
 
   const handleOpenSession = async () => {

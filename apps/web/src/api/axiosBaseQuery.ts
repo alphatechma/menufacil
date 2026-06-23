@@ -47,6 +47,7 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 let refreshPromise: Promise<any> | null = null;
+let customerRefreshPromise: Promise<any> | null = null;
 
 export const axiosBaseQuery: BaseQueryFn<
   string | (FetchArgs & { meta?: ExtraMeta }),
@@ -114,6 +115,15 @@ export const axiosBaseQuery: BaseQueryFn<
 
   // Handle admin 401 with token refresh via cookie
   if (result.error?.status === 401 && authContext === 'admin') {
+    const logoutAndRedirect = () => {
+      refreshPromise = null;
+      localStorage.removeItem('menufacil-impersonate-token');
+      localStorage.removeItem('menufacil-impersonating');
+      api.dispatch(adminLogout());
+      window.location.href = '/login';
+      return { error: { status: 401 as const, data: 'Session expired' } };
+    };
+
     try {
       if (!refreshPromise) {
         refreshPromise = (async () => {
@@ -133,19 +143,52 @@ export const axiosBaseQuery: BaseQueryFn<
 
       // Retry original request
       result = await rawBaseQuery(fetchArgs, api, extraOptions);
+
+      // Refresh succeeded but the resource still rejects → session is no longer valid
+      if (result.error?.status === 401) {
+        return logoutAndRedirect();
+      }
     } catch {
-      refreshPromise = null;
-      localStorage.removeItem('menufacil-impersonate-token');
-      api.dispatch(adminLogout());
-      window.location.href = '/login';
-      return { error: { status: 401 as const, data: 'Session expired' } };
+      return logoutAndRedirect();
     }
   }
 
-  // Handle customer 401 (JWT expired/invalid) — stateless, just clear local auth
+  // Handle customer 401 with token refresh via cookie
   if (result.error?.status === 401 && authContext === 'customer') {
-    api.dispatch(customerLogout());
-    window.dispatchEvent(new CustomEvent('unauthorized'));
+    const logoutAndRedirect = () => {
+      customerRefreshPromise = null;
+      api.dispatch(customerLogout());
+      const slug = meta?.tenantSlug ?? state.tenant?.tenant?.slug;
+      if (slug) window.location.href = `/${slug}/account`;
+      return { error: { status: 401 as const, data: 'Session expired' } };
+    };
+
+    try {
+      if (!customerRefreshPromise) {
+        customerRefreshPromise = (async () => {
+          const res = await rawBaseQuery(
+            { url: '/auth/refresh', method: 'POST', body: {} },
+            api,
+            extraOptions,
+          );
+          if (res.error) throw res.error;
+          return res.data;
+        })().finally(() => {
+          customerRefreshPromise = null;
+        });
+      }
+
+      await customerRefreshPromise;
+
+      // Retry original request
+      result = await rawBaseQuery(fetchArgs, api, extraOptions);
+
+      if (result.error?.status === 401) {
+        return logoutAndRedirect();
+      }
+    } catch {
+      return logoutAndRedirect();
+    }
   }
 
   return result;

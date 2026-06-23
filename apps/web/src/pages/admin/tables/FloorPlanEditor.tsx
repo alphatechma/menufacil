@@ -221,6 +221,55 @@ export default function FloorPlanEditor() {
     [layoutItems.length],
   );
 
+  // --- Drag a table from the sidebar onto the canvas (native HTML5 DnD) ---
+  const handleSidebarDragStart = useCallback(
+    (e: React.DragEvent, tableId: string) => {
+      e.dataTransfer.setData('text/plain', tableId);
+      e.dataTransfer.effectAllowed = 'copy';
+    },
+    [],
+  );
+
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    // Required so the canvas becomes a valid drop target.
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const tableId = e.dataTransfer.getData('text/plain');
+      if (!tableId || !canvasRef.current) return;
+      // Ignore tables already on the canvas.
+      if (layoutItems.some((item) => item.table_id === tableId)) return;
+
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = Math.max(
+        0,
+        Math.min(e.clientX - rect.left - DEFAULT_ITEM_SIZE / 2, rect.width - DEFAULT_ITEM_SIZE),
+      );
+      const y = Math.max(
+        0,
+        Math.min(e.clientY - rect.top - DEFAULT_ITEM_SIZE / 2, rect.height - DEFAULT_ITEM_SIZE),
+      );
+
+      const newItem: FloorPlanItem = {
+        table_id: tableId,
+        x: Math.round(x),
+        y: Math.round(y),
+        width: DEFAULT_ITEM_SIZE,
+        height: DEFAULT_ITEM_SIZE,
+        shape: 'rectangle',
+        rotation: 0,
+      };
+      setLayoutItems((prev) => [...prev, newItem]);
+      setSelectedTableId(tableId);
+      setHasUnsavedChanges(true);
+    },
+    [layoutItems],
+  );
+
   const handleRemoveFromCanvas = useCallback(
     (tableId: string) => {
       setLayoutItems((prev) => prev.filter((item) => item.table_id !== tableId));
@@ -376,6 +425,8 @@ export default function FloorPlanEditor() {
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
               onClick={handleCanvasClick}
+              onDragOver={handleCanvasDragOver}
+              onDrop={handleCanvasDrop}
             >
               {/* Grid pattern hint */}
               <div
@@ -563,14 +614,25 @@ export default function FloorPlanEditor() {
                   return (
                     <div
                       key={table.id}
+                      draggable={!!selectedPlanId}
+                      onDragStart={(e) => handleSidebarDragStart(e, table.id)}
+                      title={
+                        selectedPlanId
+                          ? 'Arraste para o mapa ou clique no pino para posicionar'
+                          : 'Selecione uma planta para posicionar mesas'
+                      }
                       className={cn(
                         'flex items-center justify-between p-3 rounded-xl border transition-colors',
                         'bg-card',
                         'border-border',
                         'hover:border-input',
+                        selectedPlanId
+                          ? 'cursor-grab active:cursor-grabbing'
+                          : 'cursor-not-allowed opacity-60',
                       )}
                     >
                       <div className="flex items-center gap-3">
+                        <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                         <div
                           className={cn(
                             'w-9 h-9 rounded-lg flex items-center justify-center border',

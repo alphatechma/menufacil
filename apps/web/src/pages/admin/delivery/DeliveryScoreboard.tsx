@@ -10,9 +10,9 @@ import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 
 const rankColors: Record<number, { bg: string; text: string; label: string }> = {
-  0: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Ouro' },
-  1: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Prata' },
-  2: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Bronze' },
+  0: { bg: 'bg-yellow-100 dark:bg-yellow-500/15', text: 'text-yellow-700 dark:text-yellow-300', label: 'Ouro' },
+  1: { bg: 'bg-gray-100 dark:bg-gray-500/15', text: 'text-gray-600 dark:text-gray-300', label: 'Prata' },
+  2: { bg: 'bg-orange-100 dark:bg-orange-500/15', text: 'text-orange-700 dark:text-orange-300', label: 'Bronze' },
 };
 
 export default function DeliveryScoreboard() {
@@ -40,21 +40,21 @@ export default function DeliveryScoreboard() {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">De:</label>
+              <label className="text-sm font-medium text-foreground">De:</label>
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Ate:</label>
+              <label className="text-sm font-medium text-foreground">Ate:</label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function DeliveryScoreboard() {
         </div>
       ) : scoreboard.length === 0 ? (
         <EmptyState
-          icon={<Truck className="w-12 h-12 text-gray-300" />}
+          icon={<Truck className="w-12 h-12 text-muted-foreground" />}
           title="Nenhum entregador encontrado"
           description="Cadastre entregadores para ver o ranking."
         />
@@ -83,14 +83,14 @@ export default function DeliveryScoreboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="pb-3 font-medium text-gray-500 w-12">#</th>
-                    <th className="pb-3 font-medium text-gray-500">Entregador</th>
-                    <th className="pb-3 font-medium text-gray-500 text-center">Entregas</th>
-                    <th className="pb-3 font-medium text-gray-500 text-center">Tempo Médio</th>
-                    <th className="pb-3 font-medium text-gray-500 text-center">Taxa Conclusao</th>
-                    <th className="pb-3 font-medium text-gray-500 text-right">Comissao</th>
-                    <th className="pb-3 font-medium text-gray-500 text-center">Score</th>
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-3 font-medium text-muted-foreground w-12">#</th>
+                    <th className="pb-3 font-medium text-muted-foreground">Entregador</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-center">Entregas</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-center">Tempo Médio</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-center">Taxa Conclusao</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Comissao</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-center">Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,8 +100,8 @@ export default function DeliveryScoreboard() {
                       <tr
                         key={person.id}
                         className={cn(
-                          'border-b border-gray-50 transition-colors',
-                          index < 3 && 'bg-gray-50/50',
+                          'border-b border-border transition-colors',
+                          index < 3 && 'bg-muted/50',
                         )}
                       >
                         <td className="py-3">
@@ -116,7 +116,7 @@ export default function DeliveryScoreboard() {
                               {index + 1}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center justify-center w-7 h-7 text-gray-400 text-sm">
+                            <span className="inline-flex items-center justify-center w-7 h-7 text-muted-foreground text-sm">
                               {index + 1}
                             </span>
                           )}
@@ -124,8 +124,8 @@ export default function DeliveryScoreboard() {
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <div>
-                              <p className="font-medium text-gray-900">{person.name}</p>
-                              <p className="text-xs text-gray-400">
+                              <p className="font-medium text-foreground">{person.name}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {person.vehicle || 'Sem veiculo'} {!person.is_active && '(Inativo)'}
                               </p>
                             </div>
@@ -138,14 +138,14 @@ export default function DeliveryScoreboard() {
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex flex-col items-center">
-                            <span className="font-semibold text-gray-900">{person.total_deliveries}</span>
-                            <span className="text-xs text-gray-400">de {person.total_assigned}</span>
+                            <span className="font-semibold text-foreground">{person.total_deliveries}</span>
+                            <span className="text-xs text-muted-foreground">de {person.total_assigned}</span>
                           </div>
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="font-medium text-gray-700">
+                            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="font-medium text-foreground">
                               {person.avg_delivery_time > 0 ? `${person.avg_delivery_time} min` : '-'}
                             </span>
                           </div>
@@ -163,7 +163,7 @@ export default function DeliveryScoreboard() {
                             {person.completion_rate}%
                           </Badge>
                         </td>
-                        <td className="py-3 text-right font-medium text-gray-700">
+                        <td className="py-3 text-right font-medium text-foreground">
                           {formatPrice(person.total_commission)}
                         </td>
                         <td className="py-3 text-center">

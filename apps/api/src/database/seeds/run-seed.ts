@@ -19,7 +19,7 @@ async function seed() {
     username: process.env.DB_USERNAME || 'menufacil',
     password: process.env.DB_PASSWORD || 'menufacil123',
     database: process.env.DB_DATABASE || 'menufacil',
-    entities: [join(__dirname, '..', '..', 'modules', '**', 'entities', '*.entity.{ts,js}')],
+    entities: [join(__dirname, '..', '..', 'modules', '**', '*.entity.{ts,js}')],
     synchronize: true,
   });
 
@@ -594,7 +594,7 @@ async function seed() {
     }
 
     const adminRole = savedRoles['Administrador'];
-    const waiterRole = savedRoles['Garcom'];
+    const waiterRole = savedRoles['Garçom'];
 
     // ── Create admin user ──
     let admin = await userRepo.findOne({ where: { email: demo.admin.email } });

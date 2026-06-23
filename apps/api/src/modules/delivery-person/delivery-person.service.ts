@@ -27,6 +27,12 @@ export class DeliveryPersonService {
     return entity;
   }
 
+  async findByUserId(userId: string, tenantId: string): Promise<DeliveryPerson> {
+    const entity = await this.repository.findByUserId(userId, tenantId);
+    if (!entity) throw new NotFoundException('Entregador nao encontrado para este usuario');
+    return entity;
+  }
+
   async findByIdWithOrders(id: string, tenantId: string): Promise<DeliveryPerson> {
     const entity = await this.repository.findByIdWithOrders(id, tenantId);
     if (!entity) throw new NotFoundException('Entregador nao encontrado');

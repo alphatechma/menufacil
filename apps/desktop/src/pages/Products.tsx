@@ -18,6 +18,7 @@ import {
 } from '@/api/api';
 import { formatPrice } from '@/utils/formatPrice';
 import { cn } from '@/utils/cn';
+import { useNotify } from '@/hooks/useNotify';
 
 interface ProductForm {
   name: string;
@@ -38,6 +39,7 @@ const emptyForm: ProductForm = {
 };
 
 export default function Products() {
+  const notify = useNotify();
   const { data: products = [], isLoading } = useGetProductsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
@@ -73,7 +75,7 @@ export default function Products() {
     setForm({
       name: p.name || '',
       description: p.description || '',
-      price: String(p.price || ''),
+      price: String(p.base_price ?? ''),
       category_id: p.category_id || p.category?.id || '',
       image_url: p.image_url || '',
       is_active: p.is_active !== false,
@@ -83,16 +85,31 @@ export default function Products() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = {
-      ...form,
-      price: parseFloat(form.price.replace(',', '.')) || 0,
-    };
-    if (editingId) {
-      await updateProduct({ id: editingId, data });
-    } else {
-      await createProduct(data);
+    if (!form.category_id) {
+      notify.error('Selecione uma categoria.');
+      return;
     }
-    setModalOpen(false);
+    const data = {
+      name: form.name,
+      description: form.description || undefined,
+      base_price: parseFloat(form.price.replace(',', '.')) || 0,
+      category_id: form.category_id,
+      image_url: form.image_url || undefined,
+      is_active: form.is_active,
+    };
+    try {
+      if (editingId) {
+        await updateProduct({ id: editingId, data }).unwrap();
+      } else {
+        await createProduct(data).unwrap();
+      }
+      setModalOpen(false);
+      notify.success(editingId ? 'Produto atualizado.' : 'Produto criado.');
+    } catch (err: any) {
+      const msg =
+        err?.data?.errors?.[0]?.message || err?.data?.message || 'Erro ao salvar o produto.';
+      notify.error(typeof msg === 'string' ? msg : 'Erro ao salvar o produto.');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -195,7 +212,7 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p.category?.name || '-'}</td>
-                  <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatPrice(p.price || 0)}</td>
+                  <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatPrice(p.base_price || 0)}</td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => handleToggleActive(p)} className="transition-colors">
                       {p.is_active !== false ? (
@@ -272,6 +289,7 @@ export default function Products() {
                     value={form.category_id}
                     onChange={(e) => setForm({ ...form, category_id: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
                   >
                     <option value="">Selecione...</option>
                     {categories.map((c: any) => (

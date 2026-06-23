@@ -21,6 +21,7 @@ import {
   Bar,
 } from 'recharts';
 import { useGetAdvancedStatsQuery } from '@/api/api';
+import { DateSelect } from '@/components/ui/DateTimeSelect';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/formatPrice';
 
@@ -171,19 +172,9 @@ export default function Dashboard() {
           {preset === 'custom' && (
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
-              <input
-                type="date"
-                value={customFrom}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                className="px-2 py-1 text-xs border border-gray-200 rounded-lg bg-white text-gray-900"
-              />
+              <div className="w-52"><DateSelect value={customFrom} onChange={setCustomFrom} /></div>
               <span className="text-xs text-gray-400">ate</span>
-              <input
-                type="date"
-                value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-                className="px-2 py-1 text-xs border border-gray-200 rounded-lg bg-white text-gray-900"
-              />
+              <div className="w-52"><DateSelect value={customTo} onChange={setCustomTo} /></div>
             </div>
           )}
         </div>

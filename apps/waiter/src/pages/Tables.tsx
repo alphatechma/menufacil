@@ -48,8 +48,8 @@ export default function Tables() {
 
   useSocket({
     'table:status-updated': () => fetchTables(),
-    'order:created': () => fetchTables(),
-    'order:updated': () => fetchTables(),
+    'order:new': () => fetchTables(),
+    'order:status-updated': () => fetchTables(),
   });
 
   const handleLogout = () => {

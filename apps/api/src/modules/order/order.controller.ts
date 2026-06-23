@@ -186,6 +186,19 @@ export class OrderController {
     return this.orderService.updateStatus(id, dto.status, tenantId, dto.delivery_person_id);
   }
 
+  @Put(':id/delivery-status')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('delivery_driver:update')
+  @ApiOperation({ summary: 'Update status of an order assigned to the current delivery driver' })
+  updateDeliveryStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderStatusDto,
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.orderService.updateDeliveryStatus(id, dto.status, tenantId, userId);
+  }
+
   @Put(':id/delivery-person')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('order:update')

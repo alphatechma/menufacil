@@ -3,7 +3,7 @@ import {
   Bike,
   Package,
   MapPin,
-  Phone,
+  MessageCircle,
   User,
   Clock,
   CheckCircle2,
@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import {
   useGetOrdersQuery,
-  useUpdateOrderStatusMutation,
-  useGetDeliveryPersonsQuery,
+  useUpdateDeliveryStatusMutation,
+  useGetMyDeliveryPersonQuery,
 } from '@/api/adminApi';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store/hooks';
@@ -68,6 +68,15 @@ function formatDateKey(dateStr: string): string {
   return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
+// Builds a wa.me link from a stored phone number (Brazilian numbers get the 55 country code).
+function buildWhatsappUrl(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+  if (!digits.startsWith('55')) {
+    digits = `55${digits}`;
+  }
+  return `https://wa.me/${digits}`;
+}
+
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr);
   const today = new Date();
@@ -88,16 +97,11 @@ export default function MyDeliveries() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const tenantSlug = useAppSelector((s) => s.adminAuth.tenantSlug);
-  const currentUser = useAppSelector((s) => s.adminAuth.user);
 
   const { data: orders = [], isLoading, refetch } = useGetOrdersQuery();
-  const { data: deliveryPersons = [] } = useGetDeliveryPersonsQuery();
-  const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
-
-  // Find the delivery person linked to the current user by user_id
-  const myDeliveryPerson = deliveryPersons.find(
-    (dp: any) => dp.user_id && dp.user_id === currentUser?.id,
-  );
+  // Backend resolves the delivery person from the logged-in user (driver-scoped endpoint)
+  const { data: myDeliveryPerson } = useGetMyDeliveryPersonQuery();
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateDeliveryStatusMutation();
 
   const hasCommission = myDeliveryPerson && myDeliveryPerson.commission_type !== 'none' && Number(myDeliveryPerson.commission_value) > 0;
 
@@ -339,11 +343,13 @@ export default function MyDeliveries() {
                     </div>
                     {customerPhone && (
                       <a
-                        href={`tel:${customerPhone}`}
+                        href={buildWhatsappUrl(customerPhone)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center justify-center w-12 h-12 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0 shadow-sm"
-                        title="Ligar para o cliente"
+                        title="Conversar no WhatsApp"
                       >
-                        <Phone className="w-5 h-5" />
+                        <MessageCircle className="w-5 h-5" />
                       </a>
                     )}
                   </div>

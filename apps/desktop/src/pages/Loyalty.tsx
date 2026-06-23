@@ -6,6 +6,7 @@ import {
   useUpdateLoyaltyRewardMutation,
   useDeleteLoyaltyRewardMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 
 interface RewardForm {
   name: string;
@@ -20,7 +21,7 @@ const emptyForm: RewardForm = {
   name: '',
   description: '',
   points_required: '',
-  reward_type: 'discount_percentage',
+  reward_type: 'discount_percent',
   reward_value: '',
   is_active: true,
 };
@@ -30,6 +31,7 @@ export default function Loyalty() {
   const [createReward, { isLoading: creating }] = useCreateLoyaltyRewardMutation();
   const [updateReward, { isLoading: updating }] = useUpdateLoyaltyRewardMutation();
   const [deleteReward] = useDeleteLoyaltyRewardMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export default function Loyalty() {
       name: r.name || '',
       description: r.description || '',
       points_required: String(r.points_required || ''),
-      reward_type: r.reward_type || 'discount_percentage',
+      reward_type: r.reward_type || 'discount_percent',
       reward_value: String(r.reward_value || ''),
       is_active: r.is_active !== false,
     });
@@ -57,24 +59,33 @@ export default function Loyalty() {
       points_required: parseInt(form.points_required) || 0,
       reward_value: parseFloat(form.reward_value) || 0,
     };
-    if (editingId) {
-      await updateReward({ id: editingId, data });
-    } else {
-      await createReward(data);
+    try {
+      if (editingId) {
+        await updateReward({ id: editingId, data }).unwrap();
+      } else {
+        await createReward(data).unwrap();
+      }
+      notify.success('Recompensa salva com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar recompensa.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta recompensa?')) return;
-    await deleteReward(id);
+    try {
+      await deleteReward(id).unwrap();
+      notify.success('Recompensa excluída.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir recompensa.');
+    }
   };
 
   const rewardTypeLabel: Record<string, string> = {
-    discount_percentage: 'Desconto %',
+    discount_percent: 'Desconto %',
     discount_fixed: 'Desconto Fixo',
-    free_item: 'Item Gratis',
-    free_delivery: 'Frete Gratis',
+    free_product: 'Item Gratis',
   };
 
   if (isLoading) {
@@ -168,10 +179,9 @@ export default function Loyalty() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                   <select value={form.reward_type} onChange={(e) => setForm({ ...form, reward_type: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="discount_percentage">Desconto %</option>
+                    <option value="discount_percent">Desconto %</option>
                     <option value="discount_fixed">Desconto Fixo</option>
-                    <option value="free_item">Item Gratis</option>
-                    <option value="free_delivery">Frete Gratis</option>
+                    <option value="free_product">Item Gratis</option>
                   </select>
                 </div>
                 <div>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Users, Split, X } from 'lucide-react';
 import api from '../services/api';
 import { cn } from '../utils/cn';
+import { useSocket } from '../hooks/useSocket';
 
 interface BillOrder {
   id: string;
@@ -66,6 +67,12 @@ export default function TableBill() {
   useEffect(() => {
     fetchBill();
   }, [fetchBill]);
+
+  // Atualiza a conta em tempo real quando um pedido da mesa muda
+  useSocket({
+    'order:new': () => fetchBill(),
+    'order:status-updated': () => fetchBill(),
+  });
 
   const handleSplitEqual = async () => {
     if (!sessionId) return;

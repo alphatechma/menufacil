@@ -43,14 +43,14 @@ export class AnalyticsService {
     // Revenue by day
     const revenueByDay = await this.orderRepo
       .createQueryBuilder('o')
-      .select("DATE(o.created_at AT TIME ZONE 'UTC')", 'date')
+      .select("TO_CHAR(o.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')", 'date')
       .addSelect('COALESCE(SUM(o.total), 0)', 'revenue')
       .addSelect('COUNT(o.id)', 'orders')
       .where('o.tenant_id = :tenantId', { tenantId })
       .andWhere('o.created_at >= :from', { from: fromDate })
       .andWhere('o.created_at <= :to', { to: toDate })
       .andWhere("o.status != 'cancelled'")
-      .groupBy("DATE(o.created_at AT TIME ZONE 'UTC')")
+      .groupBy("TO_CHAR(o.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')")
       .orderBy('date', 'ASC')
       .getRawMany();
 
@@ -369,7 +369,7 @@ export class AnalyticsService {
           AND o.customer_id IS NOT NULL
       )
       SELECT
-        date,
+        TO_CHAR(date, 'YYYY-MM-DD') as date,
         COUNT(DISTINCT CASE WHEN DATE(first_order_at AT TIME ZONE 'UTC') = date THEN customer_id END) as new,
         COUNT(DISTINCT CASE WHEN DATE(first_order_at AT TIME ZONE 'UTC') < date THEN customer_id END) as returning
       FROM daily_orders

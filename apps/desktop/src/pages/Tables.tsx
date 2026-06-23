@@ -6,6 +6,7 @@ import {
   useUpdateTableMutation,
   useDeleteTableMutation,
 } from '@/api/api';
+import { useNotify } from '@/hooks/useNotify';
 import { cn } from '@/utils/cn';
 
 interface TableForm {
@@ -20,7 +21,7 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
   available: { label: 'Disponivel', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   occupied: { label: 'Ocupada', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
   reserved: { label: 'Reservada', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  inactive: { label: 'Inativa', bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200' },
+  maintenance: { label: 'Manutenção', bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200' },
 };
 
 export default function Tables() {
@@ -28,6 +29,7 @@ export default function Tables() {
   const [createTable, { isLoading: creating }] = useCreateTableMutation();
   const [updateTable, { isLoading: updating }] = useUpdateTableMutation();
   const [deleteTable] = useDeleteTableMutation();
+  const notify = useNotify();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,21 +51,30 @@ export default function Tables() {
     e.preventDefault();
     const data = {
       number: parseInt(form.number) || 0,
-      seats: parseInt(form.seats) || 4,
       capacity: parseInt(form.seats) || 4,
       status: form.status,
     };
-    if (editingId) {
-      await updateTable({ id: editingId, data });
-    } else {
-      await createTable(data);
+    try {
+      if (editingId) {
+        await updateTable({ id: editingId, data }).unwrap();
+      } else {
+        await createTable(data).unwrap();
+      }
+      notify.success('Mesa salva com sucesso!');
+      setModalOpen(false);
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao salvar mesa.');
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta mesa?')) return;
-    await deleteTable(id);
+    try {
+      await deleteTable(id).unwrap();
+      notify.success('Mesa excluída.');
+    } catch (err: any) {
+      notify.error(err?.data?.message || 'Erro ao excluir mesa.');
+    }
   };
 
   if (isLoading) {
@@ -170,7 +181,7 @@ export default function Tables() {
                   <option value="available">Disponivel</option>
                   <option value="occupied">Ocupada</option>
                   <option value="reserved">Reservada</option>
-                  <option value="inactive">Inativa</option>
+                  <option value="maintenance">Manutenção</option>
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
