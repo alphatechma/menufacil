@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -12,7 +12,7 @@ import {
   selectSubtotal,
   selectTotalItems,
 } from '@/store/slices/cartSlice';
-import { useGetActivePromotionsQuery } from '@/api/customerApi';
+import { useGetActivePromotionsQuery, useEvaluateCartPromotionsMutation } from '@/api/customerApi';
 import { formatPrice } from '@/utils/formatPrice';
 import { priceCartItems } from '@/utils/promotions';
 
@@ -41,9 +41,47 @@ export function CartDrawer() {
     })),
   );
 
+  // Cart-level promotions (combo / buy_x_get_y) — evaluated by the backend on top of the
+  // per-item discounts. Não bloqueia o checkout: em erro/carregamento, comboDiscount = 0.
+  const [evaluateCart] = useEvaluateCartPromotionsMutation();
+  const [comboDiscount, setComboDiscount] = useState(0);
+
+  // Itens com o preço já descontado por item (mesma base usada para o subtotal exibido)
+  const evalItems = items.map((i, index) => ({
+    product_id: i.product_id,
+    category_id: i.category_id,
+    unit_price: lines[index]?.discountedUnitPrice ?? i.unit_price,
+    quantity: i.quantity,
+  }));
+  const evalSignature = JSON.stringify({ slug, items: evalItems });
+
+  useEffect(() => {
+    if (!slug || evalItems.length === 0) {
+      setComboDiscount(0);
+      return;
+    }
+    let cancelled = false;
+    evaluateCart({ slug, items: evalItems })
+      .unwrap()
+      .then((discounts) => {
+        if (cancelled) return;
+        const combo = (discounts || [])
+          .filter((d: any) => d.type === 'combo' || d.type === 'buy_x_get_y')
+          .reduce((sum: number, d: any) => sum + Number(d.discount_amount || 0), 0);
+        setComboDiscount(Math.round(combo * 100) / 100);
+      })
+      .catch(() => {
+        if (!cancelled) setComboDiscount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evalSignature]);
+
   const deliveryFee = tenant?.delivery_fee || 0;
   const discountedSubtotal = subtotal - totalDiscount;
-  const total = discountedSubtotal + deliveryFee;
+  const total = Math.max(0, discountedSubtotal - comboDiscount) + deliveryFee;
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -221,6 +259,12 @@ export function CartDrawer() {
               <div className="flex justify-between text-sm text-green-600 font-medium">
                 <span>Desconto promoções</span>
                 <span>- {formatPrice(totalDiscount)}</span>
+              </div>
+            )}
+            {comboDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600 font-medium">
+                <span>Desconto combo</span>
+                <span>- {formatPrice(comboDiscount)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm text-gray-600">

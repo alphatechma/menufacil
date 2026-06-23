@@ -215,6 +215,21 @@ export class OrderService {
       return sum + (item.unit_price + extrasTotal) * item.quantity;
     }, 0);
 
+    // Cart-level promotions (combo / buy_x_get_y) — applied on top of the already-discounted
+    // per-item prices, stacking like a coupon. Reuses the activePromotions fetched above.
+    const comboDiscount =
+      activePromotions.length > 0
+        ? this.promotionService.getCartLevelDiscount(
+            activePromotions,
+            orderItems.map((oi) => ({
+              product_id: oi.product_id,
+              category_id: productMap.get(oi.product_id)?.category_id ?? null,
+              unit_price: oi.unit_price,
+              quantity: oi.quantity,
+            })),
+          )
+        : 0;
+
     // Validate and apply coupon if provided (regular coupon or loyalty redemption)
     let discount = 0;
     let couponCode: string | undefined;
@@ -242,6 +257,9 @@ export class OrderService {
         await this.couponService.use(couponResult.coupon.id);
       }
     }
+
+    // Combo/buy_x_get_y stacks on top of the coupon; cap the combined discount at the subtotal.
+    discount = Math.min(discount + comboDiscount, subtotal);
 
     const total = subtotal + deliveryFee - discount;
 

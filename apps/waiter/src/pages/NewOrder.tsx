@@ -168,7 +168,7 @@ export default function NewOrder() {
           variation_id: i.variation_id || undefined,
           quantity: i.quantity,
           notes: i.notes || undefined,
-          extras: i.extras.map((e) => ({ extra_id: e.extra_id })),
+          extras: i.extras.map((e) => ({ name: e.name, price: e.price })),
         })),
         order_type: 'dine_in',
         table_id: tableId,

@@ -158,6 +158,33 @@ export class PromotionService {
     });
   }
 
+  /**
+   * Desconto em NÍVEL DE PEDIDO para promoções de carrinho (combo / buy_x_get_y), que não
+   * alteram o preço unitário e por isso não são cobertas por `priceItems`. Soma os
+   * `discount_amount` de cada promoção combo/buy_x_get_y casada e arredonda para 2 casas.
+   *
+   * Não inclui discount/happy_hour/weekday (aplicadas por item em `priceItems`) para evitar
+   * dupla contagem. Os `unit_price` recebidos já devem estar com o desconto por item aplicado.
+   */
+  getCartLevelDiscount(
+    activePromotions: Promotion[],
+    items: { product_id: string; category_id?: string | null; unit_price: number; quantity: number }[],
+  ): number {
+    let total = 0;
+    for (const promo of activePromotions) {
+      let applied: AppliedDiscount | null = null;
+      if (promo.type === PromotionType.COMBO) {
+        applied = this.applyCombo(promo, items as CartItemDto[]);
+      } else if (promo.type === PromotionType.BUY_X_GET_Y) {
+        applied = this.applyBuyXGetY(promo, items as CartItemDto[]);
+      }
+      if (applied) {
+        total += applied.discount_amount;
+      }
+    }
+    return Math.round(total * 100) / 100;
+  }
+
   async evaluateCart(tenantId: string, items: CartItemDto[]): Promise<AppliedDiscount[]> {
     const activePromotions = await this.getActivePromotions(tenantId);
     const discounts: AppliedDiscount[] = [];

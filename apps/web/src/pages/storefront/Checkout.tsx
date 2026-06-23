@@ -30,6 +30,7 @@ import {
   useGetCustomerOrdersQuery,
   useGetWalletBalanceQuery,
   useGetActivePromotionsQuery,
+  useEvaluateCartPromotionsMutation,
 } from '@/api/customerApi';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { clearCart, setOrderType, selectOrderType, selectTableId, selectTableSessionId, selectTableNumber } from '@/store/slices/cartSlice';
@@ -153,6 +154,7 @@ function OrderSummary({
   pricedLines,
   subtotal,
   promoDiscount,
+  comboDiscount,
   isDelivery,
   deliveryFee,
   lookingUpFee,
@@ -172,6 +174,7 @@ function OrderSummary({
   pricedLines: PricedLine[];
   subtotal: number;
   promoDiscount: number;
+  comboDiscount: number;
   isDelivery: boolean;
   deliveryFee: number;
   lookingUpFee: boolean;
@@ -241,6 +244,12 @@ function OrderSummary({
             <div className="flex justify-between text-sm text-green-600 font-medium">
               <span>Desconto promoções</span>
               <span>-{formatPrice(promoDiscount)}</span>
+            </div>
+          )}
+          {comboDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 font-medium">
+              <span>Desconto combo</span>
+              <span>-{formatPrice(comboDiscount)}</span>
             </div>
           )}
           {isDelivery && (
@@ -431,6 +440,44 @@ export default function Checkout() {
     })),
   );
 
+  // Cart-level promotions (combo / buy_x_get_y) — evaluated by the backend on top of the
+  // per-item discounts. Não bloqueia o checkout: em erro/carregamento, comboDiscount = 0.
+  const [evaluateCart] = useEvaluateCartPromotionsMutation();
+  const [comboDiscount, setComboDiscount] = useState(0);
+
+  // Itens com o preço já descontado por item (mesma base usada para o subtotal/promoDiscount)
+  const evalItems = cartItems.map((i, index) => ({
+    product_id: i.product_id,
+    category_id: i.category_id,
+    unit_price: pricedLines[index]?.discountedUnitPrice ?? i.unit_price,
+    quantity: i.quantity,
+  }));
+  const evalSignature = JSON.stringify({ slug, items: evalItems });
+
+  useEffect(() => {
+    if (!slug || evalItems.length === 0) {
+      setComboDiscount(0);
+      return;
+    }
+    let cancelled = false;
+    evaluateCart({ slug, items: evalItems })
+      .unwrap()
+      .then((discounts) => {
+        if (cancelled) return;
+        const combo = (discounts || [])
+          .filter((d: any) => d.type === 'combo' || d.type === 'buy_x_get_y')
+          .reduce((sum: number, d: any) => sum + Number(d.discount_amount || 0), 0);
+        setComboDiscount(Math.round(combo * 100) / 100);
+      })
+      .catch(() => {
+        if (!cancelled) setComboDiscount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evalSignature]);
+
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => {
     const extrasTotal = item.extras.reduce((s, e) => s + e.price, 0);
@@ -438,7 +485,7 @@ export default function Checkout() {
   }, 0);
   const discountedSubtotal = subtotal - promoDiscount;
   const effectiveDeliveryFee = isDelivery ? deliveryFee : 0;
-  const total = discountedSubtotal + effectiveDeliveryFee - couponDiscount;
+  const total = Math.max(0, discountedSubtotal - comboDiscount - couponDiscount) + effectiveDeliveryFee;
 
   // Get item total (with per-item promotion discount applied)
   const getItemTotal = (item: typeof cartItems[0], index: number) => {
@@ -1371,6 +1418,12 @@ export default function Checkout() {
               <span>-{formatPrice(promoDiscount)}</span>
             </div>
           )}
+          {comboDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 font-medium">
+              <span>Desconto combo</span>
+              <span>-{formatPrice(comboDiscount)}</span>
+            </div>
+          )}
           {isDelivery && (
             <div className="flex justify-between text-sm text-gray-600">
               <span>Taxa de entrega</span>
@@ -1602,6 +1655,7 @@ export default function Checkout() {
               pricedLines={pricedLines}
               subtotal={subtotal}
               promoDiscount={promoDiscount}
+              comboDiscount={comboDiscount}
               isDelivery={isDelivery}
               deliveryFee={deliveryFee}
               lookingUpFee={lookingUpFee}

@@ -14,10 +14,10 @@ const persistMiddleware: Middleware = (store) => (next) => (action) => {
     typeof (action as { type: string }).type === 'string' &&
     (action as { type: string }).type.startsWith('auth/')
   ) {
-    const { user, tenantSlug, token, isAuthenticated } = state.auth;
+    const { user, tenantSlug, token, refreshToken, isAuthenticated } = state.auth;
     localStorage.setItem(
       'menufacil-desktop-auth',
-      JSON.stringify({ user, tenantSlug, token, isAuthenticated }),
+      JSON.stringify({ user, tenantSlug, token, refreshToken, isAuthenticated }),
     );
   }
 

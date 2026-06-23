@@ -12,11 +12,11 @@ interface ZoneForm {
   name: string;
   fee: string;
   neighborhoods: string;
-  estimated_time: string;
-  is_active: boolean;
+  min_delivery_time: string;
+  max_delivery_time: string;
 }
 
-const emptyForm: ZoneForm = { name: '', fee: '', neighborhoods: '', estimated_time: '', is_active: true };
+const emptyForm: ZoneForm = { name: '', fee: '', neighborhoods: '', min_delivery_time: '', max_delivery_time: '' };
 
 export default function DeliveryZones() {
   const { data: zones = [], isLoading } = useGetDeliveryZonesQuery();
@@ -34,10 +34,10 @@ export default function DeliveryZones() {
     setEditingId(z.id);
     setForm({
       name: z.name || '',
-      fee: String(z.fee || z.delivery_fee || ''),
+      fee: String(z.fee ?? ''),
       neighborhoods: Array.isArray(z.neighborhoods) ? z.neighborhoods.join(', ') : (z.neighborhoods || ''),
-      estimated_time: String(z.estimated_time || z.delivery_time || ''),
-      is_active: z.is_active !== false,
+      min_delivery_time: String(z.min_delivery_time ?? ''),
+      max_delivery_time: String(z.max_delivery_time ?? ''),
     });
     setModalOpen(true);
   };
@@ -47,11 +47,9 @@ export default function DeliveryZones() {
     const data = {
       name: form.name,
       fee: parseFloat(form.fee) || 0,
-      delivery_fee: parseFloat(form.fee) || 0,
       neighborhoods: form.neighborhoods.split(',').map((n) => n.trim()).filter(Boolean),
-      estimated_time: parseInt(form.estimated_time) || 0,
-      delivery_time: parseInt(form.estimated_time) || 0,
-      is_active: form.is_active,
+      min_delivery_time: parseInt(form.min_delivery_time) || 0,
+      max_delivery_time: parseInt(form.max_delivery_time) || 0,
     };
     if (editingId) {
       await updateZone({ id: editingId, data });
@@ -114,11 +112,11 @@ export default function DeliveryZones() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Taxa</span>
-                    <span className="font-medium text-gray-900">{formatPrice(z.fee || z.delivery_fee || 0)}</span>
+                    <span className="font-medium text-gray-900">{formatPrice(z.fee || 0)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Tempo estimado</span>
-                    <span className="text-gray-700">{z.estimated_time || z.delivery_time || 0} min</span>
+                    <span className="text-gray-700">{z.min_delivery_time ?? 0}-{z.max_delivery_time ?? 0} min</span>
                   </div>
                   {(z.neighborhoods?.length > 0) && (
                     <div className="pt-2">
@@ -148,23 +146,23 @@ export default function DeliveryZones() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Taxa (R$)</label>
+                <input type="number" value={form.fee} onChange={(e) => setForm({ ...form, fee: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Taxa (R$)</label>
-                  <input type="number" value={form.fee} onChange={(e) => setForm({ ...form, fee: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tempo mín. (min)</label>
+                  <input type="number" value={form.min_delivery_time} onChange={(e) => setForm({ ...form, min_delivery_time: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tempo (min)</label>
-                  <input type="number" value={form.estimated_time} onChange={(e) => setForm({ ...form, estimated_time: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tempo máx. (min)</label>
+                  <input type="number" value={form.max_delivery_time} onChange={(e) => setForm({ ...form, max_delivery_time: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bairros (separados por virgula)</label>
                 <textarea value={form.neighborhoods} onChange={(e) => setForm({ ...form, neighborhoods: e.target.value })} className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" rows={3} />
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                <label className="text-sm text-gray-700">Zona ativa</label>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancelar</button>
